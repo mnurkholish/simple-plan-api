@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -13,7 +13,7 @@ use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, HasRoles, Notifiable {
@@ -100,6 +100,16 @@ class User extends Authenticatable
         return $this->getAllPermissions()
             ->mapWithKeys(fn ($permission): array => [$permission->name => true])
             ->all();
+    }
+
+    public function canImpersonate(): bool
+    {
+        return $this->hasPermissionTo('impersonate');
+    }
+
+    public function canBeImpersonated(): bool
+    {
+        return ! $this->hasPermissionTo('impersonate');
     }
 
     public function syncRoles(...$roles): self

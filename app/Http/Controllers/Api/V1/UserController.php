@@ -19,7 +19,12 @@ class UserController extends Controller
 
     public function index()
     {
-        $query = QueryBuilder::for(User::class)
+        $baseQuery = $this->applySearch(
+            User::query(),
+            ['name', 'email', 'nip', 'status'],
+        );
+
+        $query = QueryBuilder::for($baseQuery)
             ->allowedFilters('name', 'email', 'nip', 'status')
             ->allowedSorts('name', 'email', 'nip', 'created_at')
             ->allowedIncludes('roles', 'units')

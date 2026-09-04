@@ -18,7 +18,7 @@ class RoleController extends Controller
 
     public function index()
     {
-        $query = QueryBuilder::for(Role::class)
+        $query = QueryBuilder::for($this->applySearch(Role::query(), 'name'))
             ->allowedFilters('name')
             ->allowedSorts('name', 'created_at')
             ->allowedIncludes('permissions')

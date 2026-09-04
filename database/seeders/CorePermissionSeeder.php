@@ -38,5 +38,11 @@ class CorePermissionSeeder extends Seeder
         $create('units-access-owned');
         $create('units-update-owned');
         $create('units-delete-owned');
+
+        $create('backups-access');
+        $create('backups-create');
+        $create('backups-schedule');
+        $create('backups-download');
+        $create('backups-delete');
     }
 }

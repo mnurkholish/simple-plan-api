@@ -19,7 +19,12 @@ class UnitController extends Controller
 
     public function index()
     {
-        $query = QueryBuilder::for(Unit::class)
+        $baseQuery = $this->applySearch(
+            Unit::query(),
+            ['unit_name', 'description'],
+        );
+
+        $query = QueryBuilder::for($baseQuery)
             ->allowedFilters('unit_name')
             ->allowedSorts('unit_name', 'created_at')
             ->allowedIncludes('users')

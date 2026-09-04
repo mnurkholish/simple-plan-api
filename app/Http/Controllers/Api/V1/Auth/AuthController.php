@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Services\DashboardService;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -13,6 +15,11 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    public function __construct(
+        private readonly DashboardService $dashboardService,
+        private readonly NotificationService $notificationService,
+    ) {}
+
     /**
      * @throws ValidationException
      */
@@ -38,6 +45,8 @@ class AuthController extends Controller
         }
 
         $token = $user->createToken($data['device_name'] ?? 'api-token')->plainTextToken;
+        $this->dashboardService->recordLogin();
+        $this->notificationService->recordLogin($user);
 
         $user->load(['roles.permissions', 'units']);
 
@@ -51,7 +60,14 @@ class AuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
-        $request->user()?->currentAccessToken()?->delete();
+        $user = $request->user();
+
+        if ($user) {
+            $this->notificationService->recordLogout($user);
+        }
+
+        $user?->currentAccessToken()?->delete();
+        $this->dashboardService->recordLogout();
 
         return response()->json([
             'message' => 'Logout berhasil.',

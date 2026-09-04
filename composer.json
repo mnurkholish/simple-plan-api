@@ -13,10 +13,13 @@
         "laravel/framework": "^13.17",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^3.0",
+        "spatie/laravel-backup": "^10.3",
         "spatie/laravel-permission": "^8.3",
         "spatie/laravel-query-builder": "^7.3"
     },
     "require-dev": {
+        "darkaonline/l5-swagger": "^11.1",
+        "doctrine/annotations": "^2.0",
         "fakerphp/faker": "^1.23",
         "laravel/boost": "^2.2",
         "laravel/pail": "^1.2.5",

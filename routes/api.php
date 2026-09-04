@@ -1,6 +1,14 @@
 <?php
 
 use App\Http\Controllers\Api\V1\Auth\AuthController;
+use App\Http\Controllers\Api\V1\Auth\ExtendedAuthController;
+use App\Http\Controllers\Api\V1\Auth\SsoController;
+use App\Http\Controllers\Api\V1\BackupController;
+use App\Http\Controllers\Api\V1\DashboardController;
+use App\Http\Controllers\Api\V1\ExampleLiveController;
+use App\Http\Controllers\Api\V1\ImpersonationController;
+use App\Http\Controllers\Api\V1\NotificationController;
+use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\RoleController;
 use App\Http\Controllers\Api\V1\UnitController;
 use App\Http\Controllers\Api\V1\UserController;
@@ -8,10 +16,74 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('api.v1.')->group(function (): void {
     Route::post('auth/login', [AuthController::class, 'login'])->name('auth.login');
+    Route::post('auth/register', [ExtendedAuthController::class, 'register'])->name('auth.register');
+    Route::post('auth/forgot-password', [ExtendedAuthController::class, 'forgotPassword'])->name('auth.forgot-password');
+    Route::post('auth/reset-password', [ExtendedAuthController::class, 'resetPassword'])->name('auth.reset-password');
+    Route::get('auth/sso/config', [SsoController::class, 'config'])->name('auth.sso.config');
+    Route::get('auth/sso/login', [SsoController::class, 'login'])->name('auth.sso.login');
+    Route::get('auth/sso/callback', [SsoController::class, 'callback'])->name('auth.sso.callback');
+    Route::post('auth/sso/exchange', [SsoController::class, 'exchange'])->name('auth.sso.exchange');
+    Route::get('auth/email/verify/{id}/{hash}', [ExtendedAuthController::class, 'verifyEmail'])
+        ->middleware(['signed', 'throttle:6,1'])
+        ->name('auth.email.verify');
 
     Route::middleware('auth:sanctum')->group(function (): void {
         Route::post('auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
         Route::get('auth/me', [AuthController::class, 'me'])->name('auth.me');
+        Route::post('auth/email/verification-notification', [ExtendedAuthController::class, 'sendVerificationEmail'])
+            ->middleware('throttle:6,1')
+            ->name('auth.email.verification-notification');
+        Route::post('auth/confirm-password', [ExtendedAuthController::class, 'confirmPassword'])
+            ->name('auth.confirm-password');
+
+        Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
+        Route::get('dashboard/live-stats', [DashboardController::class, 'liveStats'])->name('dashboard.live-stats');
+
+        Route::get('example-live', [ExampleLiveController::class, 'index'])
+            ->middleware('permission:dashboard-access')
+            ->name('example-live.index');
+        Route::get('example-live/real-market', [ExampleLiveController::class, 'realMarketData'])
+            ->middleware('permission:dashboard-access')
+            ->name('example-live.market');
+        Route::post('example-live/start', [ExampleLiveController::class, 'startJob'])
+            ->middleware('permission:dashboard-access')
+            ->name('example-live.start');
+        Route::get('example-live/status/{taskId}', [ExampleLiveController::class, 'checkStatus'])
+            ->middleware('permission:dashboard-access')
+            ->name('example-live.status');
+
+        Route::get('profile', [ProfileController::class, 'show'])->name('profile.show');
+        Route::patch('profile', [ProfileController::class, 'update'])->name('profile.update');
+        Route::put('profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
+        Route::delete('profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+        Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
+        Route::patch('notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+        Route::patch('notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
+
+        Route::post('impersonation/{user}/start', [ImpersonationController::class, 'start'])
+            ->middleware('permission:impersonate')
+            ->name('impersonation.start');
+        Route::post('impersonation/stop', [ImpersonationController::class, 'stop'])
+            ->name('impersonation.stop');
+        Route::get('impersonation/status', [ImpersonationController::class, 'status'])
+            ->name('impersonation.status');
+
+        Route::get('backups', [BackupController::class, 'index'])
+            ->middleware('permission:backups-access')
+            ->name('backups.index');
+        Route::post('backups', [BackupController::class, 'store'])
+            ->middleware('permission:backups-create')
+            ->name('backups.store');
+        Route::post('backups/schedule', [BackupController::class, 'saveSchedule'])
+            ->middleware('permission:backups-schedule')
+            ->name('backups.schedule');
+        Route::get('backups/download', [BackupController::class, 'download'])
+            ->middleware('permission:backups-download')
+            ->name('backups.download');
+        Route::delete('backups', [BackupController::class, 'destroy'])
+            ->middleware('permission:backups-delete')
+            ->name('backups.destroy');
 
         Route::get('users/options', [UserController::class, 'options'])
             ->middleware('permission:users-create|users-update')
