@@ -41,19 +41,23 @@ Tujuan utama arsitektur ini adalah menjaga pemisahan antara HTTP handling, busin
 ## 2. Layer Responsibilities
 
 ### Route
+
 Mendefinisikan HTTP method, URI, middleware, dan Controller action.
 
 Jangan menaruh business logic di route.
 
 ### Middleware
+
 Menangani concern lintas request seperti authentication dan authorization umum.
 
 Business rule spesifik fitur tetap ditangani di Service.
 
 ### FormRequest
+
 Menangani validasi input request.
 
 Gunakan untuk:
+
 - required field;
 - format;
 - tipe data;
@@ -61,9 +65,11 @@ Gunakan untuk:
 - nilai input yang diperbolehkan.
 
 ### Controller
+
 Menangani HTTP request dan response.
 
 Controller sebaiknya hanya:
+
 - menerima validated input;
 - memanggil Service;
 - mengembalikan response.
@@ -71,9 +77,11 @@ Controller sebaiknya hanya:
 Hindari business logic dan query kompleks di Controller.
 
 ### Service
+
 Menangani business logic dan workflow.
 
 Gunakan Service untuk:
+
 - use case;
 - business rule;
 - state transition;
@@ -82,15 +90,18 @@ Gunakan Service untuk:
 - proses multi-step.
 
 Contoh:
+
 - `TicketService`
 - `AssetService`
 - `MaintenanceService`
 - `DesignRequestService`
 
 ### Repository
+
 Menangani akses dan persistence data.
 
 Gunakan Repository untuk:
+
 - query;
 - create/update/delete;
 - pencarian data;
@@ -99,11 +110,13 @@ Gunakan Repository untuk:
 Repository tidak menangani HTTP response, authorization, atau workflow decision.
 
 ### Model
+
 Gunakan Eloquent Model untuk entity, relationship, cast, dan scope sederhana.
 
 Hindari meletakkan workflow kompleks di Model.
 
 ### API Resource
+
 Gunakan API Resource untuk menjaga struktur JSON tetap konsisten dan mencegah field internal terekspos langsung.
 
 ---
@@ -162,11 +175,13 @@ Ikuti pola existing project sebelum membuat pola baru.
 Authorization harus ditegakkan di backend.
 
 Gunakan mekanisme Laravel yang sesuai dengan pola project, seperti:
+
 - middleware;
 - Policy;
 - Gate.
 
 Saat relevan, pertimbangkan:
+
 - role;
 - unit;
 - ownership;
@@ -186,6 +201,7 @@ Helpdesk, Maintenance, dan Graphic Design Request memiliki workflow yang harus d
 Perubahan status harus dilakukan melalui Service.
 
 Sebelum transition:
+
 1. validasi current state;
 2. validasi actor;
 3. validasi business rule;
@@ -203,6 +219,7 @@ Jika aturan transition belum jelas di SRS, jangan mengarang business rule.
 Gunakan migration untuk semua perubahan schema.
 
 Gunakan sesuai kebutuhan:
+
 - foreign key;
 - index;
 - unique constraint;
@@ -211,6 +228,7 @@ Gunakan sesuai kebutuhan:
 - pagination.
 
 Hindari:
+
 - duplicate data structure;
 - raw SQL tanpa kebutuhan;
 - N+1 query;
@@ -227,6 +245,7 @@ Detail schema mengikuti `docs/DATABASE.md`.
 Gunakan REST API dan JSON secara konsisten.
 
 Ikuti:
+
 - `docs/API-GUIDELINES.md`
 - `openapi.yaml`
 
@@ -259,6 +278,7 @@ Storage harus tetap dapat dikonfigurasi sesuai environment RS.
 Gunakan Job, Queue, atau Scheduler hanya jika memang dibutuhkan.
 
 Contoh kandidat:
+
 - maintenance reminder;
 - report generation;
 - notification processing;
@@ -289,6 +309,7 @@ Caching, Redis, queue, atau optimasi kompleks hanya digunakan jika terdapat kebu
 ## 12. Testing
 
 Feature/API Test digunakan untuk:
+
 - endpoint;
 - authentication;
 - authorization;
