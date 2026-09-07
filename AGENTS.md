@@ -1,160 +1,353 @@
-<laravel-boost-guidelines>
-=== foundation rules ===
+# AGENTS.md
 
-# Laravel Boost Guidelines
+# SIMPLE-PLAN API Development Guide
 
-The Laravel Boost guidelines are specifically curated by Laravel maintainers for this application. These guidelines should be followed closely to ensure the best experience when building Laravel applications.
+SIMPLE-PLAN is an internal information system for RS Citra Husada
+covering Helpdesk, Inventory, Maintenance, Graphic Design Requests,
+Notifications, Reports, and Backup.
 
-## Foundational Context
+This repository contains the Laravel backend/API.
 
-This application is a Laravel application running on PHP 8.4. You are an expert with the Laravel ecosystem. Always use the APIs that match the installed major version of each package — do not assume a version.
+---
 
-Before relying on a package's API, confirm its installed version:
-- PHP packages: run `composer show --direct` to list direct dependencies with versions, or `composer show <vendor/package>` for a single package.
-- JS packages: check `package.json` for the installed versions.
+## 1. Source of Truth
 
-## Skills Activation
+Use the following sources in this order:
 
-This project has domain-specific skills available in `**/skills/**`. You MUST activate the relevant skill whenever you work in that domain—don't wait until you're stuck.
+1. The current task/request.
+2. `docs/SRS.md` for functional requirements and business flows.
+3. `openapi.yaml` for the approved API contract.
+4. Project technical documentation.
+5. Existing code conventions and patterns.
 
-## Conventions
+Technical documentation:
 
-- You must follow all existing code conventions used in this application. When creating or editing a file, check sibling files for the correct structure, approach, and naming.
-- Use descriptive names for variables and methods. For example, `isRegisteredForDiscounts`, not `discount()`.
-- Check for existing components to reuse before writing a new one.
+- `docs/BACKEND-ARCHITECTURE.md`
+- `docs/DATABASE.md`
+- `docs/API-GUIDELINES.md`
+- `docs/TESTING.md`
+- `docs/DEPLOYMENT.md`
 
-## Verification Scripts
+Task, sprint, and progress tracking are managed in Trello.
+Do not create duplicate tracking documents in this repository.
 
-- Do not create verification scripts or tinker when tests cover that functionality and prove they work. Unit and feature tests are more important.
+The SRS is still evolving.
 
-## Application Structure & Architecture
+Do not invent missing business requirements.
+If a requirement is incomplete, contradictory, or materially ambiguous,
+report it before making a product-level decision.
 
-- Stick to existing directory structure; don't create new base folders without approval.
-- Do not change the application's dependencies without approval.
+---
 
-## Frontend Bundling
+## 2. Technology
 
-- If the user doesn't see a frontend change reflected in the UI, it could mean they need to run `npm run build`, `npm run dev`, or `composer run dev`. Ask them.
+This is a Laravel application.
 
-## Documentation Files
+Before using version-specific Laravel or package APIs:
 
-- You must only create documentation files if explicitly requested by the user.
+- inspect `composer.json` / installed Composer packages;
+- inspect `package.json` when JavaScript dependencies are relevant;
+- use Laravel Boost documentation/search tools when available and useful.
 
-## Replies
+Prefer existing project dependencies and Laravel built-in features.
 
-- Be concise in your explanations - focus on what's important rather than explaining obvious details.
+Do not add, remove, or upgrade dependencies unless required by the task.
 
-=== boost rules ===
+---
 
-# Laravel Boost
+## 3. Architecture
 
-## Tools
+Use:
 
-- Laravel Boost is an MCP server with tools designed specifically for this application. Prefer Boost tools over manual alternatives like shell commands or file reads.
-- Use `database-query` to run read-only queries against the database instead of writing raw SQL in tinker.
-- Use `database-schema` to inspect table structure before writing migrations or models.
-- Use `get-absolute-url` to resolve the correct scheme, domain, and port for project URLs. Always use this before sharing a URL with the user.
-- Use `browser-logs` to read browser logs, errors, and exceptions. Only recent logs are useful, ignore old entries.
+Route
+-> Middleware
+-> FormRequest
+-> Controller
+-> Service
+-> Repository
+-> Model
+-> Database
 
-## Searching Documentation (IMPORTANT)
+### Controller
 
-- Use `search-docs` before changes that depend on Laravel ecosystem APIs, behavior, configuration, or version-specific syntax. Skip it for copy-only edits and other changes where package documentation is irrelevant. Reuse sufficient results already in context instead of searching again.
-- Pass a `packages` array to scope results when you know which packages are relevant.
-- Use multiple broad, topic-based queries: `['rate limiting', 'routing rate limiting', 'routing']`. Expect the most relevant results first.
-- Do not add package names to queries because package info is already shared. Use `test resource table`, not `filament 4 test resource table`.
+Controllers handle HTTP concerns only.
 
-### Search Syntax
+They should:
 
-1. Use words for auto-stemmed AND logic: `rate limit` matches both "rate" AND "limit".
-2. Use `"quoted phrases"` for exact position matching: `"infinite scroll"` requires adjacent words in order.
-3. Combine words and phrases for mixed queries: `middleware "rate limit"`.
-4. Use multiple queries for OR logic: `queries=["authentication", "middleware"]`.
+- receive validated input;
+- call Services;
+- return API responses.
 
-## Project Rules
+Do not place substantial business logic in Controllers.
 
-- This project contains committed, area-grouped rules in `.ai/rules` when that directory exists (settled decisions, non-obvious traps, standing constraints). Framework and package guidelines that only apply to specific paths (testing, frontend, components) also live there, under `.ai/rules/boost` — this is not just recorded decisions, it is load-bearing guidance you have not seen inline. Before you enter plan mode or create/edit any file, you MUST first: open @.ai/rules/index.md (it maps file globs to rule files), read every rule file whose globs cover the path(s) in scope, and run `grep -rin 'keyword' .ai/rules` to catch what a path match alone misses. Do not write code until you have read and are following every matching rule. If `.ai/rules` does not exist, continue without it.
-- Record durable rules with `record-rule` so the next agent or teammate inherits them instead of working them out again. Pass a `glob` (e.g. `app/Http/Controllers/**`), a short `title`, and a few-line `note`. Always use `record-rule`, never your native memory or notes tool — native memory is personal and session-scoped; only `.ai/rules` is shared with the team and persists in the repo.
+### Service
 
-## Artisan
+Services contain business logic and workflow orchestration.
 
-- Run Artisan commands directly via the command line (e.g., `php artisan route:list`). Use `php artisan list` to discover available commands and `php artisan [command] --help` to check parameters.
-- Inspect routes with `php artisan route:list`. Filter with: `--method=GET`, `--name=users`, `--path=api`, `--except-vendor`, `--only-vendor`.
-- Read configuration values using dot notation: `php artisan config:show app.name`, `php artisan config:show database.default`. Or read config files directly from the `config/` directory.
+Examples:
 
-## Tinker
+- `TicketService`
+- `AssetService`
+- `MaintenanceService`
+- `DesignRequestService`
 
-- Execute PHP in app context for debugging and testing code. Do not create models without user approval, prefer tests with factories instead. Prefer existing Artisan commands over custom tinker code.
-- Always use single quotes to prevent shell expansion: `php artisan tinker --execute 'Your::code();'`
-  - Double quotes for PHP strings inside: `php artisan tinker --execute 'User::where("active", true)->count();'`
+State transitions and multi-step business operations belong here.
 
-=== php rules ===
+### Repository
 
-# PHP
+Repositories handle data access and persistence.
 
-- Always use curly braces for control structures, even for single-line bodies.
-- Use PHP 8 constructor property promotion: `public function __construct(public GitHub $github) { }`. Do not leave empty zero-parameter `__construct()` methods unless the constructor is private.
-- Use explicit return type declarations and type hints for all method parameters: `function isAccessible(User $user, ?string $path = null): bool`
-- Use TitleCase for Enum keys: `FavoritePerson`, `BestLake`, `Monthly`.
-- Prefer PHPDoc blocks over inline comments. Only add inline comments for exceptionally complex logic.
-- Use array shape type definitions in PHPDoc blocks.
+Do not place HTTP concerns or unrelated business workflows
+inside repositories.
 
-=== deployments rules ===
+### Model
 
-# Deployment
+Use Eloquent models and relationships.
 
-- Laravel can be deployed using [Laravel Cloud](https://cloud.laravel.com/), which is the fastest way to deploy and scale production Laravel applications.
+Avoid placing complex workflows directly in models.
 
-=== laravel/core rules ===
+### Validation
 
-# Do Things the Laravel Way
+Use FormRequest classes for request validation when appropriate.
 
-- Use `php artisan make:` commands to create new files (i.e. migrations, controllers, models, etc.). You can list available Artisan commands using `php artisan list` and check their parameters with `php artisan [command] --help`.
-- If you're creating a generic PHP class, use `php artisan make:class`.
-- Pass `--no-interaction` to all Artisan commands to ensure they work without user input. You should also pass the correct `--options` to ensure correct behavior.
+### Response
 
-### Model Creation
+Use Laravel API Resources or the established project response pattern.
 
-- When creating new models, create useful factories and seeders for them too. Ask the user if they need any other things, using `php artisan make:model --help` to check the available options.
+Do not expose raw model data when a defined API representation exists.
 
-## APIs & Eloquent Resources
+---
 
-- For APIs, default to using Eloquent API Resources and API versioning unless existing API routes do not, then you should follow existing application convention.
+## 4. Existing Conventions First
 
-## URL Generation
+Before creating or modifying code:
 
-- When generating links to other pages, prefer named routes and the `route()` function.
+1. inspect related existing files;
+2. inspect sibling classes;
+3. reuse established naming and structure;
+4. reuse existing components or abstractions where appropriate.
 
-## Testing
+Do not introduce a second pattern for a problem already solved
+consistently elsewhere in the project.
 
-- When creating models for tests, use the factories for the models. Check if the factory has custom states that can be used before manually setting up the model.
-- Faker: Use methods such as `$this->faker->word()` or `fake()->randomDigit()`. Follow existing conventions whether to use `$this->faker` or `fake()`.
-- When creating tests, make use of `php artisan make:test [options] {name}` to create a feature test, and pass `--unit` to create a unit test. Most tests should be feature tests.
+Do not create new top-level directories without a clear need.
 
-## Vite Error
+---
 
-- If you receive an "Illuminate\Foundation\ViteException: Unable to locate file in Vite manifest" error, you can run `npm run build` or ask the user to run `npm run dev` or `composer run dev`.
+## 5. API
 
-=== pint/core rules ===
+Follow:
 
-# Laravel Pint Code Formatter
+- `docs/API-GUIDELINES.md`
+- `openapi.yaml`
 
-- If you have modified any PHP files, you must run `vendor/bin/pint --dirty --format agent` before finalizing changes to ensure your code matches the project's expected style.
-- Do not run `vendor/bin/pint --test --format agent`, simply run `vendor/bin/pint --format agent` to fix any formatting issues.
+Use REST conventions and JSON responses.
 
-=== pest/core rules ===
+Each relevant endpoint must define:
 
-# Pest
+- HTTP method;
+- path;
+- authentication;
+- authorization;
+- parameters;
+- request body;
+- response body;
+- validation errors;
+- HTTP status codes.
 
-- This project uses Pest. Create tests with `php artisan make:test --pest {name}`.
-- Do not include the test suite directory in `{name}`. Use `SomeFeatureTest`, not `Feature/SomeFeatureTest`.
-- Read the `testing-best-practices` skill for guidance on coverage, naming, structure, dependency isolation, and review.
-- Do not delete tests or test files without approval. They are part of the application.
+When an implementation changes the API contract,
+update `openapi.yaml` in the same task.
 
-## Running Tests
+Do not create undocumented API behavior.
 
-- Run the narrowest set of tests that covers the change. Pass a file path or `--filter=testName` to `php artisan test --compact`.
-- Rerun a test after each change to it.
-- Run `vendor/bin/pest` to call the test runner directly. It accepts the same file path and `--filter=testName` arguments.
-- After the feature tests pass, ask the user to run the complete suite with `php artisan test --compact`.
+---
 
-</laravel-boost-guidelines>
+## 6. Authentication and Authorization
+
+SIMPLE-PLAN uses role-based access control.
+
+Roles defined by the project include:
+
+- Super Admin
+- Koordinator TIK
+- Koordinator Sarpras
+- Petugas TIK
+- Petugas Sarpras
+- Desainer Grafis
+- User/Unit
+- Manajemen
+
+Authorization must be enforced by the backend.
+
+Frontend visibility is not authorization.
+
+When relevant, check:
+
+- authenticated user;
+- role;
+- unit;
+- resource ownership;
+- assigned petugas;
+- current workflow state.
+
+Use the authentication and authorization mechanism already adopted
+by the application. Do not introduce a different mechanism
+without an explicit requirement.
+
+---
+
+## 7. Business Workflows
+
+Helpdesk, Maintenance, and Design Requests contain controlled
+workflow/state transitions.
+
+Before changing a workflow state:
+
+1. validate the current state;
+2. validate the requested transition;
+3. verify actor authorization;
+4. validate required data;
+5. persist required history/audit information.
+
+Never allow arbitrary status changes simply because a submitted
+status value is syntactically valid.
+
+If valid transitions are unclear in the SRS, report the ambiguity.
+
+---
+
+## 8. Database
+
+Follow `docs/DATABASE.md`.
+
+Before changing the database:
+
+- inspect existing migrations;
+- inspect related models and relationships;
+- inspect relevant requirements.
+
+Use Laravel migrations for schema changes.
+
+Use appropriate:
+
+- foreign keys;
+- constraints;
+- indexes;
+- transactions;
+- relationships.
+
+Avoid duplicate tables, fields, or stored derived values
+unless justified by the requirement.
+
+Use factories and seeders when they provide value for development
+or testing; do not create unnecessary sample infrastructure.
+
+---
+
+## 9. Security
+
+For relevant features:
+
+- validate all client input;
+- require authentication;
+- enforce authorization;
+- use Laravel-supported password hashing;
+- protect against mass assignment;
+- validate uploaded files;
+- avoid exposing sensitive fields;
+- protect audit/history records;
+- avoid exposing internal exceptions.
+
+Never commit:
+
+- `.env`;
+- passwords;
+- API keys;
+- database credentials;
+- other secrets.
+
+Configuration that varies by environment belongs in `.env`
+and Laravel configuration files.
+
+Keep `.env.example` updated when required configuration changes.
+
+---
+
+## 10. File Uploads
+
+SIMPLE-PLAN may handle:
+
+- ticket evidence;
+- repair evidence;
+- maintenance documentation;
+- design drafts;
+- design revisions;
+- final design files.
+
+Validate applicable:
+
+- file type;
+- size;
+- required/optional state;
+- ownership and access.
+
+Follow SRS limits where defined.
+
+Do not expose internal storage paths unnecessarily.
+
+---
+
+## 11. Performance
+
+Keep implementation appropriate for an internal hospital system.
+
+Prefer:
+
+- pagination for large collections;
+- eager loading where needed;
+- avoiding N+1 queries;
+- appropriate database indexes;
+- efficient filtering and search.
+
+Do not add caching, queues, or complex optimization
+without an actual requirement or demonstrated need.
+
+Avoid premature optimization.
+
+---
+
+## 12. Testing
+
+This project uses Pest unless the existing project configuration says otherwise.
+
+Follow `docs/TESTING.md`.
+
+Prefer Feature/API tests for behavior involving:
+
+- routing;
+- authentication;
+- authorization;
+- validation;
+- database persistence;
+- JSON responses.
+
+Use Unit tests for isolated business logic when useful.
+
+For an endpoint, test applicable scenarios:
+
+- success;
+- validation failure;
+- unauthenticated;
+- unauthorized;
+- not found;
+- invalid business state.
+
+Use model factories in tests where available.
+
+Run the narrowest relevant tests while developing.
+
+Example:
+
+```bash
+php artisan test --compact --filter=Ticket
+```
