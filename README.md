@@ -1,58 +1,103 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# SIMPLE-PLAN API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Sistem manajemen Inventarisasi, Maintenance, dan Helpdesk RS Citra Husada. Aplikasi ini menggunakan arsitektur REST API berbasis JSON.
 
-## About Laravel
+Sistem ini mengimplementasikan Role-Based Access Control (RBAC) dengan 6 role utama:
+1. Super Admin
+2. Koordinator Sarpras
+3. Petugas TIK
+4. Petugas Sarpras
+5. User/Unit
+6. Manajemen
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Tech Stack
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Berdasarkan konfigurasi saat ini, berikut adalah teknologi utama yang digunakan dalam project ini:
+- **Bahasa Pemrograman:** PHP `^8.4`
+- **Framework Utama:** Laravel Framework `^13.17`
+- **Database:** SQLite (default) / MySQL / MariaDB
+- **Autentikasi & Otorisasi:** Laravel Sanctum (`^4.0`) & Spatie Permission (`^8.3`)
+- **Query Builder:** Spatie Query Builder (`^7.3`)
+- **Testing:** PestPHP (`^5.1`)
+- **Dokumentasi API:** L5-Swagger (`^11.1`)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Persyaratan Server (Minimum)
 
-## Learning Laravel
+- PHP >= 8.4
+- Ekstensi PHP: Ctype, cURL, DOM, Fileinfo, Filter, Hash, Mbstring, OpenSSL, PCRE, PDO, Session, Tokenizer, XML (Sesuai standar Laravel)
+- Composer (v2.x)
+- Node.js & NPM (untuk frontend assets jika diperlukan)
+- Database: SQLite (sudah terintegrasi via PDO) atau MySQL / MariaDB
+- Web Server: Nginx / Apache
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Panduan Setup Lokal
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Ikuti langkah-langkah berikut untuk menjalankan project ini di lingkungan lokal:
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+1. **Clone repository**
+   ```bash
+   git clone <repository-url>
+   cd simple-plan-api
+   ```
 
-## Agentic Development
+2. **Install dependencies**
+   ```bash
+   composer install
+   ```
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+3. **Environment Setup**
+   Copy file `.env.example` menjadi `.env` (jika belum terbuat secara otomatis oleh script instalasi):
+   ```bash
+   cp .env.example .env
+   ```
+   *Secara default, konfigurasi `.env.example` menggunakan SQLite (`DB_CONNECTION=sqlite`). Jika ingin menggunakan MySQL, sesuaikan nilai `DB_*` di dalam file `.env`.*
+
+4. **Generate Application Key**
+   ```bash
+   php artisan key:generate
+   ```
+
+5. **Run Migrations & Seeders**
+   ```bash
+   php artisan migrate --seed
+   ```
+   *(Catatan: pastikan file database SQLite telah terbuat di `database/database.sqlite` jika Anda menggunakan SQLite, jalankan perintah `touch database/database.sqlite` jika belum ada)*
+
+6. **Create Storage Symlink**
+   ```bash
+   php artisan storage:link
+   ```
+
+7. **Jalankan Local Server**
+   ```bash
+   php artisan serve
+   ```
+   Aplikasi (API) dapat diakses di `http://localhost:8000`.
+
+## Automated Test
+
+Project ini menggunakan **PestPHP** untuk pengujian otomatis. Untuk menjalankan seluruh test suite, jalankan perintah:
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+php artisan test
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Atau menggunakan Pest secara langsung:
 
-## Contributing
+```bash
+vendor/bin/pest
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Tautan Dokumentasi
 
-## Code of Conduct
+Silakan merujuk pada file-file dokumentasi berikut untuk informasi lebih rinci terkait pengembangan, standar, dan spesifikasi sistem:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+- [AGENTS.md](AGENTS.md)
+- [CONTRIBUTING.md](CONTRIBUTING.md)
+- [docs/SRS.md](docs/SRS.md)
+- [docs/BACKEND-ARCHITECTURE.md](docs/BACKEND-ARCHITECTURE.md)
+- [docs/DATABASE.md](docs/DATABASE.md)
+- [docs/API-GUIDELINES.md](docs/API-GUIDELINES.md)
+- [docs/TESTING.md](docs/TESTING.md)
+- [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+- [openapi.yaml](openapi.yaml)
