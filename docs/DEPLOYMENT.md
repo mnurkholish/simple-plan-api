@@ -1,34 +1,31 @@
 # SIMPLE-PLAN Deployment Guidelines
 
-Dokumen ini menjadi panduan deployment backend SIMPLE-PLAN ke environment server RS.
+Panduan ini hanya membahas deployment production SIMPLE-PLAN: environment,
+server requirements, `.env`, PostgreSQL, MinIO production, migration, network,
+scheduler/queue jika digunakan, logging, backup, rollback, verification, dan
+CI/CD sederhana.
 
-Requirement dan batasan infrastruktur mengacu pada `docs/SRS.md`.  
-Arsitektur backend mengacu pada `docs/BACKEND-ARCHITECTURE.md`.  
-Konfigurasi database mengacu pada `docs/DATABASE.md`.
+Requirement dan batasan infrastruktur mengacu pada `docs/SRS.md`.
+Arsitektur backend mengacu pada `docs/BACKEND-ARCHITECTURE.md`.
+Aturan database mengacu pada `docs/DATABASE.md`.
 
-Deployment harus tetap sederhana, aman, dapat diulang, dan sesuai dengan infrastruktur internal RS.
+Production berjalan pada infrastruktur internal RS, bukan public cloud. Akses
+utama melalui jaringan internal.
 
 ---
 
 ## 1. Deployment Target
 
-SIMPLE-PLAN ditujukan untuk berjalan pada infrastruktur internal RS dan diakses melalui jaringan LAN/Wi-Fi internal.
-
 Komponen production utama:
 
 ```text
-Client / Browser
-      ↓
-HTTPS
-      ↓
-Web Server
-      ↓
-Laravel Application
-   ├── PostgreSQL
-   └── MinIO
+Client/Browser -> HTTPS -> Web Server -> Laravel Application
+                                      -> PostgreSQL
+                                      -> MinIO (jika digunakan)
 ```
 
-MinIO digunakan sebagai object storage production jika sudah tersedia dan disetujui.
+MinIO digunakan sebagai object storage production jika sudah tersedia dan
+disetujui.
 
 ---
 
@@ -36,46 +33,39 @@ MinIO digunakan sebagai object storage production jika sudah tersedia dan disetu
 
 Minimal gunakan environment terpisah:
 
-```text
-Development
-Production
-```
+- development;
+- production.
 
-Jika diperlukan, dapat ditambahkan:
-
-```text
-Staging
-```
-
-Jangan menggunakan credential production pada environment development.
+Staging dapat ditambahkan jika dibutuhkan.
 
 Setiap environment memiliki `.env` sendiri dan tidak disimpan di repository.
+Jangan menggunakan credential production pada development.
 
 ---
 
 ## 3. Production Requirements
 
-Server production harus menyediakan sesuai kebutuhan project:
+Server production menyediakan sesuai kebutuhan project:
 
-- supported PHP version;
+- PHP version sesuai `composer.json`;
 - Composer;
 - required PHP extensions;
 - web server seperti Nginx atau Apache;
 - PostgreSQL;
 - MinIO jika digunakan;
 - HTTPS/SSL;
-- scheduler/cron jika diperlukan;
-- queue worker jika project menggunakan queue.
+- scheduler/cron jika fitur menggunakan Laravel Scheduler;
+- queue worker jika fitur menggunakan Queue.
 
-Versi final mengikuti dependency pada `composer.json` dan environment server yang disepakati.
+Versi final mengikuti dependency dan server RS yang disepakati.
 
 ---
 
-## 4. Application Configuration
+## 4. Environment Configuration
 
 Gunakan `.env` untuk konfigurasi environment-specific.
 
-Contoh utama:
+Contoh production:
 
 ```env
 APP_ENV=production
@@ -90,7 +80,6 @@ DB_USERNAME=
 DB_PASSWORD=
 
 FILESYSTEM_DISK=s3
-
 AWS_ACCESS_KEY_ID=
 AWS_SECRET_ACCESS_KEY=
 AWS_DEFAULT_REGION=us-east-1
@@ -99,23 +88,14 @@ AWS_ENDPOINT=
 AWS_USE_PATH_STYLE_ENDPOINT=true
 ```
 
-Nilai sebenarnya disesuaikan dengan server RS.
-
-Jangan menyimpan secret, password, access key, atau credential production di repository.
+Nilai sebenarnya mengikuti server RS. Jangan menyimpan secret, password, access
+key, atau credential production di repository.
 
 ---
 
-## 5. Storage Strategy
+## 5. Storage Production
 
-### Development
-
-Development dapat menggunakan:
-
-```env
-FILESYSTEM_DISK=local
-```
-
-### Production
+Development boleh menggunakan `FILESYSTEM_DISK=local`.
 
 Production dapat menggunakan MinIO melalui S3-compatible Laravel Filesystem:
 
@@ -123,43 +103,28 @@ Production dapat menggunakan MinIO melalui S3-compatible Laravel Filesystem:
 FILESYSTEM_DISK=s3
 ```
 
-Business logic tidak boleh bergantung langsung pada local path agar perpindahan storage tidak membutuhkan refactor besar.
+Jika ada file lama di local storage, migrasikan file ke MinIO sebelum atau saat
+cutover production.
 
-Jika terdapat file lama di local storage, lakukan migrasi file ke MinIO sebelum atau saat cutover production.
+Detail metadata file berada di `docs/DATABASE.md`; cara implementasi akses file
+berada di `docs/BACKEND-ARCHITECTURE.md`.
 
 ---
 
 ## 6. Standard Deployment Flow
 
-Gunakan alur deployment berikut sebagai baseline:
+Baseline deployment:
 
 ```text
-Backup
-  ↓
-Pull / Release Code
-  ↓
-Install Dependencies
-  ↓
-Configure Environment
-  ↓
-Run Migration
-  ↓
-Optimize Laravel
-  ↓
-Restart Required Services
-  ↓
-Health Check
-  ↓
-Smoke Test
+backup -> release code -> install dependencies -> configure environment
+-> migrate -> optimize Laravel -> restart services -> health check -> smoke test
 ```
 
-Contoh command Laravel:
+Contoh command:
 
 ```bash
 composer install --no-dev --optimize-autoloader
-
 php artisan migrate --force
-
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
@@ -171,7 +136,7 @@ Jalankan hanya command yang sesuai dengan konfigurasi project.
 
 ## 7. File Permissions
 
-Pastikan web server memiliki permission yang sesuai untuk directory Laravel yang membutuhkan write access, terutama:
+Pastikan web server memiliki write access yang tepat untuk:
 
 ```text
 storage/
@@ -180,32 +145,30 @@ bootstrap/cache/
 
 Hindari permission terlalu terbuka seperti `777` jika tidak diperlukan.
 
-Gunakan ownership dan permission sesuai user/service pada server.
-
 ---
 
-## 8. Database Migration
+## 8. Database Migration in Production
 
-Semua perubahan schema harus melalui Laravel Migration.
-
-Pada production:
+Jalankan migration production dengan:
 
 ```bash
 php artisan migrate --force
 ```
 
 Sebelum migration:
+
 - pastikan backup tersedia jika perubahan berisiko;
 - review migration yang akan dijalankan;
 - pastikan perubahan kompatibel dengan data existing.
 
-Jangan melakukan perubahan schema manual tanpa alasan dan dokumentasi yang jelas.
+Jangan melakukan perubahan schema manual tanpa alasan dan dokumentasi yang
+jelas.
 
 ---
 
 ## 9. MinIO Setup
 
-Jika MinIO digunakan pada production:
+Jika MinIO digunakan:
 
 - buat bucket yang dibutuhkan;
 - gunakan credential khusus aplikasi;
@@ -214,25 +177,23 @@ Jika MinIO digunakan pada production:
 - pastikan Laravel dapat mengakses endpoint MinIO;
 - uji upload, download, dan delete.
 
-Database tetap menyimpan `object_key`/metadata, bukan endpoint atau temporary URL.
-
-MinIO tidak wajib aktif pada development jika project masih menggunakan local storage.
+PostgreSQL tetap menyimpan `object_key`/metadata, bukan endpoint atau temporary
+URL.
 
 ---
 
 ## 10. Scheduler and Queue
 
-Jika project menggunakan Laravel Scheduler, konfigurasi cron sesuai kebutuhan server.
-
-Contoh:
+Jika project menggunakan Laravel Scheduler, konfigurasi cron sesuai server:
 
 ```cron
 * * * * * cd /path/to/simple-plan && php artisan schedule:run >> /dev/null 2>&1
 ```
 
-Jika project menggunakan Queue, jalankan worker menggunakan process manager yang sesuai dengan server.
+Jika project menggunakan Queue, jalankan worker dengan process manager yang
+sesuai server.
 
-Queue dan scheduler hanya dikonfigurasi jika memang digunakan oleh fitur production.
+Queue dan scheduler hanya dikonfigurasi jika fitur production menggunakannya.
 
 ---
 
@@ -243,8 +204,9 @@ Production harus menggunakan HTTPS.
 Akses sistem dibatasi sesuai kebijakan jaringan internal RS.
 
 Pastikan:
+
 - certificate valid;
-- port yang diperlukan dibuka hanya sesuai kebutuhan;
+- port dibuka hanya sesuai kebutuhan;
 - PostgreSQL dan MinIO tidak diekspos ke jaringan publik;
 - akses administratif dibatasi.
 
@@ -252,34 +214,28 @@ Pastikan:
 
 ## 12. Logging
 
-Gunakan Laravel logging untuk error dan kejadian teknis yang relevan.
-
 Production harus menggunakan:
 
 ```env
 APP_DEBUG=false
 ```
 
-Jangan mengekspos stack trace atau informasi sensitif ke pengguna.
-
-Pastikan log dapat dipantau dan tidak menyimpan secret atau credential.
+Gunakan Laravel logging untuk error dan kejadian teknis relevan. Pastikan log
+dapat dipantau dan tidak menyimpan secret atau credential.
 
 ---
 
 ## 13. Backup
 
-Sebelum deployment berisiko, lakukan backup data yang relevan.
-
-Backup production dapat mencakup:
+Sebelum deployment berisiko, backup data relevan:
 
 - PostgreSQL;
-- MinIO/object storage;
+- MinIO/object storage jika digunakan;
 - konfigurasi penting;
 - application release metadata jika dibutuhkan.
 
-Backup harus mengikuti kebijakan penyimpanan dan infrastruktur RS.
-
-Restore procedure harus pernah diverifikasi, bukan hanya backup creation.
+Backup mengikuti kebijakan RS. Restore procedure harus pernah diverifikasi,
+bukan hanya backup creation.
 
 ---
 
@@ -294,15 +250,14 @@ Jika deployment gagal:
 5. restore backup jika diperlukan;
 6. lakukan verification ulang.
 
-Jangan menjalankan rollback database secara otomatis jika migration bersifat destructive atau berisiko kehilangan data.
+Jangan menjalankan rollback database otomatis jika migration destructive atau
+berisiko kehilangan data.
 
 ---
 
 ## 15. Post-Deployment Verification
 
-Setelah deployment, lakukan smoke test minimal pada area utama yang terdampak.
-
-Contoh:
+Smoke test minimal:
 
 - login;
 - authentication/authorization;
@@ -319,67 +274,13 @@ Pastikan tidak ada error kritis sebelum deployment dianggap selesai.
 
 ## 16. CI/CD
 
-CI/CD dapat diterapkan secara bertahap.
+CI/CD dapat diterapkan bertahap.
 
-Minimal CI sebaiknya menjalankan:
-
-```text
-Install Dependencies
-      ↓
-Code Style / Static Check jika digunakan
-      ↓
-Automated Tests
-      ↓
-Pass / Fail
-```
-
-Deployment otomatis hanya diterapkan jika environment server dan workflow tim sudah siap.
-
-Jangan memaksakan pipeline kompleks pada tahap awal project.
-
----
-
-## 17. Security
-
-Pada production:
-
-- gunakan `APP_DEBUG=false`;
-- jangan commit `.env`;
-- gunakan credential terpisah per service;
-- batasi akses PostgreSQL dan MinIO;
-- gunakan HTTPS;
-- rotasi credential jika diperlukan;
-- jangan gunakan credential development;
-- jangan mengekspos management console tanpa kontrol akses.
-
----
-
-## 18. Deployment Principles
-
-- **Repeatable** — deployment dapat dijalankan ulang dengan langkah yang jelas.
-- **Environment-based** — konfigurasi berbeda disimpan di environment, bukan source code.
-- **Safe migration** — perubahan database dilakukan melalui migration.
-- **Private storage** — file production tidak public secara default.
-- **Minimal change** — deployment tidak mengubah business logic.
-- **Rollback aware** — perubahan berisiko memiliki strategi pemulihan.
-- **Flexible** — detail server dapat berubah tanpa mengubah architecture utama.
-
----
-
-## 19. Summary
+Minimal CI:
 
 ```text
-Development
-Laravel
-├── PostgreSQL
-└── Local Storage
-
-Production
-Laravel
-├── PostgreSQL
-└── MinIO
+install dependencies -> code style/static check jika digunakan -> automated tests
 ```
 
-Perbedaan environment terutama berada pada konfigurasi dan infrastruktur.
-
-Selama aplikasi menggunakan Laravel Filesystem, Laravel Migration, dan environment configuration secara konsisten, perpindahan dari development ke production tidak membutuhkan perubahan besar pada business logic.
+Deployment otomatis hanya diterapkan jika environment server dan workflow tim
+sudah siap. Jangan memaksakan pipeline kompleks pada tahap awal project.
