@@ -4,7 +4,7 @@ Dokumen ini menjadi panduan teknis utama untuk struktur backend SIMPLE-PLAN.
 
 Requirement dan business flow mengacu pada `docs/SRS.md`.  
 Kontrak API mengacu pada `openapi.yaml`.  
-Standar API, database, dan testing mengacu pada dokumentasi terkait di folder `docs/`.
+Panduan database, API, testing, dan deployment mengacu pada dokumentasi terkait di folder `docs/`.
 
 ---
 
@@ -24,52 +24,33 @@ FormRequest
 Controller
   ↓
 Service
+  ├── Repository → Eloquent → PostgreSQL
+  └── Laravel Filesystem → Storage Disk
   ↓
-Repository
+API Resource
   ↓
-Eloquent Model
-  ↓
-MySQL / MariaDB
+JSON Response
 ```
 
-Response dikembalikan melalui API Resource atau response pattern yang sudah digunakan project.
-
-Tujuan utama arsitektur ini adalah menjaga pemisahan antara HTTP handling, business logic, dan data access tanpa menambah abstraction yang tidak diperlukan.
+Tujuan arsitektur ini adalah memisahkan HTTP handling, business logic, data access, dan file storage tanpa menambah abstraction yang tidak diperlukan.
 
 ---
 
 ## 2. Layer Responsibilities
 
 ### Route
-
 Mendefinisikan HTTP method, URI, middleware, dan Controller action.
 
-Jangan menaruh business logic di route.
-
 ### Middleware
-
 Menangani concern lintas request seperti authentication dan authorization umum.
 
-Business rule spesifik fitur tetap ditangani di Service.
-
 ### FormRequest
-
-Menangani validasi input request.
-
-Gunakan untuk:
-
-- required field;
-- format;
-- tipe data;
-- validasi file;
-- nilai input yang diperbolehkan.
+Menangani validasi input, termasuk field, format, tipe data, serta file jika ada.
 
 ### Controller
-
 Menangani HTTP request dan response.
 
 Controller sebaiknya hanya:
-
 - menerima validated input;
 - memanggil Service;
 - mengembalikan response.
@@ -77,47 +58,32 @@ Controller sebaiknya hanya:
 Hindari business logic dan query kompleks di Controller.
 
 ### Service
-
 Menangani business logic dan workflow.
 
 Gunakan Service untuk:
-
 - use case;
 - business rule;
 - state transition;
-- koordinasi beberapa Repository;
-- transaction;
-- proses multi-step.
+- koordinasi Repository;
+- database transaction;
+- koordinasi file storage bila fitur melibatkan file.
 
 Contoh:
-
 - `TicketService`
 - `AssetService`
 - `MaintenanceService`
 - `DesignRequestService`
 
 ### Repository
-
-Menangani akses dan persistence data.
-
-Gunakan Repository untuk:
-
-- query;
-- create/update/delete;
-- pencarian data;
-- filtering yang berkaitan dengan persistence.
+Menangani akses dan persistence data PostgreSQL.
 
 Repository tidak menangani HTTP response, authorization, atau workflow decision.
 
 ### Model
-
 Gunakan Eloquent Model untuk entity, relationship, cast, dan scope sederhana.
 
-Hindari meletakkan workflow kompleks di Model.
-
 ### API Resource
-
-Gunakan API Resource untuk menjaga struktur JSON tetap konsisten dan mencegah field internal terekspos langsung.
+Gunakan API Resource atau response pattern project untuk menjaga struktur JSON tetap konsisten.
 
 ---
 
@@ -138,15 +104,13 @@ app/
 └── Exceptions/
 ```
 
-Tidak semua folder harus dibuat sejak awal.
-
-Buat hanya jika memang dibutuhkan oleh implementasi.
+Tidak semua folder harus dibuat sejak awal. Buat hanya jika memang dibutuhkan.
 
 ---
 
 ## 4. Dependency Direction
 
-Gunakan dependency satu arah:
+Gunakan dependency utama:
 
 ```text
 Controller
@@ -158,15 +122,17 @@ Repository
 Model
 ```
 
-Hindari dependency terbalik seperti:
+Untuk fitur file:
 
 ```text
-Model → Controller
-Repository → Controller
-Repository → FormRequest
+Service
+  ├── Repository
+  └── Laravel Filesystem
 ```
 
-Ikuti pola existing project sebelum membuat pola baru.
+Ikuti pola existing project sebelum membuat abstraction baru.
+
+Jangan membuat `StorageService`, `FileRepository`, atau abstraction tambahan jika penggunaan Laravel Filesystem secara langsung masih sederhana dan jelas.
 
 ---
 
@@ -174,14 +140,12 @@ Ikuti pola existing project sebelum membuat pola baru.
 
 Authorization harus ditegakkan di backend.
 
-Gunakan mekanisme Laravel yang sesuai dengan pola project, seperti:
-
+Gunakan mekanisme Laravel yang sesuai dengan project, seperti:
 - middleware;
 - Policy;
 - Gate.
 
 Saat relevan, pertimbangkan:
-
 - role;
 - unit;
 - ownership;
@@ -190,25 +154,20 @@ Saat relevan, pertimbangkan:
 
 Detail permission mengikuti SRS.
 
-Frontend tidak boleh menjadi satu-satunya lapisan authorization.
-
 ---
 
 ## 6. Workflow and State Transition
 
 Helpdesk, Maintenance, dan Graphic Design Request memiliki workflow yang harus dikontrol.
 
-Perubahan status harus dilakukan melalui Service.
+Perubahan status dilakukan melalui Service.
 
 Sebelum transition:
-
 1. validasi current state;
 2. validasi actor;
 3. validasi business rule;
 4. simpan perubahan;
 5. catat history/audit jika diperlukan.
-
-Jangan mengizinkan perubahan status bebas hanya karena nilai status valid secara format.
 
 Jika aturan transition belum jelas di SRS, jangan mengarang business rule.
 
@@ -216,10 +175,11 @@ Jika aturan transition belum jelas di SRS, jangan mengarang business rule.
 
 ## 7. Database
 
-Gunakan migration untuk semua perubahan schema.
+Gunakan PostgreSQL sebagai database utama.
+
+Semua perubahan schema dilakukan melalui Laravel Migration.
 
 Gunakan sesuai kebutuhan:
-
 - foreign key;
 - index;
 - unique constraint;
@@ -227,49 +187,73 @@ Gunakan sesuai kebutuhan:
 - Eloquent relationship;
 - pagination.
 
-Hindari:
+Hindari N+1 query dan duplicate data structure.
 
-- duplicate data structure;
-- raw SQL tanpa kebutuhan;
-- N+1 query;
-- menyimpan derived value jika tidak diperlukan.
-
-Untuk operasi multi-write yang harus atomic, gunakan `DB::transaction()`.
-
-Detail schema mengikuti `docs/DATABASE.md`.
+Detail mengikuti `docs/DATABASE-GUIDELINES.md`.
 
 ---
 
-## 8. API
+## 8. File Storage
+
+Semua operasi file harus melalui Laravel Filesystem.
+
+Jangan mengikat business logic langsung ke local filesystem atau MinIO.
+
+### Development
+
+Gunakan local disk:
+
+```env
+FILESYSTEM_DISK=local
+```
+
+Contoh:
+
+```php
+Storage::putFile('helpdesk/evidence', $file);
+```
+
+### Production
+
+Storage dapat dipindahkan ke MinIO menggunakan S3-compatible driver:
+
+```env
+FILESYSTEM_DISK=s3
+```
+
+Kode aplikasi tetap menggunakan Laravel Filesystem sehingga perpindahan storage tidak memerlukan perubahan besar pada business logic.
+
+PostgreSQL hanya menyimpan metadata atau `object_key` yang dibutuhkan.
+
+Jangan menyimpan:
+- absolute local path;
+- temporary URL;
+- endpoint MinIO;
+- credential storage
+
+sebagai data permanen.
+
+Contoh `object_key`:
+
+```text
+helpdesk/evidence/{uuid}.jpg
+maintenance/{uuid}.pdf
+design/drafts/{uuid}.png
+```
+
+Default file production bersifat private dan akses tetap mengikuti authentication dan authorization aplikasi.
+
+---
+
+## 9. API
 
 Gunakan REST API dan JSON secara konsisten.
 
 Ikuti:
-
 - `docs/API-GUIDELINES.md`
 - `openapi.yaml`
 
 Jika endpoint, request, response, parameter, authentication, atau HTTP status berubah, perbarui `openapi.yaml` pada task yang sama.
-
-Gunakan API versioning sesuai convention project, misalnya:
-
-```text
-/api/v1/...
-```
-
----
-
-## 9. File and Storage
-
-Untuk file seperti bukti tiket, hasil perbaikan, dokumentasi maintenance, atau file desain:
-
-- gunakan Laravel Filesystem;
-- validasi tipe dan ukuran file;
-- batasi akses sesuai authorization;
-- simpan path/metadata di database bila sesuai;
-- jangan mengekspos internal storage path tanpa kebutuhan.
-
-Storage harus tetap dapat dikonfigurasi sesuai environment RS.
 
 ---
 
@@ -278,7 +262,6 @@ Storage harus tetap dapat dikonfigurasi sesuai environment RS.
 Gunakan Job, Queue, atau Scheduler hanya jika memang dibutuhkan.
 
 Contoh kandidat:
-
 - maintenance reminder;
 - report generation;
 - notification processing;
@@ -287,14 +270,11 @@ Contoh kandidat:
 
 Jangan membuat proses sederhana menjadi asynchronous tanpa alasan nyata.
 
-Implementation harus mempertimbangkan kemampuan server internal RS.
-
 ---
 
 ## 11. Performance
 
 Gunakan optimasi dasar terlebih dahulu:
-
 - pagination;
 - eager loading;
 - index yang relevan;
@@ -302,31 +282,25 @@ Gunakan optimasi dasar terlebih dahulu:
 - hindari N+1 query;
 - hindari mengambil data yang tidak diperlukan.
 
-Caching, Redis, queue, atau optimasi kompleks hanya digunakan jika terdapat kebutuhan atau hasil pengukuran yang mendukung.
+Caching, Redis, queue, atau optimasi kompleks hanya digunakan jika memang dibutuhkan.
 
 ---
 
 ## 12. Testing
 
 Feature/API Test digunakan untuk:
-
 - endpoint;
 - authentication;
 - authorization;
 - validation;
 - persistence;
 - JSON response;
-- workflow.
+- workflow;
+- file upload/access jika relevan.
+
+Untuk test file, gunakan Laravel Storage fake jika sesuai agar automated test tidak bergantung pada MinIO.
 
 Unit Test digunakan untuk business logic terisolasi yang cukup kompleks.
-
-Struktur umum:
-
-```text
-tests/
-├── Feature/
-└── Unit/
-```
 
 Detail testing mengikuti `docs/TESTING.md`.
 
@@ -334,14 +308,12 @@ Detail testing mengikuti `docs/TESTING.md`.
 
 ## 13. Architecture Principles
 
-Gunakan prinsip berikut:
-
 - **Keep it simple** — gunakan solusi paling sederhana yang memenuhi requirement.
-- **Separation of concerns** — pisahkan HTTP, business logic, dan data access.
+- **Separation of concerns** — pisahkan HTTP, business logic, database, dan file storage.
 - **Existing pattern first** — ikuti pola existing sebelum membuat abstraction baru.
 - **Framework first** — gunakan kemampuan Laravel sebelum menambah package.
 - **No speculative feature** — jangan implementasikan kebutuhan yang belum disepakati.
-- **Avoid premature abstraction** — jangan membuat interface, helper, base repository, atau generic service tanpa kebutuhan nyata.
+- **Avoid premature abstraction** — jangan membuat abstraction tambahan tanpa kebutuhan nyata.
 - **Testable design** — business logic harus mudah diuji.
 - **Flexible architecture** — struktur boleh berkembang jika requirement atau kebutuhan teknis berubah.
 
@@ -357,16 +329,15 @@ API Contract
 Controller
       ↓
 Service
-      ↓
-Repository
-      ↓
-Database
+   ┌──┴──────────────┐
+   ↓                 ↓
+Repository      Laravel Filesystem
+   ↓                 ↓
+PostgreSQL     Local / MinIO
       ↓
 Testing
 ```
 
-Requirement menentukan **apa yang harus dilakukan sistem**.
+Pada development, storage dapat menggunakan local disk.
 
-API Contract menentukan **bagaimana frontend dan backend berkomunikasi**.
-
-Architecture ini menentukan **bagaimana backend mengimplementasikannya** secara konsisten tanpa over-engineering.
+Pada production, storage dapat dipindahkan ke MinIO hanya melalui perubahan konfigurasi dan setup environment selama seluruh kode file tetap menggunakan Laravel Filesystem.
