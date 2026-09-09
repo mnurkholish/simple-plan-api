@@ -12,7 +12,7 @@ Dokumen entry point untuk development ada di `AGENTS.md`.
 
 Berdasarkan konfigurasi project dan keputusan teknis saat ini:
 
-- PHP `^8.3`
+- PHP `^8.4`
 - Laravel Framework `^13.17`
 - REST API + JSON
 - PostgreSQL
@@ -28,39 +28,39 @@ Berdasarkan konfigurasi project dan keputusan teknis saat ini:
 
 1. Install dependency PHP.
 
-   ```bash
-   composer install
-   ```
+    ```bash
+    composer install
+    ```
 
 2. Siapkan environment.
 
-   ```bash
-   cp .env.example .env
-   php artisan key:generate
-   ```
+    ```bash
+    cp .env.example .env
+    php artisan key:generate
+    ```
 
 3. Konfigurasikan PostgreSQL di `.env`.
 
-   ```env
-   DB_CONNECTION=pgsql
-   DB_HOST=127.0.0.1
-   DB_PORT=5432
-   DB_DATABASE=simple_plan
-   DB_USERNAME=
-   DB_PASSWORD=
-   ```
+    ```env
+    DB_CONNECTION=pgsql
+    DB_HOST=127.0.0.1
+    DB_PORT=5432
+    DB_DATABASE=simple_plan
+    DB_USERNAME=
+    DB_PASSWORD=
+    ```
 
 4. Jalankan migration dan seeder jika diperlukan.
 
-   ```bash
-   php artisan migrate --seed
-   ```
+    ```bash
+    php artisan migrate --seed
+    ```
 
 5. Jalankan server lokal.
 
-   ```bash
-   php artisan serve
-   ```
+    ```bash
+    php artisan serve
+    ```
 
 API lokal tersedia di `http://localhost:8000`.
 
