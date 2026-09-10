@@ -2250,6 +2250,61 @@
                         "sanctum": []
                     }
                 ]
+            },
+            "post": {
+                "tags": [
+                    "Helpdesk"
+                ],
+                "summary": "Create a Helpdesk ticket",
+                "description": "Creates a TIK or Sarpras ticket for the authenticated reporter with status baru.",
+                "operationId": "createTicket",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateTicketRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Ticket created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketCreateResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Invalid ticket data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
             }
         },
         "/tickets/{ticket}": {
@@ -2576,6 +2631,33 @@
                 },
                 "type": "object"
             },
+            "TicketFileMetadata": {
+                "required": [
+                    "object_key",
+                    "original_name",
+                    "mime_type",
+                    "size"
+                ],
+                "properties": {
+                    "object_key": {
+                        "type": "string",
+                        "example": "helpdesk/evidence/550e8400-e29b-41d4-a716-446655440000.jpg"
+                    },
+                    "original_name": {
+                        "type": "string",
+                        "example": "kerusakan-komputer.jpg"
+                    },
+                    "mime_type": {
+                        "type": "string",
+                        "example": "image/jpeg"
+                    },
+                    "size": {
+                        "type": "integer",
+                        "example": 245760
+                    }
+                },
+                "type": "object"
+            },
             "TicketRead": {
                 "required": [
                     "id",
@@ -2586,6 +2668,7 @@
                     "status",
                     "reporter",
                     "unit",
+                    "initial_evidence",
                     "created_at"
                 ],
                 "properties": {
@@ -2631,9 +2714,70 @@
                     "unit": {
                         "$ref": "#/components/schemas/TicketUnitSummary"
                     },
+                    "initial_evidence": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/TicketFileMetadata"
+                            }
+                        ],
+                        "nullable": true
+                    },
                     "created_at": {
                         "type": "string",
                         "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "CreateTicketRequest": {
+                "required": [
+                    "service",
+                    "unit_id",
+                    "description"
+                ],
+                "properties": {
+                    "service": {
+                        "type": "string",
+                        "example": "tik",
+                        "enum": [
+                            "tik",
+                            "sarpras"
+                        ]
+                    },
+                    "unit_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "category": {
+                        "type": "string",
+                        "example": "Perangkat Komputer",
+                        "nullable": true,
+                        "maxLength": 255
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Komputer tidak dapat menyala."
+                    },
+                    "initial_evidence": {
+                        "type": "string",
+                        "format": "binary",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "TicketCreateResponse": {
+                "required": [
+                    "message",
+                    "data"
+                ],
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "example": "Tiket berhasil dibuat."
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/TicketRead"
                     }
                 },
                 "type": "object"

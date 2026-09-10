@@ -25,6 +25,10 @@ class Ticket extends Model
         'category',
         'description',
         'status',
+        'initial_evidence_object_key',
+        'initial_evidence_original_name',
+        'initial_evidence_mime_type',
+        'initial_evidence_size',
     ];
 
     /**
@@ -35,6 +39,7 @@ class Ticket extends Model
         return [
             'service' => TicketService::class,
             'status' => TicketStatus::class,
+            'initial_evidence_size' => 'integer',
         ];
     }
 

@@ -146,9 +146,20 @@ use OpenApi\Annotations as OA;
  * )
  *
  * @OA\Schema(
+ *     schema="TicketFileMetadata",
+ *     type="object",
+ *     required={"object_key","original_name","mime_type","size"},
+ *
+ *     @OA\Property(property="object_key", type="string", example="helpdesk/evidence/550e8400-e29b-41d4-a716-446655440000.jpg"),
+ *     @OA\Property(property="original_name", type="string", example="kerusakan-komputer.jpg"),
+ *     @OA\Property(property="mime_type", type="string", example="image/jpeg"),
+ *     @OA\Property(property="size", type="integer", example=245760)
+ * )
+ *
+ * @OA\Schema(
  *     schema="TicketRead",
  *     type="object",
- *     required={"id","ticket_number","service","category","description","status","reporter","unit","created_at"},
+ *     required={"id","ticket_number","service","category","description","status","reporter","unit","initial_evidence","created_at"},
  *
  *     @OA\Property(property="id", type="integer", example=1),
  *     @OA\Property(property="ticket_number", type="string", example="TIK-2026-0001"),
@@ -158,7 +169,29 @@ use OpenApi\Annotations as OA;
  *     @OA\Property(property="status", type="string", enum={"baru","terverifikasi","diproses","selesai","ditolak"}, example="baru"),
  *     @OA\Property(property="reporter", ref="#/components/schemas/TicketReporterSummary"),
  *     @OA\Property(property="unit", ref="#/components/schemas/TicketUnitSummary"),
+ *     @OA\Property(property="initial_evidence", ref="#/components/schemas/TicketFileMetadata", nullable=true),
  *     @OA\Property(property="created_at", type="string", format="date-time")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="CreateTicketRequest",
+ *     type="object",
+ *     required={"service","unit_id","description"},
+ *
+ *     @OA\Property(property="service", type="string", enum={"tik","sarpras"}, example="tik"),
+ *     @OA\Property(property="unit_id", type="integer", example=1),
+ *     @OA\Property(property="category", type="string", maxLength=255, nullable=true, example="Perangkat Komputer"),
+ *     @OA\Property(property="description", type="string", example="Komputer tidak dapat menyala."),
+ *     @OA\Property(property="initial_evidence", type="string", format="binary", nullable=true)
+ * )
+ *
+ * @OA\Schema(
+ *     schema="TicketCreateResponse",
+ *     type="object",
+ *     required={"message","data"},
+ *
+ *     @OA\Property(property="message", type="string", example="Tiket berhasil dibuat."),
+ *     @OA\Property(property="data", ref="#/components/schemas/TicketRead")
  * )
  *
  * @OA\Schema(
@@ -1096,6 +1129,24 @@ class ApiDocumentation
      * )
      */
     public function ticketsIndex(): void {}
+
+    /**
+     * @OA\Post(
+     *     path="/tickets",
+     *     operationId="createTicket",
+     *     tags={"Helpdesk"},
+     *     summary="Create a Helpdesk ticket",
+     *     description="Creates a TIK or Sarpras ticket for the authenticated reporter with status baru.",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\RequestBody(required=true, @OA\MediaType(mediaType="multipart/form-data", @OA\Schema(ref="#/components/schemas/CreateTicketRequest"))),
+     *
+     *     @OA\Response(response=201, description="Ticket created", @OA\JsonContent(ref="#/components/schemas/TicketCreateResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=422, description="Invalid ticket data", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
+     * )
+     */
+    public function ticketsStore(): void {}
 
     /**
      * @OA\Get(

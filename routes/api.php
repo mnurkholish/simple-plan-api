@@ -63,6 +63,7 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::patch('notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
 
         Route::get('tickets', [TicketController::class, 'index'])->name('tickets.index');
+        Route::post('tickets', [TicketController::class, 'store'])->name('tickets.store');
         Route::get('tickets/{ticket}', [TicketController::class, 'show'])
             ->name('tickets.show')
             ->missing(fn () => response()->json(['message' => 'Resource not found.'], 404));

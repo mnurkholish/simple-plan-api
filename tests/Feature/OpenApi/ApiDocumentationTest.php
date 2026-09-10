@@ -2,6 +2,21 @@
 
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
+use Symfony\Component\Yaml\Yaml;
+
+test('the Helpdesk OpenAPI contract only documents implemented ticket operations', function (): void {
+    $contract = Yaml::parseFile(base_path('openapi.yaml'));
+
+    expect($contract['paths'])->toHaveKeys(['/tickets', '/tickets/{ticket}'])
+        ->and(array_keys($contract['paths']))->toBe(['/tickets', '/tickets/{ticket}'])
+        ->and($contract['paths']['/tickets'])->toHaveKeys(['get', 'post'])
+        ->and($contract['paths']['/tickets']['post']['requestBody']['content']['multipart/form-data']['schema']['$ref'])
+        ->toBe('#/components/schemas/CreateTicketRequest')
+        ->and($contract['components']['schemas']['CreateTicketRequest']['required'])
+        ->toBe(['service', 'unit_id', 'description'])
+        ->and($contract['components']['schemas']['CreateTicketRequest']['properties']['service']['enum'])
+        ->toBe(['tik', 'sarpras']);
+});
 
 test('it generates the Helpdesk ticket Swagger contract', function (): void {
     $documentationPath = storage_path('framework/testing/swagger-docs');
@@ -47,8 +62,16 @@ test('it generates the Helpdesk ticket Swagger contract', function (): void {
             ->toBe('#/components/schemas/TicketCollectionResponse');
 
         $detailOperation = $documentation['paths']['/tickets/{ticket}']['get'];
+        $createOperation = $documentation['paths']['/tickets']['post'];
 
-        expect($detailOperation['responses']['200']['content']['application/json']['schema']['$ref'])
+        expect($createOperation['security'])->toBe([['sanctum' => []]])
+            ->and($createOperation['requestBody']['content']['multipart/form-data']['schema']['$ref'])
+            ->toBe('#/components/schemas/CreateTicketRequest')
+            ->and($createOperation['responses']['201']['content']['application/json']['schema']['$ref'])
+            ->toBe('#/components/schemas/TicketCreateResponse')
+            ->and($documentation['components']['schemas']['CreateTicketRequest']['required'])
+            ->toBe(['service', 'unit_id', 'description'])
+            ->and($detailOperation['responses']['200']['content']['application/json']['schema']['$ref'])
             ->toBe('#/components/schemas/TicketReadResponse')
             ->and($detailOperation['responses']['404']['content']['application/json']['schema']['$ref'])
             ->toBe('#/components/schemas/TicketReadError')
@@ -62,6 +85,7 @@ test('it generates the Helpdesk ticket Swagger contract', function (): void {
                 'status',
                 'reporter',
                 'unit',
+                'initial_evidence',
                 'created_at',
             ]);
     } finally {

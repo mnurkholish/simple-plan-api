@@ -4,14 +4,19 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ListTicketRequest;
+use App\Http\Requests\StoreTicketRequest;
 use App\Http\Resources\TicketResource;
 use App\Models\Ticket;
+use App\Services\TicketService;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class TicketController extends Controller
 {
+    public function __construct(private readonly TicketService $service) {}
+
     public function index(ListTicketRequest $request): AnonymousResourceCollection
     {
         $filters = $request->validated();
@@ -69,5 +74,22 @@ class TicketController extends Controller
             'reporter:id,name',
             'unit:id,unit_name',
         ]));
+    }
+
+    public function store(StoreTicketRequest $request): JsonResponse
+    {
+        $ticket = $this->service->create(
+            $request->validated(),
+            $request->user(),
+            $request->file('initial_evidence'),
+        );
+
+        return (new TicketResource($ticket->load([
+            'reporter:id,name',
+            'unit:id,unit_name',
+        ])))
+            ->additional(['message' => 'Tiket berhasil dibuat.'])
+            ->response()
+            ->setStatusCode(201);
     }
 }

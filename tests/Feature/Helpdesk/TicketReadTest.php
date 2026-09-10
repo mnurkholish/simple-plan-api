@@ -243,6 +243,7 @@ test('it returns ticket details with reporter and unit summaries', function (): 
                     'id' => $unit->id,
                     'name' => 'Unit Radiologi',
                 ],
+                'initial_evidence' => null,
                 'created_at' => $ticket->created_at->toJSON(),
             ],
         ]);
