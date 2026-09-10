@@ -2307,6 +2307,248 @@
                 ]
             }
         },
+        "/tickets/{ticket}/verify": {
+            "post": {
+                "tags": [
+                    "Helpdesk"
+                ],
+                "summary": "Verify a new Helpdesk ticket",
+                "operationId": "verifyTicket",
+                "parameters": [
+                    {
+                        "name": "ticket",
+                        "in": "path",
+                        "description": "Internal ticket ID.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ticket verified",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketActionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Ticket not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Ticket state conflict",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/tickets/{ticket}/reject": {
+            "post": {
+                "tags": [
+                    "Helpdesk"
+                ],
+                "summary": "Reject a new Helpdesk ticket",
+                "operationId": "rejectTicket",
+                "parameters": [
+                    {
+                        "name": "ticket",
+                        "in": "path",
+                        "description": "Internal ticket ID.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RejectTicketRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Ticket rejected",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketActionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Ticket not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Ticket state conflict",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Invalid rejection data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/tickets/{ticket}/assign": {
+            "post": {
+                "tags": [
+                    "Helpdesk"
+                ],
+                "summary": "Set priority and assign an officer",
+                "description": "Assignment keeps the ticket status as terverifikasi.",
+                "operationId": "assignTicket",
+                "parameters": [
+                    {
+                        "name": "ticket",
+                        "in": "path",
+                        "description": "Internal ticket ID.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AssignTicketRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Priority and officer assigned",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketActionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Ticket not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Ticket state conflict",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Invalid assignment data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/tickets/{ticket}": {
             "get": {
                 "tags": [
@@ -2631,6 +2873,23 @@
                 },
                 "type": "object"
             },
+            "TicketOfficerSummary": {
+                "required": [
+                    "id",
+                    "name"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Petugas Terpilih"
+                    }
+                },
+                "type": "object"
+            },
             "TicketFileMetadata": {
                 "required": [
                     "object_key",
@@ -2666,8 +2925,11 @@
                     "category",
                     "description",
                     "status",
+                    "rejection_reason",
+                    "priority",
                     "reporter",
                     "unit",
+                    "assigned_officer",
                     "initial_evidence",
                     "created_at"
                 ],
@@ -2708,11 +2970,35 @@
                             "ditolak"
                         ]
                     },
+                    "rejection_reason": {
+                        "type": "string",
+                        "example": "Informasi kerusakan tidak sesuai.",
+                        "nullable": true
+                    },
+                    "priority": {
+                        "type": "string",
+                        "example": "high",
+                        "nullable": true,
+                        "enum": [
+                            "critical",
+                            "high",
+                            "medium",
+                            "low"
+                        ]
+                    },
                     "reporter": {
                         "$ref": "#/components/schemas/TicketReporterSummary"
                     },
                     "unit": {
                         "$ref": "#/components/schemas/TicketUnitSummary"
+                    },
+                    "assigned_officer": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/TicketOfficerSummary"
+                            }
+                        ],
+                        "nullable": true
                     },
                     "initial_evidence": {
                         "oneOf": [
@@ -2775,6 +3061,57 @@
                     "message": {
                         "type": "string",
                         "example": "Tiket berhasil dibuat."
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/TicketRead"
+                    }
+                },
+                "type": "object"
+            },
+            "RejectTicketRequest": {
+                "required": [
+                    "reason"
+                ],
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "example": "Informasi kerusakan tidak sesuai."
+                    }
+                },
+                "type": "object"
+            },
+            "AssignTicketRequest": {
+                "required": [
+                    "priority",
+                    "officer_id"
+                ],
+                "properties": {
+                    "priority": {
+                        "type": "string",
+                        "example": "high",
+                        "enum": [
+                            "critical",
+                            "high",
+                            "medium",
+                            "low"
+                        ]
+                    },
+                    "officer_id": {
+                        "type": "integer",
+                        "example": 2
+                    }
+                },
+                "type": "object"
+            },
+            "TicketActionResponse": {
+                "required": [
+                    "message",
+                    "data"
+                ],
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "example": "Tiket berhasil diverifikasi."
                     },
                     "data": {
                         "$ref": "#/components/schemas/TicketRead"

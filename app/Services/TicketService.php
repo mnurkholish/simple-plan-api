@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
 use App\Models\Ticket;
 use App\Models\User;
@@ -10,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use RuntimeException;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Throwable;
 
 class TicketService
@@ -59,5 +61,62 @@ class TicketService
 
             throw $exception;
         }
+    }
+
+    public function verify(Ticket $ticket): Ticket
+    {
+        return $this->updateWhenStatus(
+            $ticket,
+            TicketStatus::Baru,
+            ['status' => TicketStatus::Terverifikasi->value],
+            'Hanya tiket berstatus baru yang dapat diverifikasi.',
+        );
+    }
+
+    public function reject(Ticket $ticket, string $reason): Ticket
+    {
+        return $this->updateWhenStatus(
+            $ticket,
+            TicketStatus::Baru,
+            [
+                'status' => TicketStatus::Ditolak->value,
+                'rejection_reason' => $reason,
+            ],
+            'Hanya tiket berstatus baru yang dapat ditolak.',
+        );
+    }
+
+    public function assign(Ticket $ticket, TicketPriority $priority, int $officerId): Ticket
+    {
+        return $this->updateWhenStatus(
+            $ticket,
+            TicketStatus::Terverifikasi,
+            [
+                'priority' => $priority->value,
+                'assigned_officer_id' => $officerId,
+            ],
+            'Hanya tiket berstatus terverifikasi yang dapat diberi prioritas dan petugas.',
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    private function updateWhenStatus(
+        Ticket $ticket,
+        TicketStatus $requiredStatus,
+        array $attributes,
+        string $conflictMessage,
+    ): Ticket {
+        $updatedRows = Ticket::query()
+            ->whereKey($ticket->getKey())
+            ->where('status', $requiredStatus->value)
+            ->update($attributes);
+
+        if ($updatedRows === 0) {
+            throw new ConflictHttpException($conflictMessage);
+        }
+
+        return $ticket->refresh();
     }
 }

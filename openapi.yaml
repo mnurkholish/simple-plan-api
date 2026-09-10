@@ -119,6 +119,89 @@ paths:
         '404':
           $ref: '#/components/responses/TicketNotFound'
 
+  /tickets/{ticket}/verify:
+    post:
+      tags: [Helpdesk]
+      summary: Memverifikasi tiket baru
+      operationId: verifyTicket
+      x-auth-required: true
+      parameters:
+        - $ref: '#/components/parameters/TicketId'
+      responses:
+        '200':
+          description: Tiket berhasil diverifikasi.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketActionResponse'
+        '401':
+          $ref: '#/components/responses/TicketUnauthenticated'
+        '404':
+          $ref: '#/components/responses/TicketNotFound'
+        '409':
+          $ref: '#/components/responses/TicketConflict'
+
+  /tickets/{ticket}/reject:
+    post:
+      tags: [Helpdesk]
+      summary: Menolak tiket baru
+      operationId: rejectTicket
+      x-auth-required: true
+      parameters:
+        - $ref: '#/components/parameters/TicketId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectTicketRequest'
+      responses:
+        '200':
+          description: Tiket berhasil ditolak.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketActionResponse'
+        '401':
+          $ref: '#/components/responses/TicketUnauthenticated'
+        '404':
+          $ref: '#/components/responses/TicketNotFound'
+        '409':
+          $ref: '#/components/responses/TicketConflict'
+        '422':
+          $ref: '#/components/responses/TicketValidationError'
+
+  /tickets/{ticket}/assign:
+    post:
+      tags: [Helpdesk]
+      summary: Menentukan prioritas dan petugas tiket
+      operationId: assignTicket
+      description: Assignment tidak mengubah status tiket dari Terverifikasi menjadi Diproses.
+      x-auth-required: true
+      parameters:
+        - $ref: '#/components/parameters/TicketId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignTicketRequest'
+      responses:
+        '200':
+          description: Prioritas dan petugas berhasil disimpan.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketActionResponse'
+        '401':
+          $ref: '#/components/responses/TicketUnauthenticated'
+        '404':
+          $ref: '#/components/responses/TicketNotFound'
+        '409':
+          $ref: '#/components/responses/TicketConflict'
+        '422':
+          $ref: '#/components/responses/TicketValidationError'
+
 components:
   parameters:
     TicketId:
@@ -159,8 +242,11 @@ components:
         - category
         - description
         - status
+        - rejection_reason
+        - priority
         - reporter
         - unit
+        - assigned_officer
         - initial_evidence
         - created_at
       properties:
@@ -187,10 +273,25 @@ components:
           type: string
           enum: [baru, terverifikasi, diproses, selesai, ditolak]
           example: baru
+        rejection_reason:
+          type:
+            - string
+            - 'null'
+          example: Informasi kerusakan tidak sesuai.
+        priority:
+          type:
+            - string
+            - 'null'
+          enum: [critical, high, medium, low, null]
+          example: high
         reporter:
           $ref: '#/components/schemas/UserSummary'
         unit:
           $ref: '#/components/schemas/UnitSummary'
+        assigned_officer:
+          anyOf:
+            - $ref: '#/components/schemas/UserSummary'
+            - type: 'null'
         initial_evidence:
           anyOf:
             - $ref: '#/components/schemas/FileMetadata'
@@ -275,6 +376,44 @@ components:
         message:
           type: string
           example: Tiket berhasil dibuat.
+        data:
+          $ref: '#/components/schemas/TicketRead'
+
+    RejectTicketRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - reason
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          example: Informasi kerusakan tidak sesuai.
+
+    AssignTicketRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - priority
+        - officer_id
+      properties:
+        priority:
+          type: string
+          enum: [critical, high, medium, low]
+          example: high
+        officer_id:
+          type: integer
+          example: 2
+
+    TicketActionResponse:
+      type: object
+      required:
+        - message
+        - data
+      properties:
+        message:
+          type: string
+          example: Tiket berhasil diverifikasi.
         data:
           $ref: '#/components/schemas/TicketRead'
 
@@ -412,7 +551,7 @@ components:
             message: Resource not found.
 
     TicketValidationError:
-      description: Filter daftar tiket tidak valid.
+      description: Data request tiket tidak valid.
       content:
         application/json:
           schema:
@@ -422,3 +561,12 @@ components:
             errors:
               service:
                 - The selected service is invalid.
+
+    TicketConflict:
+      description: Status tiket tidak mengizinkan aksi workflow.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TicketReadError'
+          example:
+            message: Hanya tiket berstatus baru yang dapat diverifikasi.

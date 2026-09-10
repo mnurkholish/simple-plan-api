@@ -146,6 +146,15 @@ use OpenApi\Annotations as OA;
  * )
  *
  * @OA\Schema(
+ *     schema="TicketOfficerSummary",
+ *     type="object",
+ *     required={"id","name"},
+ *
+ *     @OA\Property(property="id", type="integer", example=2),
+ *     @OA\Property(property="name", type="string", example="Petugas Terpilih")
+ * )
+ *
+ * @OA\Schema(
  *     schema="TicketFileMetadata",
  *     type="object",
  *     required={"object_key","original_name","mime_type","size"},
@@ -159,7 +168,7 @@ use OpenApi\Annotations as OA;
  * @OA\Schema(
  *     schema="TicketRead",
  *     type="object",
- *     required={"id","ticket_number","service","category","description","status","reporter","unit","initial_evidence","created_at"},
+ *     required={"id","ticket_number","service","category","description","status","rejection_reason","priority","reporter","unit","assigned_officer","initial_evidence","created_at"},
  *
  *     @OA\Property(property="id", type="integer", example=1),
  *     @OA\Property(property="ticket_number", type="string", example="TIK-2026-0001"),
@@ -167,8 +176,11 @@ use OpenApi\Annotations as OA;
  *     @OA\Property(property="category", type="string", nullable=true, example="Perangkat Komputer"),
  *     @OA\Property(property="description", type="string", example="Komputer tidak dapat menyala."),
  *     @OA\Property(property="status", type="string", enum={"baru","terverifikasi","diproses","selesai","ditolak"}, example="baru"),
+ *     @OA\Property(property="rejection_reason", type="string", nullable=true, example="Informasi kerusakan tidak sesuai."),
+ *     @OA\Property(property="priority", type="string", enum={"critical","high","medium","low"}, nullable=true, example="high"),
  *     @OA\Property(property="reporter", ref="#/components/schemas/TicketReporterSummary"),
  *     @OA\Property(property="unit", ref="#/components/schemas/TicketUnitSummary"),
+ *     @OA\Property(property="assigned_officer", ref="#/components/schemas/TicketOfficerSummary", nullable=true),
  *     @OA\Property(property="initial_evidence", ref="#/components/schemas/TicketFileMetadata", nullable=true),
  *     @OA\Property(property="created_at", type="string", format="date-time")
  * )
@@ -191,6 +203,32 @@ use OpenApi\Annotations as OA;
  *     required={"message","data"},
  *
  *     @OA\Property(property="message", type="string", example="Tiket berhasil dibuat."),
+ *     @OA\Property(property="data", ref="#/components/schemas/TicketRead")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="RejectTicketRequest",
+ *     type="object",
+ *     required={"reason"},
+ *
+ *     @OA\Property(property="reason", type="string", example="Informasi kerusakan tidak sesuai.")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="AssignTicketRequest",
+ *     type="object",
+ *     required={"priority","officer_id"},
+ *
+ *     @OA\Property(property="priority", type="string", enum={"critical","high","medium","low"}, example="high"),
+ *     @OA\Property(property="officer_id", type="integer", example=2)
+ * )
+ *
+ * @OA\Schema(
+ *     schema="TicketActionResponse",
+ *     type="object",
+ *     required={"message","data"},
+ *
+ *     @OA\Property(property="message", type="string", example="Tiket berhasil diverifikasi."),
  *     @OA\Property(property="data", ref="#/components/schemas/TicketRead")
  * )
  *
@@ -1147,6 +1185,67 @@ class ApiDocumentation
      * )
      */
     public function ticketsStore(): void {}
+
+    /**
+     * @OA\Post(
+     *     path="/tickets/{ticket}/verify",
+     *     operationId="verifyTicket",
+     *     tags={"Helpdesk"},
+     *     summary="Verify a new Helpdesk ticket",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
+     *
+     *     @OA\Response(response=200, description="Ticket verified", @OA\JsonContent(ref="#/components/schemas/TicketActionResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=404, description="Ticket not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=409, description="Ticket state conflict", @OA\JsonContent(ref="#/components/schemas/TicketReadError"))
+     * )
+     */
+    public function ticketsVerify(): void {}
+
+    /**
+     * @OA\Post(
+     *     path="/tickets/{ticket}/reject",
+     *     operationId="rejectTicket",
+     *     tags={"Helpdesk"},
+     *     summary="Reject a new Helpdesk ticket",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
+     *
+     *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/RejectTicketRequest")),
+     *
+     *     @OA\Response(response=200, description="Ticket rejected", @OA\JsonContent(ref="#/components/schemas/TicketActionResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=404, description="Ticket not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=409, description="Ticket state conflict", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=422, description="Invalid rejection data", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
+     * )
+     */
+    public function ticketsReject(): void {}
+
+    /**
+     * @OA\Post(
+     *     path="/tickets/{ticket}/assign",
+     *     operationId="assignTicket",
+     *     tags={"Helpdesk"},
+     *     summary="Set priority and assign an officer",
+     *     description="Assignment keeps the ticket status as terverifikasi.",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
+     *
+     *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/AssignTicketRequest")),
+     *
+     *     @OA\Response(response=200, description="Priority and officer assigned", @OA\JsonContent(ref="#/components/schemas/TicketActionResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=404, description="Ticket not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=409, description="Ticket state conflict", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=422, description="Invalid assignment data", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
+     * )
+     */
+    public function ticketsAssign(): void {}
 
     /**
      * @OA\Get(

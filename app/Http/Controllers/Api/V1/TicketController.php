@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\TicketPriority;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\AssignTicketRequest;
 use App\Http\Requests\ListTicketRequest;
+use App\Http\Requests\RejectTicketRequest;
 use App\Http\Requests\StoreTicketRequest;
 use App\Http\Resources\TicketResource;
 use App\Models\Ticket;
@@ -23,6 +26,7 @@ class TicketController extends Controller
 
         $query = Ticket::query()
             ->with([
+                'assignedOfficer:id,name',
                 'reporter:id,name',
                 'unit:id,unit_name',
             ])
@@ -71,6 +75,7 @@ class TicketController extends Controller
     public function show(Ticket $ticket): TicketResource
     {
         return new TicketResource($ticket->load([
+            'assignedOfficer:id,name',
             'reporter:id,name',
             'unit:id,unit_name',
         ]));
@@ -85,11 +90,50 @@ class TicketController extends Controller
         );
 
         return (new TicketResource($ticket->load([
+            'assignedOfficer:id,name',
             'reporter:id,name',
             'unit:id,unit_name',
         ])))
             ->additional(['message' => 'Tiket berhasil dibuat.'])
             ->response()
             ->setStatusCode(201);
+    }
+
+    public function verify(Ticket $ticket): TicketResource
+    {
+        $ticket = $this->service->verify($ticket);
+
+        return (new TicketResource($ticket->load([
+            'assignedOfficer:id,name',
+            'reporter:id,name',
+            'unit:id,unit_name',
+        ])))->additional(['message' => 'Tiket berhasil diverifikasi.']);
+    }
+
+    public function reject(RejectTicketRequest $request, Ticket $ticket): TicketResource
+    {
+        $ticket = $this->service->reject($ticket, $request->string('reason')->toString());
+
+        return (new TicketResource($ticket->load([
+            'assignedOfficer:id,name',
+            'reporter:id,name',
+            'unit:id,unit_name',
+        ])))->additional(['message' => 'Tiket berhasil ditolak.']);
+    }
+
+    public function assign(AssignTicketRequest $request, Ticket $ticket): TicketResource
+    {
+        $validated = $request->validated();
+        $ticket = $this->service->assign(
+            $ticket,
+            TicketPriority::from($validated['priority']),
+            $validated['officer_id'],
+        );
+
+        return (new TicketResource($ticket->load([
+            'assignedOfficer:id,name',
+            'reporter:id,name',
+            'unit:id,unit_name',
+        ])))->additional(['message' => 'Prioritas dan petugas berhasil disimpan.']);
     }
 }

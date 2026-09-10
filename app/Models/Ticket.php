@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\TicketPriority;
 use App\Enums\TicketService;
 use App\Enums\TicketStatus;
 use Database\Factories\TicketFactory;
@@ -29,6 +30,9 @@ class Ticket extends Model
         'initial_evidence_original_name',
         'initial_evidence_mime_type',
         'initial_evidence_size',
+        'rejection_reason',
+        'priority',
+        'assigned_officer_id',
     ];
 
     /**
@@ -39,6 +43,7 @@ class Ticket extends Model
         return [
             'service' => TicketService::class,
             'status' => TicketStatus::class,
+            'priority' => TicketPriority::class,
             'initial_evidence_size' => 'integer',
         ];
     }
@@ -51,5 +56,10 @@ class Ticket extends Model
     public function unit(): BelongsTo
     {
         return $this->belongsTo(Unit::class);
+    }
+
+    public function assignedOfficer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_officer_id');
     }
 }

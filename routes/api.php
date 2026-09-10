@@ -64,6 +64,15 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
 
         Route::get('tickets', [TicketController::class, 'index'])->name('tickets.index');
         Route::post('tickets', [TicketController::class, 'store'])->name('tickets.store');
+        Route::post('tickets/{ticket}/verify', [TicketController::class, 'verify'])
+            ->name('tickets.verify')
+            ->missing(fn () => response()->json(['message' => 'Resource not found.'], 404));
+        Route::post('tickets/{ticket}/reject', [TicketController::class, 'reject'])
+            ->name('tickets.reject')
+            ->missing(fn () => response()->json(['message' => 'Resource not found.'], 404));
+        Route::post('tickets/{ticket}/assign', [TicketController::class, 'assign'])
+            ->name('tickets.assign')
+            ->missing(fn () => response()->json(['message' => 'Resource not found.'], 404));
         Route::get('tickets/{ticket}', [TicketController::class, 'show'])
             ->name('tickets.show')
             ->missing(fn () => response()->json(['message' => 'Resource not found.'], 404));

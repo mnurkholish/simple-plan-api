@@ -21,6 +21,8 @@ class TicketResource extends JsonResource
             'category' => $this->category,
             'description' => $this->description,
             'status' => $this->status->value,
+            'rejection_reason' => $this->rejection_reason,
+            'priority' => $this->priority?->value,
             'reporter' => $this->whenLoaded('reporter', fn (): array => [
                 'id' => $this->reporter->id,
                 'name' => $this->reporter->name,
@@ -29,6 +31,13 @@ class TicketResource extends JsonResource
                 'id' => $this->unit->id,
                 'name' => $this->unit->unit_name,
             ]),
+            'assigned_officer' => $this->whenLoaded(
+                'assignedOfficer',
+                fn (): ?array => $this->assignedOfficer === null ? null : [
+                    'id' => $this->assignedOfficer->id,
+                    'name' => $this->assignedOfficer->name,
+                ],
+            ),
             'initial_evidence' => $this->initial_evidence_object_key === null ? null : [
                 'object_key' => $this->initial_evidence_object_key,
                 'original_name' => $this->initial_evidence_original_name,
