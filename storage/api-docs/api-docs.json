@@ -2122,6 +2122,192 @@
                     }
                 ]
             }
+        },
+        "/tickets": {
+            "get": {
+                "tags": [
+                    "Helpdesk"
+                ],
+                "summary": "List Helpdesk tickets",
+                "description": "Returns TIK and Sarpras tickets ordered from newest to oldest.",
+                "operationId": "listTickets",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "service",
+                        "in": "query",
+                        "description": "Ticket service.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "tik",
+                                "sarpras"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Ticket status.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "baru",
+                                "terverifikasi",
+                                "diproses",
+                                "selesai",
+                                "ditolak"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "date_from",
+                        "in": "query",
+                        "description": "Inclusive created date lower bound.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "date_to",
+                        "in": "query",
+                        "description": "Inclusive created date upper bound.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search ticket number, category, and description.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 255
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated tickets",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketCollectionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Invalid filters",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/tickets/{ticket}": {
+            "get": {
+                "tags": [
+                    "Helpdesk"
+                ],
+                "summary": "Show a Helpdesk ticket",
+                "operationId": "showTicket",
+                "parameters": [
+                    {
+                        "name": "ticket",
+                        "in": "path",
+                        "description": "Internal ticket ID.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ticket detail",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Ticket not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -2355,6 +2541,263 @@
                     }
                 },
                 "type": "object"
+            },
+            "TicketReporterSummary": {
+                "required": [
+                    "id",
+                    "name"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Rina Pelapor"
+                    }
+                },
+                "type": "object"
+            },
+            "TicketUnitSummary": {
+                "required": [
+                    "id",
+                    "name"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Unit Rawat Jalan"
+                    }
+                },
+                "type": "object"
+            },
+            "TicketRead": {
+                "required": [
+                    "id",
+                    "ticket_number",
+                    "service",
+                    "category",
+                    "description",
+                    "status",
+                    "reporter",
+                    "unit",
+                    "created_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "ticket_number": {
+                        "type": "string",
+                        "example": "TIK-2026-0001"
+                    },
+                    "service": {
+                        "type": "string",
+                        "example": "tik",
+                        "enum": [
+                            "tik",
+                            "sarpras"
+                        ]
+                    },
+                    "category": {
+                        "type": "string",
+                        "example": "Perangkat Komputer",
+                        "nullable": true
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Komputer tidak dapat menyala."
+                    },
+                    "status": {
+                        "type": "string",
+                        "example": "baru",
+                        "enum": [
+                            "baru",
+                            "terverifikasi",
+                            "diproses",
+                            "selesai",
+                            "ditolak"
+                        ]
+                    },
+                    "reporter": {
+                        "$ref": "#/components/schemas/TicketReporterSummary"
+                    },
+                    "unit": {
+                        "$ref": "#/components/schemas/TicketUnitSummary"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "TicketPaginationLinks": {
+                "required": [
+                    "first",
+                    "last",
+                    "prev",
+                    "next"
+                ],
+                "properties": {
+                    "first": {
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "last": {
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "prev": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "next": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "TicketPaginationLinkItem": {
+                "required": [
+                    "url",
+                    "label",
+                    "page",
+                    "active"
+                ],
+                "properties": {
+                    "url": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "page": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "active": {
+                        "type": "boolean"
+                    }
+                },
+                "type": "object"
+            },
+            "TicketPaginationMeta": {
+                "required": [
+                    "current_page",
+                    "from",
+                    "last_page",
+                    "links",
+                    "path",
+                    "per_page",
+                    "to",
+                    "total"
+                ],
+                "properties": {
+                    "current_page": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "from": {
+                        "type": "integer",
+                        "example": 1,
+                        "nullable": true
+                    },
+                    "last_page": {
+                        "type": "integer",
+                        "example": 3
+                    },
+                    "links": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/TicketPaginationLinkItem"
+                        }
+                    },
+                    "path": {
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "per_page": {
+                        "type": "integer",
+                        "example": 15
+                    },
+                    "to": {
+                        "type": "integer",
+                        "example": 15,
+                        "nullable": true
+                    },
+                    "total": {
+                        "type": "integer",
+                        "example": 42
+                    }
+                },
+                "type": "object"
+            },
+            "TicketCollectionResponse": {
+                "required": [
+                    "data",
+                    "links",
+                    "meta"
+                ],
+                "properties": {
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/TicketRead"
+                        }
+                    },
+                    "links": {
+                        "$ref": "#/components/schemas/TicketPaginationLinks"
+                    },
+                    "meta": {
+                        "$ref": "#/components/schemas/TicketPaginationMeta"
+                    }
+                },
+                "type": "object"
+            },
+            "TicketReadResponse": {
+                "required": [
+                    "data"
+                ],
+                "properties": {
+                    "data": {
+                        "$ref": "#/components/schemas/TicketRead"
+                    }
+                },
+                "type": "object"
+            },
+            "TicketReadError": {
+                "required": [
+                    "message"
+                ],
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "example": "Resource not found."
+                    },
+                    "errors": {
+                        "type": "object",
+                        "nullable": true,
+                        "additionalProperties": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "type": "object"
             }
         },
         "parameters": {
@@ -2454,6 +2897,10 @@
         {
             "name": "Notifications",
             "description": "Notification and activity summary"
+        },
+        {
+            "name": "Helpdesk",
+            "description": "Helpdesk TIK and Sarpras tickets"
         }
     ]
 }

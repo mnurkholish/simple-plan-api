@@ -34,6 +34,7 @@ paths:
           description: Jenis layanan tiket.
           schema:
             type: string
+            enum: [tik, sarpras]
             example: tik
         - name: status
           in: query
@@ -41,6 +42,7 @@ paths:
           description: Filter status tiket.
           schema:
             type: string
+            enum: [baru, terverifikasi, diproses, selesai, ditolak]
             example: baru
         - name: date_from
           in: query
@@ -54,11 +56,14 @@ paths:
           schema:
             type: string
             format: date
+          description: Batas akhir tanggal dibuat, bersifat inklusif.
         - name: search
           in: query
           required: false
+          description: Pencarian pada nomor tiket, kategori, dan deskripsi.
           schema:
             type: string
+            maxLength: 255
       responses:
         '200':
           description: Daftar tiket berhasil diambil.
@@ -67,9 +72,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/TicketCollectionResponse'
         '401':
-          $ref: '#/components/responses/Unauthenticated'
-        '403':
-          $ref: '#/components/responses/Forbidden'
+          $ref: '#/components/responses/TicketUnauthenticated'
+        '422':
+          $ref: '#/components/responses/TicketValidationError'
 
     post:
       tags: [Helpdesk]
@@ -110,13 +115,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TicketResponse'
+                $ref: '#/components/schemas/TicketReadResponse'
         '401':
-          $ref: '#/components/responses/Unauthenticated'
-        '403':
-          $ref: '#/components/responses/Forbidden'
+          $ref: '#/components/responses/TicketUnauthenticated'
         '404':
-          $ref: '#/components/responses/NotFound'
+          $ref: '#/components/responses/TicketNotFound'
 
   /tickets/{ticket}/verify:
     post:
@@ -236,6 +239,51 @@ components:
         default: 15
 
   schemas:
+    TicketRead:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - ticket_number
+        - service
+        - category
+        - description
+        - status
+        - reporter
+        - unit
+        - created_at
+      properties:
+        id:
+          type: integer
+          example: 1
+        ticket_number:
+          type: string
+          example: TIK-2026-0001
+        service:
+          type: string
+          enum: [tik, sarpras]
+          description: Jenis layanan tiket.
+          example: tik
+        category:
+          type:
+            - string
+            - 'null'
+          example: Perangkat Komputer
+        description:
+          type: string
+          example: Komputer tidak dapat menyala.
+        status:
+          type: string
+          enum: [baru, terverifikasi, diproses, selesai, ditolak]
+          example: baru
+        reporter:
+          $ref: '#/components/schemas/UserSummary'
+        unit:
+          $ref: '#/components/schemas/UnitSummary'
+        created_at:
+          type: string
+          format: date-time
+
     Ticket:
       type: object
       additionalProperties: false
@@ -388,38 +436,105 @@ components:
     TicketCollectionResponse:
       type: object
       required:
-        - success
-        - message
         - data
+        - links
+        - meta
       properties:
-        success:
-          type: boolean
-          example: true
-        message:
-          type: string
-          example: Tickets retrieved successfully.
         data:
           type: array
           items:
-            $ref: '#/components/schemas/Ticket'
+            $ref: '#/components/schemas/TicketRead'
+        links:
+          $ref: '#/components/schemas/PaginationLinks'
         meta:
           $ref: '#/components/schemas/PaginationMeta'
 
+    TicketReadResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/TicketRead'
+
+    PaginationLinks:
+      type: object
+      required:
+        - first
+        - last
+        - prev
+        - next
+      properties:
+        first:
+          type: string
+          format: uri
+        last:
+          type: string
+          format: uri
+        prev:
+          type:
+            - string
+            - 'null'
+          format: uri
+        next:
+          type:
+            - string
+            - 'null'
+          format: uri
+
     PaginationMeta:
       type: object
+      required:
+        - current_page
+        - from
+        - last_page
+        - links
+        - path
+        - per_page
+        - to
+        - total
       properties:
         current_page:
           type: integer
           example: 1
-        per_page:
-          type: integer
-          example: 15
-        total:
-          type: integer
-          example: 42
+        from:
+          type:
+            - integer
+            - 'null'
         last_page:
           type: integer
           example: 3
+        links:
+          type: array
+          items:
+            type: object
+            properties:
+              url:
+                type:
+                  - string
+                  - 'null'
+                format: uri
+              label:
+                type: string
+              page:
+                type:
+                  - integer
+                  - 'null'
+              active:
+                type: boolean
+        path:
+          type: string
+          format: uri
+        per_page:
+          type: integer
+          example: 15
+        to:
+          type:
+            - integer
+            - 'null'
+        total:
+          type: integer
+          example: 42
 
     ErrorResponse:
       type: object
@@ -436,7 +551,48 @@ components:
           type: object
           additionalProperties: true
 
+    TicketReadError:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties: true
+
   responses:
+    TicketUnauthenticated:
+      description: Pengguna belum terautentikasi.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TicketReadError'
+          example:
+            message: Unauthenticated.
+
+    TicketNotFound:
+      description: Tiket tidak ditemukan.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TicketReadError'
+          example:
+            message: Resource not found.
+
+    TicketValidationError:
+      description: Filter daftar tiket tidak valid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TicketReadError'
+          example:
+            message: The selected service is invalid.
+            errors:
+              service:
+                - The selected service is invalid.
+
     Unauthenticated:
       description: Pengguna belum terautentikasi.
       content:

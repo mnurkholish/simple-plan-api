@@ -34,6 +34,7 @@ use OpenApi\Annotations as OA;
  * @OA\Tag(name="Example Live", description="Market proxy and background task demo")
  * @OA\Tag(name="Impersonation", description="Sanctum token impersonation")
  * @OA\Tag(name="Notifications", description="Notification and activity summary")
+ * @OA\Tag(name="Helpdesk", description="Helpdesk TIK and Sarpras tickets")
  *
  * @OA\Schema(
  *     schema="User",
@@ -124,6 +125,104 @@ use OpenApi\Annotations as OA;
  *     @OA\Property(property="per_page", type="integer"),
  *     @OA\Property(property="to", type="integer", nullable=true),
  *     @OA\Property(property="total", type="integer")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="TicketReporterSummary",
+ *     type="object",
+ *     required={"id","name"},
+ *
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="name", type="string", example="Rina Pelapor")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="TicketUnitSummary",
+ *     type="object",
+ *     required={"id","name"},
+ *
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="name", type="string", example="Unit Rawat Jalan")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="TicketRead",
+ *     type="object",
+ *     required={"id","ticket_number","service","category","description","status","reporter","unit","created_at"},
+ *
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="ticket_number", type="string", example="TIK-2026-0001"),
+ *     @OA\Property(property="service", type="string", enum={"tik","sarpras"}, example="tik"),
+ *     @OA\Property(property="category", type="string", nullable=true, example="Perangkat Komputer"),
+ *     @OA\Property(property="description", type="string", example="Komputer tidak dapat menyala."),
+ *     @OA\Property(property="status", type="string", enum={"baru","terverifikasi","diproses","selesai","ditolak"}, example="baru"),
+ *     @OA\Property(property="reporter", ref="#/components/schemas/TicketReporterSummary"),
+ *     @OA\Property(property="unit", ref="#/components/schemas/TicketUnitSummary"),
+ *     @OA\Property(property="created_at", type="string", format="date-time")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="TicketPaginationLinks",
+ *     type="object",
+ *     required={"first","last","prev","next"},
+ *
+ *     @OA\Property(property="first", type="string", format="uri"),
+ *     @OA\Property(property="last", type="string", format="uri"),
+ *     @OA\Property(property="prev", type="string", format="uri", nullable=true),
+ *     @OA\Property(property="next", type="string", format="uri", nullable=true)
+ * )
+ *
+ * @OA\Schema(
+ *     schema="TicketPaginationLinkItem",
+ *     type="object",
+ *     required={"url","label","page","active"},
+ *
+ *     @OA\Property(property="url", type="string", format="uri", nullable=true),
+ *     @OA\Property(property="label", type="string"),
+ *     @OA\Property(property="page", type="integer", nullable=true),
+ *     @OA\Property(property="active", type="boolean")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="TicketPaginationMeta",
+ *     type="object",
+ *     required={"current_page","from","last_page","links","path","per_page","to","total"},
+ *
+ *     @OA\Property(property="current_page", type="integer", example=1),
+ *     @OA\Property(property="from", type="integer", nullable=true, example=1),
+ *     @OA\Property(property="last_page", type="integer", example=3),
+ *     @OA\Property(property="links", type="array", @OA\Items(ref="#/components/schemas/TicketPaginationLinkItem")),
+ *     @OA\Property(property="path", type="string", format="uri"),
+ *     @OA\Property(property="per_page", type="integer", example=15),
+ *     @OA\Property(property="to", type="integer", nullable=true, example=15),
+ *     @OA\Property(property="total", type="integer", example=42)
+ * )
+ *
+ * @OA\Schema(
+ *     schema="TicketCollectionResponse",
+ *     type="object",
+ *     required={"data","links","meta"},
+ *
+ *     @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/TicketRead")),
+ *     @OA\Property(property="links", ref="#/components/schemas/TicketPaginationLinks"),
+ *     @OA\Property(property="meta", ref="#/components/schemas/TicketPaginationMeta")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="TicketReadResponse",
+ *     type="object",
+ *     required={"data"},
+ *
+ *     @OA\Property(property="data", ref="#/components/schemas/TicketRead")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="TicketReadError",
+ *     type="object",
+ *     required={"message"},
+ *
+ *     @OA\Property(property="message", type="string", example="Resource not found."),
+ *     @OA\Property(property="errors", type="object", nullable=true, @OA\AdditionalProperties(type="array", @OA\Items(type="string")))
  * )
  *
  * @OA\Parameter(
@@ -973,4 +1072,45 @@ class ApiDocumentation
      * )
      */
     public function notificationsReadAll(): void {}
+
+    /**
+     * @OA\Get(
+     *     path="/tickets",
+     *     operationId="listTickets",
+     *     tags={"Helpdesk"},
+     *     summary="List Helpdesk tickets",
+     *     description="Returns TIK and Sarpras tickets ordered from newest to oldest.",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="page", in="query", required=false, @OA\Schema(type="integer", minimum=1, default=1)),
+     *     @OA\Parameter(name="per_page", in="query", required=false, @OA\Schema(type="integer", minimum=1, maximum=100, default=15)),
+     *     @OA\Parameter(name="service", in="query", required=false, description="Ticket service.", @OA\Schema(type="string", enum={"tik","sarpras"})),
+     *     @OA\Parameter(name="status", in="query", required=false, description="Ticket status.", @OA\Schema(type="string", enum={"baru","terverifikasi","diproses","selesai","ditolak"})),
+     *     @OA\Parameter(name="date_from", in="query", required=false, description="Inclusive created date lower bound.", @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="date_to", in="query", required=false, description="Inclusive created date upper bound.", @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="search", in="query", required=false, description="Search ticket number, category, and description.", @OA\Schema(type="string", maxLength=255)),
+     *
+     *     @OA\Response(response=200, description="Paginated tickets", @OA\JsonContent(ref="#/components/schemas/TicketCollectionResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=422, description="Invalid filters", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
+     * )
+     */
+    public function ticketsIndex(): void {}
+
+    /**
+     * @OA\Get(
+     *     path="/tickets/{ticket}",
+     *     operationId="showTicket",
+     *     tags={"Helpdesk"},
+     *     summary="Show a Helpdesk ticket",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
+     *
+     *     @OA\Response(response=200, description="Ticket detail", @OA\JsonContent(ref="#/components/schemas/TicketReadResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=404, description="Ticket not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError"))
+     * )
+     */
+    public function ticketsShow(): void {}
 }

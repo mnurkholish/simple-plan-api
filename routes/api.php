@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\ImpersonationController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\RoleController;
+use App\Http\Controllers\Api\V1\TicketController;
 use App\Http\Controllers\Api\V1\UnitController;
 use App\Http\Controllers\Api\V1\UserController;
 use Illuminate\Support\Facades\Route;
@@ -60,6 +61,11 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
         Route::patch('notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
         Route::patch('notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
+
+        Route::get('tickets', [TicketController::class, 'index'])->name('tickets.index');
+        Route::get('tickets/{ticket}', [TicketController::class, 'show'])
+            ->name('tickets.show')
+            ->missing(fn () => response()->json(['message' => 'Resource not found.'], 404));
 
         Route::post('impersonation/{user}/start', [ImpersonationController::class, 'start'])
             ->middleware('permission:impersonate')
