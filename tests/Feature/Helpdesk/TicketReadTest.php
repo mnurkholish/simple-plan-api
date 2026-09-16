@@ -61,6 +61,7 @@ test('it returns tickets newest first with pagination metadata', function (): vo
                     'unit' => ['id', 'name'],
                     'assigned_officer',
                     'initial_evidence',
+                    'completed_at',
                     'created_at',
                 ],
             ],
@@ -251,6 +252,8 @@ test('it returns ticket details with reporter and unit summaries', function (): 
                 ],
                 'assigned_officer' => null,
                 'initial_evidence' => null,
+                'completed_at' => null,
+                'handlings' => [],
                 'created_at' => $ticket->created_at->toJSON(),
             ],
         ]);

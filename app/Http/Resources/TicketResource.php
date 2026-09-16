@@ -44,6 +44,8 @@ class TicketResource extends JsonResource
                 'mime_type' => $this->initial_evidence_mime_type,
                 'size' => $this->initial_evidence_size,
             ],
+            'completed_at' => $this->completed_at,
+            'handlings' => TicketHandlingResource::collection($this->whenLoaded('handlings')),
             'created_at' => $this->created_at,
         ];
     }

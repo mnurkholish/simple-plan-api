@@ -202,6 +202,40 @@ paths:
         '422':
           $ref: '#/components/responses/TicketValidationError'
 
+  /tickets/{ticket}/handlings:
+    post:
+      tags: [Helpdesk]
+      summary: Menambahkan riwayat penanganan tiket
+      operationId: createTicketHandling
+      description: >-
+        Menambahkan satu catatan pada tiket yang sedang Diproses. Status dapat
+        tetap Diproses atau berubah menjadi Selesai. Endpoint ini tidak memulai
+        proses dari status Terverifikasi.
+      x-auth-required: true
+      parameters:
+        - $ref: '#/components/parameters/TicketId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateTicketHandlingRequest'
+      responses:
+        '200':
+          description: Riwayat penanganan berhasil disimpan.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketActionResponse'
+        '401':
+          $ref: '#/components/responses/TicketUnauthenticated'
+        '404':
+          $ref: '#/components/responses/TicketNotFound'
+        '409':
+          $ref: '#/components/responses/TicketConflict'
+        '422':
+          $ref: '#/components/responses/TicketValidationError'
+
 components:
   parameters:
     TicketId:
@@ -248,6 +282,7 @@ components:
         - unit
         - assigned_officer
         - initial_evidence
+        - completed_at
         - created_at
       properties:
         id:
@@ -296,6 +331,16 @@ components:
           anyOf:
             - $ref: '#/components/schemas/FileMetadata'
             - type: 'null'
+        completed_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        handlings:
+          type: array
+          description: Tersedia pada response detail dan pembaruan penanganan.
+          items:
+            $ref: '#/components/schemas/TicketHandling'
         created_at:
           type: string
           format: date-time
@@ -404,6 +449,82 @@ components:
         officer_id:
           type: integer
           example: 2
+
+    CreateTicketHandlingRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - notes
+        - status
+      properties:
+        notes:
+          type: string
+          example: Kabel daya dikencangkan dan perangkat diuji.
+        status:
+          type: string
+          enum: [diproses, selesai]
+          example: diproses
+        started_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        completed_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: >-
+            Wajib ketika status selesai. Harus sama atau setelah started_at jika
+            waktu mulai diberikan.
+        result_photo:
+          type:
+            - string
+            - 'null'
+          format: binary
+
+    TicketHandling:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - notes
+        - status
+        - started_at
+        - completed_at
+        - handled_by
+        - result_photo
+        - created_at
+      properties:
+        id:
+          type: integer
+          example: 1
+        notes:
+          type: string
+          example: Kabel daya dikencangkan dan perangkat diuji.
+        status:
+          type: string
+          enum: [diproses, selesai]
+          example: diproses
+        started_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        completed_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        handled_by:
+          $ref: '#/components/schemas/UserSummary'
+        result_photo:
+          anyOf:
+            - $ref: '#/components/schemas/FileMetadata'
+            - type: 'null'
+        created_at:
+          type: string
+          format: date-time
 
     TicketActionResponse:
       type: object

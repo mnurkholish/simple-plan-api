@@ -12,6 +12,7 @@ test('the Helpdesk OpenAPI contract only documents implemented ticket operations
         '/tickets/{ticket}/verify',
         '/tickets/{ticket}/reject',
         '/tickets/{ticket}/assign',
+        '/tickets/{ticket}/handlings',
     ];
 
     expect($contract['paths'])->toHaveKeys($expectedPaths)
@@ -26,7 +27,13 @@ test('the Helpdesk OpenAPI contract only documents implemented ticket operations
         ->and($contract['components']['schemas']['AssignTicketRequest']['required'])
         ->toBe(['priority', 'officer_id'])
         ->and($contract['components']['schemas']['AssignTicketRequest']['properties']['priority']['enum'])
-        ->toBe(['critical', 'high', 'medium', 'low']);
+        ->toBe(['critical', 'high', 'medium', 'low'])
+        ->and($contract['paths']['/tickets/{ticket}/handlings']['post']['requestBody']['content']['multipart/form-data']['schema']['$ref'])
+        ->toBe('#/components/schemas/CreateTicketHandlingRequest')
+        ->and($contract['components']['schemas']['CreateTicketHandlingRequest']['required'])
+        ->toBe(['notes', 'status'])
+        ->and($contract['components']['schemas']['CreateTicketHandlingRequest']['properties']['status']['enum'])
+        ->toBe(['diproses', 'selesai']);
 });
 
 test('it generates the Helpdesk ticket Swagger contract', function (): void {
@@ -52,6 +59,7 @@ test('it generates the Helpdesk ticket Swagger contract', function (): void {
                 '/tickets/{ticket}/verify',
                 '/tickets/{ticket}/reject',
                 '/tickets/{ticket}/assign',
+                '/tickets/{ticket}/handlings',
             ]);
 
         $listOperation = $documentation['paths']['/tickets']['get'];
@@ -83,6 +91,7 @@ test('it generates the Helpdesk ticket Swagger contract', function (): void {
         $verifyOperation = $documentation['paths']['/tickets/{ticket}/verify']['post'];
         $rejectOperation = $documentation['paths']['/tickets/{ticket}/reject']['post'];
         $assignOperation = $documentation['paths']['/tickets/{ticket}/assign']['post'];
+        $handlingOperation = $documentation['paths']['/tickets/{ticket}/handlings']['post'];
 
         expect($createOperation['security'])->toBe([['sanctum' => []]])
             ->and($createOperation['requestBody']['content']['multipart/form-data']['schema']['$ref'])
@@ -101,6 +110,14 @@ test('it generates the Helpdesk ticket Swagger contract', function (): void {
             ->toBe(['priority', 'officer_id'])
             ->and($documentation['components']['schemas']['AssignTicketRequest']['properties']['priority']['enum'])
             ->toBe(['critical', 'high', 'medium', 'low'])
+            ->and($handlingOperation['requestBody']['content']['multipart/form-data']['schema']['$ref'])
+            ->toBe('#/components/schemas/CreateTicketHandlingRequest')
+            ->and($handlingOperation['responses']['409']['content']['application/json']['schema']['$ref'])
+            ->toBe('#/components/schemas/TicketReadError')
+            ->and($documentation['components']['schemas']['CreateTicketHandlingRequest']['required'])
+            ->toBe(['notes', 'status'])
+            ->and($documentation['components']['schemas']['CreateTicketHandlingRequest']['properties']['status']['enum'])
+            ->toBe(['diproses', 'selesai'])
             ->and($detailOperation['responses']['200']['content']['application/json']['schema']['$ref'])
             ->toBe('#/components/schemas/TicketReadResponse')
             ->and($detailOperation['responses']['404']['content']['application/json']['schema']['$ref'])
@@ -119,6 +136,7 @@ test('it generates the Helpdesk ticket Swagger contract', function (): void {
                 'unit',
                 'assigned_officer',
                 'initial_evidence',
+                'completed_at',
                 'created_at',
             ]);
     } finally {

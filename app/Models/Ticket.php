@@ -9,6 +9,7 @@ use Database\Factories\TicketFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Ticket extends Model
 {
@@ -33,6 +34,7 @@ class Ticket extends Model
         'rejection_reason',
         'priority',
         'assigned_officer_id',
+        'completed_at',
     ];
 
     /**
@@ -45,6 +47,7 @@ class Ticket extends Model
             'status' => TicketStatus::class,
             'priority' => TicketPriority::class,
             'initial_evidence_size' => 'integer',
+            'completed_at' => 'datetime',
         ];
     }
 
@@ -61,5 +64,12 @@ class Ticket extends Model
     public function assignedOfficer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_officer_id');
+    }
+
+    public function handlings(): HasMany
+    {
+        return $this->hasMany(TicketHandling::class)
+            ->orderByDesc('created_at')
+            ->orderByDesc('id');
     }
 }

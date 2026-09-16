@@ -100,6 +100,66 @@ class TicketService
     }
 
     /**
+     * @param  array{notes: string, status: string, started_at?: string|null, completed_at?: string|null}  $data
+     */
+    public function addHandling(
+        Ticket $ticket,
+        array $data,
+        User $handledBy,
+        ?UploadedFile $resultPhoto = null,
+    ): Ticket {
+        $objectKey = $resultPhoto?->store('helpdesk/handling-results');
+
+        if ($resultPhoto !== null && $objectKey === false) {
+            throw new RuntimeException('The result photo could not be stored.');
+        }
+
+        try {
+            return DB::transaction(function () use ($ticket, $data, $handledBy, $resultPhoto, $objectKey): Ticket {
+                $lockedTicket = Ticket::query()
+                    ->whereKey($ticket->getKey())
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                if ($lockedTicket->status !== TicketStatus::Diproses) {
+                    throw new ConflictHttpException('Hanya tiket berstatus diproses yang dapat diperbarui penanganannya.');
+                }
+
+                $targetStatus = TicketStatus::from($data['status']);
+                $completedAt = $data['completed_at'] ?? null;
+
+                $lockedTicket->handlings()->create([
+                    'handled_by_id' => $handledBy->getKey(),
+                    'notes' => $data['notes'],
+                    'status' => $targetStatus,
+                    'started_at' => $data['started_at'] ?? null,
+                    'completed_at' => $completedAt,
+                    'result_photo_object_key' => $objectKey ?: null,
+                    'result_photo_original_name' => $resultPhoto?->getClientOriginalName(),
+                    'result_photo_mime_type' => $resultPhoto?->getMimeType(),
+                    'result_photo_size' => $resultPhoto?->getSize(),
+                ]);
+
+                $attributes = ['status' => $targetStatus->value];
+
+                if ($targetStatus === TicketStatus::Selesai) {
+                    $attributes['completed_at'] = $completedAt;
+                }
+
+                $lockedTicket->update($attributes);
+
+                return $lockedTicket;
+            });
+        } catch (Throwable $exception) {
+            if (is_string($objectKey)) {
+                Storage::delete($objectKey);
+            }
+
+            throw $exception;
+        }
+    }
+
+    /**
      * @param  array<string, mixed>  $attributes
      */
     private function updateWhenStatus(

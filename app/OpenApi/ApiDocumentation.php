@@ -166,9 +166,24 @@ use OpenApi\Annotations as OA;
  * )
  *
  * @OA\Schema(
+ *     schema="TicketHandling",
+ *     type="object",
+ *     required={"id","notes","status","started_at","completed_at","handled_by","result_photo","created_at"},
+ *
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="notes", type="string", example="Kabel daya dikencangkan dan perangkat diuji."),
+ *     @OA\Property(property="status", type="string", enum={"diproses","selesai"}, example="diproses"),
+ *     @OA\Property(property="started_at", type="string", format="date-time", nullable=true),
+ *     @OA\Property(property="completed_at", type="string", format="date-time", nullable=true),
+ *     @OA\Property(property="handled_by", ref="#/components/schemas/TicketOfficerSummary"),
+ *     @OA\Property(property="result_photo", ref="#/components/schemas/TicketFileMetadata", nullable=true),
+ *     @OA\Property(property="created_at", type="string", format="date-time")
+ * )
+ *
+ * @OA\Schema(
  *     schema="TicketRead",
  *     type="object",
- *     required={"id","ticket_number","service","category","description","status","rejection_reason","priority","reporter","unit","assigned_officer","initial_evidence","created_at"},
+ *     required={"id","ticket_number","service","category","description","status","rejection_reason","priority","reporter","unit","assigned_officer","initial_evidence","completed_at","created_at"},
  *
  *     @OA\Property(property="id", type="integer", example=1),
  *     @OA\Property(property="ticket_number", type="string", example="TIK-2026-0001"),
@@ -182,6 +197,8 @@ use OpenApi\Annotations as OA;
  *     @OA\Property(property="unit", ref="#/components/schemas/TicketUnitSummary"),
  *     @OA\Property(property="assigned_officer", ref="#/components/schemas/TicketOfficerSummary", nullable=true),
  *     @OA\Property(property="initial_evidence", ref="#/components/schemas/TicketFileMetadata", nullable=true),
+ *     @OA\Property(property="completed_at", type="string", format="date-time", nullable=true),
+ *     @OA\Property(property="handlings", type="array", @OA\Items(ref="#/components/schemas/TicketHandling")),
  *     @OA\Property(property="created_at", type="string", format="date-time")
  * )
  *
@@ -221,6 +238,18 @@ use OpenApi\Annotations as OA;
  *
  *     @OA\Property(property="priority", type="string", enum={"critical","high","medium","low"}, example="high"),
  *     @OA\Property(property="officer_id", type="integer", example=2)
+ * )
+ *
+ * @OA\Schema(
+ *     schema="CreateTicketHandlingRequest",
+ *     type="object",
+ *     required={"notes","status"},
+ *
+ *     @OA\Property(property="notes", type="string", example="Kabel daya dikencangkan dan perangkat diuji."),
+ *     @OA\Property(property="status", type="string", enum={"diproses","selesai"}, example="diproses"),
+ *     @OA\Property(property="started_at", type="string", format="date-time", nullable=true),
+ *     @OA\Property(property="completed_at", type="string", format="date-time", nullable=true, description="Required when status is selesai. Must be equal to or after started_at when a start time is supplied."),
+ *     @OA\Property(property="result_photo", type="string", format="binary", nullable=true)
  * )
  *
  * @OA\Schema(
@@ -1246,6 +1275,28 @@ class ApiDocumentation
      * )
      */
     public function ticketsAssign(): void {}
+
+    /**
+     * @OA\Post(
+     *     path="/tickets/{ticket}/handlings",
+     *     operationId="createTicketHandling",
+     *     tags={"Helpdesk"},
+     *     summary="Add ticket handling history",
+     *     description="Adds history to a ticket currently in progress. The ticket remains diproses or becomes selesai; this endpoint does not start processing from terverifikasi.",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
+     *
+     *     @OA\RequestBody(required=true, @OA\MediaType(mediaType="multipart/form-data", @OA\Schema(ref="#/components/schemas/CreateTicketHandlingRequest"))),
+     *
+     *     @OA\Response(response=200, description="Ticket handling history stored", @OA\JsonContent(ref="#/components/schemas/TicketActionResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=404, description="Ticket not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=409, description="Ticket state conflict", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=422, description="Invalid handling data", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
+     * )
+     */
+    public function ticketHandlingsStore(): void {}
 
     /**
      * @OA\Get(

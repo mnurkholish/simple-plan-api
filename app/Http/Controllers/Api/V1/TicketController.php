@@ -76,6 +76,7 @@ class TicketController extends Controller
     {
         return new TicketResource($ticket->load([
             'assignedOfficer:id,name',
+            'handlings.handledBy:id,name',
             'reporter:id,name',
             'unit:id,unit_name',
         ]));

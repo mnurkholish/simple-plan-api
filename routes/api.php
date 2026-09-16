@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\RoleController;
 use App\Http\Controllers\Api\V1\TicketController;
+use App\Http\Controllers\Api\V1\TicketHandlingController;
 use App\Http\Controllers\Api\V1\UnitController;
 use App\Http\Controllers\Api\V1\UserController;
 use Illuminate\Support\Facades\Route;
@@ -72,6 +73,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             ->missing(fn () => response()->json(['message' => 'Resource not found.'], 404));
         Route::post('tickets/{ticket}/assign', [TicketController::class, 'assign'])
             ->name('tickets.assign')
+            ->missing(fn () => response()->json(['message' => 'Resource not found.'], 404));
+        Route::post('tickets/{ticket}/handlings', [TicketHandlingController::class, 'store'])
+            ->name('tickets.handlings.store')
             ->missing(fn () => response()->json(['message' => 'Resource not found.'], 404));
         Route::get('tickets/{ticket}', [TicketController::class, 'show'])
             ->name('tickets.show')

@@ -2549,6 +2549,94 @@
                 ]
             }
         },
+        "/tickets/{ticket}/handlings": {
+            "post": {
+                "tags": [
+                    "Helpdesk"
+                ],
+                "summary": "Add ticket handling history",
+                "description": "Adds history to a ticket currently in progress. The ticket remains diproses or becomes selesai; this endpoint does not start processing from terverifikasi.",
+                "operationId": "createTicketHandling",
+                "parameters": [
+                    {
+                        "name": "ticket",
+                        "in": "path",
+                        "description": "Internal ticket ID.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateTicketHandlingRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Ticket handling history stored",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketActionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Ticket not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Ticket state conflict",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Invalid handling data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/tickets/{ticket}": {
             "get": {
                 "tags": [
@@ -2917,6 +3005,62 @@
                 },
                 "type": "object"
             },
+            "TicketHandling": {
+                "required": [
+                    "id",
+                    "notes",
+                    "status",
+                    "started_at",
+                    "completed_at",
+                    "handled_by",
+                    "result_photo",
+                    "created_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "notes": {
+                        "type": "string",
+                        "example": "Kabel daya dikencangkan dan perangkat diuji."
+                    },
+                    "status": {
+                        "type": "string",
+                        "example": "diproses",
+                        "enum": [
+                            "diproses",
+                            "selesai"
+                        ]
+                    },
+                    "started_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "completed_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "handled_by": {
+                        "$ref": "#/components/schemas/TicketOfficerSummary"
+                    },
+                    "result_photo": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/TicketFileMetadata"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
             "TicketRead": {
                 "required": [
                     "id",
@@ -2931,6 +3075,7 @@
                     "unit",
                     "assigned_officer",
                     "initial_evidence",
+                    "completed_at",
                     "created_at"
                 ],
                 "properties": {
@@ -3007,6 +3152,17 @@
                             }
                         ],
                         "nullable": true
+                    },
+                    "completed_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "handlings": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/TicketHandling"
+                        }
                     },
                     "created_at": {
                         "type": "string",
@@ -3099,6 +3255,43 @@
                     "officer_id": {
                         "type": "integer",
                         "example": 2
+                    }
+                },
+                "type": "object"
+            },
+            "CreateTicketHandlingRequest": {
+                "required": [
+                    "notes",
+                    "status"
+                ],
+                "properties": {
+                    "notes": {
+                        "type": "string",
+                        "example": "Kabel daya dikencangkan dan perangkat diuji."
+                    },
+                    "status": {
+                        "type": "string",
+                        "example": "diproses",
+                        "enum": [
+                            "diproses",
+                            "selesai"
+                        ]
+                    },
+                    "started_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "completed_at": {
+                        "description": "Required when status is selesai. Must be equal to or after started_at when a start time is supplied.",
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "result_photo": {
+                        "type": "string",
+                        "format": "binary",
+                        "nullable": true
                     }
                 },
                 "type": "object"
