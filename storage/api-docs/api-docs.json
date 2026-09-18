@@ -2129,7 +2129,7 @@
                     "Helpdesk"
                 ],
                 "summary": "List Helpdesk tickets",
-                "description": "Returns TIK and Sarpras tickets ordered from newest to oldest.",
+                "description": "Returns TIK and Sarpras tickets ordered from newest to oldest. Requires the tickets-access permission.",
                 "operationId": "listTickets",
                 "parameters": [
                     {
@@ -2234,6 +2234,16 @@
                             }
                         }
                     },
+                    "403": {
+                        "description": "Missing tickets-access permission",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
                     "422": {
                         "description": "Invalid filters",
                         "content": {
@@ -2256,7 +2266,7 @@
                     "Helpdesk"
                 ],
                 "summary": "Create a Helpdesk ticket",
-                "description": "Creates a TIK or Sarpras ticket for the authenticated reporter with status baru.",
+                "description": "Creates a TIK or Sarpras ticket for the authenticated reporter with status baru. Requires the tickets-create permission.",
                 "operationId": "createTicket",
                 "requestBody": {
                     "required": true,
@@ -2289,6 +2299,16 @@
                             }
                         }
                     },
+                    "403": {
+                        "description": "Missing tickets-create permission",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
                     "422": {
                         "description": "Invalid ticket data",
                         "content": {
@@ -2313,6 +2333,7 @@
                     "Helpdesk"
                 ],
                 "summary": "Verify a new Helpdesk ticket",
+                "description": "Requires the tickets-verify permission.",
                 "operationId": "verifyTicket",
                 "parameters": [
                     {
@@ -2338,6 +2359,16 @@
                     },
                     "401": {
                         "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing tickets-verify permission",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -2380,6 +2411,7 @@
                     "Helpdesk"
                 ],
                 "summary": "Reject a new Helpdesk ticket",
+                "description": "Requires the tickets-reject permission.",
                 "operationId": "rejectTicket",
                 "parameters": [
                     {
@@ -2415,6 +2447,16 @@
                     },
                     "401": {
                         "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing tickets-reject permission",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -2467,7 +2509,7 @@
                     "Helpdesk"
                 ],
                 "summary": "Set priority and assign an officer",
-                "description": "Assignment keeps the ticket status as terverifikasi.",
+                "description": "Assignment keeps the ticket status as terverifikasi. Requires the tickets-assign permission.",
                 "operationId": "assignTicket",
                 "parameters": [
                     {
@@ -2503,6 +2545,16 @@
                     },
                     "401": {
                         "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing tickets-assign permission",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -2555,7 +2607,7 @@
                     "Helpdesk"
                 ],
                 "summary": "Add ticket handling history",
-                "description": "Adds history to a ticket currently in progress. The ticket remains diproses or becomes selesai; this endpoint does not start processing from terverifikasi.",
+                "description": "Adds history to a ticket currently in progress. The ticket remains diproses or becomes selesai; this endpoint does not start processing from terverifikasi. Requires the tickets-handle permission.",
                 "operationId": "createTicketHandling",
                 "parameters": [
                     {
@@ -2591,6 +2643,16 @@
                     },
                     "401": {
                         "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing tickets-handle permission",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -2643,6 +2705,7 @@
                     "Helpdesk"
                 ],
                 "summary": "Show a Helpdesk ticket",
+                "description": "Requires the tickets-access permission.",
                 "operationId": "showTicket",
                 "parameters": [
                     {
@@ -2668,6 +2731,16 @@
                     },
                     "401": {
                         "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing tickets-access permission",
                         "content": {
                             "application/json": {
                                 "schema": {
