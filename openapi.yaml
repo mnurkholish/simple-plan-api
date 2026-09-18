@@ -25,6 +25,7 @@ paths:
       summary: Melihat daftar tiket
       operationId: listTickets
       x-auth-required: true
+      x-required-permission: tickets-access
       parameters:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PerPage'
@@ -73,6 +74,8 @@ paths:
                 $ref: '#/components/schemas/TicketCollectionResponse'
         '401':
           $ref: '#/components/responses/TicketUnauthenticated'
+        '403':
+          $ref: '#/components/responses/TicketForbidden'
         '422':
           $ref: '#/components/responses/TicketValidationError'
 
@@ -81,6 +84,7 @@ paths:
       summary: Membuat tiket
       operationId: createTicket
       x-auth-required: true
+      x-required-permission: tickets-create
       requestBody:
         required: true
         content:
@@ -96,6 +100,8 @@ paths:
                 $ref: '#/components/schemas/TicketCreateResponse'
         '401':
           $ref: '#/components/responses/TicketUnauthenticated'
+        '403':
+          $ref: '#/components/responses/TicketForbidden'
         '422':
           $ref: '#/components/responses/TicketValidationError'
 
@@ -105,6 +111,7 @@ paths:
       summary: Melihat detail tiket
       operationId: showTicket
       x-auth-required: true
+      x-required-permission: tickets-access
       parameters:
         - $ref: '#/components/parameters/TicketId'
       responses:
@@ -116,6 +123,8 @@ paths:
                 $ref: '#/components/schemas/TicketReadResponse'
         '401':
           $ref: '#/components/responses/TicketUnauthenticated'
+        '403':
+          $ref: '#/components/responses/TicketForbidden'
         '404':
           $ref: '#/components/responses/TicketNotFound'
 
@@ -125,6 +134,7 @@ paths:
       summary: Memverifikasi tiket baru
       operationId: verifyTicket
       x-auth-required: true
+      x-required-permission: tickets-verify
       parameters:
         - $ref: '#/components/parameters/TicketId'
       responses:
@@ -136,6 +146,8 @@ paths:
                 $ref: '#/components/schemas/TicketActionResponse'
         '401':
           $ref: '#/components/responses/TicketUnauthenticated'
+        '403':
+          $ref: '#/components/responses/TicketForbidden'
         '404':
           $ref: '#/components/responses/TicketNotFound'
         '409':
@@ -147,6 +159,7 @@ paths:
       summary: Menolak tiket baru
       operationId: rejectTicket
       x-auth-required: true
+      x-required-permission: tickets-reject
       parameters:
         - $ref: '#/components/parameters/TicketId'
       requestBody:
@@ -164,6 +177,8 @@ paths:
                 $ref: '#/components/schemas/TicketActionResponse'
         '401':
           $ref: '#/components/responses/TicketUnauthenticated'
+        '403':
+          $ref: '#/components/responses/TicketForbidden'
         '404':
           $ref: '#/components/responses/TicketNotFound'
         '409':
@@ -178,6 +193,7 @@ paths:
       operationId: assignTicket
       description: Assignment tidak mengubah status tiket dari Terverifikasi menjadi Diproses.
       x-auth-required: true
+      x-required-permission: tickets-assign
       parameters:
         - $ref: '#/components/parameters/TicketId'
       requestBody:
@@ -195,6 +211,8 @@ paths:
                 $ref: '#/components/schemas/TicketActionResponse'
         '401':
           $ref: '#/components/responses/TicketUnauthenticated'
+        '403':
+          $ref: '#/components/responses/TicketForbidden'
         '404':
           $ref: '#/components/responses/TicketNotFound'
         '409':
@@ -210,8 +228,9 @@ paths:
       description: >-
         Menambahkan satu catatan pada tiket yang sedang Diproses. Status dapat
         tetap Diproses atau berubah menjadi Selesai. Endpoint ini tidak memulai
-        proses dari status Terverifikasi.
+        proses dari status Terverifikasi. Membutuhkan permission tickets-handle.
       x-auth-required: true
+      x-required-permission: tickets-handle
       parameters:
         - $ref: '#/components/parameters/TicketId'
       requestBody:
@@ -229,6 +248,8 @@ paths:
                 $ref: '#/components/schemas/TicketActionResponse'
         '401':
           $ref: '#/components/responses/TicketUnauthenticated'
+        '403':
+          $ref: '#/components/responses/TicketForbidden'
         '404':
           $ref: '#/components/responses/TicketNotFound'
         '409':
@@ -661,6 +682,15 @@ components:
             $ref: '#/components/schemas/TicketReadError'
           example:
             message: Unauthenticated.
+
+    TicketForbidden:
+      description: Pengguna tidak memiliki permission yang dibutuhkan endpoint.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TicketReadError'
+          example:
+            message: User does not have the right permissions.
 
     TicketNotFound:
       description: Tiket tidak ditemukan.

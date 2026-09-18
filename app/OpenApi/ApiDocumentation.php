@@ -1179,7 +1179,7 @@ class ApiDocumentation
      *     operationId="listTickets",
      *     tags={"Helpdesk"},
      *     summary="List Helpdesk tickets",
-     *     description="Returns TIK and Sarpras tickets ordered from newest to oldest.",
+     *     description="Returns TIK and Sarpras tickets ordered from newest to oldest. Requires the tickets-access permission.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(name="page", in="query", required=false, @OA\Schema(type="integer", minimum=1, default=1)),
@@ -1192,6 +1192,7 @@ class ApiDocumentation
      *
      *     @OA\Response(response=200, description="Paginated tickets", @OA\JsonContent(ref="#/components/schemas/TicketCollectionResponse")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Missing tickets-access permission", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=422, description="Invalid filters", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
      * )
      */
@@ -1203,13 +1204,14 @@ class ApiDocumentation
      *     operationId="createTicket",
      *     tags={"Helpdesk"},
      *     summary="Create a Helpdesk ticket",
-     *     description="Creates a TIK or Sarpras ticket for the authenticated reporter with status baru.",
+     *     description="Creates a TIK or Sarpras ticket for the authenticated reporter with status baru. Requires the tickets-create permission.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\RequestBody(required=true, @OA\MediaType(mediaType="multipart/form-data", @OA\Schema(ref="#/components/schemas/CreateTicketRequest"))),
      *
      *     @OA\Response(response=201, description="Ticket created", @OA\JsonContent(ref="#/components/schemas/TicketCreateResponse")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Missing tickets-create permission", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=422, description="Invalid ticket data", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
      * )
      */
@@ -1221,12 +1223,14 @@ class ApiDocumentation
      *     operationId="verifyTicket",
      *     tags={"Helpdesk"},
      *     summary="Verify a new Helpdesk ticket",
+     *     description="Requires the tickets-verify permission.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
      *
      *     @OA\Response(response=200, description="Ticket verified", @OA\JsonContent(ref="#/components/schemas/TicketActionResponse")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Missing tickets-verify permission", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=404, description="Ticket not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=409, description="Ticket state conflict", @OA\JsonContent(ref="#/components/schemas/TicketReadError"))
      * )
@@ -1239,6 +1243,7 @@ class ApiDocumentation
      *     operationId="rejectTicket",
      *     tags={"Helpdesk"},
      *     summary="Reject a new Helpdesk ticket",
+     *     description="Requires the tickets-reject permission.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
@@ -1247,6 +1252,7 @@ class ApiDocumentation
      *
      *     @OA\Response(response=200, description="Ticket rejected", @OA\JsonContent(ref="#/components/schemas/TicketActionResponse")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Missing tickets-reject permission", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=404, description="Ticket not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=409, description="Ticket state conflict", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=422, description="Invalid rejection data", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
@@ -1260,7 +1266,7 @@ class ApiDocumentation
      *     operationId="assignTicket",
      *     tags={"Helpdesk"},
      *     summary="Set priority and assign an officer",
-     *     description="Assignment keeps the ticket status as terverifikasi.",
+     *     description="Assignment keeps the ticket status as terverifikasi. Requires the tickets-assign permission.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
@@ -1269,6 +1275,7 @@ class ApiDocumentation
      *
      *     @OA\Response(response=200, description="Priority and officer assigned", @OA\JsonContent(ref="#/components/schemas/TicketActionResponse")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Missing tickets-assign permission", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=404, description="Ticket not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=409, description="Ticket state conflict", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=422, description="Invalid assignment data", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
@@ -1282,7 +1289,7 @@ class ApiDocumentation
      *     operationId="createTicketHandling",
      *     tags={"Helpdesk"},
      *     summary="Add ticket handling history",
-     *     description="Adds history to a ticket currently in progress. The ticket remains diproses or becomes selesai; this endpoint does not start processing from terverifikasi.",
+     *     description="Adds history to a ticket currently in progress. The ticket remains diproses or becomes selesai; this endpoint does not start processing from terverifikasi. Requires the tickets-handle permission.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
@@ -1291,6 +1298,7 @@ class ApiDocumentation
      *
      *     @OA\Response(response=200, description="Ticket handling history stored", @OA\JsonContent(ref="#/components/schemas/TicketActionResponse")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Missing tickets-handle permission", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=404, description="Ticket not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=409, description="Ticket state conflict", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=422, description="Invalid handling data", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
@@ -1304,12 +1312,14 @@ class ApiDocumentation
      *     operationId="showTicket",
      *     tags={"Helpdesk"},
      *     summary="Show a Helpdesk ticket",
+     *     description="Requires the tickets-access permission.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
      *
      *     @OA\Response(response=200, description="Ticket detail", @OA\JsonContent(ref="#/components/schemas/TicketReadResponse")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Missing tickets-access permission", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=404, description="Ticket not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError"))
      * )
      */
