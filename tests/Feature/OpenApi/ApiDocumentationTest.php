@@ -4,6 +4,22 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Symfony\Component\Yaml\Yaml;
 
+/**
+ * @return list<array{path: string, method: string, permission: string}>
+ */
+function documentedTicketPermissions(): array
+{
+    return [
+        ['path' => '/tickets', 'method' => 'get', 'permission' => 'tickets-access'],
+        ['path' => '/tickets', 'method' => 'post', 'permission' => 'tickets-create'],
+        ['path' => '/tickets/{ticket}', 'method' => 'get', 'permission' => 'tickets-access'],
+        ['path' => '/tickets/{ticket}/verify', 'method' => 'post', 'permission' => 'tickets-verify'],
+        ['path' => '/tickets/{ticket}/reject', 'method' => 'post', 'permission' => 'tickets-reject'],
+        ['path' => '/tickets/{ticket}/assign', 'method' => 'post', 'permission' => 'tickets-assign'],
+        ['path' => '/tickets/{ticket}/handlings', 'method' => 'post', 'permission' => 'tickets-handle'],
+    ];
+}
+
 test('the Helpdesk OpenAPI contract only documents implemented ticket operations', function (): void {
     $contract = Yaml::parseFile(base_path('openapi.yaml'));
     $expectedPaths = [
@@ -14,6 +30,14 @@ test('the Helpdesk OpenAPI contract only documents implemented ticket operations
         '/tickets/{ticket}/assign',
         '/tickets/{ticket}/handlings',
     ];
+
+    foreach (documentedTicketPermissions() as $operation) {
+        $documentedOperation = $contract['paths'][$operation['path']][$operation['method']];
+
+        expect($documentedOperation['x-required-permission'])->toBe($operation['permission'])
+            ->and($documentedOperation['responses']['403']['$ref'])
+            ->toBe('#/components/responses/TicketForbidden');
+    }
 
     expect($contract['paths'])->toHaveKeys($expectedPaths)
         ->and(array_keys($contract['paths']))->toBe($expectedPaths)
@@ -30,6 +54,10 @@ test('the Helpdesk OpenAPI contract only documents implemented ticket operations
         ->toBe(['critical', 'high', 'medium', 'low'])
         ->and($contract['paths']['/tickets/{ticket}/handlings']['post']['requestBody']['content']['multipart/form-data']['schema']['$ref'])
         ->toBe('#/components/schemas/CreateTicketHandlingRequest')
+        ->and($contract['paths']['/tickets/{ticket}/handlings']['post']['x-required-permission'])
+        ->toBe('tickets-handle')
+        ->and($contract['paths']['/tickets/{ticket}/handlings']['post']['responses']['403']['$ref'])
+        ->toBe('#/components/responses/TicketForbidden')
         ->and($contract['components']['schemas']['CreateTicketHandlingRequest']['required'])
         ->toBe(['notes', 'status'])
         ->and($contract['components']['schemas']['CreateTicketHandlingRequest']['properties']['status']['enum'])
@@ -93,6 +121,14 @@ test('it generates the Helpdesk ticket Swagger contract', function (): void {
         $assignOperation = $documentation['paths']['/tickets/{ticket}/assign']['post'];
         $handlingOperation = $documentation['paths']['/tickets/{ticket}/handlings']['post'];
 
+        foreach (documentedTicketPermissions() as $operation) {
+            $documentedOperation = $documentation['paths'][$operation['path']][$operation['method']];
+
+            expect($documentedOperation['description'])->toContain($operation['permission'])
+                ->and($documentedOperation['responses']['403']['content']['application/json']['schema']['$ref'])
+                ->toBe('#/components/schemas/TicketReadError');
+        }
+
         expect($createOperation['security'])->toBe([['sanctum' => []]])
             ->and($createOperation['requestBody']['content']['multipart/form-data']['schema']['$ref'])
             ->toBe('#/components/schemas/CreateTicketRequest')
@@ -112,6 +148,8 @@ test('it generates the Helpdesk ticket Swagger contract', function (): void {
             ->toBe(['critical', 'high', 'medium', 'low'])
             ->and($handlingOperation['requestBody']['content']['multipart/form-data']['schema']['$ref'])
             ->toBe('#/components/schemas/CreateTicketHandlingRequest')
+            ->and($handlingOperation['responses']['403']['content']['application/json']['schema']['$ref'])
+            ->toBe('#/components/schemas/TicketReadError')
             ->and($handlingOperation['responses']['409']['content']['application/json']['schema']['$ref'])
             ->toBe('#/components/schemas/TicketReadError')
             ->and($documentation['components']['schemas']['CreateTicketHandlingRequest']['required'])

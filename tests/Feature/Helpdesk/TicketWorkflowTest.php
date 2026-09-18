@@ -4,13 +4,29 @@ use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
 use App\Models\Ticket;
 use App\Models\User;
+use Database\Seeders\DomainPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Spatie\Permission\Models\Permission;
 
 uses(RefreshDatabase::class);
 
+function actingAsTicketWorkflowUser(string $permissionName): User
+{
+    $user = User::factory()->create();
+    $permission = Permission::firstOrCreate([
+        'name' => $permissionName,
+        'guard_name' => 'web',
+    ]);
+
+    $user->givePermissionTo($permission);
+    Sanctum::actingAs($user);
+
+    return $user;
+}
+
 test('new ticket can be verified', function (): void {
-    Sanctum::actingAs(User::factory()->create());
+    actingAsTicketWorkflowUser('tickets-verify');
     $ticket = Ticket::factory()->create(['status' => TicketStatus::Baru]);
 
     $response = $this->postJson("/api/v1/tickets/{$ticket->id}/verify");
@@ -26,7 +42,7 @@ test('new ticket can be verified', function (): void {
 });
 
 test('verify returns 409 when ticket is not new', function (TicketStatus $status): void {
-    Sanctum::actingAs(User::factory()->create());
+    actingAsTicketWorkflowUser('tickets-verify');
     $ticket = Ticket::factory()->create(['status' => $status]);
 
     $response = $this->postJson("/api/v1/tickets/{$ticket->id}/verify");
@@ -43,7 +59,7 @@ test('verify returns 409 when ticket is not new', function (TicketStatus $status
 ]);
 
 test('new ticket can be rejected with a reason', function (): void {
-    Sanctum::actingAs(User::factory()->create());
+    actingAsTicketWorkflowUser('tickets-reject');
     $ticket = Ticket::factory()->create(['status' => TicketStatus::Baru]);
 
     $response = $this->postJson("/api/v1/tickets/{$ticket->id}/reject", [
@@ -63,7 +79,7 @@ test('new ticket can be rejected with a reason', function (): void {
 });
 
 test('reject returns 422 when reason is missing', function (): void {
-    Sanctum::actingAs(User::factory()->create());
+    actingAsTicketWorkflowUser('tickets-reject');
     $ticket = Ticket::factory()->create(['status' => TicketStatus::Baru]);
 
     $response = $this->postJson("/api/v1/tickets/{$ticket->id}/reject");
@@ -76,7 +92,7 @@ test('reject returns 422 when reason is missing', function (): void {
 });
 
 test('reject returns 409 when ticket is not new', function (TicketStatus $status): void {
-    Sanctum::actingAs(User::factory()->create());
+    actingAsTicketWorkflowUser('tickets-reject');
     $ticket = Ticket::factory()->create(['status' => $status]);
 
     $response = $this->postJson("/api/v1/tickets/{$ticket->id}/reject", [
@@ -96,7 +112,7 @@ test('reject returns 409 when ticket is not new', function (TicketStatus $status
 ]);
 
 test('verified ticket can be assigned an active officer and priority without changing status', function (TicketPriority $priority): void {
-    Sanctum::actingAs(User::factory()->create());
+    actingAsTicketWorkflowUser('tickets-assign');
     $officer = User::factory()->create([
         'name' => 'Petugas Terpilih',
         'status' => 'active',
@@ -129,7 +145,7 @@ test('verified ticket can be assigned an active officer and priority without cha
 ]);
 
 test('assign returns 422 when priority or officer is missing', function (): void {
-    Sanctum::actingAs(User::factory()->create());
+    actingAsTicketWorkflowUser('tickets-assign');
     $ticket = Ticket::factory()->create(['status' => TicketStatus::Terverifikasi]);
 
     $response = $this->postJson("/api/v1/tickets/{$ticket->id}/assign");
@@ -142,7 +158,7 @@ test('assign returns 422 when priority or officer is missing', function (): void
 });
 
 test('assign returns 422 for an unsupported priority', function (string $priority): void {
-    Sanctum::actingAs(User::factory()->create());
+    actingAsTicketWorkflowUser('tickets-assign');
     $officer = User::factory()->create(['status' => 'active']);
     $ticket = Ticket::factory()->create(['status' => TicketStatus::Terverifikasi]);
 
@@ -162,7 +178,7 @@ test('assign returns 422 for an unsupported priority', function (string $priorit
 ]);
 
 test('assign returns 422 for an unavailable officer', function (int $officerId): void {
-    Sanctum::actingAs(User::factory()->create());
+    actingAsTicketWorkflowUser('tickets-assign');
     $ticket = Ticket::factory()->create(['status' => TicketStatus::Terverifikasi]);
 
     $response = $this->postJson("/api/v1/tickets/{$ticket->id}/assign", [
@@ -182,7 +198,7 @@ test('assign returns 422 for an unavailable officer', function (int $officerId):
 ]);
 
 test('assign returns 409 when ticket is not verified', function (TicketStatus $status): void {
-    Sanctum::actingAs(User::factory()->create());
+    actingAsTicketWorkflowUser('tickets-assign');
     $officer = User::factory()->create(['status' => 'active']);
     $ticket = Ticket::factory()->create(['status' => $status]);
 
@@ -215,14 +231,27 @@ test('guest cannot use ticket workflow endpoints', function (string $endpoint, a
     'assign' => ['assign', ['priority' => 'high', 'officer_id' => 1]],
 ]);
 
-test('ticket workflow endpoint returns 404 when ticket does not exist', function (string $endpoint, array $payload): void {
+test('authenticated user without workflow permission receives 403', function (string $endpoint, array $payload): void {
+    $this->seed(DomainPermissionSeeder::class);
+    $ticket = Ticket::factory()->create();
     Sanctum::actingAs(User::factory()->create());
+
+    $this->postJson("/api/v1/tickets/{$ticket->id}/{$endpoint}", $payload)
+        ->assertForbidden();
+})->with([
+    'verify' => ['verify', []],
+    'reject' => ['reject', ['reason' => 'Tidak dapat diproses.']],
+    'assign' => ['assign', ['priority' => 'high', 'officer_id' => 1]],
+]);
+
+test('ticket workflow endpoint returns 404 when ticket does not exist', function (string $endpoint, array $payload, string $permission): void {
+    actingAsTicketWorkflowUser($permission);
 
     $this->postJson("/api/v1/tickets/999999/{$endpoint}", $payload)
         ->assertNotFound()
         ->assertExactJson(['message' => 'Resource not found.']);
 })->with([
-    'verify' => ['verify', []],
-    'reject' => ['reject', ['reason' => 'Tidak dapat diproses.']],
-    'assign' => ['assign', ['priority' => 'high', 'officer_id' => 999999]],
+    'verify' => ['verify', [], 'tickets-verify'],
+    'reject' => ['reject', ['reason' => 'Tidak dapat diproses.'], 'tickets-reject'],
+    'assign' => ['assign', ['priority' => 'high', 'officer_id' => 999999], 'tickets-assign'],
 ]);

@@ -8,8 +8,23 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
+use Spatie\Permission\Models\Permission;
 
 uses(RefreshDatabase::class);
+
+function actingAsTicketCreator(?User $user = null): User
+{
+    $user ??= User::factory()->create();
+    $permission = Permission::firstOrCreate([
+        'name' => 'tickets-create',
+        'guard_name' => 'web',
+    ]);
+
+    $user->givePermissionTo($permission);
+    Sanctum::actingAs($user);
+
+    return $user;
+}
 
 test('guest cannot create a ticket', function (): void {
     $unit = Unit::factory()->create();
@@ -21,10 +36,23 @@ test('guest cannot create a ticket', function (): void {
     ])->assertUnauthorized();
 });
 
+test('authenticated user without tickets-create permission cannot create a ticket', function (): void {
+    $unit = Unit::factory()->create();
+    Sanctum::actingAs(User::factory()->create());
+
+    $this->postJson('/api/v1/tickets', [
+        'service' => 'tik',
+        'unit_id' => $unit->id,
+        'description' => 'Komputer tidak dapat menyala.',
+    ])->assertForbidden();
+
+    expect(Ticket::query()->count())->toBe(0);
+});
+
 test('authenticated user can create a TIK ticket', function (): void {
     $reporter = User::factory()->create();
     $unit = Unit::factory()->create();
-    Sanctum::actingAs($reporter);
+    actingAsTicketCreator($reporter);
 
     $response = $this->postJson('/api/v1/tickets', [
         'service' => 'tik',
@@ -59,7 +87,7 @@ test('authenticated user can create a TIK ticket', function (): void {
 test('authenticated user can create a Sarpras ticket without a category', function (): void {
     $reporter = User::factory()->create();
     $unit = Unit::factory()->create();
-    Sanctum::actingAs($reporter);
+    actingAsTicketCreator($reporter);
 
     $response = $this->postJson('/api/v1/tickets', [
         'service' => 'sarpras',
@@ -78,7 +106,7 @@ test('authenticated user can create a Sarpras ticket without a category', functi
 });
 
 test('ticket creation requires its documented fields', function (): void {
-    Sanctum::actingAs(User::factory()->create());
+    actingAsTicketCreator();
 
     $this->postJson('/api/v1/tickets')
         ->assertUnprocessable()
@@ -86,7 +114,7 @@ test('ticket creation requires its documented fields', function (): void {
 });
 
 test('ticket creation rejects an unknown service', function (): void {
-    Sanctum::actingAs(User::factory()->create());
+    actingAsTicketCreator();
 
     $this->postJson('/api/v1/tickets', [
         'service' => 'umum',
@@ -98,7 +126,7 @@ test('ticket creation rejects an unknown service', function (): void {
 });
 
 test('ticket creation rejects an unavailable unit', function (): void {
-    Sanctum::actingAs(User::factory()->create());
+    actingAsTicketCreator();
 
     $this->postJson('/api/v1/tickets', [
         'service' => 'tik',
@@ -113,7 +141,7 @@ test('ticket creation keeps server controlled fields authoritative', function ()
     $reporter = User::factory()->create();
     $otherUser = User::factory()->create();
     $unit = Unit::factory()->create();
-    Sanctum::actingAs($reporter);
+    actingAsTicketCreator($reporter);
 
     $response = $this->postJson('/api/v1/tickets', [
         'service' => 'tik',
@@ -134,7 +162,7 @@ test('ticket creation keeps server controlled fields authoritative', function ()
 test('generated ticket numbers are unique', function (): void {
     $reporter = User::factory()->create();
     $unit = Unit::factory()->create();
-    Sanctum::actingAs($reporter);
+    actingAsTicketCreator($reporter);
 
     $payload = [
         'service' => 'tik',
@@ -158,7 +186,7 @@ test('initial evidence image is stored with portable metadata', function (): voi
 
     $reporter = User::factory()->create();
     $unit = Unit::factory()->create();
-    Sanctum::actingAs($reporter);
+    actingAsTicketCreator($reporter);
 
     $response = $this->post('/api/v1/tickets', [
         'service' => 'tik',
@@ -187,7 +215,7 @@ test('initial evidence image is stored with portable metadata', function (): voi
 
 test('initial evidence must be an image no larger than two megabytes', function (UploadedFile $file): void {
     Storage::fake('local');
-    Sanctum::actingAs(User::factory()->create());
+    actingAsTicketCreator();
 
     $this->post('/api/v1/tickets', [
         'service' => 'tik',

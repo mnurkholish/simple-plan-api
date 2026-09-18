@@ -7,8 +7,23 @@ use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Spatie\Permission\Models\Permission;
 
 uses(RefreshDatabase::class);
+
+function actingAsTicketReader(?User $user = null): User
+{
+    $user ??= User::factory()->create();
+    $permission = Permission::firstOrCreate([
+        'name' => 'tickets-access',
+        'guard_name' => 'web',
+    ]);
+
+    $user->givePermissionTo($permission);
+    Sanctum::actingAs($user);
+
+    return $user;
+}
 
 test('it returns 401 when listing tickets without authentication', function (): void {
     $this->getJson('/api/v1/tickets')
@@ -22,10 +37,25 @@ test('it returns 401 when viewing a ticket without authentication', function ():
         ->assertUnauthorized();
 });
 
+test('it returns 403 when listing tickets without tickets-access permission', function (): void {
+    Sanctum::actingAs(User::factory()->create());
+
+    $this->getJson('/api/v1/tickets')
+        ->assertForbidden();
+});
+
+test('it returns 403 when viewing a ticket without tickets-access permission', function (): void {
+    $ticket = Ticket::factory()->create();
+    Sanctum::actingAs(User::factory()->create());
+
+    $this->getJson("/api/v1/tickets/{$ticket->id}")
+        ->assertForbidden();
+});
+
 test('it returns tickets newest first with pagination metadata', function (): void {
     $reporter = User::factory()->create(['name' => 'Rina Pelapor']);
     $unit = Unit::factory()->create(['unit_name' => 'Unit Rawat Jalan']);
-    Sanctum::actingAs($reporter);
+    actingAsTicketReader($reporter);
 
     Ticket::factory()->for($reporter, 'reporter')->for($unit)->create([
         'ticket_number' => 'TIK-2026-0001',
@@ -71,7 +101,7 @@ test('it returns tickets newest first with pagination metadata', function (): vo
 });
 
 test('it returns an empty paginated ticket collection', function (): void {
-    Sanctum::actingAs(User::factory()->create());
+    actingAsTicketReader();
 
     $this->getJson('/api/v1/tickets')
         ->assertOk()
@@ -82,7 +112,7 @@ test('it returns an empty paginated ticket collection', function (): void {
 test('it filters tickets by service', function (): void {
     $user = User::factory()->create();
     $unit = Unit::factory()->create();
-    Sanctum::actingAs($user);
+    actingAsTicketReader($user);
 
     Ticket::factory()->for($user, 'reporter')->for($unit)->create([
         'ticket_number' => 'TIK-2026-0001',
@@ -102,7 +132,7 @@ test('it filters tickets by service', function (): void {
 test('it filters tickets by status', function (): void {
     $user = User::factory()->create();
     $unit = Unit::factory()->create();
-    Sanctum::actingAs($user);
+    actingAsTicketReader($user);
 
     Ticket::factory()->for($user, 'reporter')->for($unit)->create([
         'ticket_number' => 'TIK-2026-0001',
@@ -122,7 +152,7 @@ test('it filters tickets by status', function (): void {
 test('it filters tickets by an inclusive date range', function (): void {
     $user = User::factory()->create();
     $unit = Unit::factory()->create();
-    Sanctum::actingAs($user);
+    actingAsTicketReader($user);
 
     Ticket::factory()->for($user, 'reporter')->for($unit)->create([
         'ticket_number' => 'TIK-2026-0001',
@@ -151,7 +181,7 @@ test('it filters tickets by an inclusive date range', function (): void {
 test('it searches ticket number category and description', function (): void {
     $user = User::factory()->create();
     $unit = Unit::factory()->create();
-    Sanctum::actingAs($user);
+    actingAsTicketReader($user);
 
     Ticket::factory()->for($user, 'reporter')->for($unit)->create([
         'ticket_number' => 'TIK-2026-0042',
@@ -173,7 +203,7 @@ test('it searches ticket number category and description', function (): void {
 test('it binds ticket search input as a value', function (): void {
     $user = User::factory()->create();
     $unit = Unit::factory()->create();
-    Sanctum::actingAs($user);
+    actingAsTicketReader($user);
 
     Ticket::factory()->for($user, 'reporter')->for($unit)->create([
         'ticket_number' => 'TIK-2026-0042',
@@ -188,7 +218,7 @@ test('it binds ticket search input as a value', function (): void {
 test('it combines ticket filters', function (): void {
     $user = User::factory()->create();
     $unit = Unit::factory()->create();
-    Sanctum::actingAs($user);
+    actingAsTicketReader($user);
 
     Ticket::factory()->for($user, 'reporter')->for($unit)->create([
         'ticket_number' => 'TIK-2026-0100',
@@ -228,7 +258,7 @@ test('it returns ticket details with reporter and unit summaries', function (): 
         'description' => 'Lampu ruang pemeriksaan mati.',
         'status' => TicketStatus::Terverifikasi,
     ]);
-    Sanctum::actingAs($reporter);
+    actingAsTicketReader($reporter);
 
     $this->getJson("/api/v1/tickets/{$ticket->id}")
         ->assertOk()
@@ -260,7 +290,7 @@ test('it returns ticket details with reporter and unit summaries', function (): 
 });
 
 test('it returns 404 when a ticket does not exist', function (): void {
-    Sanctum::actingAs(User::factory()->create());
+    actingAsTicketReader();
 
     $this->getJson('/api/v1/tickets/999999')
         ->assertNotFound()
@@ -270,7 +300,7 @@ test('it returns 404 when a ticket does not exist', function (): void {
 });
 
 test('it returns 422 for invalid ticket filters', function (array $query, string $field): void {
-    Sanctum::actingAs(User::factory()->create());
+    actingAsTicketReader();
 
     $this->getJson('/api/v1/tickets?'.http_build_query($query))
         ->assertUnprocessable()

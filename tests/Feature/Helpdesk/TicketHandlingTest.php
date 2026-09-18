@@ -4,18 +4,44 @@ use App\Enums\TicketStatus;
 use App\Models\Ticket;
 use App\Models\TicketHandling;
 use App\Models\User;
+use Database\Seeders\CorePermissionSeeder;
+use Database\Seeders\CoreRoleSeeder;
+use Database\Seeders\DomainPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
+use Spatie\Permission\Models\Permission;
 
 uses(RefreshDatabase::class);
+
+/**
+ * @param  list<string>  $additionalPermissions
+ */
+function actingAsTicketHandler(?User $user = null, array $additionalPermissions = []): User
+{
+    $user ??= User::factory()->create();
+
+    collect(['tickets-handle', ...$additionalPermissions])
+        ->each(function (string $permissionName) use ($user): void {
+            $permission = Permission::firstOrCreate([
+                'name' => $permissionName,
+                'guard_name' => 'web',
+            ]);
+
+            $user->givePermissionTo($permission);
+        });
+
+    Sanctum::actingAs($user);
+
+    return $user;
+}
 
 test('a processed ticket can receive a handling note without changing its status', function (): void {
     $handler = User::factory()->create(['name' => 'Petugas Penanganan']);
     $ticket = Ticket::factory()->create(['status' => TicketStatus::Diproses]);
-    Sanctum::actingAs($handler);
+    actingAsTicketHandler($handler);
 
     $response = $this->postJson("/api/v1/tickets/{$ticket->id}/handlings", [
         'notes' => 'Koneksi kabel daya diperiksa dan dikencangkan.',
@@ -48,7 +74,7 @@ test('a processed ticket can receive a handling note without changing its status
 test('handling history keeps multiple notes linked to the same ticket', function (): void {
     $handler = User::factory()->create();
     $ticket = Ticket::factory()->create(['status' => TicketStatus::Diproses]);
-    Sanctum::actingAs($handler);
+    actingAsTicketHandler($handler, ['tickets-access']);
 
     foreach (['Pemeriksaan awal.', 'Penggantian komponen.'] as $notes) {
         $this->postJson("/api/v1/tickets/{$ticket->id}/handlings", [
@@ -69,7 +95,7 @@ test('handling history keeps multiple notes linked to the same ticket', function
 test('a processed ticket can be completed atomically with its handling history', function (): void {
     $handler = User::factory()->create();
     $ticket = Ticket::factory()->create(['status' => TicketStatus::Diproses]);
-    Sanctum::actingAs($handler);
+    actingAsTicketHandler($handler);
 
     $response = $this->postJson("/api/v1/tickets/{$ticket->id}/handlings", [
         'notes' => 'Perbaikan selesai dan perangkat sudah diuji.',
@@ -93,7 +119,7 @@ test('a processed ticket can be completed atomically with its handling history',
 
 test('completion time is required when completing a ticket', function (): void {
     $ticket = Ticket::factory()->create(['status' => TicketStatus::Diproses]);
-    Sanctum::actingAs(User::factory()->create());
+    actingAsTicketHandler();
 
     $this->postJson("/api/v1/tickets/{$ticket->id}/handlings", [
         'notes' => 'Pekerjaan dinyatakan selesai.',
@@ -109,7 +135,7 @@ test('completion time is required when completing a ticket', function (): void {
 
 test('handling notes and status are required', function (): void {
     $ticket = Ticket::factory()->create(['status' => TicketStatus::Diproses]);
-    Sanctum::actingAs(User::factory()->create());
+    actingAsTicketHandler();
 
     $this->postJson("/api/v1/tickets/{$ticket->id}/handlings", [])
         ->assertUnprocessable()
@@ -121,7 +147,7 @@ test('handling notes and status are required', function (): void {
 
 test('handling only accepts in progress or completed as its target status', function (string $status): void {
     $ticket = Ticket::factory()->create(['status' => TicketStatus::Diproses]);
-    Sanctum::actingAs(User::factory()->create());
+    actingAsTicketHandler();
 
     $this->postJson("/api/v1/tickets/{$ticket->id}/handlings", [
         'notes' => 'Catatan penanganan.',
@@ -141,7 +167,7 @@ test('handling only accepts in progress or completed as its target status', func
 
 test('a ticket outside in progress cannot receive handling updates', function (TicketStatus $status): void {
     $ticket = Ticket::factory()->create(['status' => $status]);
-    Sanctum::actingAs(User::factory()->create());
+    actingAsTicketHandler();
 
     $this->postJson("/api/v1/tickets/{$ticket->id}/handlings", [
         'notes' => 'Catatan yang tidak boleh tersimpan.',
@@ -162,7 +188,7 @@ test('a ticket outside in progress cannot receive handling updates', function (T
 
 test('completion time cannot be before start time', function (): void {
     $ticket = Ticket::factory()->create(['status' => TicketStatus::Diproses]);
-    Sanctum::actingAs(User::factory()->create());
+    actingAsTicketHandler();
 
     $this->postJson("/api/v1/tickets/{$ticket->id}/handlings", [
         'notes' => 'Waktu tidak konsisten.',
@@ -184,7 +210,7 @@ test('a result photo is stored through the configured filesystem with portable m
 
     $handler = User::factory()->create();
     $ticket = Ticket::factory()->create(['status' => TicketStatus::Diproses]);
-    Sanctum::actingAs($handler);
+    actingAsTicketHandler($handler);
 
     $response = $this->post("/api/v1/tickets/{$ticket->id}/handlings", [
         'notes' => 'Foto hasil penggantian komponen.',
@@ -215,7 +241,7 @@ test('result photo is cleaned up when ticket state makes the operation fail', fu
     config()->set('filesystems.default', 'local');
 
     $ticket = Ticket::factory()->create(['status' => TicketStatus::Baru]);
-    Sanctum::actingAs(User::factory()->create());
+    actingAsTicketHandler();
 
     $this->post("/api/v1/tickets/{$ticket->id}/handlings", [
         'notes' => 'Catatan tidak valid.',
@@ -233,7 +259,7 @@ test('history status and result photo are rolled back together when the ticket u
     config()->set('filesystems.default', 'local');
 
     $ticket = Ticket::factory()->create(['status' => TicketStatus::Diproses]);
-    Sanctum::actingAs(User::factory()->create());
+    actingAsTicketHandler();
 
     Event::listen('eloquent.updating: '.Ticket::class, function (Ticket $updatingTicket): void {
         if ($updatingTicket->isDirty('status')) {
@@ -263,7 +289,7 @@ test('result photo must be an image no larger than two megabytes', function (Upl
     config()->set('filesystems.default', 'local');
 
     $ticket = Ticket::factory()->create(['status' => TicketStatus::Diproses]);
-    Sanctum::actingAs(User::factory()->create());
+    actingAsTicketHandler();
 
     $this->post("/api/v1/tickets/{$ticket->id}/handlings", [
         'notes' => 'Catatan penanganan.',
@@ -286,8 +312,53 @@ test('guest cannot add ticket handling history', function (): void {
     ])->assertUnauthorized();
 });
 
-test('handling endpoint returns 404 when ticket does not exist', function (): void {
+test('authenticated user without tickets-handle permission cannot add ticket handling history', function (): void {
+    $this->seed(DomainPermissionSeeder::class);
+    $ticket = Ticket::factory()->create(['status' => TicketStatus::Diproses]);
     Sanctum::actingAs(User::factory()->create());
+
+    $this->postJson("/api/v1/tickets/{$ticket->id}/handlings", [
+        'notes' => 'Catatan tanpa izin.',
+        'status' => TicketStatus::Diproses->value,
+    ])->assertForbidden();
+
+    expect($ticket->handlings()->count())->toBe(0)
+        ->and($ticket->refresh()->status)->toBe(TicketStatus::Diproses);
+});
+
+test('super admin receives all ticket permissions and can add ticket handling history', function (): void {
+    $this->seed([
+        CorePermissionSeeder::class,
+        DomainPermissionSeeder::class,
+        CoreRoleSeeder::class,
+    ]);
+    $handler = User::factory()->create();
+    $handler->assignRole('super-admin');
+    $ticket = Ticket::factory()->create(['status' => TicketStatus::Diproses]);
+    Sanctum::actingAs($handler);
+
+    $this->postJson("/api/v1/tickets/{$ticket->id}/handlings", [
+        'notes' => 'Catatan oleh super admin.',
+        'status' => TicketStatus::Diproses->value,
+    ])->assertOk();
+
+    expect($handler->hasAllPermissions([
+        'tickets-access',
+        'tickets-create',
+        'tickets-verify',
+        'tickets-reject',
+        'tickets-assign',
+        'tickets-handle',
+    ]))->toBeTrue();
+    $this->assertDatabaseHas('ticket_handlings', [
+        'ticket_id' => $ticket->id,
+        'handled_by_id' => $handler->id,
+        'notes' => 'Catatan oleh super admin.',
+    ]);
+});
+
+test('handling endpoint returns 404 when ticket does not exist', function (): void {
+    actingAsTicketHandler();
 
     $this->postJson('/api/v1/tickets/999999/handlings', [
         'notes' => 'Catatan penanganan.',
