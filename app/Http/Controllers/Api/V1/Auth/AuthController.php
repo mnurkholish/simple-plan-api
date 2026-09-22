@@ -48,7 +48,7 @@ class AuthController extends Controller
         $this->dashboardService->recordLogin();
         $this->notificationService->recordLogin($user);
 
-        $user->load(['roles.permissions', 'units']);
+        $user->load(['roles.permissions', 'unit']);
 
         return response()->json([
             'message' => 'Login berhasil.',
@@ -77,7 +77,7 @@ class AuthController extends Controller
     public function me(Request $request): UserResource
     {
         return new UserResource(
-            $request->user()->load(['roles.permissions', 'units'])
+            $request->user()->load(['roles.permissions', 'unit'])
         );
     }
 

@@ -6,7 +6,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -33,6 +33,12 @@ class User extends Authenticatable implements MustVerifyEmail
         'avatar',
         'iam_id',
         'status',
+        'unit_id',
+        'jabatan',
+        'no_hp',
+        'status_user',
+        'alasan_nonaktif',
+        'riwayat_status_akun',
     ];
 
     /**
@@ -56,19 +62,13 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'status' => 'string',
+            'riwayat_status_akun' => 'array',
         ];
     }
 
-    public function units(): BelongsToMany
+    public function unit(): BelongsTo
     {
-        return $this->belongsToMany(Unit::class, 'unit_user')
-            ->withTimestamps();
-    }
-
-    public function unitKerjas(): BelongsToMany
-    {
-        return $this->belongsToMany(Unit::class, 'unit_user', 'user_id', 'unit_id')
-            ->withTimestamps();
+        return $this->belongsTo(Unit::class, 'unit_id');
     }
 
     protected function avatar(): Attribute

@@ -179,22 +179,25 @@ class SsoIamService
         }
 
         if ((bool) config('iam.sync_unit_kerja', true)) {
-            $unitIds = collect(Arr::get($payload, config('iam.unit_kerja_field', 'unit_kerja'), []))
+            $unitName = collect(Arr::get($payload, config('iam.unit_kerja_field', 'unit_kerja'), []))
                 ->map(fn (mixed $unit): ?string => is_array($unit)
                     ? ($unit['unit_name'] ?? $unit['name'] ?? $unit['slug'] ?? null)
                     : (is_string($unit) ? $unit : null))
                 ->filter()
-                ->map(fn (string $unitName): int => Unit::firstOrCreate([
+                ->first();
+
+            if ($unitName) {
+                $unitId = Unit::firstOrCreate([
                     'unit_name' => $unitName,
                 ], [
                     'slug' => Str::slug($unitName),
-                ])->id)
-                ->all();
+                ])->id;
 
-            $user->units()->sync($unitIds);
+                $user->update(['unit_id' => $unitId]);
+            }
         }
 
-        return $user->load(['roles.permissions', 'units']);
+        return $user->load(['roles.permissions', 'unit']);
     }
 
     /**
