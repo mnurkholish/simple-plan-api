@@ -21,7 +21,7 @@ Route
 -> Service
 -> Repository
 -> Eloquent Model
--> PostgreSQL
+-> MySQL
 ```
 
 Untuk fitur file, Service juga berkoordinasi dengan Laravel Filesystem.

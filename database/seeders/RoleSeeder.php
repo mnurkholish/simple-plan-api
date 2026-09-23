@@ -13,11 +13,6 @@ class RoleSeeder extends Seeder
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        // Delete old roles if possible
-        $oldRoles = ['super-admin', 'kepala-departemen', 'perawat'];
-        Role::whereIn('name', $oldRoles)->delete();
-
-        // Create new roles
         $roles = [
             'super admin',
             'koordinator-sarpras',
@@ -34,7 +29,6 @@ class RoleSeeder extends Seeder
             ]);
         }
 
-        // If super admin needs all permissions, sync them (optional, but good practice if migrating from old super-admin)
         $superAdmin = Role::where('name', 'super admin')->first();
         if ($superAdmin) {
             $superAdmin->syncPermissions(Permission::all());

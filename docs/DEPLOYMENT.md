@@ -1,7 +1,7 @@
 # SIMPLE-PLAN Deployment Guidelines
 
 Panduan ini hanya membahas deployment production SIMPLE-PLAN: environment,
-server requirements, `.env`, PostgreSQL, MinIO production, migration, network,
+server requirements, `.env`, MySQL, MinIO production, migration, network,
 scheduler/queue jika digunakan, logging, backup, rollback, verification, dan
 CI/CD sederhana.
 
@@ -20,7 +20,7 @@ Komponen production utama:
 
 ```text
 Client/Browser -> HTTPS -> Web Server -> Laravel Application
-                                      -> PostgreSQL
+                                      -> MySQL
                                       -> MinIO (jika digunakan)
 ```
 
@@ -51,7 +51,7 @@ Server production menyediakan sesuai kebutuhan project:
 - Composer;
 - required PHP extensions;
 - web server seperti Nginx atau Apache;
-- PostgreSQL;
+- MySQL;
 - MinIO jika digunakan;
 - HTTPS/SSL;
 - scheduler/cron jika fitur menggunakan Laravel Scheduler;
@@ -177,7 +177,7 @@ Jika MinIO digunakan:
 - pastikan Laravel dapat mengakses endpoint MinIO;
 - uji upload, download, dan delete.
 
-PostgreSQL tetap menyimpan `object_key`/metadata, bukan endpoint atau temporary
+MySQL tetap menyimpan `object_key`/metadata, bukan endpoint atau temporary
 URL.
 
 ---
@@ -207,7 +207,7 @@ Pastikan:
 
 - certificate valid;
 - port dibuka hanya sesuai kebutuhan;
-- PostgreSQL dan MinIO tidak diekspos ke jaringan publik;
+- MySQL dan MinIO tidak diekspos ke jaringan publik;
 - akses administratif dibatasi.
 
 ---
@@ -229,7 +229,7 @@ dapat dipantau dan tidak menyimpan secret atau credential.
 
 Sebelum deployment berisiko, backup data relevan:
 
-- PostgreSQL;
+- MySQL;
 - MinIO/object storage jika digunakan;
 - konfigurasi penting;
 - application release metadata jika dibutuhkan.
@@ -262,7 +262,7 @@ Smoke test minimal:
 - login;
 - authentication/authorization;
 - endpoint utama;
-- koneksi PostgreSQL;
+- koneksi MySQL;
 - upload/download file jika MinIO digunakan;
 - scheduler/queue jika digunakan;
 - error log;

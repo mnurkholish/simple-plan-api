@@ -19,6 +19,19 @@ return new class extends Migration
             $table->string('password');
             $table->rememberToken();
             $table->timestamps();
+            $table->string('iam_id')->nullable()->unique();
+            $table->string('nip')->nullable()->unique();
+            $table->string('avatar')->nullable();
+            $table->string('status')->default('active');
+            $table->foreignId('unit_id')->nullable();
+            $table->string('jabatan')->nullable();
+            $table->string('no_hp')->nullable()->unique();
+            $table->string('status_user')->default('Aktif');
+            $table->string('alasan_nonaktif')->nullable();
+            $table->text('riwayat_status_akun')->nullable();
+
+            $table->index('unit_id');
+            $table->foreign('unit_id')->references('id')->on('units')->restrictOnDelete();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
@@ -42,8 +55,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('users');
-        Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
+        Schema::dropIfExists('password_reset_tokens');
+        Schema::dropIfExists('users');
     }
 };

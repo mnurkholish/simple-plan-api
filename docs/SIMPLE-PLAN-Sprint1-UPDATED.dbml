@@ -1,0 +1,282 @@
+// SIMPLE PLAN - Sprint 1
+// Laravel + MySQL/MariaDB
+// Existing users schema is intentionally preserved.
+// New tables/fields use English naming.
+
+Table units {
+  id bigint [pk, increment]
+  unit_name varchar(255) [not null]
+  slug varchar(255) [unique]
+  description text
+  created_at timestamp
+  updated_at timestamp
+  deleted_at timestamp
+}
+
+Table users {
+  id bigint [pk, increment]
+  name varchar(255) [not null]
+  email varchar(255) [not null, unique]
+  email_verified_at timestamp
+  password varchar(255) [not null]
+  remember_token varchar(100)
+  created_at timestamp
+  updated_at timestamp
+
+  iam_id varchar(255) [unique]
+  nip varchar(255) [unique]
+  avatar varchar(255)
+  status varchar(255) [not null, default: 'active']
+
+  unit_id bigint
+  jabatan varchar(255)
+  no_hp varchar(255) [unique]
+  status_user varchar(255) [not null, default: 'Aktif']
+  alasan_nonaktif varchar(255)
+  riwayat_status_akun text
+
+  indexes {
+    unit_id
+  }
+
+  Note: 'Existing users structure preserved for now.'
+}
+
+Table assets {
+  id bigint [pk, increment]
+  asset_number varchar(50) [not null, unique]
+  name varchar(100) [not null]
+  brand varchar(100)
+  unit_id bigint [not null]
+  location varchar(150)
+  status varchar(30) [not null, default: 'active']
+  created_at timestamp
+  updated_at timestamp
+  deleted_at timestamp
+
+  indexes {
+    unit_id
+    status
+  }
+}
+
+Table quality_categories {
+  id bigint [pk, increment]
+  name varchar(100) [not null, unique]
+  is_active boolean [not null, default: true]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table it_tags {
+  id bigint [pk, increment]
+  name varchar(150) [not null, unique]
+  is_active boolean [not null, default: true]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table sarpras_categories {
+  id bigint [pk, increment]
+  name varchar(100) [not null, unique]
+  is_active boolean [not null, default: true]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table tickets {
+  id bigint [pk, increment]
+  ticket_number varchar(30) [not null, unique, note: 'TIK-YYYY-NNNNNN or SPR-YYYY-NNNNNN']
+  service varchar(20) [not null, note: 'tik or sarpras; immutable after creation']
+  reporter_id bigint [not null]
+  unit_id bigint [not null, note: 'Reporter unit snapshot']
+  asset_id bigint
+  description text [not null]
+
+  status varchar(30) [not null, default: 'baru', note: 'baru, diklasifikasi, ditugaskan, diproses, eskalasi, terselesaikan, terverifikasi, ditutup, ditolak']
+  priority varchar(20) [note: 'critical, high, medium, low']
+
+  classified_by_id bigint
+  classified_at timestamp
+  assigned_officer_id bigint
+  assigned_at timestamp
+
+  sla_deadline timestamp
+  completed_at timestamp
+  closed_at timestamp
+
+  initial_evidence_object_key varchar(500)
+  initial_evidence_original_name varchar(255)
+  initial_evidence_mime_type varchar(100)
+  initial_evidence_size bigint
+
+  created_at timestamp
+  updated_at timestamp
+
+  indexes {
+    (service, status)
+    (assigned_officer_id, status)
+    (reporter_id, created_at)
+    unit_id
+    asset_id
+    sla_deadline
+  }
+}
+
+Table ticket_tik_details {
+  ticket_id bigint [pk]
+  quality_category_id bigint [not null]
+  it_tag_id bigint [not null]
+  custom_it_tag_text varchar(255)
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table ticket_sarpras_details {
+  ticket_id bigint [pk]
+  sarpras_category_id bigint [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table ticket_status_histories {
+  id bigint [pk, increment]
+  ticket_id bigint [not null]
+  from_status varchar(30)
+  to_status varchar(30) [not null]
+  changed_by_id bigint
+  notes text
+  created_at timestamp [not null]
+
+  indexes {
+    (ticket_id, created_at)
+    to_status
+  }
+}
+
+Table ticket_handlings {
+  id bigint [pk, increment]
+  ticket_id bigint [not null]
+  handled_by_id bigint [not null]
+  notes text [not null]
+  started_at timestamp
+  completed_at timestamp
+
+  result_photo_object_key varchar(500)
+  result_photo_original_name varchar(255)
+  result_photo_mime_type varchar(100)
+  result_photo_size bigint
+
+  created_at timestamp
+  updated_at timestamp
+
+  indexes {
+    (ticket_id, created_at)
+    handled_by_id
+  }
+}
+
+Table ticket_escalations {
+  id bigint [pk, increment]
+  ticket_id bigint [not null]
+  escalated_by_id bigint [not null]
+  target varchar(30) [not null, note: 'management, vendor, related_team']
+  notes text
+  escalated_at timestamp [not null]
+  created_at timestamp
+  updated_at timestamp
+
+  indexes {
+    (ticket_id, escalated_at)
+    target
+  }
+}
+
+// Spatie Laravel Permission
+// Business rule: one active role per user.
+// Keep package polymorphic structure.
+
+Table roles {
+  id bigint [pk, increment]
+  name varchar(255) [not null]
+  guard_name varchar(255) [not null]
+  created_at timestamp
+  updated_at timestamp
+
+  indexes {
+    (name, guard_name) [unique]
+  }
+}
+
+Table permissions {
+  id bigint [pk, increment]
+  name varchar(255) [not null]
+  guard_name varchar(255) [not null]
+  created_at timestamp
+  updated_at timestamp
+
+  indexes {
+    (name, guard_name) [unique]
+  }
+}
+
+Table model_has_roles {
+  role_id bigint [not null]
+  model_type varchar(255) [not null]
+  model_id bigint [not null]
+
+  indexes {
+    (role_id, model_id, model_type) [pk]
+    (model_id, model_type)
+  }
+}
+
+Table model_has_permissions {
+  permission_id bigint [not null]
+  model_type varchar(255) [not null]
+  model_id bigint [not null]
+
+  indexes {
+    (permission_id, model_id, model_type) [pk]
+    (model_id, model_type)
+  }
+}
+
+Table role_has_permissions {
+  permission_id bigint [not null]
+  role_id bigint [not null]
+
+  indexes {
+    (permission_id, role_id) [pk]
+  }
+}
+
+Ref: users.unit_id > units.id
+Ref: assets.unit_id > units.id
+
+Ref: tickets.reporter_id > users.id
+Ref: tickets.unit_id > units.id
+Ref: tickets.asset_id > assets.id
+Ref: tickets.classified_by_id > users.id
+Ref: tickets.assigned_officer_id > users.id
+
+Ref: ticket_tik_details.ticket_id - tickets.id
+Ref: ticket_tik_details.quality_category_id > quality_categories.id
+Ref: ticket_tik_details.it_tag_id > it_tags.id
+
+Ref: ticket_sarpras_details.ticket_id - tickets.id
+Ref: ticket_sarpras_details.sarpras_category_id > sarpras_categories.id
+
+Ref: ticket_status_histories.ticket_id > tickets.id
+Ref: ticket_status_histories.changed_by_id > users.id
+
+Ref: ticket_handlings.ticket_id > tickets.id
+Ref: ticket_handlings.handled_by_id > users.id
+
+Ref: ticket_escalations.ticket_id > tickets.id
+Ref: ticket_escalations.escalated_by_id > users.id
+
+Ref: model_has_roles.role_id > roles.id
+Ref: model_has_permissions.permission_id > permissions.id
+Ref: role_has_permissions.role_id > roles.id
+Ref: role_has_permissions.permission_id > permissions.id
