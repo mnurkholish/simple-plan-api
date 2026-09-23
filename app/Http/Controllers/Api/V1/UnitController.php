@@ -100,8 +100,7 @@ class UnitController extends Controller
         return response()->json([
             'data' => UserResource::collection(
                 User::query()
-                    ->select('id', 'name', 'email', 'avatar', 'nip', 'status')
-                    ->with('roles:id,name')
+                    ->with(['roles:id,name', 'unit'])
                     ->orderBy('name')
                     ->get()
             ),

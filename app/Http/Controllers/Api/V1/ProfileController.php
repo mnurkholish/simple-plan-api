@@ -19,7 +19,7 @@ class ProfileController extends Controller
     public function show(Request $request): UserResource
     {
         return new UserResource(
-            $request->user()->load(['roles.permissions', 'units'])
+            $request->user()->load(['roles.permissions', 'unit'])
         );
     }
 
@@ -47,7 +47,7 @@ class ProfileController extends Controller
 
         $user->save();
 
-        return (new UserResource($user->load(['roles.permissions', 'units'])))
+        return (new UserResource($user->load(['roles.permissions', 'unit'])))
             ->additional(['message' => 'Profil berhasil diperbarui.']);
     }
 
@@ -67,8 +67,8 @@ class ProfileController extends Controller
         $user = $request->user();
 
         if (
-            $user->hasRole('super-admin')
-            && ! User::role('super-admin')->whereKeyNot($user->getKey())->exists()
+            $user->hasRole('super admin')
+            && ! User::role('super admin')->whereKeyNot($user->getKey())->exists()
         ) {
             throw ValidationException::withMessages([
                 'password' => ['Super admin terakhir tidak dapat menghapus akunnya sendiri.'],
