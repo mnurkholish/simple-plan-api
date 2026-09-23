@@ -19,6 +19,9 @@ class DatabaseSeeder extends Seeder
             DomainPermissionSeeder::class,
             RoleSeeder::class,
             UnitSeeder::class,
+            QualityCategorySeeder::class,
+            ItTagSeeder::class,
+            SarprasCategorySeeder::class,
             UserSeeder::class,
         ]);
     }
