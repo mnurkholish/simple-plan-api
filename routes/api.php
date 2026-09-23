@@ -100,9 +100,12 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::match(['put', 'patch'], 'users/{user}', [UserController::class, 'update'])
             ->middleware('permission:users-update')
             ->name('users.update');
-        Route::delete('users/{ids}', [UserController::class, 'destroy'])
-            ->middleware('permission:users-delete')
-            ->name('users.destroy');
+        Route::patch('users/{user}/status', [UserController::class, 'toggleStatus'])
+            ->middleware('permission:users-update')
+            ->name('users.status');
+        // Route::delete('users/{ids}', [UserController::class, 'destroy'])
+        //     ->middleware('permission:users-delete')
+        //     ->name('users.destroy');
 
         Route::get('roles/permissions', [RoleController::class, 'permissions'])
             ->middleware('permission:permissions-access|roles-create|roles-update')

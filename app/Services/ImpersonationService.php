@@ -71,8 +71,8 @@ class ImpersonationService
 
         return [
             'token' => $plainTextToken,
-            'user' => $target->load(['roles.permissions', 'units']),
-            'impersonator' => $impersonator->load(['roles.permissions', 'units']),
+            'user' => $target->load(['roles.permissions', 'unit']),
+            'impersonator' => $impersonator->load(['roles.permissions', 'unit']),
             'impersonation' => [
                 'active' => true,
                 'impersonator_id' => $impersonator->id,
@@ -98,8 +98,8 @@ class ImpersonationService
             ];
         }
 
-        $impersonator = User::with(['roles.permissions', 'units'])->find($record['impersonator_id']);
-        $impersonated = User::with(['roles.permissions', 'units'])->find($record['impersonated_id']);
+        $impersonator = User::with(['roles.permissions', 'unit'])->find($record['impersonator_id']);
+        $impersonated = User::with(['roles.permissions', 'unit'])->find($record['impersonated_id']);
 
         if (! $impersonator || ! $impersonated) {
             $this->forget($currentToken);

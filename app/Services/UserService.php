@@ -1,75 +1,86 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\User;
-use Illuminate\Http\UploadedFile;
+use App\Repositories\UserRepository;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 
 class UserService
 {
-    public function store(array $data, ?UploadedFile $avatar = null): User
+    public function __construct(
+        protected UserRepository $userRepository
+    ) {}
+
+    public function getAllUsers(int $perPage = 15): LengthAwarePaginator
     {
-        $avatarPath = $avatar?->store('avatars', 'public');
+        return $this->userRepository->getPaginatedUsers($perPage);
+    }
 
-        $user = User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'nip' => $data['nip'] ?? null,
-            'password' => Hash::make($data['password']),
-            'avatar' => $avatarPath,
-            'status' => $data['status'] ?? 'active',
-        ]);
-
-        if (isset($data['selectedRoles'])) {
-            $user->assignRole($data['selectedRoles']);
-        }
-
-        if (isset($data['selectedUnits'])) {
-            $user->units()->sync($data['selectedUnits']);
-        }
+    public function getUserById(int $id): User
+    {
+        $user = $this->userRepository->findById($id);
+        $user->load(['unit', 'roles']);
 
         return $user;
     }
 
-    public function update(User $user, array $data, ?UploadedFile $avatar = null): User
+    public function createUser(array $data): User
     {
-        $avatarPath = $user->getRawOriginal('avatar');
-
-        if ($avatar) {
-            if ($avatarPath) {
-                Storage::disk('public')->delete($avatarPath);
-            }
-
-            $avatarPath = $avatar->store('avatars', 'public');
+        if (isset($data['nama'])) {
+            $data['name'] = $data['nama'];
+            unset($data['nama']);
+        }
+        $data['email'] = $data['nip'].'@simpleplan.local';
+        if (isset($data['password'])) {
+            $data['password'] = Hash::make($data['password']);
         }
 
-        $updateData = [
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'nip' => $data['nip'] ?? null,
-            'avatar' => $avatarPath,
-            'status' => $data['status'] ?? $user->status,
+        return DB::transaction(function () use ($data): User {
+            return $this->userRepository->create($data);
+        });
+    }
+
+    public function updateUser(User $user, array $data): User
+    {
+        if (isset($data['nama'])) {
+            $data['name'] = $data['nama'];
+            unset($data['nama']);
+        }
+        if (! empty($data['password'])) {
+            $data['password'] = Hash::make($data['password']);
+        } else {
+            unset($data['password']);
+        }
+
+        return DB::transaction(function () use ($user, $data): User {
+            return $this->userRepository->update($user, $data);
+        });
+    }
+
+    public function toggleStatus(User $user, array $data): User
+    {
+        $riwayat = $user->riwayat_status_akun ?? [];
+
+        $status = $data['status_user'];
+        $alasan = $status === 'Nonaktif' ? ($data['alasan_nonaktif'] ?? null) : null;
+
+        $riwayat[] = [
+            'status' => $status,
+            'alasan' => $alasan,
+            'tanggal' => now()->toDateTimeString(),
         ];
 
-        if (! empty($data['password'])) {
-            $updateData['password'] = Hash::make($data['password']);
-        }
+        $updateData = [
+            'status_user' => $status,
+            'alasan_nonaktif' => $alasan,
+            'riwayat_status_akun' => $riwayat,
+        ];
 
-        $user->update($updateData);
-
-        if (isset($data['selectedRoles'])) {
-            $user->syncRoles($data['selectedRoles']);
-        }
-
-        $user->units()->sync($data['selectedUnits'] ?? []);
-
-        return $user;
-    }
-
-    public function destroy(array $ids): void
-    {
-        User::whereIn('id', $ids)->get()->each->delete();
+        return $this->userRepository->toggleStatus($user, $updateData);
     }
 }

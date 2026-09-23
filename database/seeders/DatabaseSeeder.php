@@ -17,8 +17,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             CorePermissionSeeder::class,
             DomainPermissionSeeder::class,
-            CoreRoleSeeder::class,
-            DomainRoleSeeder::class,
+            RoleSeeder::class,
             UnitSeeder::class,
             UserSeeder::class,
         ]);

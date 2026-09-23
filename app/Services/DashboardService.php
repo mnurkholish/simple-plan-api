@@ -17,7 +17,7 @@ class DashboardService
      */
     public function getDashboardData(User $user): array
     {
-        $user->loadMissing(['roles.permissions', 'units']);
+        $user->loadMissing(['roles.permissions', 'unit']);
         $variant = DashboardResolver::resolveFor($user);
 
         return [
@@ -30,7 +30,7 @@ class DashboardService
             ],
             'current_user' => [
                 'roles' => $user->roles->pluck('name')->values(),
-                'units' => $user->units->pluck('unit_name')->values(),
+                'units' => $user->unit ? [$user->unit->unit_name] : [],
                 'permissions_count' => count($user->getPermissions()),
             ],
             'role_distribution' => $this->roleDistribution(),
@@ -123,20 +123,17 @@ class DashboardService
      */
     private function ownedUnitsData(User $user): array
     {
-        $units = $user->units()->withCount('users')->orderBy('unit_name')->get();
-        $unitIds = $units->pluck('id');
+        $unit = $user->unit()->withCount('users')->first();
 
         return [
-            'total_units' => $units->count(),
-            'unit_names' => $units->pluck('unit_name')->values(),
-            'total_members' => $unitIds->isEmpty()
-                ? 0
-                : User::whereHas('units', fn ($query) => $query->whereIn('units.id', $unitIds))->count(),
-            'units' => $units->map(fn (Unit $unit): array => [
+            'total_units' => $unit ? 1 : 0,
+            'unit_names' => $unit ? [$unit->unit_name] : [],
+            'total_members' => $unit ? $unit->users_count : 0,
+            'units' => $unit ? [[
                 'id' => $unit->id,
                 'unit_name' => $unit->unit_name,
                 'users_count' => $unit->users_count,
-            ])->values(),
+            ]] : [],
             'active_shifts' => 0,
             'present_today' => 0,
         ];
