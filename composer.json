@@ -19,6 +19,7 @@
     },
     "require-dev": {
         "darkaonline/l5-swagger": "^11.1",
+        "doctrine/annotations": "^2.0",
         "fakerphp/faker": "^1.23",
         "laravel/boost": "^2.2",
         "laravel/pail": "^1.2.5",

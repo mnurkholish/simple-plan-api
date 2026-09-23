@@ -18,7 +18,10 @@ function adminTokenForImpersonation(): string
 
 test('admin can start check and stop impersonating a user', function (): void {
     $adminToken = adminTokenForImpersonation();
-    $target = User::where('email', 'perawat@gmail.com')->firstOrFail();
+    $target = User::factory()->create([
+        'email' => 'impersonated@example.test',
+        'status' => 'active',
+    ]);
 
     $start = $this->withToken($adminToken)
         ->postJson("/api/v1/impersonation/{$target->id}/start");
@@ -26,7 +29,7 @@ test('admin can start check and stop impersonating a user', function (): void {
     $impersonationToken = $start
         ->assertOk()
         ->assertJsonPath('token_type', 'Bearer')
-        ->assertJsonPath('user.email', 'perawat@gmail.com')
+        ->assertJsonPath('user.email', 'impersonated@example.test')
         ->assertJsonPath('impersonator.email', 'juniyasyos@gmail.com')
         ->assertJsonPath('impersonation.active', true)
         ->json('token');
@@ -36,7 +39,7 @@ test('admin can start check and stop impersonating a user', function (): void {
     $this->withToken($impersonationToken)
         ->getJson('/api/v1/auth/me')
         ->assertOk()
-        ->assertJsonPath('data.email', 'perawat@gmail.com');
+        ->assertJsonPath('data.email', 'impersonated@example.test');
 
     $this->app['auth']->forgetGuards();
 
@@ -45,7 +48,7 @@ test('admin can start check and stop impersonating a user', function (): void {
         ->assertOk()
         ->assertJsonPath('data.active', true)
         ->assertJsonPath('data.impersonator.email', 'juniyasyos@gmail.com')
-        ->assertJsonPath('data.impersonated.email', 'perawat@gmail.com');
+        ->assertJsonPath('data.impersonated.email', 'impersonated@example.test');
 
     $this->app['auth']->forgetGuards();
 
@@ -81,14 +84,19 @@ test('admin cannot impersonate themselves', function (): void {
 
 test('user without impersonate permission cannot start impersonation', function (): void {
     test()->seed();
-    $perawatToken = $this->postJson('/api/v1/auth/login', [
-        'email' => 'perawat@gmail.com',
+    $requester = User::factory()->create([
+        'email' => 'requester@example.test',
+        'status' => 'active',
+    ]);
+    $target = User::factory()->create(['status' => 'active']);
+
+    $requesterToken = $this->postJson('/api/v1/auth/login', [
+        'email' => $requester->email,
         'password' => 'password',
         'device_name' => 'feature-test',
     ])->json('token');
-    $target = User::where('email', 'kepala@gmail.com')->firstOrFail();
 
-    $this->withToken($perawatToken)
+    $this->withToken($requesterToken)
         ->postJson("/api/v1/impersonation/{$target->id}/start")
         ->assertForbidden();
 });

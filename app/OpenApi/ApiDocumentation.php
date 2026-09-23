@@ -34,6 +34,7 @@ use OpenApi\Annotations as OA;
  * @OA\Tag(name="Example Live", description="Market proxy and background task demo")
  * @OA\Tag(name="Impersonation", description="Sanctum token impersonation")
  * @OA\Tag(name="Notifications", description="Notification and activity summary")
+ * @OA\Tag(name="Helpdesk", description="Helpdesk TIK and Sarpras tickets")
  *
  * @OA\Schema(
  *     schema="User",
@@ -124,6 +125,204 @@ use OpenApi\Annotations as OA;
  *     @OA\Property(property="per_page", type="integer"),
  *     @OA\Property(property="to", type="integer", nullable=true),
  *     @OA\Property(property="total", type="integer")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="TicketReporterSummary",
+ *     type="object",
+ *     required={"id","name"},
+ *
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="name", type="string", example="Rina Pelapor")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="TicketUnitSummary",
+ *     type="object",
+ *     required={"id","name"},
+ *
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="name", type="string", example="Unit Rawat Jalan")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="TicketOfficerSummary",
+ *     type="object",
+ *     required={"id","name"},
+ *
+ *     @OA\Property(property="id", type="integer", example=2),
+ *     @OA\Property(property="name", type="string", example="Petugas Terpilih")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="TicketFileMetadata",
+ *     type="object",
+ *     required={"object_key","original_name","mime_type","size"},
+ *
+ *     @OA\Property(property="object_key", type="string", example="helpdesk/evidence/550e8400-e29b-41d4-a716-446655440000.jpg"),
+ *     @OA\Property(property="original_name", type="string", example="kerusakan-komputer.jpg"),
+ *     @OA\Property(property="mime_type", type="string", example="image/jpeg"),
+ *     @OA\Property(property="size", type="integer", example=245760)
+ * )
+ *
+ * @OA\Schema(
+ *     schema="TicketHandling",
+ *     type="object",
+ *     required={"id","notes","status","started_at","completed_at","handled_by","result_photo","created_at"},
+ *
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="notes", type="string", example="Kabel daya dikencangkan dan perangkat diuji."),
+ *     @OA\Property(property="status", type="string", enum={"diproses","selesai"}, example="diproses"),
+ *     @OA\Property(property="started_at", type="string", format="date-time", nullable=true),
+ *     @OA\Property(property="completed_at", type="string", format="date-time", nullable=true),
+ *     @OA\Property(property="handled_by", ref="#/components/schemas/TicketOfficerSummary"),
+ *     @OA\Property(property="result_photo", ref="#/components/schemas/TicketFileMetadata", nullable=true),
+ *     @OA\Property(property="created_at", type="string", format="date-time")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="TicketRead",
+ *     type="object",
+ *     required={"id","ticket_number","service","category","description","status","rejection_reason","priority","reporter","unit","assigned_officer","initial_evidence","completed_at","created_at"},
+ *
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="ticket_number", type="string", example="TIK-2026-0001"),
+ *     @OA\Property(property="service", type="string", enum={"tik","sarpras"}, example="tik"),
+ *     @OA\Property(property="category", type="string", nullable=true, example="Perangkat Komputer"),
+ *     @OA\Property(property="description", type="string", example="Komputer tidak dapat menyala."),
+ *     @OA\Property(property="status", type="string", enum={"baru","terverifikasi","diproses","selesai","ditolak"}, example="baru"),
+ *     @OA\Property(property="rejection_reason", type="string", nullable=true, example="Informasi kerusakan tidak sesuai."),
+ *     @OA\Property(property="priority", type="string", enum={"critical","high","medium","low"}, nullable=true, example="high"),
+ *     @OA\Property(property="reporter", ref="#/components/schemas/TicketReporterSummary"),
+ *     @OA\Property(property="unit", ref="#/components/schemas/TicketUnitSummary"),
+ *     @OA\Property(property="assigned_officer", ref="#/components/schemas/TicketOfficerSummary", nullable=true),
+ *     @OA\Property(property="initial_evidence", ref="#/components/schemas/TicketFileMetadata", nullable=true),
+ *     @OA\Property(property="completed_at", type="string", format="date-time", nullable=true),
+ *     @OA\Property(property="handlings", type="array", @OA\Items(ref="#/components/schemas/TicketHandling")),
+ *     @OA\Property(property="created_at", type="string", format="date-time")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="CreateTicketRequest",
+ *     type="object",
+ *     required={"service","unit_id","description"},
+ *
+ *     @OA\Property(property="service", type="string", enum={"tik","sarpras"}, example="tik"),
+ *     @OA\Property(property="unit_id", type="integer", example=1),
+ *     @OA\Property(property="category", type="string", maxLength=255, nullable=true, example="Perangkat Komputer"),
+ *     @OA\Property(property="description", type="string", example="Komputer tidak dapat menyala."),
+ *     @OA\Property(property="initial_evidence", type="string", format="binary", nullable=true)
+ * )
+ *
+ * @OA\Schema(
+ *     schema="TicketCreateResponse",
+ *     type="object",
+ *     required={"message","data"},
+ *
+ *     @OA\Property(property="message", type="string", example="Tiket berhasil dibuat."),
+ *     @OA\Property(property="data", ref="#/components/schemas/TicketRead")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="RejectTicketRequest",
+ *     type="object",
+ *     required={"reason"},
+ *
+ *     @OA\Property(property="reason", type="string", example="Informasi kerusakan tidak sesuai.")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="AssignTicketRequest",
+ *     type="object",
+ *     required={"priority","officer_id"},
+ *
+ *     @OA\Property(property="priority", type="string", enum={"critical","high","medium","low"}, example="high"),
+ *     @OA\Property(property="officer_id", type="integer", example=2)
+ * )
+ *
+ * @OA\Schema(
+ *     schema="CreateTicketHandlingRequest",
+ *     type="object",
+ *     required={"notes","status"},
+ *
+ *     @OA\Property(property="notes", type="string", example="Kabel daya dikencangkan dan perangkat diuji."),
+ *     @OA\Property(property="status", type="string", enum={"diproses","selesai"}, example="diproses"),
+ *     @OA\Property(property="started_at", type="string", format="date-time", nullable=true),
+ *     @OA\Property(property="completed_at", type="string", format="date-time", nullable=true, description="Required when status is selesai. Must be equal to or after started_at when a start time is supplied."),
+ *     @OA\Property(property="result_photo", type="string", format="binary", nullable=true)
+ * )
+ *
+ * @OA\Schema(
+ *     schema="TicketActionResponse",
+ *     type="object",
+ *     required={"message","data"},
+ *
+ *     @OA\Property(property="message", type="string", example="Tiket berhasil diverifikasi."),
+ *     @OA\Property(property="data", ref="#/components/schemas/TicketRead")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="TicketPaginationLinks",
+ *     type="object",
+ *     required={"first","last","prev","next"},
+ *
+ *     @OA\Property(property="first", type="string", format="uri"),
+ *     @OA\Property(property="last", type="string", format="uri"),
+ *     @OA\Property(property="prev", type="string", format="uri", nullable=true),
+ *     @OA\Property(property="next", type="string", format="uri", nullable=true)
+ * )
+ *
+ * @OA\Schema(
+ *     schema="TicketPaginationLinkItem",
+ *     type="object",
+ *     required={"url","label","page","active"},
+ *
+ *     @OA\Property(property="url", type="string", format="uri", nullable=true),
+ *     @OA\Property(property="label", type="string"),
+ *     @OA\Property(property="page", type="integer", nullable=true),
+ *     @OA\Property(property="active", type="boolean")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="TicketPaginationMeta",
+ *     type="object",
+ *     required={"current_page","from","last_page","links","path","per_page","to","total"},
+ *
+ *     @OA\Property(property="current_page", type="integer", example=1),
+ *     @OA\Property(property="from", type="integer", nullable=true, example=1),
+ *     @OA\Property(property="last_page", type="integer", example=3),
+ *     @OA\Property(property="links", type="array", @OA\Items(ref="#/components/schemas/TicketPaginationLinkItem")),
+ *     @OA\Property(property="path", type="string", format="uri"),
+ *     @OA\Property(property="per_page", type="integer", example=15),
+ *     @OA\Property(property="to", type="integer", nullable=true, example=15),
+ *     @OA\Property(property="total", type="integer", example=42)
+ * )
+ *
+ * @OA\Schema(
+ *     schema="TicketCollectionResponse",
+ *     type="object",
+ *     required={"data","links","meta"},
+ *
+ *     @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/TicketRead")),
+ *     @OA\Property(property="links", ref="#/components/schemas/TicketPaginationLinks"),
+ *     @OA\Property(property="meta", ref="#/components/schemas/TicketPaginationMeta")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="TicketReadResponse",
+ *     type="object",
+ *     required={"data"},
+ *
+ *     @OA\Property(property="data", ref="#/components/schemas/TicketRead")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="TicketReadError",
+ *     type="object",
+ *     required={"message"},
+ *
+ *     @OA\Property(property="message", type="string", example="Resource not found."),
+ *     @OA\Property(property="errors", type="object", nullable=true, @OA\AdditionalProperties(type="array", @OA\Items(type="string")))
  * )
  *
  * @OA\Parameter(
@@ -973,4 +1172,156 @@ class ApiDocumentation
      * )
      */
     public function notificationsReadAll(): void {}
+
+    /**
+     * @OA\Get(
+     *     path="/tickets",
+     *     operationId="listTickets",
+     *     tags={"Helpdesk"},
+     *     summary="List Helpdesk tickets",
+     *     description="Returns TIK and Sarpras tickets ordered from newest to oldest. Requires the tickets-access permission.",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="page", in="query", required=false, @OA\Schema(type="integer", minimum=1, default=1)),
+     *     @OA\Parameter(name="per_page", in="query", required=false, @OA\Schema(type="integer", minimum=1, maximum=100, default=15)),
+     *     @OA\Parameter(name="service", in="query", required=false, description="Ticket service.", @OA\Schema(type="string", enum={"tik","sarpras"})),
+     *     @OA\Parameter(name="status", in="query", required=false, description="Ticket status.", @OA\Schema(type="string", enum={"baru","terverifikasi","diproses","selesai","ditolak"})),
+     *     @OA\Parameter(name="date_from", in="query", required=false, description="Inclusive created date lower bound.", @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="date_to", in="query", required=false, description="Inclusive created date upper bound.", @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="search", in="query", required=false, description="Search ticket number, category, and description.", @OA\Schema(type="string", maxLength=255)),
+     *
+     *     @OA\Response(response=200, description="Paginated tickets", @OA\JsonContent(ref="#/components/schemas/TicketCollectionResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Missing tickets-access permission", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=422, description="Invalid filters", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
+     * )
+     */
+    public function ticketsIndex(): void {}
+
+    /**
+     * @OA\Post(
+     *     path="/tickets",
+     *     operationId="createTicket",
+     *     tags={"Helpdesk"},
+     *     summary="Create a Helpdesk ticket",
+     *     description="Creates a TIK or Sarpras ticket for the authenticated reporter with status baru. Requires the tickets-create permission.",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\RequestBody(required=true, @OA\MediaType(mediaType="multipart/form-data", @OA\Schema(ref="#/components/schemas/CreateTicketRequest"))),
+     *
+     *     @OA\Response(response=201, description="Ticket created", @OA\JsonContent(ref="#/components/schemas/TicketCreateResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Missing tickets-create permission", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=422, description="Invalid ticket data", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
+     * )
+     */
+    public function ticketsStore(): void {}
+
+    /**
+     * @OA\Post(
+     *     path="/tickets/{ticket}/verify",
+     *     operationId="verifyTicket",
+     *     tags={"Helpdesk"},
+     *     summary="Verify a new Helpdesk ticket",
+     *     description="Requires the tickets-verify permission.",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
+     *
+     *     @OA\Response(response=200, description="Ticket verified", @OA\JsonContent(ref="#/components/schemas/TicketActionResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Missing tickets-verify permission", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=404, description="Ticket not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=409, description="Ticket state conflict", @OA\JsonContent(ref="#/components/schemas/TicketReadError"))
+     * )
+     */
+    public function ticketsVerify(): void {}
+
+    /**
+     * @OA\Post(
+     *     path="/tickets/{ticket}/reject",
+     *     operationId="rejectTicket",
+     *     tags={"Helpdesk"},
+     *     summary="Reject a new Helpdesk ticket",
+     *     description="Requires the tickets-reject permission.",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
+     *
+     *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/RejectTicketRequest")),
+     *
+     *     @OA\Response(response=200, description="Ticket rejected", @OA\JsonContent(ref="#/components/schemas/TicketActionResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Missing tickets-reject permission", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=404, description="Ticket not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=409, description="Ticket state conflict", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=422, description="Invalid rejection data", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
+     * )
+     */
+    public function ticketsReject(): void {}
+
+    /**
+     * @OA\Post(
+     *     path="/tickets/{ticket}/assign",
+     *     operationId="assignTicket",
+     *     tags={"Helpdesk"},
+     *     summary="Set priority and assign an officer",
+     *     description="Assignment keeps the ticket status as terverifikasi. Requires the tickets-assign permission.",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
+     *
+     *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/AssignTicketRequest")),
+     *
+     *     @OA\Response(response=200, description="Priority and officer assigned", @OA\JsonContent(ref="#/components/schemas/TicketActionResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Missing tickets-assign permission", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=404, description="Ticket not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=409, description="Ticket state conflict", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=422, description="Invalid assignment data", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
+     * )
+     */
+    public function ticketsAssign(): void {}
+
+    /**
+     * @OA\Post(
+     *     path="/tickets/{ticket}/handlings",
+     *     operationId="createTicketHandling",
+     *     tags={"Helpdesk"},
+     *     summary="Add ticket handling history",
+     *     description="Adds history to a ticket currently in progress. The ticket remains diproses or becomes selesai; this endpoint does not start processing from terverifikasi. Requires the tickets-handle permission.",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
+     *
+     *     @OA\RequestBody(required=true, @OA\MediaType(mediaType="multipart/form-data", @OA\Schema(ref="#/components/schemas/CreateTicketHandlingRequest"))),
+     *
+     *     @OA\Response(response=200, description="Ticket handling history stored", @OA\JsonContent(ref="#/components/schemas/TicketActionResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Missing tickets-handle permission", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=404, description="Ticket not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=409, description="Ticket state conflict", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=422, description="Invalid handling data", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
+     * )
+     */
+    public function ticketHandlingsStore(): void {}
+
+    /**
+     * @OA\Get(
+     *     path="/tickets/{ticket}",
+     *     operationId="showTicket",
+     *     tags={"Helpdesk"},
+     *     summary="Show a Helpdesk ticket",
+     *     description="Requires the tickets-access permission.",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
+     *
+     *     @OA\Response(response=200, description="Ticket detail", @OA\JsonContent(ref="#/components/schemas/TicketReadResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Missing tickets-access permission", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=404, description="Ticket not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError"))
+     * )
+     */
+    public function ticketsShow(): void {}
 }

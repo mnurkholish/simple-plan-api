@@ -25,6 +25,7 @@ paths:
       summary: Melihat daftar tiket
       operationId: listTickets
       x-auth-required: true
+      x-required-permission: tickets-access
       parameters:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PerPage'
@@ -34,6 +35,7 @@ paths:
           description: Jenis layanan tiket.
           schema:
             type: string
+            enum: [tik, sarpras]
             example: tik
         - name: status
           in: query
@@ -41,6 +43,7 @@ paths:
           description: Filter status tiket.
           schema:
             type: string
+            enum: [baru, terverifikasi, diproses, selesai, ditolak]
             example: baru
         - name: date_from
           in: query
@@ -54,11 +57,14 @@ paths:
           schema:
             type: string
             format: date
+          description: Batas akhir tanggal dibuat, bersifat inklusif.
         - name: search
           in: query
           required: false
+          description: Pencarian pada nomor tiket, kategori, dan deskripsi.
           schema:
             type: string
+            maxLength: 255
       responses:
         '200':
           description: Daftar tiket berhasil diambil.
@@ -67,15 +73,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/TicketCollectionResponse'
         '401':
-          $ref: '#/components/responses/Unauthenticated'
+          $ref: '#/components/responses/TicketUnauthenticated'
         '403':
-          $ref: '#/components/responses/Forbidden'
+          $ref: '#/components/responses/TicketForbidden'
+        '422':
+          $ref: '#/components/responses/TicketValidationError'
 
     post:
       tags: [Helpdesk]
       summary: Membuat tiket
       operationId: createTicket
       x-auth-required: true
+      x-required-permission: tickets-create
       requestBody:
         required: true
         content:
@@ -88,13 +97,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TicketResponse'
+                $ref: '#/components/schemas/TicketCreateResponse'
         '401':
-          $ref: '#/components/responses/Unauthenticated'
+          $ref: '#/components/responses/TicketUnauthenticated'
         '403':
-          $ref: '#/components/responses/Forbidden'
+          $ref: '#/components/responses/TicketForbidden'
         '422':
-          $ref: '#/components/responses/ValidationError'
+          $ref: '#/components/responses/TicketValidationError'
 
   /tickets/{ticket}:
     get:
@@ -102,6 +111,7 @@ paths:
       summary: Melihat detail tiket
       operationId: showTicket
       x-auth-required: true
+      x-required-permission: tickets-access
       parameters:
         - $ref: '#/components/parameters/TicketId'
       responses:
@@ -110,20 +120,21 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TicketResponse'
+                $ref: '#/components/schemas/TicketReadResponse'
         '401':
-          $ref: '#/components/responses/Unauthenticated'
+          $ref: '#/components/responses/TicketUnauthenticated'
         '403':
-          $ref: '#/components/responses/Forbidden'
+          $ref: '#/components/responses/TicketForbidden'
         '404':
-          $ref: '#/components/responses/NotFound'
+          $ref: '#/components/responses/TicketNotFound'
 
   /tickets/{ticket}/verify:
     post:
       tags: [Helpdesk]
-      summary: Memverifikasi tiket
+      summary: Memverifikasi tiket baru
       operationId: verifyTicket
       x-auth-required: true
+      x-required-permission: tickets-verify
       parameters:
         - $ref: '#/components/parameters/TicketId'
       responses:
@@ -132,22 +143,23 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TicketResponse'
+                $ref: '#/components/schemas/TicketActionResponse'
         '401':
-          $ref: '#/components/responses/Unauthenticated'
+          $ref: '#/components/responses/TicketUnauthenticated'
         '403':
-          $ref: '#/components/responses/Forbidden'
+          $ref: '#/components/responses/TicketForbidden'
         '404':
-          $ref: '#/components/responses/NotFound'
+          $ref: '#/components/responses/TicketNotFound'
         '409':
-          $ref: '#/components/responses/BusinessConflict'
+          $ref: '#/components/responses/TicketConflict'
 
   /tickets/{ticket}/reject:
     post:
       tags: [Helpdesk]
-      summary: Menolak tiket
+      summary: Menolak tiket baru
       operationId: rejectTicket
       x-auth-required: true
+      x-required-permission: tickets-reject
       parameters:
         - $ref: '#/components/parameters/TicketId'
       requestBody:
@@ -162,24 +174,26 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TicketResponse'
+                $ref: '#/components/schemas/TicketActionResponse'
         '401':
-          $ref: '#/components/responses/Unauthenticated'
+          $ref: '#/components/responses/TicketUnauthenticated'
         '403':
-          $ref: '#/components/responses/Forbidden'
+          $ref: '#/components/responses/TicketForbidden'
         '404':
-          $ref: '#/components/responses/NotFound'
+          $ref: '#/components/responses/TicketNotFound'
         '409':
-          $ref: '#/components/responses/BusinessConflict'
+          $ref: '#/components/responses/TicketConflict'
         '422':
-          $ref: '#/components/responses/ValidationError'
+          $ref: '#/components/responses/TicketValidationError'
 
   /tickets/{ticket}/assign:
     post:
       tags: [Helpdesk]
-      summary: Menentukan prioritas dan menugaskan tiket
+      summary: Menentukan prioritas dan petugas tiket
       operationId: assignTicket
+      description: Assignment tidak mengubah status tiket dari Terverifikasi menjadi Diproses.
       x-auth-required: true
+      x-required-permission: tickets-assign
       parameters:
         - $ref: '#/components/parameters/TicketId'
       requestBody:
@@ -194,17 +208,54 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TicketResponse'
+                $ref: '#/components/schemas/TicketActionResponse'
         '401':
-          $ref: '#/components/responses/Unauthenticated'
+          $ref: '#/components/responses/TicketUnauthenticated'
         '403':
-          $ref: '#/components/responses/Forbidden'
+          $ref: '#/components/responses/TicketForbidden'
         '404':
-          $ref: '#/components/responses/NotFound'
+          $ref: '#/components/responses/TicketNotFound'
         '409':
-          $ref: '#/components/responses/BusinessConflict'
+          $ref: '#/components/responses/TicketConflict'
         '422':
-          $ref: '#/components/responses/ValidationError'
+          $ref: '#/components/responses/TicketValidationError'
+
+  /tickets/{ticket}/handlings:
+    post:
+      tags: [Helpdesk]
+      summary: Menambahkan riwayat penanganan tiket
+      operationId: createTicketHandling
+      description: >-
+        Menambahkan satu catatan pada tiket yang sedang Diproses. Status dapat
+        tetap Diproses atau berubah menjadi Selesai. Endpoint ini tidak memulai
+        proses dari status Terverifikasi. Membutuhkan permission tickets-handle.
+      x-auth-required: true
+      x-required-permission: tickets-handle
+      parameters:
+        - $ref: '#/components/parameters/TicketId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateTicketHandlingRequest'
+      responses:
+        '200':
+          description: Riwayat penanganan berhasil disimpan.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketActionResponse'
+        '401':
+          $ref: '#/components/responses/TicketUnauthenticated'
+        '403':
+          $ref: '#/components/responses/TicketForbidden'
+        '404':
+          $ref: '#/components/responses/TicketNotFound'
+        '409':
+          $ref: '#/components/responses/TicketConflict'
+        '422':
+          $ref: '#/components/responses/TicketValidationError'
 
 components:
   parameters:
@@ -236,9 +287,24 @@ components:
         default: 15
 
   schemas:
-    Ticket:
+    TicketRead:
       type: object
       additionalProperties: false
+      required:
+        - id
+        - ticket_number
+        - service
+        - category
+        - description
+        - status
+        - rejection_reason
+        - priority
+        - reporter
+        - unit
+        - assigned_officer
+        - initial_evidence
+        - completed_at
+        - created_at
       properties:
         id:
           type: integer
@@ -248,6 +314,7 @@ components:
           example: TIK-2026-0001
         service:
           type: string
+          enum: [tik, sarpras]
           description: Jenis layanan tiket.
           example: tik
         category:
@@ -260,13 +327,18 @@ components:
           example: Komputer tidak dapat menyala.
         status:
           type: string
-          description: Nilai final mengikuti business rule yang disepakati.
+          enum: [baru, terverifikasi, diproses, selesai, ditolak]
           example: baru
+        rejection_reason:
+          type:
+            - string
+            - 'null'
+          example: Informasi kerusakan tidak sesuai.
         priority:
           type:
             - string
             - 'null'
-          description: Nilai final mengikuti business rule yang disepakati.
+          enum: [critical, high, medium, low, null]
           example: high
         reporter:
           $ref: '#/components/schemas/UserSummary'
@@ -280,13 +352,18 @@ components:
           anyOf:
             - $ref: '#/components/schemas/FileMetadata'
             - type: 'null'
-        created_at:
-          type: string
-          format: date-time
         completed_at:
           type:
             - string
             - 'null'
+          format: date-time
+        handlings:
+          type: array
+          description: Tersedia pada response detail dan pembaruan penanganan.
+          items:
+            $ref: '#/components/schemas/TicketHandling'
+        created_at:
+          type: string
           format: date-time
 
     UserSummary:
@@ -307,6 +384,12 @@ components:
 
     FileMetadata:
       type: object
+      additionalProperties: false
+      required:
+        - object_key
+        - original_name
+        - mime_type
+        - size
       properties:
         object_key:
           type: string
@@ -326,19 +409,22 @@ components:
       type: object
       required:
         - service
+        - unit_id
         - description
       properties:
         service:
           type: string
+          enum: [tik, sarpras]
           example: tik
-        asset_id:
+        unit_id:
+          type: integer
+          example: 1
+        category:
           type:
-            - integer
+            - string
             - 'null'
-        category_id:
-          type:
-            - integer
-            - 'null'
+          maxLength: 255
+          example: Perangkat Komputer
         description:
           type: string
         initial_evidence:
@@ -347,89 +433,240 @@ components:
             - 'null'
           format: binary
 
+    TicketCreateResponse:
+      type: object
+      required:
+        - message
+        - data
+      properties:
+        message:
+          type: string
+          example: Tiket berhasil dibuat.
+        data:
+          $ref: '#/components/schemas/TicketRead'
+
     RejectTicketRequest:
       type: object
+      additionalProperties: false
       required:
         - reason
       properties:
         reason:
           type: string
           minLength: 1
+          example: Informasi kerusakan tidak sesuai.
 
     AssignTicketRequest:
       type: object
+      additionalProperties: false
       required:
         - priority
         - officer_id
       properties:
         priority:
           type: string
-          description: Nilai final mengikuti business rule yang disepakati.
+          enum: [critical, high, medium, low]
           example: high
         officer_id:
           type: integer
+          example: 2
 
-    TicketResponse:
+    CreateTicketHandlingRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - notes
+        - status
+      properties:
+        notes:
+          type: string
+          example: Kabel daya dikencangkan dan perangkat diuji.
+        status:
+          type: string
+          enum: [diproses, selesai]
+          example: diproses
+        started_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        completed_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: >-
+            Wajib ketika status selesai. Harus sama atau setelah started_at jika
+            waktu mulai diberikan.
+        result_photo:
+          type:
+            - string
+            - 'null'
+          format: binary
+
+    TicketHandling:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - notes
+        - status
+        - started_at
+        - completed_at
+        - handled_by
+        - result_photo
+        - created_at
+      properties:
+        id:
+          type: integer
+          example: 1
+        notes:
+          type: string
+          example: Kabel daya dikencangkan dan perangkat diuji.
+        status:
+          type: string
+          enum: [diproses, selesai]
+          example: diproses
+        started_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        completed_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        handled_by:
+          $ref: '#/components/schemas/UserSummary'
+        result_photo:
+          anyOf:
+            - $ref: '#/components/schemas/FileMetadata'
+            - type: 'null'
+        created_at:
+          type: string
+          format: date-time
+
+    TicketActionResponse:
       type: object
       required:
-        - success
         - message
         - data
       properties:
-        success:
-          type: boolean
-          example: true
         message:
           type: string
-          example: Request processed successfully.
+          example: Tiket berhasil diverifikasi.
         data:
-          $ref: '#/components/schemas/Ticket'
+          $ref: '#/components/schemas/TicketRead'
 
     TicketCollectionResponse:
       type: object
       required:
-        - success
-        - message
         - data
+        - links
+        - meta
       properties:
-        success:
-          type: boolean
-          example: true
-        message:
-          type: string
-          example: Tickets retrieved successfully.
         data:
           type: array
           items:
-            $ref: '#/components/schemas/Ticket'
+            $ref: '#/components/schemas/TicketRead'
+        links:
+          $ref: '#/components/schemas/PaginationLinks'
         meta:
           $ref: '#/components/schemas/PaginationMeta'
 
+    TicketReadResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/TicketRead'
+
+    PaginationLinks:
+      type: object
+      required:
+        - first
+        - last
+        - prev
+        - next
+      properties:
+        first:
+          type: string
+          format: uri
+        last:
+          type: string
+          format: uri
+        prev:
+          type:
+            - string
+            - 'null'
+          format: uri
+        next:
+          type:
+            - string
+            - 'null'
+          format: uri
+
     PaginationMeta:
       type: object
+      required:
+        - current_page
+        - from
+        - last_page
+        - links
+        - path
+        - per_page
+        - to
+        - total
       properties:
         current_page:
           type: integer
           example: 1
-        per_page:
-          type: integer
-          example: 15
-        total:
-          type: integer
-          example: 42
+        from:
+          type:
+            - integer
+            - 'null'
         last_page:
           type: integer
           example: 3
+        links:
+          type: array
+          items:
+            type: object
+            properties:
+              url:
+                type:
+                  - string
+                  - 'null'
+                format: uri
+              label:
+                type: string
+              page:
+                type:
+                  - integer
+                  - 'null'
+              active:
+                type: boolean
+        path:
+          type: string
+          format: uri
+        per_page:
+          type: integer
+          example: 15
+        to:
+          type:
+            - integer
+            - 'null'
+        total:
+          type: integer
+          example: 42
 
-    ErrorResponse:
+    TicketReadError:
       type: object
       required:
-        - success
         - message
       properties:
-        success:
-          type: boolean
-          example: false
         message:
           type: string
         errors:
@@ -437,55 +674,50 @@ components:
           additionalProperties: true
 
   responses:
-    Unauthenticated:
+    TicketUnauthenticated:
       description: Pengguna belum terautentikasi.
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: '#/components/schemas/TicketReadError'
           example:
-            success: false
             message: Unauthenticated.
 
-    Forbidden:
-      description: Pengguna tidak memiliki izin.
+    TicketForbidden:
+      description: Pengguna tidak memiliki permission yang dibutuhkan endpoint.
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: '#/components/schemas/TicketReadError'
           example:
-            success: false
-            message: Forbidden.
+            message: User does not have the right permissions.
 
-    NotFound:
-      description: Resource tidak ditemukan.
+    TicketNotFound:
+      description: Tiket tidak ditemukan.
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: '#/components/schemas/TicketReadError'
           example:
-            success: false
             message: Resource not found.
 
-    BusinessConflict:
-      description: Operasi tidak dapat dilakukan karena kondisi business/workflow.
+    TicketValidationError:
+      description: Data request tiket tidak valid.
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: '#/components/schemas/TicketReadError'
           example:
-            success: false
-            message: Operation is not allowed in the current state.
-
-    ValidationError:
-      description: Request tidak valid.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-          example:
-            success: false
-            message: Validation failed.
+            message: The selected service is invalid.
             errors:
-              field:
-                - The field is required.
+              service:
+                - The selected service is invalid.
+
+    TicketConflict:
+      description: Status tiket tidak mengizinkan aksi workflow.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TicketReadError'
+          example:
+            message: Hanya tiket berstatus baru yang dapat diverifikasi.

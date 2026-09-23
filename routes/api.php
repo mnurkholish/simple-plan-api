@@ -10,6 +10,8 @@ use App\Http\Controllers\Api\V1\ImpersonationController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\RoleController;
+use App\Http\Controllers\Api\V1\TicketController;
+use App\Http\Controllers\Api\V1\TicketHandlingController;
 use App\Http\Controllers\Api\V1\UnitController;
 use App\Http\Controllers\Api\V1\UserController;
 use Illuminate\Support\Facades\Route;
@@ -60,6 +62,33 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
         Route::patch('notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
         Route::patch('notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
+
+        Route::get('tickets', [TicketController::class, 'index'])
+            ->middleware('permission:tickets-access')
+            ->name('tickets.index');
+        Route::post('tickets', [TicketController::class, 'store'])
+            ->middleware('permission:tickets-create')
+            ->name('tickets.store');
+        Route::post('tickets/{ticket}/verify', [TicketController::class, 'verify'])
+            ->middleware('permission:tickets-verify')
+            ->name('tickets.verify')
+            ->missing(fn () => response()->json(['message' => 'Resource not found.'], 404));
+        Route::post('tickets/{ticket}/reject', [TicketController::class, 'reject'])
+            ->middleware('permission:tickets-reject')
+            ->name('tickets.reject')
+            ->missing(fn () => response()->json(['message' => 'Resource not found.'], 404));
+        Route::post('tickets/{ticket}/assign', [TicketController::class, 'assign'])
+            ->middleware('permission:tickets-assign')
+            ->name('tickets.assign')
+            ->missing(fn () => response()->json(['message' => 'Resource not found.'], 404));
+        Route::post('tickets/{ticket}/handlings', [TicketHandlingController::class, 'store'])
+            ->middleware('permission:tickets-handle')
+            ->name('tickets.handlings.store')
+            ->missing(fn () => response()->json(['message' => 'Resource not found.'], 404));
+        Route::get('tickets/{ticket}', [TicketController::class, 'show'])
+            ->middleware('permission:tickets-access')
+            ->name('tickets.show')
+            ->missing(fn () => response()->json(['message' => 'Resource not found.'], 404));
 
         Route::post('impersonation/{user}/start', [ImpersonationController::class, 'start'])
             ->middleware('permission:impersonate')
