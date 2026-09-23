@@ -166,6 +166,8 @@ test('it generates the Helpdesk ticket Swagger contract', function (): void {
                 'ticket_number',
                 'service',
                 'category',
+                'tik_detail',
+                'sarpras_detail',
                 'description',
                 'status',
                 'rejection_reason',

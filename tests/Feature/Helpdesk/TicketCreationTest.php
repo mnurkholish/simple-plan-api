@@ -1,6 +1,8 @@
 <?php
 
 use App\Enums\TicketStatus;
+use App\Models\ItTag;
+use App\Models\QualityCategory;
 use App\Models\Ticket;
 use App\Models\Unit;
 use App\Models\User;
@@ -52,12 +54,21 @@ test('authenticated user without tickets-create permission cannot create a ticke
 test('authenticated user can create a TIK ticket', function (): void {
     $reporter = User::factory()->create();
     $unit = Unit::factory()->create();
+    $qualityCategory = QualityCategory::create([
+        'name' => 'Ketidaksesuaian Program',
+        'is_active' => true,
+    ]);
+    $itTag = ItTag::create([
+        'name' => 'Perangkat Komputer',
+        'is_active' => true,
+    ]);
     actingAsTicketCreator($reporter);
 
     $response = $this->postJson('/api/v1/tickets', [
         'service' => 'tik',
         'unit_id' => $unit->id,
-        'category' => 'Perangkat Komputer',
+        'quality_category_id' => $qualityCategory->id,
+        'it_tag_id' => $itTag->id,
         'description' => 'Komputer tidak dapat menyala.',
     ]);
 
@@ -66,6 +77,9 @@ test('authenticated user can create a TIK ticket', function (): void {
         ->assertJsonPath('message', 'Tiket berhasil dibuat.')
         ->assertJsonPath('data.service', 'tik')
         ->assertJsonPath('data.category', 'Perangkat Komputer')
+        ->assertJsonPath('data.tik_detail.quality_category.id', $qualityCategory->id)
+        ->assertJsonPath('data.tik_detail.it_tag.id', $itTag->id)
+        ->assertJsonPath('data.sarpras_detail', null)
         ->assertJsonPath('data.description', 'Komputer tidak dapat menyala.')
         ->assertJsonPath('data.status', 'baru')
         ->assertJsonPath('data.reporter.id', $reporter->id)
@@ -81,6 +95,11 @@ test('authenticated user can create a TIK ticket', function (): void {
         'unit_id' => $unit->id,
         'service' => 'tik',
         'status' => TicketStatus::Baru->value,
+    ]);
+    $this->assertDatabaseHas('ticket_tik_details', [
+        'ticket_id' => $response->json('data.id'),
+        'quality_category_id' => $qualityCategory->id,
+        'it_tag_id' => $itTag->id,
     ]);
 });
 

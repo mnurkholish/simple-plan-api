@@ -2,6 +2,9 @@
 
 use App\Enums\TicketService;
 use App\Enums\TicketStatus;
+use App\Models\ItTag;
+use App\Models\QualityCategory;
+use App\Models\SarprasCategory;
 use App\Models\Ticket;
 use App\Models\Unit;
 use App\Models\User;
@@ -83,6 +86,8 @@ test('it returns tickets newest first with pagination metadata', function (): vo
                     'ticket_number',
                     'service',
                     'category',
+                    'tik_detail',
+                    'sarpras_detail',
                     'description',
                     'status',
                     'rejection_reason',
@@ -178,20 +183,39 @@ test('it filters tickets by an inclusive date range', function (): void {
         ->assertJsonPath('data.1.ticket_number', 'TIK-2026-0002');
 });
 
-test('it searches ticket number category and description', function (): void {
+test('it searches ticket number classification and description', function (): void {
     $user = User::factory()->create();
     $unit = Unit::factory()->create();
+    $qualityCategory = QualityCategory::create([
+        'name' => 'Ketidaksesuaian Program',
+        'is_active' => true,
+    ]);
+    $itTag = ItTag::create([
+        'name' => 'Perangkat Komputer',
+        'is_active' => true,
+    ]);
+    $sarprasCategory = SarprasCategory::create([
+        'name' => 'Air Conditioner',
+        'is_active' => true,
+    ]);
     actingAsTicketReader($user);
 
-    Ticket::factory()->for($user, 'reporter')->for($unit)->create([
+    $tikTicket = Ticket::factory()->for($user, 'reporter')->for($unit)->create([
         'ticket_number' => 'TIK-2026-0042',
-        'category' => 'Perangkat Komputer',
-        'description' => 'Komputer tidak dapat menyala.',
+        'description' => 'Perangkat tidak dapat menyala.',
     ]);
-    Ticket::factory()->for($user, 'reporter')->for($unit)->create([
+    $tikTicket->tikDetail()->create([
+        'quality_category_id' => $qualityCategory->id,
+        'it_tag_id' => $itTag->id,
+    ]);
+
+    $sarprasTicket = Ticket::factory()->for($user, 'reporter')->for($unit)->create([
         'ticket_number' => 'SARPRAS-2026-0001',
-        'category' => 'Air Conditioner',
         'description' => 'Ruangan terasa panas.',
+        'service' => TicketService::Sarpras,
+    ]);
+    $sarprasTicket->sarprasDetail()->create([
+        'sarpras_category_id' => $sarprasCategory->id,
     ]);
 
     $this->getJson('/api/v1/tickets?search=komputer')
@@ -251,12 +275,18 @@ test('it combines ticket filters', function (): void {
 test('it returns ticket details with reporter and unit summaries', function (): void {
     $reporter = User::factory()->create(['name' => 'Dedi Pelapor']);
     $unit = Unit::factory()->create(['unit_name' => 'Unit Radiologi']);
+    $sarprasCategory = SarprasCategory::create([
+        'name' => 'Kelistrikan',
+        'is_active' => true,
+    ]);
     $ticket = Ticket::factory()->for($reporter, 'reporter')->for($unit)->create([
         'ticket_number' => 'SARPRAS-2026-0007',
         'service' => TicketService::Sarpras,
-        'category' => 'Kelistrikan',
         'description' => 'Lampu ruang pemeriksaan mati.',
         'status' => TicketStatus::Terverifikasi,
+    ]);
+    $ticket->sarprasDetail()->create([
+        'sarpras_category_id' => $sarprasCategory->id,
     ]);
     actingAsTicketReader($reporter);
 
@@ -268,6 +298,13 @@ test('it returns ticket details with reporter and unit summaries', function (): 
                 'ticket_number' => 'SARPRAS-2026-0007',
                 'service' => 'sarpras',
                 'category' => 'Kelistrikan',
+                'tik_detail' => null,
+                'sarpras_detail' => [
+                    'sarpras_category' => [
+                        'id' => $sarprasCategory->id,
+                        'name' => 'Kelistrikan',
+                    ],
+                ],
                 'description' => 'Lampu ruang pemeriksaan mati.',
                 'status' => 'terverifikasi',
                 'rejection_reason' => null,
