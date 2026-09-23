@@ -1,6 +1,6 @@
 # SIMPLE-PLAN Database Guidelines
 
-Panduan ini hanya membahas aturan database SIMPLE-PLAN: PostgreSQL, migration,
+Panduan ini hanya membahas aturan database SIMPLE-PLAN: MySQL, migration,
 schema evolution, naming, relationship, constraint, transaction, index/query,
 file metadata, dan data integrity.
 
@@ -14,7 +14,7 @@ requirement yang sudah disepakati.
 
 ## 1. Database Platform
 
-Gunakan PostgreSQL sebagai DBMS utama.
+Gunakan MySQL sebagai DBMS utama.
 
 Konfigurasi development yang disarankan:
 
@@ -72,7 +72,7 @@ Migration harus:
 
 ## 4. Naming and Relationships
 
-Ikuti convention Laravel dan PostgreSQL:
+Ikuti convention Laravel dan MySQL:
 
 - `snake_case` untuk tabel dan kolom;
 - nama tabel plural;
@@ -112,16 +112,16 @@ Gunakan pendekatan yang konsisten:
 
 - PHP Enum;
 - string/varchar dengan validation;
-- PostgreSQL constraint jika nilainya stabil.
+- MySQL constraint jika nilainya stabil.
 
-Hindari PostgreSQL native ENUM untuk nilai yang masih mungkin sering berubah.
+Hindari MySQL native ENUM untuk nilai yang masih mungkin sering berubah.
 State transition tetap divalidasi di Service layer.
 
 ---
 
 ## 7. Date and Time
 
-Gunakan tipe waktu PostgreSQL melalui Laravel Migration.
+Gunakan tipe waktu MySQL melalui Laravel Migration.
 
 Gunakan `created_at` dan `updated_at` jika relevan. Jangan menyimpan tanggal
 atau waktu sebagai string.
@@ -133,7 +133,7 @@ maintenance, penyelesaian, dan approval.
 
 ## 8. File Metadata
 
-PostgreSQL menyimpan metadata file, bukan file fisik.
+MySQL menyimpan metadata file, bukan file fisik.
 
 File fisik dikelola melalui Laravel Filesystem. Storage dapat berpindah dari
 local disk ke MinIO tanpa mengubah schema selama database menyimpan referensi
@@ -262,7 +262,7 @@ Jangan memasukkan credential production atau data sensitif ke Seeder.
 - Jangan menyimpan secret atau credential di migration, seeder, atau source
   code.
 - Password harus menggunakan hashing Laravel.
-- Credential PostgreSQL dan object storage disimpan melalui environment
+- Credential MySQL dan object storage disimpan melalui environment
   configuration.
 - Hak akses data dan file ditegakkan pada application layer melalui
   authentication dan authorization.
