@@ -82,12 +82,14 @@ test('it exchanges a valid sso token for sanctum bearer token', function (): voi
         ->assertOk()
         ->assertJsonPath('message', 'Login SSO berhasil.')
         ->assertJsonPath('token_type', 'Bearer')
-        ->assertJsonPath('user.email', 'sso@example.com')
-        ->assertJsonStructure(['token', 'user' => ['roles', 'units', 'permissions']]);
+        ->assertJsonPath('user.nama', 'SSO User')
+        ->assertJsonPath('user.unit_user', 'ICU')
+        ->assertJsonPath('user.role', 'sso-admin')
+        ->assertJsonStructure(['token', 'user' => ['id', 'nama', 'unit_user', 'jabatan', 'role', 'status_user']]);
 
     $user = User::where('email', 'sso@example.com')->firstOrFail();
     expect($user->hasRole('sso-admin'))->toBeTrue()
-        ->and($user->units()->where('unit_name', 'ICU')->exists())->toBeTrue();
+        ->and($user->unit()->where('unit_name', 'ICU')->exists())->toBeTrue();
 });
 
 test('it rejects reused sso exchange code', function (): void {

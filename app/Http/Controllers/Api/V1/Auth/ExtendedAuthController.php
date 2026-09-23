@@ -48,7 +48,7 @@ class ExtendedAuthController extends Controller
             'message' => 'Registrasi berhasil.',
             'token_type' => 'Bearer',
             'token' => $token,
-            'user' => new UserResource($user->load(['roles.permissions', 'units'])),
+            'user' => new UserResource($user->load(['roles.permissions', 'unit'])),
         ], 201);
     }
 

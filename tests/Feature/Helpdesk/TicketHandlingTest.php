@@ -5,8 +5,8 @@ use App\Models\Ticket;
 use App\Models\TicketHandling;
 use App\Models\User;
 use Database\Seeders\CorePermissionSeeder;
-use Database\Seeders\CoreRoleSeeder;
 use Database\Seeders\DomainPermissionSeeder;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
@@ -330,10 +330,10 @@ test('super admin receives all ticket permissions and can add ticket handling hi
     $this->seed([
         CorePermissionSeeder::class,
         DomainPermissionSeeder::class,
-        CoreRoleSeeder::class,
+        RoleSeeder::class,
     ]);
     $handler = User::factory()->create();
-    $handler->assignRole('super-admin');
+    $handler->assignRole('super admin');
     $ticket = Ticket::factory()->create(['status' => TicketStatus::Diproses]);
     Sanctum::actingAs($handler);
 

@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -29,24 +30,23 @@ test('authenticated user can update profile avatar', function (): void {
 
     $response
         ->assertOk()
-        ->assertJsonPath('data.email', 'juniyasyos@gmail.com')
+        ->assertJsonPath('data.nama', 'Juniyas Yos')
         ->assertJsonStructure([
             'data' => [
                 'id',
-                'name',
-                'email',
-                'nip',
-                'avatar',
-                'roles',
-                'units',
-                'permissions',
+                'nama',
+                'unit_user',
+                'jabatan',
+                'role',
+                'status_user',
             ],
             'message',
         ]);
 
-    $avatarUrl = $response->json('data.avatar');
-    expect($avatarUrl)->toContain('/storage/avatars/');
+    $user = User::query()->where('email', 'juniyasyos@gmail.com')->firstOrFail();
+    $avatarPath = $user->getRawOriginal('avatar');
 
-    $avatarPath = str($avatarUrl)->after('/storage/')->toString();
+    expect($user->name)->toBe('Juniyas Yos')
+        ->and($avatarPath)->toStartWith('avatars/');
     Storage::disk('public')->assertExists($avatarPath);
 });
