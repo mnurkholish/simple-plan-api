@@ -2205,7 +2205,7 @@
                     {
                         "name": "search",
                         "in": "query",
-                        "description": "Search ticket number, category, and description.",
+                        "description": "Search ticket number, classification, and description.",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -3099,6 +3099,7 @@
                         "example": "Kabel daya dikencangkan dan perangkat diuji."
                     },
                     "status": {
+                        "description": "Current ticket status, not a ticket_handlings column.",
                         "type": "string",
                         "example": "diproses",
                         "enum": [
@@ -3134,12 +3135,62 @@
                 },
                 "type": "object"
             },
+            "TicketNamedReference": {
+                "required": [
+                    "id",
+                    "name"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Perangkat Komputer"
+                    }
+                },
+                "type": "object"
+            },
+            "TicketTikDetail": {
+                "required": [
+                    "quality_category",
+                    "it_tag",
+                    "custom_it_tag_text"
+                ],
+                "properties": {
+                    "quality_category": {
+                        "$ref": "#/components/schemas/TicketNamedReference"
+                    },
+                    "it_tag": {
+                        "$ref": "#/components/schemas/TicketNamedReference"
+                    },
+                    "custom_it_tag_text": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "TicketSarprasDetail": {
+                "required": [
+                    "sarpras_category"
+                ],
+                "properties": {
+                    "sarpras_category": {
+                        "$ref": "#/components/schemas/TicketNamedReference"
+                    }
+                },
+                "type": "object"
+            },
             "TicketRead": {
                 "required": [
                     "id",
                     "ticket_number",
                     "service",
                     "category",
+                    "tik_detail",
+                    "sarpras_detail",
                     "description",
                     "status",
                     "rejection_reason",
@@ -3169,8 +3220,25 @@
                         ]
                     },
                     "category": {
+                        "description": "Compatibility label derived from the ticket detail relation.",
                         "type": "string",
                         "example": "Perangkat Komputer",
+                        "nullable": true
+                    },
+                    "tik_detail": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/TicketTikDetail"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "sarpras_detail": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/TicketSarprasDetail"
+                            }
+                        ],
                         "nullable": true
                     },
                     "description": {
@@ -3189,6 +3257,7 @@
                         ]
                     },
                     "rejection_reason": {
+                        "description": "Compatibility field derived from the latest rejected status history notes.",
                         "type": "string",
                         "example": "Informasi kerusakan tidak sesuai.",
                         "nullable": true
@@ -3263,11 +3332,25 @@
                         "type": "integer",
                         "example": 1
                     },
-                    "category": {
+                    "quality_category_id": {
+                        "type": "integer",
+                        "example": 1,
+                        "nullable": true
+                    },
+                    "it_tag_id": {
+                        "type": "integer",
+                        "example": 1,
+                        "nullable": true
+                    },
+                    "custom_it_tag_text": {
                         "type": "string",
-                        "example": "Perangkat Komputer",
                         "nullable": true,
                         "maxLength": 255
+                    },
+                    "sarpras_category_id": {
+                        "type": "integer",
+                        "example": 1,
+                        "nullable": true
                     },
                     "description": {
                         "type": "string",

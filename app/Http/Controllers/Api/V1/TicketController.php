@@ -28,6 +28,10 @@ class TicketController extends Controller
             ->with([
                 'assignedOfficer:id,name',
                 'reporter:id,name',
+                'sarprasDetail.sarprasCategory:id,name',
+                'statusHistories:id,ticket_id,to_status,notes,created_at',
+                'tikDetail.itTag:id,name',
+                'tikDetail.qualityCategory:id,name',
                 'unit:id,unit_name',
             ])
             ->when(
@@ -58,9 +62,27 @@ class TicketController extends Controller
                 $filters['search'] ?? null,
                 function (Builder $query, string $search): Builder {
                     return $query->where(function (Builder $query) use ($search): void {
-                        foreach (['ticket_number', 'category', 'description'] as $column) {
+                        foreach (['ticket_number', 'description'] as $column) {
                             $query->orWhereLike($column, "%{$search}%");
                         }
+
+                        $query
+                            ->orWhereHas('tikDetail', function (Builder $detailQuery) use ($search): void {
+                                $detailQuery
+                                    ->whereLike('custom_it_tag_text', "%{$search}%")
+                                    ->orWhereHas(
+                                        'qualityCategory',
+                                        fn (Builder $categoryQuery): Builder => $categoryQuery->whereLike('name', "%{$search}%"),
+                                    )
+                                    ->orWhereHas(
+                                        'itTag',
+                                        fn (Builder $tagQuery): Builder => $tagQuery->whereLike('name', "%{$search}%"),
+                                    );
+                            })
+                            ->orWhereHas(
+                                'sarprasDetail.sarprasCategory',
+                                fn (Builder $categoryQuery): Builder => $categoryQuery->whereLike('name', "%{$search}%"),
+                            );
                     });
                 },
             )
@@ -77,7 +99,12 @@ class TicketController extends Controller
         return new TicketResource($ticket->load([
             'assignedOfficer:id,name',
             'handlings.handledBy:id,name',
+            'handlings.ticket:id,status',
             'reporter:id,name',
+            'sarprasDetail.sarprasCategory:id,name',
+            'statusHistories:id,ticket_id,to_status,notes,created_at',
+            'tikDetail.itTag:id,name',
+            'tikDetail.qualityCategory:id,name',
             'unit:id,unit_name',
         ]));
     }
@@ -93,6 +120,10 @@ class TicketController extends Controller
         return (new TicketResource($ticket->load([
             'assignedOfficer:id,name',
             'reporter:id,name',
+            'sarprasDetail.sarprasCategory:id,name',
+            'statusHistories:id,ticket_id,to_status,notes,created_at',
+            'tikDetail.itTag:id,name',
+            'tikDetail.qualityCategory:id,name',
             'unit:id,unit_name',
         ])))
             ->additional(['message' => 'Tiket berhasil dibuat.'])
@@ -107,17 +138,29 @@ class TicketController extends Controller
         return (new TicketResource($ticket->load([
             'assignedOfficer:id,name',
             'reporter:id,name',
+            'sarprasDetail.sarprasCategory:id,name',
+            'statusHistories:id,ticket_id,to_status,notes,created_at',
+            'tikDetail.itTag:id,name',
+            'tikDetail.qualityCategory:id,name',
             'unit:id,unit_name',
         ])))->additional(['message' => 'Tiket berhasil diverifikasi.']);
     }
 
     public function reject(RejectTicketRequest $request, Ticket $ticket): TicketResource
     {
-        $ticket = $this->service->reject($ticket, $request->string('reason')->toString());
+        $ticket = $this->service->reject(
+            $ticket,
+            $request->string('reason')->toString(),
+            $request->user(),
+        );
 
         return (new TicketResource($ticket->load([
             'assignedOfficer:id,name',
             'reporter:id,name',
+            'sarprasDetail.sarprasCategory:id,name',
+            'statusHistories:id,ticket_id,to_status,notes,created_at',
+            'tikDetail.itTag:id,name',
+            'tikDetail.qualityCategory:id,name',
             'unit:id,unit_name',
         ])))->additional(['message' => 'Tiket berhasil ditolak.']);
     }
@@ -134,6 +177,10 @@ class TicketController extends Controller
         return (new TicketResource($ticket->load([
             'assignedOfficer:id,name',
             'reporter:id,name',
+            'sarprasDetail.sarprasCategory:id,name',
+            'statusHistories:id,ticket_id,to_status,notes,created_at',
+            'tikDetail.itTag:id,name',
+            'tikDetail.qualityCategory:id,name',
             'unit:id,unit_name',
         ])))->additional(['message' => 'Prioritas dan petugas berhasil disimpan.']);
     }

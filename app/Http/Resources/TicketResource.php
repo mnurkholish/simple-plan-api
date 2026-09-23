@@ -2,6 +2,8 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\TicketService;
+use App\Enums\TicketStatus;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -18,10 +20,33 @@ class TicketResource extends JsonResource
             'id' => $this->id,
             'ticket_number' => $this->ticket_number,
             'service' => $this->service->value,
-            'category' => $this->category,
+            'category' => $this->categoryLabel(),
+            'tik_detail' => $this->whenLoaded(
+                'tikDetail',
+                fn (): ?array => $this->tikDetail === null ? null : [
+                    'quality_category' => $this->tikDetail->qualityCategory === null ? null : [
+                        'id' => $this->tikDetail->qualityCategory->id,
+                        'name' => $this->tikDetail->qualityCategory->name,
+                    ],
+                    'it_tag' => $this->tikDetail->itTag === null ? null : [
+                        'id' => $this->tikDetail->itTag->id,
+                        'name' => $this->tikDetail->itTag->name,
+                    ],
+                    'custom_it_tag_text' => $this->tikDetail->custom_it_tag_text,
+                ],
+            ),
+            'sarpras_detail' => $this->whenLoaded(
+                'sarprasDetail',
+                fn (): ?array => $this->sarprasDetail === null ? null : [
+                    'sarpras_category' => $this->sarprasDetail->sarprasCategory === null ? null : [
+                        'id' => $this->sarprasDetail->sarprasCategory->id,
+                        'name' => $this->sarprasDetail->sarprasCategory->name,
+                    ],
+                ],
+            ),
             'description' => $this->description,
             'status' => $this->status->value,
-            'rejection_reason' => $this->rejection_reason,
+            'rejection_reason' => $this->rejectionReason(),
             'priority' => $this->priority?->value,
             'reporter' => $this->whenLoaded('reporter', fn (): array => [
                 'id' => $this->reporter->id,
@@ -48,5 +73,30 @@ class TicketResource extends JsonResource
             'handlings' => TicketHandlingResource::collection($this->whenLoaded('handlings')),
             'created_at' => $this->created_at,
         ];
+    }
+
+    private function categoryLabel(): ?string
+    {
+        if ($this->service === TicketService::Tik && $this->resource->relationLoaded('tikDetail')) {
+            return $this->tikDetail?->custom_it_tag_text
+                ?: $this->tikDetail?->itTag?->name;
+        }
+
+        if ($this->service === TicketService::Sarpras && $this->resource->relationLoaded('sarprasDetail')) {
+            return $this->sarprasDetail?->sarprasCategory?->name;
+        }
+
+        return null;
+    }
+
+    private function rejectionReason(): ?string
+    {
+        if (! $this->resource->relationLoaded('statusHistories')) {
+            return null;
+        }
+
+        return $this->statusHistories
+            ->firstWhere('to_status', TicketStatus::Ditolak->value)
+            ?->notes;
     }
 }

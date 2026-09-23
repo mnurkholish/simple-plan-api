@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Ticket extends Model
 {
@@ -24,17 +25,21 @@ class Ticket extends Model
         'service',
         'reporter_id',
         'unit_id',
-        'category',
+        'asset_id',
         'description',
         'status',
+        'priority',
+        'classified_by_id',
+        'classified_at',
+        'assigned_officer_id',
+        'assigned_at',
+        'sla_deadline',
+        'completed_at',
+        'closed_at',
         'initial_evidence_object_key',
         'initial_evidence_original_name',
         'initial_evidence_mime_type',
         'initial_evidence_size',
-        'rejection_reason',
-        'priority',
-        'assigned_officer_id',
-        'completed_at',
     ];
 
     /**
@@ -47,7 +52,11 @@ class Ticket extends Model
             'status' => TicketStatus::class,
             'priority' => TicketPriority::class,
             'initial_evidence_size' => 'integer',
+            'classified_at' => 'datetime',
+            'assigned_at' => 'datetime',
+            'sla_deadline' => 'datetime',
             'completed_at' => 'datetime',
+            'closed_at' => 'datetime',
         ];
     }
 
@@ -61,15 +70,49 @@ class Ticket extends Model
         return $this->belongsTo(Unit::class);
     }
 
+    public function asset(): BelongsTo
+    {
+        return $this->belongsTo(Asset::class);
+    }
+
+    public function classifiedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'classified_by_id');
+    }
+
     public function assignedOfficer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_officer_id');
+    }
+
+    public function tikDetail(): HasOne
+    {
+        return $this->hasOne(TicketTikDetail::class);
+    }
+
+    public function sarprasDetail(): HasOne
+    {
+        return $this->hasOne(TicketSarprasDetail::class);
+    }
+
+    public function statusHistories(): HasMany
+    {
+        return $this->hasMany(TicketStatusHistory::class)
+            ->orderByDesc('created_at')
+            ->orderByDesc('id');
     }
 
     public function handlings(): HasMany
     {
         return $this->hasMany(TicketHandling::class)
             ->orderByDesc('created_at')
+            ->orderByDesc('id');
+    }
+
+    public function escalations(): HasMany
+    {
+        return $this->hasMany(TicketEscalation::class)
+            ->orderByDesc('escalated_at')
             ->orderByDesc('id');
     }
 }

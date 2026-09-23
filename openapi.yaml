@@ -61,7 +61,7 @@ paths:
         - name: search
           in: query
           required: false
-          description: Pencarian pada nomor tiket, kategori, dan deskripsi.
+          description: Pencarian pada nomor tiket, klasifikasi, dan deskripsi.
           schema:
             type: string
             maxLength: 255
@@ -295,6 +295,8 @@ components:
         - ticket_number
         - service
         - category
+        - tik_detail
+        - sarpras_detail
         - description
         - status
         - rejection_reason
@@ -321,7 +323,16 @@ components:
           type:
             - string
             - 'null'
+          description: Label kompatibilitas yang diturunkan dari detail klasifikasi tiket.
           example: Perangkat Komputer
+        tik_detail:
+          anyOf:
+            - $ref: '#/components/schemas/TicketTikDetail'
+            - type: 'null'
+        sarpras_detail:
+          anyOf:
+            - $ref: '#/components/schemas/TicketSarprasDetail'
+            - type: 'null'
         description:
           type: string
           example: Komputer tidak dapat menyala.
@@ -333,6 +344,7 @@ components:
           type:
             - string
             - 'null'
+          description: Field kompatibilitas dari notes status history penolakan terbaru.
           example: Informasi kerusakan tidak sesuai.
         priority:
           type:
@@ -382,6 +394,44 @@ components:
         name:
           type: string
 
+    TicketNamedReference:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+
+    TicketTikDetail:
+      type: object
+      additionalProperties: false
+      required:
+        - quality_category
+        - it_tag
+        - custom_it_tag_text
+      properties:
+        quality_category:
+          $ref: '#/components/schemas/TicketNamedReference'
+        it_tag:
+          $ref: '#/components/schemas/TicketNamedReference'
+        custom_it_tag_text:
+          type:
+            - string
+            - 'null'
+
+    TicketSarprasDetail:
+      type: object
+      additionalProperties: false
+      required:
+        - sarpras_category
+      properties:
+        sarpras_category:
+          $ref: '#/components/schemas/TicketNamedReference'
+
     FileMetadata:
       type: object
       additionalProperties: false
@@ -419,12 +469,26 @@ components:
         unit_id:
           type: integer
           example: 1
-        category:
+        quality_category_id:
+          type:
+            - integer
+            - 'null'
+          description: Digunakan bersama it_tag_id untuk detail tiket TIK.
+        it_tag_id:
+          type:
+            - integer
+            - 'null'
+          description: Digunakan bersama quality_category_id untuk detail tiket TIK.
+        custom_it_tag_text:
           type:
             - string
             - 'null'
           maxLength: 255
-          example: Perangkat Komputer
+        sarpras_category_id:
+          type:
+            - integer
+            - 'null'
+          description: Kategori detail tiket Sarpras.
         description:
           type: string
         initial_evidence:
@@ -484,6 +548,7 @@ components:
         status:
           type: string
           enum: [diproses, selesai]
+          description: Status target disimpan pada tickets.status, bukan ticket_handlings.
           example: diproses
         started_at:
           type:
@@ -526,6 +591,7 @@ components:
         status:
           type: string
           enum: [diproses, selesai]
+          description: Status tiket saat ini; bukan kolom pada ticket_handlings.
           example: diproses
         started_at:
           type:

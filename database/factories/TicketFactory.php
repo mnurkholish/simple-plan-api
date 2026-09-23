@@ -33,7 +33,6 @@ class TicketFactory extends Factory
             'service' => $service,
             'reporter_id' => User::factory(),
             'unit_id' => Unit::factory(),
-            'category' => fake()->optional()->words(2, true),
             'description' => fake()->sentence(),
             'status' => TicketStatus::Baru,
         ];
