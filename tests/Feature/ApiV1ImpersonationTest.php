@@ -19,6 +19,7 @@ function adminTokenForImpersonation(): string
 test('admin can start check and stop impersonating a user', function (): void {
     $adminToken = adminTokenForImpersonation();
     $target = User::factory()->create([
+        'name' => 'Impersonated User',
         'email' => 'impersonated@example.test',
         'status' => 'active',
     ]);
@@ -29,8 +30,8 @@ test('admin can start check and stop impersonating a user', function (): void {
     $impersonationToken = $start
         ->assertOk()
         ->assertJsonPath('token_type', 'Bearer')
-        ->assertJsonPath('user.email', 'impersonated@example.test')
-        ->assertJsonPath('impersonator.email', 'juniyasyos@gmail.com')
+        ->assertJsonPath('user.nama', 'Impersonated User')
+        ->assertJsonPath('impersonator.nama', 'Ahmad Ilyas')
         ->assertJsonPath('impersonation.active', true)
         ->json('token');
 
@@ -39,7 +40,7 @@ test('admin can start check and stop impersonating a user', function (): void {
     $this->withToken($impersonationToken)
         ->getJson('/api/v1/auth/me')
         ->assertOk()
-        ->assertJsonPath('data.email', 'impersonated@example.test');
+        ->assertJsonPath('data.nama', 'Impersonated User');
 
     $this->app['auth']->forgetGuards();
 
@@ -47,15 +48,15 @@ test('admin can start check and stop impersonating a user', function (): void {
         ->getJson('/api/v1/impersonation/status')
         ->assertOk()
         ->assertJsonPath('data.active', true)
-        ->assertJsonPath('data.impersonator.email', 'juniyasyos@gmail.com')
-        ->assertJsonPath('data.impersonated.email', 'impersonated@example.test');
+        ->assertJsonPath('data.impersonator.nama', 'Ahmad Ilyas')
+        ->assertJsonPath('data.impersonated.nama', 'Impersonated User');
 
     $this->app['auth']->forgetGuards();
 
     $this->withToken($impersonationToken)
         ->postJson('/api/v1/impersonation/stop')
         ->assertOk()
-        ->assertJsonPath('user.email', 'juniyasyos@gmail.com')
+        ->assertJsonPath('user.nama', 'Ahmad Ilyas')
         ->assertJsonPath('impersonation.active', false);
 
     $this->app['auth']->forgetGuards();
@@ -69,7 +70,7 @@ test('admin can start check and stop impersonating a user', function (): void {
     $this->withToken($adminToken)
         ->getJson('/api/v1/auth/me')
         ->assertOk()
-        ->assertJsonPath('data.email', 'juniyasyos@gmail.com');
+        ->assertJsonPath('data.nama', 'Ahmad Ilyas');
 });
 
 test('admin cannot impersonate themselves', function (): void {

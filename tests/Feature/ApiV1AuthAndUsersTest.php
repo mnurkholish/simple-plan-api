@@ -21,16 +21,15 @@ test('it logs in with sanctum bearer token response', function (): void {
             'token',
             'user' => [
                 'id',
-                'name',
-                'email',
-                'nip',
-                'status',
-                'roles',
-                'units',
-                'permissions',
+                'nama',
+                'unit_user',
+                'jabatan',
+                'role',
+                'status_user',
             ],
         ])
-        ->assertJsonPath('token_type', 'Bearer');
+        ->assertJsonPath('token_type', 'Bearer')
+        ->assertJsonPath('user.nama', 'Ahmad Ilyas');
 });
 
 test('it returns paginated users json for authenticated admin', function (): void {
@@ -43,25 +42,24 @@ test('it returns paginated users json for authenticated admin', function (): voi
     ])->json('token');
 
     $response = $this->withToken($token)
-        ->getJson('/api/v1/users?include=roles,units');
+        ->getJson('/api/v1/users');
 
     $response
         ->assertOk()
         ->assertJsonStructure([
             'data' => [
-                '*' => [
-                    'id',
-                    'name',
-                    'email',
-                    'nip',
-                    'avatar',
-                    'status',
-                    'roles',
-                    'units',
-                    'created_at',
+                'data' => [
+                    '*' => [
+                        'id',
+                        'nama',
+                        'unit_user',
+                        'jabatan',
+                        'role',
+                        'status_user',
+                    ],
                 ],
+                'links',
+                'meta',
             ],
-            'links',
-            'meta',
         ]);
 });

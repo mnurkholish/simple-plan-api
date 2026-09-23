@@ -26,7 +26,7 @@ test('it registers user and returns bearer token', function (): void {
     $response
         ->assertCreated()
         ->assertJsonPath('token_type', 'Bearer')
-        ->assertJsonPath('user.email', 'baru@example.com')
+        ->assertJsonPath('user.nama', 'User Baru')
         ->assertJsonStructure(['message', 'token', 'user']);
 
     $user = User::where('email', 'baru@example.com')->firstOrFail();
