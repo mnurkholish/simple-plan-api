@@ -12,19 +12,17 @@ class DomainRoleSeeder extends Seeder
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        $kepalaDepartemenRole = Role::firstOrCreate([
-            'name' => 'kepala-departemen',
-            'guard_name' => 'web',
-        ]);
-        $kepalaDepartemenRole->syncPermissions([
-            'dashboard-access',
-            'units-access-owned',
-        ]);
-
-        $perawatRole = Role::firstOrCreate([
-            'name' => 'perawat',
-            'guard_name' => 'web',
-        ]);
-        $perawatRole->syncPermissions(['dashboard-access']);
+        foreach ([
+            'koordinator-sarpras',
+            'petugas-tik',
+            'petugas-sarpras',
+            'user',
+            'management',
+        ] as $roleName) {
+            Role::firstOrCreate([
+                'name' => $roleName,
+                'guard_name' => 'web',
+            ]);
+        }
     }
 }
