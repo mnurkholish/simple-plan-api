@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Enums\TicketPriority;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AssignTicketRequest;
+use App\Http\Requests\ClassifyTicketRequest;
 use App\Http\Requests\ListTicketRequest;
 use App\Http\Requests\RejectTicketRequest;
 use App\Http\Requests\StoreTicketRequest;
@@ -12,7 +12,6 @@ use App\Http\Resources\TicketResource;
 use App\Models\Ticket;
 use App\Services\TicketService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
 
@@ -56,9 +55,15 @@ class TicketController extends Controller
             ->setStatusCode(201);
     }
 
-    public function verify(Request $request, Ticket $ticket): TicketResource
+    public function classify(ClassifyTicketRequest $request, Ticket $ticket): TicketResource
     {
-        $ticket = $this->service->verify($ticket, $request->user());
+        Gate::authorize('classify', $ticket);
+
+        $ticket = $this->service->classify(
+            $ticket,
+            $request->validated(),
+            $request->user(),
+        );
 
         return (new TicketResource($this->service->loadSummary($ticket)))
             ->additional(['message' => 'Tiket berhasil diklasifikasi.']);
@@ -66,6 +71,8 @@ class TicketController extends Controller
 
     public function reject(RejectTicketRequest $request, Ticket $ticket): TicketResource
     {
+        Gate::authorize('reject', $ticket);
+
         $ticket = $this->service->reject(
             $ticket,
             $request->string('reason')->toString(),
@@ -81,12 +88,11 @@ class TicketController extends Controller
         $validated = $request->validated();
         $ticket = $this->service->assign(
             $ticket,
-            TicketPriority::from($validated['priority']),
             $validated['officer_id'],
             $request->user(),
         );
 
         return (new TicketResource($this->service->loadSummary($ticket)))
-            ->additional(['message' => 'Prioritas dan petugas berhasil disimpan.']);
+            ->additional(['message' => 'Petugas berhasil ditugaskan.']);
     }
 }

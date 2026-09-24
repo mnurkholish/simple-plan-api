@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\TicketService;
 use App\Models\Ticket;
 use App\Models\User;
 
@@ -19,5 +20,25 @@ class TicketPolicy
                 ->visibleTo($user)
                 ->whereKey($ticket->getKey())
                 ->exists();
+    }
+
+    public function classify(User $user, Ticket $ticket): bool
+    {
+        return $this->canClassifyService($user, $ticket->service);
+    }
+
+    public function reject(User $user, Ticket $ticket): bool
+    {
+        return $this->canClassifyService($user, $ticket->service);
+    }
+
+    private function canClassifyService(User $user, TicketService $service): bool
+    {
+        if ($user->hasRole('super-admin')) {
+            return true;
+        }
+
+        return $service === TicketService::Sarpras
+            && $user->hasRole('koordinator-sarpras');
     }
 }

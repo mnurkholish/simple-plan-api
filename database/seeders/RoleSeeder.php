@@ -17,6 +17,8 @@ class RoleSeeder extends Seeder
             'koordinator-sarpras' => [
                 'tickets-access',
                 'tickets-create',
+                'tickets-verify',
+                'tickets-reject',
             ],
             'petugas-tik' => [
                 'tickets-access',

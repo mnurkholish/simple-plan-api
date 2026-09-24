@@ -294,11 +294,38 @@ use OpenApi\Annotations as OA;
  * )
  *
  * @OA\Schema(
+ *     schema="ClassifyTicketRequest",
+ *     description="Request shape is selected from the ticket service in the path.",
+ *     oneOf={
+ *         @OA\Schema(ref="#/components/schemas/ClassifyTikTicketRequest"),
+ *         @OA\Schema(ref="#/components/schemas/ClassifySarprasTicketRequest")
+ *     }
+ * )
+ * @OA\Schema(
+ *     schema="ClassifyTikTicketRequest",
+ *     type="object",
+ *     required={"quality_category_id","it_tag_id","priority"},
+ *
+ *     @OA\Property(property="quality_category_id", type="integer", example=1),
+ *     @OA\Property(property="it_tag_id", type="integer", example=1),
+ *     @OA\Property(property="custom_it_tag_text", type="string", maxLength=255, nullable=true, description="Required and only accepted when the selected IT Tag is Lain-lain."),
+ *     @OA\Property(property="priority", type="string", enum={"critical","high","medium","low"}, example="high")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="ClassifySarprasTicketRequest",
+ *     type="object",
+ *     required={"sarpras_category_id","priority"},
+ *
+ *     @OA\Property(property="sarpras_category_id", type="integer", description="Active Sarpras, Elektronik, or Alkes category ID.", example=1),
+ *     @OA\Property(property="priority", type="string", enum={"critical","high","medium","low"}, example="high")
+ * )
+ *
+ * @OA\Schema(
  *     schema="AssignTicketRequest",
  *     type="object",
- *     required={"priority","officer_id"},
+ *     required={"officer_id"},
  *
- *     @OA\Property(property="priority", type="string", enum={"critical","high","medium","low"}, example="high"),
  *     @OA\Property(property="officer_id", type="integer", example=2)
  * )
  *
@@ -319,7 +346,7 @@ use OpenApi\Annotations as OA;
  *     type="object",
  *     required={"message","data"},
  *
- *     @OA\Property(property="message", type="string", example="Tiket berhasil diverifikasi."),
+ *     @OA\Property(property="message", type="string", example="Tiket berhasil diklasifikasi."),
  *     @OA\Property(property="data", ref="#/components/schemas/TicketRead")
  * )
  *
@@ -1281,23 +1308,26 @@ class ApiDocumentation
 
     /**
      * @OA\Post(
-     *     path="/tickets/{ticket}/verify",
-     *     operationId="verifyTicket",
+     *     path="/tickets/{ticket}/classify",
+     *     operationId="classifyTicket",
      *     tags={"Helpdesk"},
-     *     summary="Run the retained classification action for a new Helpdesk ticket",
-     *     description="Retained legacy endpoint that transitions baru to diklasifikasi. Requires the tickets-verify permission.",
+     *     summary="Classify a new Helpdesk ticket",
+     *     description="TIK classification is limited to Super Admin. Sarpras classification is allowed for Super Admin and Koordinator Sarpras. The endpoint retains tickets-verify as its general capability permission.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
      *
+     *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/ClassifyTicketRequest")),
+     *
      *     @OA\Response(response=200, description="Ticket classified", @OA\JsonContent(ref="#/components/schemas/TicketActionResponse")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
-     *     @OA\Response(response=403, description="Missing tickets-verify permission", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Actor cannot classify this ticket service", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=404, description="Ticket not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
-     *     @OA\Response(response=409, description="Ticket state conflict", @OA\JsonContent(ref="#/components/schemas/TicketReadError"))
+     *     @OA\Response(response=409, description="Ticket state conflict", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=422, description="Invalid classification data", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
      * )
      */
-    public function ticketsVerify(): void {}
+    public function ticketsClassify(): void {}
 
     /**
      * @OA\Post(
@@ -1305,7 +1335,7 @@ class ApiDocumentation
      *     operationId="rejectTicket",
      *     tags={"Helpdesk"},
      *     summary="Reject a new Helpdesk ticket",
-     *     description="Requires the tickets-reject permission.",
+     *     description="The actor must be allowed to classify the ticket service, the ticket must be new, and the tickets-reject permission is required.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
@@ -1327,7 +1357,7 @@ class ApiDocumentation
      *     path="/tickets/{ticket}/assign",
      *     operationId="assignTicket",
      *     tags={"Helpdesk"},
-     *     summary="Set priority and assign an officer",
+     *     summary="Assign an officer without changing classification priority",
      *     description="Assignment transitions a classified ticket to ditugaskan. Requires the tickets-assign permission.",
      *     security={{"sanctum":{}}},
      *
@@ -1335,7 +1365,7 @@ class ApiDocumentation
      *
      *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/AssignTicketRequest")),
      *
-     *     @OA\Response(response=200, description="Priority and officer assigned", @OA\JsonContent(ref="#/components/schemas/TicketActionResponse")),
+     *     @OA\Response(response=200, description="Officer assigned", @OA\JsonContent(ref="#/components/schemas/TicketActionResponse")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=403, description="Missing tickets-assign permission", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=404, description="Ticket not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),

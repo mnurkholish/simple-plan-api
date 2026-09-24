@@ -129,18 +129,28 @@ paths:
         '404':
           $ref: '#/components/responses/TicketNotFound'
 
-  /tickets/{ticket}/verify:
+  /tickets/{ticket}/classify:
     post:
       tags: [Helpdesk]
-      summary: Menjalankan aksi klasifikasi legacy pada tiket baru
-      operationId: verifyTicket
+      summary: Mengklasifikasikan tiket baru
+      operationId: classifyTicket
+      description: |
+        TIK hanya dapat diklasifikasikan Super Admin. Sarpras dapat
+        diklasifikasikan Super Admin atau Koordinator Sarpras. Capability
+        umum endpoint tetap menggunakan permission tickets-verify.
       x-auth-required: true
       x-required-permission: tickets-verify
       parameters:
         - $ref: '#/components/parameters/TicketId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClassifyTicketRequest'
       responses:
         '200':
-          description: Tiket berhasil diverifikasi.
+          description: Tiket berhasil diklasifikasikan.
           content:
             application/json:
               schema:
@@ -153,12 +163,15 @@ paths:
           $ref: '#/components/responses/TicketNotFound'
         '409':
           $ref: '#/components/responses/TicketConflict'
+        '422':
+          $ref: '#/components/responses/TicketValidationError'
 
   /tickets/{ticket}/reject:
     post:
       tags: [Helpdesk]
       summary: Menolak tiket baru
       operationId: rejectTicket
+      description: Actor mengikuti hak klasifikasi service tiket dan tiket harus berstatus baru.
       x-auth-required: true
       x-required-permission: tickets-reject
       parameters:
@@ -190,7 +203,7 @@ paths:
   /tickets/{ticket}/assign:
     post:
       tags: [Helpdesk]
-      summary: Menentukan prioritas dan petugas tiket
+      summary: Menentukan petugas tiket
       operationId: assignTicket
       description: Assignment mengubah status tiket dari Diklasifikasi menjadi Ditugaskan.
       x-auth-required: true
@@ -205,7 +218,7 @@ paths:
               $ref: '#/components/schemas/AssignTicketRequest'
       responses:
         '200':
-          description: Prioritas dan petugas berhasil disimpan.
+          description: Petugas berhasil ditugaskan.
           content:
             application/json:
               schema:
@@ -595,17 +608,54 @@ components:
           minLength: 1
           example: Informasi kerusakan tidak sesuai.
 
+    ClassifyTicketRequest:
+      description: Request dipilih berdasarkan service ticket pada path.
+      oneOf:
+        - $ref: '#/components/schemas/ClassifyTikTicketRequest'
+        - $ref: '#/components/schemas/ClassifySarprasTicketRequest'
+
+    ClassifyTikTicketRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - quality_category_id
+        - it_tag_id
+        - priority
+      properties:
+        quality_category_id:
+          type: integer
+        it_tag_id:
+          type: integer
+        custom_it_tag_text:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+          description: Wajib dan hanya boleh diisi ketika IT Tag adalah Lain-lain.
+        priority:
+          type: string
+          enum: [critical, high, medium, low]
+
+    ClassifySarprasTicketRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - sarpras_category_id
+        - priority
+      properties:
+        sarpras_category_id:
+          type: integer
+          description: ID kategori aktif Sarpras, Elektronik, atau Alkes.
+        priority:
+          type: string
+          enum: [critical, high, medium, low]
+
     AssignTicketRequest:
       type: object
       additionalProperties: false
       required:
-        - priority
         - officer_id
       properties:
-        priority:
-          type: string
-          enum: [critical, high, medium, low]
-          example: high
         officer_id:
           type: integer
           example: 2

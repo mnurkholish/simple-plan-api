@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\TicketPriority;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -22,7 +21,6 @@ class AssignTicketRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'priority' => ['required', Rule::enum(TicketPriority::class)],
             'officer_id' => [
                 'required',
                 'integer',

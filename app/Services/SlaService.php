@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\TicketPriority;
 use Carbon\Carbon;
 
 class SlaService
@@ -9,37 +10,29 @@ class SlaService
     /**
      * Menghitung deadline berdasarkan waktu klasifikasi dan priority tiket.
      *
-     * @param Carbon $classifiedAt Waktu ketika tiket diklasifikasi
-     * @param string $priority     Prioritas tiket ('critical', 'high', 'medium', 'low')
      * @return Carbon Waktu deadline SLA
      */
-    public function calculateDeadline(Carbon $classifiedAt, string $priority): Carbon
+    public function calculateDeadline(Carbon $classifiedAt, TicketPriority $priority): Carbon
     {
         $deadline = $classifiedAt->copy();
 
-        switch (strtolower($priority)) {
-            case 'critical':
-                return $deadline->addHours(2);
-            case 'high':
-                return $deadline->addHours(4);
-            case 'medium':
-                return $deadline->addHours(24); // 1 hari
-            case 'low':
-                return $deadline->addHours(72); // 3 hari
-            default:
-                return $deadline->addHours(24); // Default ke medium jika tidak valid
-        }
+        return match ($priority) {
+            TicketPriority::Critical => $deadline->addHours(2),
+            TicketPriority::High => $deadline->addHours(4),
+            TicketPriority::Medium => $deadline->addDay(),
+            TicketPriority::Low => $deadline->addDays(3),
+        };
     }
 
     /**
      * Menentukan status SLA secara dinamis.
-     * 
-     * Catatan: Parameter $classifiedAt ditambahkan ke dalam signature untuk menghitung 
+     *
+     * Catatan: Parameter $classifiedAt ditambahkan ke dalam signature untuk menghitung
      * total durasi SLA (selisih antara classifiedAt dan deadline) agar bisa mendapatkan nilai 25% nya.
      *
-     * @param Carbon $classifiedAt Waktu tiket diklasifikasi (untuk hitung total durasi)
-     * @param Carbon $deadline     Waktu deadline tiket
-     * @param Carbon|null $completedAt Waktu tiket selesai (opsional)
+     * @param  Carbon  $classifiedAt  Waktu tiket diklasifikasi (untuk hitung total durasi)
+     * @param  Carbon  $deadline  Waktu deadline tiket
+     * @param  Carbon|null  $completedAt  Waktu tiket selesai (opsional)
      * @return string Status SLA ('Melewati Batas', 'Mendekati Batas', 'Tepat Waktu')
      */
     public function determineSlaStatus(Carbon $classifiedAt, Carbon $deadline, ?Carbon $completedAt = null): string
@@ -49,6 +42,7 @@ class SlaService
             if ($completedAt->greaterThan($deadline)) {
                 return 'Melewati Batas';
             }
+
             return 'Tepat Waktu';
         }
 

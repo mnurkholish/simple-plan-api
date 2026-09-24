@@ -2331,14 +2331,14 @@
                 ]
             }
         },
-        "/tickets/{ticket}/verify": {
+        "/tickets/{ticket}/classify": {
             "post": {
                 "tags": [
                     "Helpdesk"
                 ],
-                "summary": "Run the retained classification action for a new Helpdesk ticket",
-                "description": "Retained legacy endpoint that transitions baru to diklasifikasi. Requires the tickets-verify permission.",
-                "operationId": "verifyTicket",
+                "summary": "Classify a new Helpdesk ticket",
+                "description": "TIK classification is limited to Super Admin. Sarpras classification is allowed for Super Admin and Koordinator Sarpras. The endpoint retains tickets-verify as its general capability permission.",
+                "operationId": "classifyTicket",
                 "parameters": [
                     {
                         "name": "ticket",
@@ -2350,6 +2350,16 @@
                         }
                     }
                 ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ClassifyTicketRequest"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "Ticket classified",
@@ -2372,7 +2382,7 @@
                         }
                     },
                     "403": {
-                        "description": "Missing tickets-verify permission",
+                        "description": "Actor cannot classify this ticket service",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -2400,6 +2410,16 @@
                                 }
                             }
                         }
+                    },
+                    "422": {
+                        "description": "Invalid classification data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -2415,7 +2435,7 @@
                     "Helpdesk"
                 ],
                 "summary": "Reject a new Helpdesk ticket",
-                "description": "Requires the tickets-reject permission.",
+                "description": "The actor must be allowed to classify the ticket service, the ticket must be new, and the tickets-reject permission is required.",
                 "operationId": "rejectTicket",
                 "parameters": [
                     {
@@ -2512,7 +2532,7 @@
                 "tags": [
                     "Helpdesk"
                 ],
-                "summary": "Set priority and assign an officer",
+                "summary": "Assign an officer without changing classification priority",
                 "description": "Assignment transitions a classified ticket to ditugaskan. Requires the tickets-assign permission.",
                 "operationId": "assignTicket",
                 "parameters": [
@@ -2538,7 +2558,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Priority and officer assigned",
+                        "description": "Officer assigned",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -3537,12 +3557,38 @@
                 },
                 "type": "object"
             },
-            "AssignTicketRequest": {
+            "ClassifyTicketRequest": {
+                "description": "Request shape is selected from the ticket service in the path.",
+                "oneOf": [
+                    {
+                        "$ref": "#/components/schemas/ClassifyTikTicketRequest"
+                    },
+                    {
+                        "$ref": "#/components/schemas/ClassifySarprasTicketRequest"
+                    }
+                ]
+            },
+            "ClassifyTikTicketRequest": {
                 "required": [
-                    "priority",
-                    "officer_id"
+                    "quality_category_id",
+                    "it_tag_id",
+                    "priority"
                 ],
                 "properties": {
+                    "quality_category_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "it_tag_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "custom_it_tag_text": {
+                        "description": "Required and only accepted when the selected IT Tag is Lain-lain.",
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 255
+                    },
                     "priority": {
                         "type": "string",
                         "example": "high",
@@ -3552,7 +3598,39 @@
                             "medium",
                             "low"
                         ]
+                    }
+                },
+                "type": "object"
+            },
+            "ClassifySarprasTicketRequest": {
+                "required": [
+                    "sarpras_category_id",
+                    "priority"
+                ],
+                "properties": {
+                    "sarpras_category_id": {
+                        "description": "Active Sarpras, Elektronik, or Alkes category ID.",
+                        "type": "integer",
+                        "example": 1
                     },
+                    "priority": {
+                        "type": "string",
+                        "example": "high",
+                        "enum": [
+                            "critical",
+                            "high",
+                            "medium",
+                            "low"
+                        ]
+                    }
+                },
+                "type": "object"
+            },
+            "AssignTicketRequest": {
+                "required": [
+                    "officer_id"
+                ],
+                "properties": {
                     "officer_id": {
                         "type": "integer",
                         "example": 2
@@ -3605,7 +3683,7 @@
                 "properties": {
                     "message": {
                         "type": "string",
-                        "example": "Tiket berhasil diverifikasi."
+                        "example": "Tiket berhasil diklasifikasi."
                     },
                     "data": {
                         "$ref": "#/components/schemas/TicketRead"

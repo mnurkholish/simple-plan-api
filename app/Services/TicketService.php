@@ -20,7 +20,10 @@ use Throwable;
 
 class TicketService
 {
-    public function __construct(private readonly TicketRepository $tickets) {}
+    public function __construct(
+        private readonly TicketRepository $tickets,
+        private readonly SlaService $sla,
+    ) {}
 
     /**
      * @param  array{service: string, description: string, asset_id?: int|null}  $data
@@ -95,13 +98,49 @@ class TicketService
         return $this->tickets->loadSummary($ticket);
     }
 
-    public function verify(Ticket $ticket, User $changedBy): Ticket
+    /**
+     * @param  array{priority: string, quality_category_id?: int, it_tag_id?: int, custom_it_tag_text?: string|null, sarpras_category_id?: int}  $data
+     */
+    public function classify(Ticket $ticket, array $data, User $classifiedBy): Ticket
     {
-        return $this->transitionStatus(
-            $ticket,
-            TicketStatus::Diklasifikasi,
-            $changedBy,
-        );
+        return DB::transaction(function () use ($ticket, $data, $classifiedBy): Ticket {
+            $lockedTicket = Ticket::query()
+                ->whereKey($ticket->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $this->assertCanTransitionTo($lockedTicket, TicketStatus::Diklasifikasi);
+
+            $priority = TicketPriority::from($data['priority']);
+            $classifiedAt = now();
+
+            if ($lockedTicket->service === TicketServiceEnum::Tik) {
+                $lockedTicket->tikDetail()->create([
+                    'quality_category_id' => $data['quality_category_id'],
+                    'it_tag_id' => $data['it_tag_id'],
+                    'custom_it_tag_text' => $data['custom_it_tag_text'] ?? null,
+                ]);
+            } else {
+                $lockedTicket->sarprasDetail()->create([
+                    'sarpras_category_id' => $data['sarpras_category_id'],
+                ]);
+            }
+
+            $this->applyStatusTransition(
+                $lockedTicket,
+                TicketStatus::Diklasifikasi,
+                $classifiedBy,
+                notes: null,
+                attributes: [
+                    'priority' => $priority->value,
+                    'classified_by_id' => $classifiedBy->getKey(),
+                    'classified_at' => $classifiedAt,
+                    'sla_deadline' => $this->sla->calculateDeadline($classifiedAt, $priority),
+                ],
+            );
+
+            return $lockedTicket->refresh();
+        });
     }
 
     public function reject(Ticket $ticket, string $reason, User $changedBy): Ticket
@@ -116,7 +155,6 @@ class TicketService
 
     public function assign(
         Ticket $ticket,
-        TicketPriority $priority,
         int $officerId,
         User $changedBy,
     ): Ticket {
@@ -125,7 +163,6 @@ class TicketService
             TicketStatus::Ditugaskan,
             $changedBy,
             attributes: [
-                'priority' => $priority->value,
                 'assigned_officer_id' => $officerId,
                 'assigned_at' => now(),
             ],
@@ -259,13 +296,7 @@ class TicketService
             return false;
         }
 
-        if (! $currentStatus->canTransitionTo($targetStatus)) {
-            throw new ConflictHttpException(sprintf(
-                'Status tiket tidak dapat diubah dari %s menjadi %s.',
-                $currentStatus->value,
-                $targetStatus->value,
-            ));
-        }
+        $this->assertCanTransitionTo($ticket, $targetStatus);
 
         $ticket->update([
             ...$attributes,
@@ -280,6 +311,19 @@ class TicketService
         ]);
 
         return true;
+    }
+
+    private function assertCanTransitionTo(Ticket $ticket, TicketStatus $targetStatus): void
+    {
+        if ($ticket->status->canTransitionTo($targetStatus)) {
+            return;
+        }
+
+        throw new ConflictHttpException(sprintf(
+            'Status tiket tidak dapat diubah dari %s menjadi %s.',
+            $ticket->status->value,
+            $targetStatus->value,
+        ));
     }
 
     private function nextTicketNumber(TicketServiceEnum $service, string $year): string

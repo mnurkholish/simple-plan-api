@@ -13,7 +13,7 @@ function documentedTicketPermissions(): array
         ['path' => '/tickets', 'method' => 'get', 'permission' => 'tickets-access'],
         ['path' => '/tickets', 'method' => 'post', 'permission' => 'tickets-create'],
         ['path' => '/tickets/{ticket}', 'method' => 'get', 'permission' => 'tickets-access'],
-        ['path' => '/tickets/{ticket}/verify', 'method' => 'post', 'permission' => 'tickets-verify'],
+        ['path' => '/tickets/{ticket}/classify', 'method' => 'post', 'permission' => 'tickets-verify'],
         ['path' => '/tickets/{ticket}/reject', 'method' => 'post', 'permission' => 'tickets-reject'],
         ['path' => '/tickets/{ticket}/assign', 'method' => 'post', 'permission' => 'tickets-assign'],
         ['path' => '/tickets/{ticket}/handlings', 'method' => 'post', 'permission' => 'tickets-handle'],
@@ -25,7 +25,7 @@ test('the Helpdesk OpenAPI contract only documents implemented ticket operations
     $expectedPaths = [
         '/tickets',
         '/tickets/{ticket}',
-        '/tickets/{ticket}/verify',
+        '/tickets/{ticket}/classify',
         '/tickets/{ticket}/reject',
         '/tickets/{ticket}/assign',
         '/tickets/{ticket}/handlings',
@@ -50,10 +50,14 @@ test('the Helpdesk OpenAPI contract only documents implemented ticket operations
         ->toBe(['tik', 'sarpras'])
         ->and($contract['components']['schemas']['CreateTicketRequest']['properties'])
         ->toHaveKey('asset_id')
+        ->and($contract['paths']['/tickets/{ticket}/classify']['post']['requestBody']['content']['application/json']['schema']['$ref'])
+        ->toBe('#/components/schemas/ClassifyTicketRequest')
+        ->and($contract['components']['schemas']['ClassifyTikTicketRequest']['required'])
+        ->toBe(['quality_category_id', 'it_tag_id', 'priority'])
+        ->and($contract['components']['schemas']['ClassifySarprasTicketRequest']['required'])
+        ->toBe(['sarpras_category_id', 'priority'])
         ->and($contract['components']['schemas']['AssignTicketRequest']['required'])
-        ->toBe(['priority', 'officer_id'])
-        ->and($contract['components']['schemas']['AssignTicketRequest']['properties']['priority']['enum'])
-        ->toBe(['critical', 'high', 'medium', 'low'])
+        ->toBe(['officer_id'])
         ->and($contract['paths']['/tickets/{ticket}/handlings']['post']['requestBody']['content']['multipart/form-data']['schema']['$ref'])
         ->toBe('#/components/schemas/CreateTicketHandlingRequest')
         ->and($contract['paths']['/tickets/{ticket}/handlings']['post']['x-required-permission'])
@@ -86,7 +90,7 @@ test('it generates the Helpdesk ticket Swagger contract', function (): void {
             ->toHaveKeys([
                 '/tickets',
                 '/tickets/{ticket}',
-                '/tickets/{ticket}/verify',
+                '/tickets/{ticket}/classify',
                 '/tickets/{ticket}/reject',
                 '/tickets/{ticket}/assign',
                 '/tickets/{ticket}/handlings',
@@ -122,7 +126,7 @@ test('it generates the Helpdesk ticket Swagger contract', function (): void {
 
         $detailOperation = $documentation['paths']['/tickets/{ticket}']['get'];
         $createOperation = $documentation['paths']['/tickets']['post'];
-        $verifyOperation = $documentation['paths']['/tickets/{ticket}/verify']['post'];
+        $classifyOperation = $documentation['paths']['/tickets/{ticket}/classify']['post'];
         $rejectOperation = $documentation['paths']['/tickets/{ticket}/reject']['post'];
         $assignOperation = $documentation['paths']['/tickets/{ticket}/assign']['post'];
         $handlingOperation = $documentation['paths']['/tickets/{ticket}/handlings']['post'];
@@ -144,16 +148,18 @@ test('it generates the Helpdesk ticket Swagger contract', function (): void {
             ->toBe(['service', 'description'])
             ->and($documentation['components']['schemas']['CreateTicketRequest']['properties'])
             ->toHaveKey('asset_id')
-            ->and($verifyOperation['responses']['409']['content']['application/json']['schema']['$ref'])
+            ->and($classifyOperation['requestBody']['content']['application/json']['schema']['$ref'])
+            ->toBe('#/components/schemas/ClassifyTicketRequest')
+            ->and($classifyOperation['responses']['409']['content']['application/json']['schema']['$ref'])
             ->toBe('#/components/schemas/TicketReadError')
+            ->and($classifyOperation['responses']['422']['content']['application/json']['schema']['$ref'])
+            ->toBe('#/components/schemas/ValidationError')
             ->and($rejectOperation['requestBody']['content']['application/json']['schema']['$ref'])
             ->toBe('#/components/schemas/RejectTicketRequest')
             ->and($assignOperation['requestBody']['content']['application/json']['schema']['$ref'])
             ->toBe('#/components/schemas/AssignTicketRequest')
             ->and($documentation['components']['schemas']['AssignTicketRequest']['required'])
-            ->toBe(['priority', 'officer_id'])
-            ->and($documentation['components']['schemas']['AssignTicketRequest']['properties']['priority']['enum'])
-            ->toBe(['critical', 'high', 'medium', 'low'])
+            ->toBe(['officer_id'])
             ->and($handlingOperation['requestBody']['content']['multipart/form-data']['schema']['$ref'])
             ->toBe('#/components/schemas/CreateTicketHandlingRequest')
             ->and($handlingOperation['responses']['403']['content']['application/json']['schema']['$ref'])
