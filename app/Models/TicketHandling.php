@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\TicketStatus;
 use Database\Factories\TicketHandlingFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,9 +16,9 @@ class TicketHandling extends Model
      * @var list<string>
      */
     protected $fillable = [
+        'ticket_id',
         'handled_by_id',
         'notes',
-        'status',
         'started_at',
         'completed_at',
         'result_photo_object_key',
@@ -34,7 +33,6 @@ class TicketHandling extends Model
     protected function casts(): array
     {
         return [
-            'status' => TicketStatus::class,
             'started_at' => 'datetime',
             'completed_at' => 'datetime',
             'result_photo_size' => 'integer',

@@ -24,7 +24,12 @@ class TicketHandlingController extends Controller
         return (new TicketResource($ticket->load([
             'assignedOfficer:id,name',
             'handlings.handledBy:id,name',
+            'handlings.ticket:id,status',
             'reporter:id,name',
+            'sarprasDetail.sarprasCategory:id,name',
+            'statusHistories:id,ticket_id,to_status,notes,created_at',
+            'tikDetail.itTag:id,name',
+            'tikDetail.qualityCategory:id,name',
             'unit:id,unit_name',
         ])))->additional(['message' => 'Riwayat penanganan berhasil disimpan.']);
     }

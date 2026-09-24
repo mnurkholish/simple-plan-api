@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\TicketPriority;
+use App\Enums\TicketService as TicketServiceEnum;
 use App\Enums\TicketStatus;
 use App\Models\Ticket;
 use App\Models\User;
@@ -17,7 +18,7 @@ use Throwable;
 class TicketService
 {
     /**
-     * @param  array{service: string, unit_id: int, category?: string|null, description: string}  $data
+     * @param  array{service: string, unit_id: int, quality_category_id?: int|null, it_tag_id?: int|null, custom_it_tag_text?: string|null, sarpras_category_id?: int|null, description: string}  $data
      */
     public function create(array $data, User $reporter, ?UploadedFile $initialEvidence = null): Ticket
     {
@@ -34,7 +35,6 @@ class TicketService
                     'service' => $data['service'],
                     'reporter_id' => $reporter->getKey(),
                     'unit_id' => $data['unit_id'],
-                    'category' => $data['category'] ?? null,
                     'description' => $data['description'],
                     'status' => TicketStatus::Baru,
                     'initial_evidence_object_key' => $objectKey ?: null,
@@ -51,6 +51,26 @@ class TicketService
                         $ticket->getKey(),
                     ),
                 ]);
+
+                if (
+                    $data['service'] === TicketServiceEnum::Tik->value
+                    && isset($data['quality_category_id'], $data['it_tag_id'])
+                ) {
+                    $ticket->tikDetail()->create([
+                        'quality_category_id' => $data['quality_category_id'],
+                        'it_tag_id' => $data['it_tag_id'],
+                        'custom_it_tag_text' => $data['custom_it_tag_text'] ?? null,
+                    ]);
+                }
+
+                if (
+                    $data['service'] === TicketServiceEnum::Sarpras->value
+                    && isset($data['sarpras_category_id'])
+                ) {
+                    $ticket->sarprasDetail()->create([
+                        'sarpras_category_id' => $data['sarpras_category_id'],
+                    ]);
+                }
 
                 return $ticket;
             });
@@ -73,17 +93,25 @@ class TicketService
         );
     }
 
-    public function reject(Ticket $ticket, string $reason): Ticket
+    public function reject(Ticket $ticket, string $reason, User $changedBy): Ticket
     {
-        return $this->updateWhenStatus(
-            $ticket,
-            TicketStatus::Baru,
-            [
-                'status' => TicketStatus::Ditolak->value,
-                'rejection_reason' => $reason,
-            ],
-            'Hanya tiket berstatus baru yang dapat ditolak.',
-        );
+        return DB::transaction(function () use ($ticket, $reason, $changedBy): Ticket {
+            $updatedTicket = $this->updateWhenStatus(
+                $ticket,
+                TicketStatus::Baru,
+                ['status' => TicketStatus::Ditolak->value],
+                'Hanya tiket berstatus baru yang dapat ditolak.',
+            );
+
+            $updatedTicket->statusHistories()->create([
+                'from_status' => TicketStatus::Baru->value,
+                'to_status' => TicketStatus::Ditolak->value,
+                'changed_by_id' => $changedBy->getKey(),
+                'notes' => $reason,
+            ]);
+
+            return $updatedTicket;
+        });
     }
 
     public function assign(Ticket $ticket, TicketPriority $priority, int $officerId): Ticket
@@ -131,7 +159,6 @@ class TicketService
                 $lockedTicket->handlings()->create([
                     'handled_by_id' => $handledBy->getKey(),
                     'notes' => $data['notes'],
-                    'status' => $targetStatus,
                     'started_at' => $data['started_at'] ?? null,
                     'completed_at' => $completedAt,
                     'result_photo_object_key' => $objectKey ?: null,

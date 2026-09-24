@@ -64,7 +64,6 @@ test('a processed ticket can receive a handling note without changing its status
         'ticket_id' => $ticket->id,
         'handled_by_id' => $handler->id,
         'notes' => 'Koneksi kabel daya diperiksa dan dikencangkan.',
-        'status' => TicketStatus::Diproses->value,
     ]);
 
     expect($ticket->refresh()->status)->toBe(TicketStatus::Diproses)

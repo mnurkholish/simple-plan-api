@@ -17,7 +17,7 @@ class TicketHandlingResource extends JsonResource
         return [
             'id' => $this->id,
             'notes' => $this->notes,
-            'status' => $this->status->value,
+            'status' => $this->whenLoaded('ticket', fn (): string => $this->ticket->status->value),
             'started_at' => $this->started_at,
             'completed_at' => $this->completed_at,
             'handled_by' => $this->whenLoaded('handledBy', fn (): array => [

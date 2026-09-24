@@ -172,7 +172,7 @@ use OpenApi\Annotations as OA;
  *
  *     @OA\Property(property="id", type="integer", example=1),
  *     @OA\Property(property="notes", type="string", example="Kabel daya dikencangkan dan perangkat diuji."),
- *     @OA\Property(property="status", type="string", enum={"diproses","selesai"}, example="diproses"),
+ *     @OA\Property(property="status", type="string", enum={"diproses","selesai"}, description="Current ticket status, not a ticket_handlings column.", example="diproses"),
  *     @OA\Property(property="started_at", type="string", format="date-time", nullable=true),
  *     @OA\Property(property="completed_at", type="string", format="date-time", nullable=true),
  *     @OA\Property(property="handled_by", ref="#/components/schemas/TicketOfficerSummary"),
@@ -181,17 +181,46 @@ use OpenApi\Annotations as OA;
  * )
  *
  * @OA\Schema(
+ *     schema="TicketNamedReference",
+ *     type="object",
+ *     required={"id","name"},
+ *
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="name", type="string", example="Perangkat Komputer")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="TicketTikDetail",
+ *     type="object",
+ *     required={"quality_category","it_tag","custom_it_tag_text"},
+ *
+ *     @OA\Property(property="quality_category", ref="#/components/schemas/TicketNamedReference"),
+ *     @OA\Property(property="it_tag", ref="#/components/schemas/TicketNamedReference"),
+ *     @OA\Property(property="custom_it_tag_text", type="string", nullable=true)
+ * )
+ *
+ * @OA\Schema(
+ *     schema="TicketSarprasDetail",
+ *     type="object",
+ *     required={"sarpras_category"},
+ *
+ *     @OA\Property(property="sarpras_category", ref="#/components/schemas/TicketNamedReference")
+ * )
+ *
+ * @OA\Schema(
  *     schema="TicketRead",
  *     type="object",
- *     required={"id","ticket_number","service","category","description","status","rejection_reason","priority","reporter","unit","assigned_officer","initial_evidence","completed_at","created_at"},
+ *     required={"id","ticket_number","service","category","tik_detail","sarpras_detail","description","status","rejection_reason","priority","reporter","unit","assigned_officer","initial_evidence","completed_at","created_at"},
  *
  *     @OA\Property(property="id", type="integer", example=1),
  *     @OA\Property(property="ticket_number", type="string", example="TIK-2026-0001"),
  *     @OA\Property(property="service", type="string", enum={"tik","sarpras"}, example="tik"),
- *     @OA\Property(property="category", type="string", nullable=true, example="Perangkat Komputer"),
+ *     @OA\Property(property="category", type="string", nullable=true, description="Compatibility label derived from the ticket detail relation.", example="Perangkat Komputer"),
+ *     @OA\Property(property="tik_detail", ref="#/components/schemas/TicketTikDetail", nullable=true),
+ *     @OA\Property(property="sarpras_detail", ref="#/components/schemas/TicketSarprasDetail", nullable=true),
  *     @OA\Property(property="description", type="string", example="Komputer tidak dapat menyala."),
  *     @OA\Property(property="status", type="string", enum={"baru","terverifikasi","diproses","selesai","ditolak"}, example="baru"),
- *     @OA\Property(property="rejection_reason", type="string", nullable=true, example="Informasi kerusakan tidak sesuai."),
+ *     @OA\Property(property="rejection_reason", type="string", nullable=true, description="Compatibility field derived from the latest rejected status history notes.", example="Informasi kerusakan tidak sesuai."),
  *     @OA\Property(property="priority", type="string", enum={"critical","high","medium","low"}, nullable=true, example="high"),
  *     @OA\Property(property="reporter", ref="#/components/schemas/TicketReporterSummary"),
  *     @OA\Property(property="unit", ref="#/components/schemas/TicketUnitSummary"),
@@ -209,7 +238,10 @@ use OpenApi\Annotations as OA;
  *
  *     @OA\Property(property="service", type="string", enum={"tik","sarpras"}, example="tik"),
  *     @OA\Property(property="unit_id", type="integer", example=1),
- *     @OA\Property(property="category", type="string", maxLength=255, nullable=true, example="Perangkat Komputer"),
+ *     @OA\Property(property="quality_category_id", type="integer", nullable=true, example=1),
+ *     @OA\Property(property="it_tag_id", type="integer", nullable=true, example=1),
+ *     @OA\Property(property="custom_it_tag_text", type="string", maxLength=255, nullable=true),
+ *     @OA\Property(property="sarpras_category_id", type="integer", nullable=true, example=1),
  *     @OA\Property(property="description", type="string", example="Komputer tidak dapat menyala."),
  *     @OA\Property(property="initial_evidence", type="string", format="binary", nullable=true)
  * )
@@ -1188,7 +1220,7 @@ class ApiDocumentation
      *     @OA\Parameter(name="status", in="query", required=false, description="Ticket status.", @OA\Schema(type="string", enum={"baru","terverifikasi","diproses","selesai","ditolak"})),
      *     @OA\Parameter(name="date_from", in="query", required=false, description="Inclusive created date lower bound.", @OA\Schema(type="string", format="date")),
      *     @OA\Parameter(name="date_to", in="query", required=false, description="Inclusive created date upper bound.", @OA\Schema(type="string", format="date")),
-     *     @OA\Parameter(name="search", in="query", required=false, description="Search ticket number, category, and description.", @OA\Schema(type="string", maxLength=255)),
+     *     @OA\Parameter(name="search", in="query", required=false, description="Search ticket number, classification, and description.", @OA\Schema(type="string", maxLength=255)),
      *
      *     @OA\Response(response=200, description="Paginated tickets", @OA\JsonContent(ref="#/components/schemas/TicketCollectionResponse")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),

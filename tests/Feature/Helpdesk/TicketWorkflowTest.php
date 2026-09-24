@@ -74,7 +74,12 @@ test('new ticket can be rejected with a reason', function (): void {
     $this->assertDatabaseHas('tickets', [
         'id' => $ticket->id,
         'status' => TicketStatus::Ditolak->value,
-        'rejection_reason' => 'Informasi kerusakan tidak sesuai.',
+    ]);
+    $this->assertDatabaseHas('ticket_status_histories', [
+        'ticket_id' => $ticket->id,
+        'from_status' => TicketStatus::Baru->value,
+        'to_status' => TicketStatus::Ditolak->value,
+        'notes' => 'Informasi kerusakan tidak sesuai.',
     ]);
 });
 
@@ -88,7 +93,7 @@ test('reject returns 422 when reason is missing', function (): void {
         ->assertUnprocessable()
         ->assertJsonValidationErrors('reason');
     expect($ticket->refresh()->status)->toBe(TicketStatus::Baru)
-        ->and($ticket->rejection_reason)->toBeNull();
+        ->and($ticket->statusHistories()->count())->toBe(0);
 });
 
 test('reject returns 409 when ticket is not new', function (TicketStatus $status): void {
@@ -103,7 +108,7 @@ test('reject returns 409 when ticket is not new', function (TicketStatus $status
         ->assertConflict()
         ->assertJsonPath('message', 'Hanya tiket berstatus baru yang dapat ditolak.');
     expect($ticket->refresh()->status)->toBe($status)
-        ->and($ticket->rejection_reason)->toBeNull();
+        ->and($ticket->statusHistories()->count())->toBe(0);
 })->with([
     'verified' => TicketStatus::Terverifikasi,
     'already rejected' => TicketStatus::Ditolak,
