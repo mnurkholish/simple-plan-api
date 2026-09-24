@@ -3799,7 +3799,7 @@
                         "example": 1
                     },
                     "custom_it_tag_text": {
-                        "description": "Required and only accepted when the selected IT Tag is Lain-lain.",
+                        "description": "Optional and only accepted when the selected IT Tag is Lain-lain.",
                         "type": "string",
                         "nullable": true,
                         "maxLength": 255

@@ -324,7 +324,7 @@ use OpenApi\Annotations as OA;
  *
  *     @OA\Property(property="quality_category_id", type="integer", example=1),
  *     @OA\Property(property="it_tag_id", type="integer", example=1),
- *     @OA\Property(property="custom_it_tag_text", type="string", maxLength=255, nullable=true, description="Required and only accepted when the selected IT Tag is Lain-lain.")
+ *     @OA\Property(property="custom_it_tag_text", type="string", maxLength=255, nullable=true, description="Optional and only accepted when the selected IT Tag is Lain-lain.")
  * )
  *
  * @OA\Schema(

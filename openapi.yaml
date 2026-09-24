@@ -737,7 +737,7 @@ components:
             - string
             - 'null'
           maxLength: 255
-          description: Wajib dan hanya boleh diisi ketika IT Tag adalah Lain-lain.
+          description: Opsional dan hanya boleh diisi ketika IT Tag adalah Lain-lain.
 
     ClassifySarprasTicketRequest:
       type: object
