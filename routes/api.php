@@ -69,6 +69,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::post('tickets', [TicketController::class, 'store'])
             ->middleware('permission:tickets-create')
             ->name('tickets.store');
+        Route::get('tickets/classification-options', [TicketController::class, 'classificationOptions'])
+            ->middleware('permission:tickets-verify')
+            ->name('tickets.classification-options');
         Route::post('tickets/{ticket}/classify', [TicketController::class, 'classify'])
             ->middleware('permission:tickets-verify')
             ->name('tickets.classify')

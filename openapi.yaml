@@ -106,6 +106,40 @@ paths:
         '422':
           $ref: '#/components/responses/TicketValidationError'
 
+  /tickets/classification-options:
+    get:
+      tags: [Helpdesk]
+      summary: Mengambil opsi klasifikasi tiket
+      operationId: listTicketClassificationOptions
+      description: |
+        Mengembalikan master aktif yang diperlukan form klasifikasi. Service
+        TIK memperoleh quality_categories dan it_tags, sedangkan service
+        Sarpras memperoleh sarpras_categories.
+      x-auth-required: true
+      x-required-permission: tickets-verify
+      parameters:
+        - name: service
+          in: query
+          required: true
+          description: Jenis layanan tiket yang akan diklasifikasikan.
+          schema:
+            type: string
+            enum: [tik, sarpras]
+            example: tik
+      responses:
+        '200':
+          description: Opsi klasifikasi berhasil diambil.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassificationOptionsResponse'
+        '401':
+          $ref: '#/components/responses/TicketUnauthenticated'
+        '403':
+          $ref: '#/components/responses/TicketForbidden'
+        '422':
+          $ref: '#/components/responses/TicketValidationError'
+
   /tickets/{ticket}:
     get:
       tags: [Helpdesk]
@@ -556,6 +590,35 @@ components:
           type: integer
         name:
           type: string
+
+    ClassificationOptionsResponse:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [service, quality_categories, it_tags, sarpras_categories]
+          properties:
+            service:
+              type: string
+              enum: [tik, sarpras]
+            quality_categories:
+              type: array
+              description: Berisi data hanya ketika service adalah tik.
+              items:
+                $ref: '#/components/schemas/TicketNamedReference'
+            it_tags:
+              type: array
+              description: Berisi IT tag aktif hanya ketika service adalah tik.
+              items:
+                $ref: '#/components/schemas/TicketNamedReference'
+            sarpras_categories:
+              type: array
+              description: Berisi kategori aktif hanya ketika service adalah sarpras.
+              items:
+                $ref: '#/components/schemas/TicketNamedReference'
 
     TicketTikDetail:
       type: object

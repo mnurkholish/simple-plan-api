@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\TicketService as TicketServiceEnum;
 use App\Enums\TicketStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AssigneeOptionsRequest;
 use App\Http\Requests\AssignTicketRequest;
+use App\Http\Requests\ClassificationOptionsRequest;
 use App\Http\Requests\ClassifyTicketRequest;
 use App\Http\Requests\ListTicketRequest;
 use App\Http\Requests\RejectTicketRequest;
@@ -56,6 +58,15 @@ class TicketController extends Controller
             ->additional(['message' => 'Tiket berhasil dibuat.'])
             ->response()
             ->setStatusCode(201);
+    }
+
+    public function classificationOptions(ClassificationOptionsRequest $request): JsonResponse
+    {
+        return response()->json([
+            'data' => $this->service->classificationOptions(
+                $request->enum('service', TicketServiceEnum::class),
+            ),
+        ]);
     }
 
     public function classify(ClassifyTicketRequest $request, Ticket $ticket): TicketResource

@@ -12,8 +12,8 @@ use OpenApi\Annotations as OA;
  * )
  *
  * @OA\Server(
- *     url="http://localhost:8000/api/v1",
- *     description="Local API server"
+ *     url="/api/v1",
+ *     description="Current API server"
  * )
  *
  * @OA\SecurityScheme(
@@ -213,6 +213,22 @@ use OpenApi\Annotations as OA;
  *
  *     @OA\Property(property="id", type="integer", example=1),
  *     @OA\Property(property="name", type="string", example="Perangkat Komputer")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="ClassificationOptionsResponse",
+ *     type="object",
+ *     required={"data"},
+ *
+ *     @OA\Property(
+ *         property="data",
+ *         type="object",
+ *         required={"service","quality_categories","it_tags","sarpras_categories"},
+ *         @OA\Property(property="service", type="string", enum={"tik","sarpras"}, example="tik"),
+ *         @OA\Property(property="quality_categories", type="array", @OA\Items(ref="#/components/schemas/TicketNamedReference")),
+ *         @OA\Property(property="it_tags", type="array", @OA\Items(ref="#/components/schemas/TicketNamedReference")),
+ *         @OA\Property(property="sarpras_categories", type="array", @OA\Items(ref="#/components/schemas/TicketNamedReference"))
+ *     )
  * )
  *
  * @OA\Schema(
@@ -1322,6 +1338,25 @@ class ApiDocumentation
      * )
      */
     public function ticketsStore(): void {}
+
+    /**
+     * @OA\Get(
+     *     path="/tickets/classification-options",
+     *     operationId="listTicketClassificationOptions",
+     *     tags={"Helpdesk"},
+     *     summary="Get ticket classification options",
+     *     description="Returns active quality categories and IT tags for TIK, or active Sarpras categories for Sarpras. Requires the tickets-verify permission.",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="service", in="query", required=true, description="Ticket service.", @OA\Schema(type="string", enum={"tik","sarpras"}, example="tik")),
+     *
+     *     @OA\Response(response=200, description="Classification options", @OA\JsonContent(ref="#/components/schemas/ClassificationOptionsResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Missing tickets-verify permission", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=422, description="Invalid service", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
+     * )
+     */
+    public function ticketClassificationOptions(): void {}
 
     /**
      * @OA\Post(

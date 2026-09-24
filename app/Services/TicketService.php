@@ -5,6 +5,9 @@ namespace App\Services;
 use App\Enums\TicketPriority;
 use App\Enums\TicketService as TicketServiceEnum;
 use App\Enums\TicketStatus;
+use App\Models\ItTag;
+use App\Models\QualityCategory;
+use App\Models\SarprasCategory;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Repositories\TicketRepository;
@@ -100,6 +103,43 @@ class TicketService
     public function loadSummary(Ticket $ticket): Ticket
     {
         return $this->tickets->loadSummary($ticket);
+    }
+
+    /**
+     * @return array{
+     *     service: string,
+     *     quality_categories: array<int, array{id: int, name: string}>,
+     *     it_tags: array<int, array{id: int, name: string}>,
+     *     sarpras_categories: array<int, array{id: int, name: string}>
+     * }
+     */
+    public function classificationOptions(TicketServiceEnum $service): array
+    {
+        return [
+            'service' => $service->value,
+            'quality_categories' => $service === TicketServiceEnum::Tik
+                ? QualityCategory::query()
+                    ->where('is_active', true)
+                    ->orderBy('name')
+                    ->get(['id', 'name'])
+                    ->toArray()
+                : [],
+            'it_tags' => $service === TicketServiceEnum::Tik
+                ? ItTag::query()
+                    ->where('is_active', true)
+                    ->orderBy('name')
+                    ->get(['id', 'name'])
+                    ->toArray()
+                : [],
+            'sarpras_categories' => $service === TicketServiceEnum::Sarpras
+                ? SarprasCategory::query()
+                    ->where('is_active', true)
+                    ->whereIn('name', ['Sarpras', 'Elektronik', 'Alkes'])
+                    ->orderBy('name')
+                    ->get(['id', 'name'])
+                    ->toArray()
+                : [],
+        ];
     }
 
     /**
