@@ -40,7 +40,26 @@ function actingAsTicketWorkflowUser(string $permissionName, ?string $roleName = 
     return $user;
 }
 
-test('super admin classifies a new TIK ticket with priority SLA detail and history', function (): void {
+/**
+ * @param  array<string, mixed>  $attributes
+ */
+function createTicketOfficer(string $roleName, array $attributes = []): User
+{
+    $role = Role::firstOrCreate([
+        'name' => $roleName,
+        'guard_name' => 'web',
+    ]);
+    $officer = User::factory()->create([
+        'status' => 'active',
+        'status_user' => 'Aktif',
+        ...$attributes,
+    ]);
+    $officer->assignRole($role);
+
+    return $officer;
+}
+
+test('super admin classifies a new TIK ticket without priority or SLA', function (): void {
     $actor = actingAsTicketWorkflowUser('tickets-verify', 'super-admin');
     $qualityCategory = QualityCategory::create(['name' => 'Ketidakstabilan System', 'is_active' => true]);
     $itTag = ItTag::create(['name' => 'Server', 'is_active' => true]);
@@ -55,7 +74,6 @@ test('super admin classifies a new TIK ticket with priority SLA detail and histo
         $response = $this->postJson("/api/v1/tickets/{$ticket->id}/classify", [
             'quality_category_id' => $qualityCategory->id,
             'it_tag_id' => $itTag->id,
-            'priority' => TicketPriority::Critical->value,
         ]);
     } finally {
         Carbon::setTestNow();
@@ -65,7 +83,8 @@ test('super admin classifies a new TIK ticket with priority SLA detail and histo
         ->assertOk()
         ->assertJsonPath('message', 'Tiket berhasil diklasifikasi.')
         ->assertJsonPath('data.status', TicketStatus::Diklasifikasi->value)
-        ->assertJsonPath('data.priority', TicketPriority::Critical->value)
+        ->assertJsonPath('data.priority', null)
+        ->assertJsonPath('data.sla_deadline', null)
         ->assertJsonPath('data.classified_by.id', $actor->id)
         ->assertJsonPath('data.tik_detail.quality_category.id', $qualityCategory->id)
         ->assertJsonPath('data.tik_detail.it_tag.id', $itTag->id);
@@ -73,7 +92,8 @@ test('super admin classifies a new TIK ticket with priority SLA detail and histo
     $ticket->refresh();
 
     expect($ticket->classified_at?->format('Y-m-d H:i:s'))->toBe('2026-09-24 08:00:00')
-        ->and($ticket->sla_deadline?->format('Y-m-d H:i:s'))->toBe('2026-09-24 10:00:00');
+        ->and($ticket->priority)->toBeNull()
+        ->and($ticket->sla_deadline)->toBeNull();
     $this->assertDatabaseHas('ticket_status_histories', [
         'ticket_id' => $ticket->id,
         'from_status' => TicketStatus::Baru->value,
@@ -90,26 +110,20 @@ test('Sarpras coordinator classifies a new Sarpras ticket', function (): void {
         'status' => TicketStatus::Baru,
     ]);
 
-    try {
-        Carbon::setTestNow('2026-09-24 08:00:00');
-
-        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/classify", [
-            'sarpras_category_id' => $category->id,
-            'priority' => TicketPriority::High->value,
-        ]);
-    } finally {
-        Carbon::setTestNow();
-    }
+    $response = $this->postJson("/api/v1/tickets/{$ticket->id}/classify", [
+        'sarpras_category_id' => $category->id,
+    ]);
 
     $response
         ->assertOk()
         ->assertJsonPath('data.status', TicketStatus::Diklasifikasi->value)
-        ->assertJsonPath('data.priority', TicketPriority::High->value)
+        ->assertJsonPath('data.priority', null)
+        ->assertJsonPath('data.sla_deadline', null)
         ->assertJsonPath('data.classified_by.id', $actor->id)
         ->assertJsonPath('data.sarpras_detail.sarpras_category.id', $category->id);
 
-    expect($ticket->refresh()->sla_deadline?->format('Y-m-d H:i:s'))
-        ->toBe('2026-09-24 12:00:00');
+    expect($ticket->refresh()->priority)->toBeNull()
+        ->and($ticket->sla_deadline)->toBeNull();
 });
 
 test('classification requires custom text for the Lain-lain IT tag', function (): void {
@@ -124,7 +138,6 @@ test('classification requires custom text for the Lain-lain IT tag', function ()
     $this->postJson("/api/v1/tickets/{$ticket->id}/classify", [
         'quality_category_id' => $qualityCategory->id,
         'it_tag_id' => $otherTag->id,
-        'priority' => TicketPriority::Medium->value,
     ])
         ->assertUnprocessable()
         ->assertJsonValidationErrors('custom_it_tag_text');
@@ -146,7 +159,6 @@ test('classification rejects actors and tickets outside the service and state ru
     $this->postJson("/api/v1/tickets/{$tikTicket->id}/classify", [
         'quality_category_id' => $qualityCategory->id,
         'it_tag_id' => $itTag->id,
-        'priority' => TicketPriority::Low->value,
     ])->assertForbidden();
 
     actingAsTicketWorkflowUser('tickets-verify', 'super-admin');
@@ -158,7 +170,6 @@ test('classification rejects actors and tickets outside the service and state ru
     $this->postJson("/api/v1/tickets/{$classifiedTicket->id}/classify", [
         'quality_category_id' => $qualityCategory->id,
         'it_tag_id' => $itTag->id,
-        'priority' => TicketPriority::Low->value,
     ])
         ->assertConflict()
         ->assertJsonPath('message', 'Status tiket tidak dapat diubah dari diklasifikasi menjadi diklasifikasi.');
@@ -250,35 +261,34 @@ test('Sarpras coordinator can reject Sarpras but not TIK tickets', function (): 
         ->and($tikTicket->refresh()->status)->toBe(TicketStatus::Baru);
 });
 
-test('assignment cannot overwrite the priority selected during classification', function (): void {
-    $actor = actingAsTicketWorkflowUser('tickets-assign');
-    $officer = User::factory()->create([
-        'name' => 'Petugas Terpilih',
-        'status' => 'active',
-    ]);
+test('super admin assigns a TIK officer with priority and SLA', function (): void {
+    $actor = actingAsTicketWorkflowUser('tickets-assign', 'super-admin');
+    $officer = createTicketOfficer('petugas-tik', ['name' => 'Petugas TIK Terpilih']);
     $ticket = Ticket::factory()->create([
+        'service' => TicketService::Tik,
         'status' => TicketStatus::Diklasifikasi,
-        'priority' => TicketPriority::High,
     ]);
 
-    $response = $this->postJson("/api/v1/tickets/{$ticket->id}/assign", [
-        'priority' => TicketPriority::Critical->value,
-        'officer_id' => $officer->id,
-    ]);
+    try {
+        Carbon::setTestNow('2026-09-24 08:00:00');
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/assign", [
+            'assigned_officer_id' => $officer->id,
+            'priority' => TicketPriority::Critical->value,
+        ]);
+    } finally {
+        Carbon::setTestNow();
+    }
 
     $response
         ->assertOk()
         ->assertJsonPath('message', 'Petugas berhasil ditugaskan.')
-        ->assertJsonPath('data.priority', TicketPriority::High->value)
+        ->assertJsonPath('data.priority', TicketPriority::Critical->value)
         ->assertJsonPath('data.assigned_officer.id', $officer->id)
-        ->assertJsonPath('data.assigned_officer.name', 'Petugas Terpilih')
         ->assertJsonPath('data.status', TicketStatus::Ditugaskan->value);
-    $this->assertDatabaseHas('tickets', [
-        'id' => $ticket->id,
-        'priority' => TicketPriority::High->value,
-        'assigned_officer_id' => $officer->id,
-        'status' => TicketStatus::Ditugaskan->value,
-    ]);
+
+    $ticket->refresh();
+    expect($ticket->assigned_at?->format('Y-m-d H:i:s'))->toBe('2026-09-24 08:00:00')
+        ->and($ticket->sla_deadline?->format('Y-m-d H:i:s'))->toBe('2026-09-24 10:00:00');
     $this->assertDatabaseHas('ticket_status_histories', [
         'ticket_id' => $ticket->id,
         'from_status' => TicketStatus::Diklasifikasi->value,
@@ -287,67 +297,173 @@ test('assignment cannot overwrite the priority selected during classification', 
     ]);
 });
 
-test('assign returns 422 when officer is missing', function (): void {
-    actingAsTicketWorkflowUser('tickets-assign');
+test('Sarpras coordinator assigns only a Sarpras officer', function (): void {
+    actingAsTicketWorkflowUser('tickets-assign', 'koordinator-sarpras');
+    $sarprasOfficer = createTicketOfficer('petugas-sarpras');
+    $tikOfficer = createTicketOfficer('petugas-tik');
     $ticket = Ticket::factory()->create([
+        'service' => TicketService::Sarpras,
         'status' => TicketStatus::Diklasifikasi,
-        'priority' => TicketPriority::High,
     ]);
 
-    $response = $this->postJson("/api/v1/tickets/{$ticket->id}/assign");
-
-    $response
+    $this->postJson("/api/v1/tickets/{$ticket->id}/assign", [
+        'assigned_officer_id' => $tikOfficer->id,
+        'priority' => TicketPriority::High->value,
+    ])
         ->assertUnprocessable()
-        ->assertJsonValidationErrors('officer_id');
-    expect($ticket->refresh()->priority)->toBe(TicketPriority::High)
-        ->and($ticket->assigned_officer_id)->toBeNull();
+        ->assertJsonValidationErrors('assigned_officer_id');
+
+    $this->postJson("/api/v1/tickets/{$ticket->id}/assign", [
+        'assigned_officer_id' => $sarprasOfficer->id,
+        'priority' => TicketPriority::High->value,
+    ])->assertOk();
+
+    expect($ticket->refresh()->assigned_officer_id)->toBe($sarprasOfficer->id)
+        ->and($ticket->priority)->toBe(TicketPriority::High);
 });
 
-test('assign returns 422 for an unavailable officer', function (int $officerId): void {
-    actingAsTicketWorkflowUser('tickets-assign');
-    $ticket = Ticket::factory()->create([
+test('assignment authorization follows the ticket service', function (): void {
+    $coordinator = actingAsTicketWorkflowUser('tickets-assign', 'koordinator-sarpras');
+    $tikOfficer = createTicketOfficer('petugas-tik');
+    $tikTicket = Ticket::factory()->create([
+        'service' => TicketService::Tik,
         'status' => TicketStatus::Diklasifikasi,
-        'priority' => TicketPriority::High,
     ]);
 
-    $response = $this->postJson("/api/v1/tickets/{$ticket->id}/assign", [
-        'officer_id' => $officerId,
+    $this->postJson("/api/v1/tickets/{$tikTicket->id}/assign", [
+        'assigned_officer_id' => $tikOfficer->id,
+        'priority' => TicketPriority::Low->value,
+    ])->assertForbidden();
+
+    $superAdmin = actingAsTicketWorkflowUser('tickets-assign', 'super-admin');
+    $sarprasOfficer = createTicketOfficer('petugas-sarpras');
+    $sarprasTicket = Ticket::factory()->create([
+        'service' => TicketService::Sarpras,
+        'status' => TicketStatus::Diklasifikasi,
     ]);
 
-    $response
-        ->assertUnprocessable()
-        ->assertJsonValidationErrors('officer_id');
-    expect($ticket->refresh()->priority)->toBe(TicketPriority::High)
-        ->and($ticket->assigned_officer_id)->toBeNull();
-})->with([
-    'unknown user' => 999999,
-    'inactive user' => fn (): int => User::factory()->create(['status' => 'inactive'])->id,
-    'suspended user' => fn (): int => User::factory()->create(['status' => 'suspended'])->id,
-]);
+    $this->postJson("/api/v1/tickets/{$sarprasTicket->id}/assign", [
+        'assigned_officer_id' => $sarprasOfficer->id,
+        'priority' => TicketPriority::Low->value,
+    ])->assertForbidden();
 
-test('assign returns 409 when ticket is not classified', function (TicketStatus $status): void {
-    actingAsTicketWorkflowUser('tickets-assign');
-    $officer = User::factory()->create(['status' => 'active']);
+    expect($coordinator->id)->not->toBe($superAdmin->id);
+});
+
+test('assigned ticket can be reassigned without resetting priority SLA or history', function (): void {
+    actingAsTicketWorkflowUser('tickets-assign', 'super-admin');
+    $oldOfficer = createTicketOfficer('petugas-tik');
+    $newOfficer = createTicketOfficer('petugas-tik');
     $ticket = Ticket::factory()->create([
-        'status' => $status,
-        'priority' => TicketPriority::Low,
+        'service' => TicketService::Tik,
+        'status' => TicketStatus::Ditugaskan,
+        'assigned_officer_id' => $oldOfficer->id,
+        'assigned_at' => '2026-09-24 08:00:00',
+        'priority' => TicketPriority::High,
+        'sla_deadline' => '2026-09-24 12:00:00',
     ]);
 
-    $response = $this->postJson("/api/v1/tickets/{$ticket->id}/assign", [
-        'officer_id' => $officer->id,
-    ]);
+    try {
+        Carbon::setTestNow('2026-09-24 09:00:00');
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/assign", [
+            'assigned_officer_id' => $newOfficer->id,
+        ]);
+    } finally {
+        Carbon::setTestNow();
+    }
 
     $response
-        ->assertConflict()
-        ->assertJsonPath('message', "Status tiket tidak dapat diubah dari {$status->value} menjadi ditugaskan.");
-    expect($ticket->refresh()->status)->toBe($status)
-        ->and($ticket->priority)->toBe(TicketPriority::Low)
-        ->and($ticket->assigned_officer_id)->toBeNull();
+        ->assertOk()
+        ->assertJsonPath('message', 'Petugas berhasil ditugaskan ulang.');
+    $ticket->refresh();
+    expect($ticket->assigned_officer_id)->toBe($newOfficer->id)
+        ->and($ticket->assigned_at?->format('Y-m-d H:i:s'))->toBe('2026-09-24 09:00:00')
+        ->and($ticket->priority)->toBe(TicketPriority::High)
+        ->and($ticket->sla_deadline?->format('Y-m-d H:i:s'))->toBe('2026-09-24 12:00:00')
+        ->and($ticket->statusHistories()->count())->toBe(0);
+});
+
+test('processed ticket returns to assigned when reassigned without resetting SLA', function (): void {
+    $actor = actingAsTicketWorkflowUser('tickets-assign', 'super-admin');
+    $oldOfficer = createTicketOfficer('petugas-tik');
+    $newOfficer = createTicketOfficer('petugas-tik');
+    $ticket = Ticket::factory()->create([
+        'service' => TicketService::Tik,
+        'status' => TicketStatus::Diproses,
+        'assigned_officer_id' => $oldOfficer->id,
+        'priority' => TicketPriority::Medium,
+        'sla_deadline' => '2026-09-25 08:00:00',
+    ]);
+
+    $this->postJson("/api/v1/tickets/{$ticket->id}/assign", [
+        'assigned_officer_id' => $newOfficer->id,
+    ])->assertOk();
+
+    $ticket->refresh();
+    expect($ticket->status)->toBe(TicketStatus::Ditugaskan)
+        ->and($ticket->assigned_officer_id)->toBe($newOfficer->id)
+        ->and($ticket->priority)->toBe(TicketPriority::Medium)
+        ->and($ticket->sla_deadline?->format('Y-m-d H:i:s'))->toBe('2026-09-25 08:00:00');
+    $this->assertDatabaseHas('ticket_status_histories', [
+        'ticket_id' => $ticket->id,
+        'from_status' => TicketStatus::Diproses->value,
+        'to_status' => TicketStatus::Ditugaskan->value,
+        'changed_by_id' => $actor->id,
+    ]);
+});
+
+test('assignee options search active officers by service name and jabatan', function (): void {
+    actingAsTicketWorkflowUser('tickets-assign', 'super-admin');
+    $byName = createTicketOfficer('petugas-tik', ['name' => 'Network Specialist', 'jabatan' => 'Teknisi']);
+    $byPosition = createTicketOfficer('petugas-tik', ['name' => 'Budi', 'jabatan' => 'Network Engineer']);
+    createTicketOfficer('petugas-sarpras', ['name' => 'Network Sarpras', 'jabatan' => 'Network Engineer']);
+    createTicketOfficer('petugas-tik', [
+        'name' => 'Network Nonaktif',
+        'jabatan' => 'Network Engineer',
+        'status_user' => 'Nonaktif',
+    ]);
+    $ticket = Ticket::factory()->create([
+        'service' => TicketService::Tik,
+        'status' => TicketStatus::Diklasifikasi,
+    ]);
+
+    $this->getJson("/api/v1/tickets/{$ticket->id}/assignee-options?search=Network")
+        ->assertOk()
+        ->assertJsonCount(2, 'data')
+        ->assertJsonFragment(['id' => $byName->id, 'name' => 'Network Specialist', 'jabatan' => 'Teknisi'])
+        ->assertJsonFragment(['id' => $byPosition->id, 'name' => 'Budi', 'jabatan' => 'Network Engineer'])
+        ->assertJsonMissing(['name' => 'Network Sarpras'])
+        ->assertJsonMissing(['name' => 'Network Nonaktif']);
+});
+
+test('assign rejects missing input and unsupported ticket states', function (TicketStatus $status): void {
+    actingAsTicketWorkflowUser('tickets-assign', 'super-admin');
+    $officer = createTicketOfficer('petugas-tik');
+    $ticket = Ticket::factory()->create([
+        'service' => TicketService::Tik,
+        'status' => $status,
+    ]);
+
+    $payload = $status === TicketStatus::Diklasifikasi
+        ? []
+        : ['assigned_officer_id' => $officer->id];
+    $response = $this->postJson("/api/v1/tickets/{$ticket->id}/assign", $payload);
+
+    if ($status === TicketStatus::Diklasifikasi) {
+        $response
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['assigned_officer_id', 'priority']);
+    } else {
+        $response->assertConflict();
+    }
 })->with([
+    'missing first assignment input' => TicketStatus::Diklasifikasi,
     'new' => TicketStatus::Baru,
-    'rejected' => TicketStatus::Ditolak,
-    'in progress' => TicketStatus::Diproses,
+    'escalated' => TicketStatus::Eskalasi,
     'completed' => TicketStatus::Terselesaikan,
+    'verified' => TicketStatus::Terverifikasi,
+    'closed' => TicketStatus::Ditutup,
+    'rejected' => TicketStatus::Ditolak,
 ]);
 
 test('guest cannot use ticket workflow endpoints', function (string $endpoint, array $payload): void {
@@ -358,7 +474,7 @@ test('guest cannot use ticket workflow endpoints', function (string $endpoint, a
 })->with([
     'classify' => ['classify', []],
     'reject' => ['reject', ['reason' => 'Tidak dapat diproses.']],
-    'assign' => ['assign', ['officer_id' => 1]],
+    'assign' => ['assign', ['assigned_officer_id' => 1, 'priority' => 'high']],
 ]);
 
 test('authenticated user without workflow permission receives 403', function (string $endpoint, array $payload): void {
@@ -371,7 +487,7 @@ test('authenticated user without workflow permission receives 403', function (st
 })->with([
     'classify' => ['classify', []],
     'reject' => ['reject', ['reason' => 'Tidak dapat diproses.']],
-    'assign' => ['assign', ['officer_id' => 1]],
+    'assign' => ['assign', ['assigned_officer_id' => 1, 'priority' => 'high']],
 ]);
 
 test('ticket workflow endpoint returns 404 when ticket does not exist', function (string $endpoint, array $payload, string $permission): void {
@@ -383,5 +499,5 @@ test('ticket workflow endpoint returns 404 when ticket does not exist', function
 })->with([
     'classify' => ['classify', [], 'tickets-verify'],
     'reject' => ['reject', ['reason' => 'Tidak dapat diproses.'], 'tickets-reject'],
-    'assign' => ['assign', ['officer_id' => 999999], 'tickets-assign'],
+    'assign' => ['assign', ['assigned_officer_id' => 999999, 'priority' => 'high'], 'tickets-assign'],
 ]);

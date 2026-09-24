@@ -15,6 +15,7 @@ function documentedTicketPermissions(): array
         ['path' => '/tickets/{ticket}', 'method' => 'get', 'permission' => 'tickets-access'],
         ['path' => '/tickets/{ticket}/classify', 'method' => 'post', 'permission' => 'tickets-verify'],
         ['path' => '/tickets/{ticket}/reject', 'method' => 'post', 'permission' => 'tickets-reject'],
+        ['path' => '/tickets/{ticket}/assignee-options', 'method' => 'get', 'permission' => 'tickets-assign'],
         ['path' => '/tickets/{ticket}/assign', 'method' => 'post', 'permission' => 'tickets-assign'],
         ['path' => '/tickets/{ticket}/handlings', 'method' => 'post', 'permission' => 'tickets-handle'],
     ];
@@ -27,6 +28,7 @@ test('the Helpdesk OpenAPI contract only documents implemented ticket operations
         '/tickets/{ticket}',
         '/tickets/{ticket}/classify',
         '/tickets/{ticket}/reject',
+        '/tickets/{ticket}/assignee-options',
         '/tickets/{ticket}/assign',
         '/tickets/{ticket}/handlings',
     ];
@@ -53,11 +55,17 @@ test('the Helpdesk OpenAPI contract only documents implemented ticket operations
         ->and($contract['paths']['/tickets/{ticket}/classify']['post']['requestBody']['content']['application/json']['schema']['$ref'])
         ->toBe('#/components/schemas/ClassifyTicketRequest')
         ->and($contract['components']['schemas']['ClassifyTikTicketRequest']['required'])
-        ->toBe(['quality_category_id', 'it_tag_id', 'priority'])
+        ->toBe(['quality_category_id', 'it_tag_id'])
         ->and($contract['components']['schemas']['ClassifySarprasTicketRequest']['required'])
-        ->toBe(['sarpras_category_id', 'priority'])
+        ->toBe(['sarpras_category_id'])
         ->and($contract['components']['schemas']['AssignTicketRequest']['required'])
-        ->toBe(['officer_id'])
+        ->toBe(['assigned_officer_id'])
+        ->and($contract['components']['schemas']['AssignTicketRequest']['properties']['priority']['enum'])
+        ->toBe(['critical', 'high', 'medium', 'low'])
+        ->and($contract['paths']['/tickets/{ticket}/assignee-options']['get']['parameters'][1]['name'])
+        ->toBe('search')
+        ->and($contract['paths']['/tickets/{ticket}/assignee-options']['get']['responses']['200']['content']['application/json']['schema']['$ref'])
+        ->toBe('#/components/schemas/AssigneeOptionCollectionResponse')
         ->and($contract['paths']['/tickets/{ticket}/handlings']['post']['requestBody']['content']['multipart/form-data']['schema']['$ref'])
         ->toBe('#/components/schemas/CreateTicketHandlingRequest')
         ->and($contract['paths']['/tickets/{ticket}/handlings']['post']['x-required-permission'])
@@ -92,6 +100,7 @@ test('it generates the Helpdesk ticket Swagger contract', function (): void {
                 '/tickets/{ticket}',
                 '/tickets/{ticket}/classify',
                 '/tickets/{ticket}/reject',
+                '/tickets/{ticket}/assignee-options',
                 '/tickets/{ticket}/assign',
                 '/tickets/{ticket}/handlings',
             ]);
@@ -128,6 +137,7 @@ test('it generates the Helpdesk ticket Swagger contract', function (): void {
         $createOperation = $documentation['paths']['/tickets']['post'];
         $classifyOperation = $documentation['paths']['/tickets/{ticket}/classify']['post'];
         $rejectOperation = $documentation['paths']['/tickets/{ticket}/reject']['post'];
+        $assigneeOptionsOperation = $documentation['paths']['/tickets/{ticket}/assignee-options']['get'];
         $assignOperation = $documentation['paths']['/tickets/{ticket}/assign']['post'];
         $handlingOperation = $documentation['paths']['/tickets/{ticket}/handlings']['post'];
 
@@ -159,7 +169,13 @@ test('it generates the Helpdesk ticket Swagger contract', function (): void {
             ->and($assignOperation['requestBody']['content']['application/json']['schema']['$ref'])
             ->toBe('#/components/schemas/AssignTicketRequest')
             ->and($documentation['components']['schemas']['AssignTicketRequest']['required'])
-            ->toBe(['officer_id'])
+            ->toBe(['assigned_officer_id'])
+            ->and($documentation['components']['schemas']['AssignTicketRequest']['properties']['priority']['enum'])
+            ->toBe(['critical', 'high', 'medium', 'low'])
+            ->and($assigneeOptionsOperation['parameters'][1]['name'])
+            ->toBe('search')
+            ->and($assigneeOptionsOperation['responses']['200']['content']['application/json']['schema']['$ref'])
+            ->toBe('#/components/schemas/AssigneeOptionCollectionResponse')
             ->and($handlingOperation['requestBody']['content']['multipart/form-data']['schema']['$ref'])
             ->toBe('#/components/schemas/CreateTicketHandlingRequest')
             ->and($handlingOperation['responses']['403']['content']['application/json']['schema']['$ref'])

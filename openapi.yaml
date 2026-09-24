@@ -200,12 +200,53 @@ paths:
         '422':
           $ref: '#/components/responses/TicketValidationError'
 
+  /tickets/{ticket}/assignee-options:
+    get:
+      tags: [Helpdesk]
+      summary: Mencari kandidat petugas assignment
+      operationId: listTicketAssigneeOptions
+      description: |
+        Kandidat dibatasi pada user aktif dengan role Petugas TIK atau Petugas
+        Sarpras sesuai service ticket. Search mencocokkan name dan jabatan.
+      x-auth-required: true
+      x-required-permission: tickets-assign
+      parameters:
+        - $ref: '#/components/parameters/TicketId'
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 255
+      responses:
+        '200':
+          description: Kandidat petugas berhasil diambil.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssigneeOptionCollectionResponse'
+        '401':
+          $ref: '#/components/responses/TicketUnauthenticated'
+        '403':
+          $ref: '#/components/responses/TicketForbidden'
+        '404':
+          $ref: '#/components/responses/TicketNotFound'
+        '409':
+          $ref: '#/components/responses/TicketConflict'
+        '422':
+          $ref: '#/components/responses/TicketValidationError'
+
   /tickets/{ticket}/assign:
     post:
       tags: [Helpdesk]
-      summary: Menentukan petugas tiket
+      summary: Assignment atau reassignment tiket
       operationId: assignTicket
-      description: Assignment mengubah status tiket dari Diklasifikasi menjadi Ditugaskan.
+      description: |
+        TIK hanya dapat di-assign Super Admin kepada Petugas TIK. Sarpras hanya
+        dapat di-assign Koordinator Sarpras kepada Petugas Sarpras. Assignment
+        pertama dari Diklasifikasi menentukan priority dan SLA dari assigned_at.
+        Reassignment dari Ditugaskan atau Diproses hanya mengganti petugas dan
+        assigned_at; priority serta SLA deadline pertama tidak direset.
       x-auth-required: true
       x-required-permission: tickets-assign
       parameters:
@@ -218,7 +259,7 @@ paths:
               $ref: '#/components/schemas/AssignTicketRequest'
       responses:
         '200':
-          description: Petugas berhasil ditugaskan.
+          description: Assignment atau reassignment berhasil.
           content:
             application/json:
               schema:
@@ -620,7 +661,6 @@ components:
       required:
         - quality_category_id
         - it_tag_id
-        - priority
       properties:
         quality_category_id:
           type: integer
@@ -632,33 +672,53 @@ components:
             - 'null'
           maxLength: 255
           description: Wajib dan hanya boleh diisi ketika IT Tag adalah Lain-lain.
-        priority:
-          type: string
-          enum: [critical, high, medium, low]
 
     ClassifySarprasTicketRequest:
       type: object
       additionalProperties: false
       required:
         - sarpras_category_id
-        - priority
       properties:
         sarpras_category_id:
           type: integer
           description: ID kategori aktif Sarpras, Elektronik, atau Alkes.
-        priority:
-          type: string
-          enum: [critical, high, medium, low]
-
     AssignTicketRequest:
       type: object
       additionalProperties: false
       required:
-        - officer_id
+        - assigned_officer_id
       properties:
-        officer_id:
+        assigned_officer_id:
           type: integer
           example: 2
+        priority:
+          type: string
+          enum: [critical, high, medium, low]
+          description: Wajib pada assignment pertama dan tidak boleh dikirim saat reassignment.
+
+    AssigneeOption:
+      type: object
+      additionalProperties: false
+      required: [id, name, jabatan]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        jabatan:
+          type:
+            - string
+            - 'null'
+
+    AssigneeOptionCollectionResponse:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssigneeOption'
 
     CreateTicketHandlingRequest:
       type: object

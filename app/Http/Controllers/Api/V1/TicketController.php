@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\TicketStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\AssigneeOptionsRequest;
 use App\Http\Requests\AssignTicketRequest;
 use App\Http\Requests\ClassifyTicketRequest;
 use App\Http\Requests\ListTicketRequest;
 use App\Http\Requests\RejectTicketRequest;
 use App\Http\Requests\StoreTicketRequest;
+use App\Http\Resources\AssigneeOptionResource;
 use App\Http\Resources\TicketResource;
 use App\Models\Ticket;
 use App\Services\TicketService;
@@ -85,14 +88,33 @@ class TicketController extends Controller
 
     public function assign(AssignTicketRequest $request, Ticket $ticket): TicketResource
     {
+        Gate::authorize('assign', $ticket);
+
         $validated = $request->validated();
+        $isReassignment = in_array($ticket->status, [TicketStatus::Ditugaskan, TicketStatus::Diproses], true);
         $ticket = $this->service->assign(
             $ticket,
-            $validated['officer_id'],
+            $validated,
             $request->user(),
         );
 
         return (new TicketResource($this->service->loadSummary($ticket)))
-            ->additional(['message' => 'Petugas berhasil ditugaskan.']);
+            ->additional(['message' => $isReassignment
+                ? 'Petugas berhasil ditugaskan ulang.'
+                : 'Petugas berhasil ditugaskan.']);
+    }
+
+    public function assigneeOptions(
+        AssigneeOptionsRequest $request,
+        Ticket $ticket,
+    ): AnonymousResourceCollection {
+        Gate::authorize('assign', $ticket);
+
+        return AssigneeOptionResource::collection(
+            $this->service->assigneeOptions(
+                $ticket,
+                $request->string('search')->toString() ?: null,
+            ),
+        );
     }
 }

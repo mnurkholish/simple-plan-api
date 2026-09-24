@@ -19,6 +19,7 @@ class RoleSeeder extends Seeder
                 'tickets-create',
                 'tickets-verify',
                 'tickets-reject',
+                'tickets-assign',
             ],
             'petugas-tik' => [
                 'tickets-access',

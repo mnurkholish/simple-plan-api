@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\TicketPriority;
 use App\Enums\TicketService;
 use App\Models\ItTag;
 use App\Models\QualityCategory;
@@ -27,9 +26,7 @@ class ClassifyTicketRequest extends FormRequest
     public function rules(): array
     {
         $ticket = $this->route('ticket');
-        $rules = [
-            'priority' => ['required', Rule::enum(TicketPriority::class)],
-        ];
+        $rules = [];
 
         if (! $ticket instanceof Ticket) {
             return $rules;

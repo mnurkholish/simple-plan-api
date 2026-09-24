@@ -2527,13 +2527,111 @@
                 ]
             }
         },
+        "/tickets/{ticket}/assignee-options": {
+            "get": {
+                "tags": [
+                    "Helpdesk"
+                ],
+                "summary": "Search eligible officers for assignment",
+                "description": "Returns active Petugas TIK for a TIK ticket or active Petugas Sarpras for a Sarpras ticket. Search matches name or jabatan. TIK is limited to Super Admin; Sarpras is limited to Koordinator Sarpras. Requires the tickets-assign permission.",
+                "operationId": "getTicketAssigneeOptions",
+                "parameters": [
+                    {
+                        "name": "ticket",
+                        "in": "path",
+                        "description": "Internal ticket ID.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Optional name or jabatan search.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 255
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Eligible assignee options",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AssigneeOptionCollectionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Actor cannot assign this ticket service",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Ticket not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Ticket state conflict",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Invalid search query",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/tickets/{ticket}/assign": {
             "post": {
                 "tags": [
                     "Helpdesk"
                 ],
-                "summary": "Assign an officer without changing classification priority",
-                "description": "Assignment transitions a classified ticket to ditugaskan. Requires the tickets-assign permission.",
+                "summary": "Assign or reassign a ticket officer",
+                "description": "TIK assignment is limited to Super Admin and requires Petugas TIK. Sarpras assignment is limited to Koordinator Sarpras and requires Petugas Sarpras. Initial assignment from diklasifikasi requires priority, sets assigned_at, starts the SLA deadline, and transitions to ditugaskan. Reassignment from ditugaskan or diproses updates the officer and assigned_at without resetting priority or SLA; diproses transitions back to ditugaskan. Requires the tickets-assign permission.",
                 "operationId": "assignTicket",
                 "parameters": [
                     {
@@ -2578,7 +2676,7 @@
                         }
                     },
                     "403": {
-                        "description": "Missing tickets-assign permission",
+                        "description": "Actor or selected officer is not eligible for this ticket service",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -3571,8 +3669,7 @@
             "ClassifyTikTicketRequest": {
                 "required": [
                     "quality_category_id",
-                    "it_tag_id",
-                    "priority"
+                    "it_tag_id"
                 ],
                 "properties": {
                     "quality_category_id": {
@@ -3588,32 +3685,34 @@
                         "type": "string",
                         "nullable": true,
                         "maxLength": 255
-                    },
-                    "priority": {
-                        "type": "string",
-                        "example": "high",
-                        "enum": [
-                            "critical",
-                            "high",
-                            "medium",
-                            "low"
-                        ]
                     }
                 },
                 "type": "object"
             },
             "ClassifySarprasTicketRequest": {
                 "required": [
-                    "sarpras_category_id",
-                    "priority"
+                    "sarpras_category_id"
                 ],
                 "properties": {
                     "sarpras_category_id": {
                         "description": "Active Sarpras, Elektronik, or Alkes category ID.",
                         "type": "integer",
                         "example": 1
+                    }
+                },
+                "type": "object"
+            },
+            "AssignTicketRequest": {
+                "required": [
+                    "assigned_officer_id"
+                ],
+                "properties": {
+                    "assigned_officer_id": {
+                        "type": "integer",
+                        "example": 2
                     },
                     "priority": {
+                        "description": "Required for initial assignment and prohibited for reassignment.",
                         "type": "string",
                         "example": "high",
                         "enum": [
@@ -3626,14 +3725,39 @@
                 },
                 "type": "object"
             },
-            "AssignTicketRequest": {
+            "AssigneeOption": {
                 "required": [
-                    "officer_id"
+                    "id",
+                    "name",
+                    "jabatan"
                 ],
                 "properties": {
-                    "officer_id": {
+                    "id": {
                         "type": "integer",
                         "example": 2
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Budi Petugas"
+                    },
+                    "jabatan": {
+                        "type": "string",
+                        "example": "Teknisi Jaringan",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "AssigneeOptionCollectionResponse": {
+                "required": [
+                    "data"
+                ],
+                "properties": {
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AssigneeOption"
+                        }
                     }
                 },
                 "type": "object"

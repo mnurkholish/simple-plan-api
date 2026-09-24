@@ -8,7 +8,9 @@ use App\Enums\TicketStatus;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Repositories\TicketRepository;
+use App\Repositories\UserRepository;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +24,7 @@ class TicketService
 {
     public function __construct(
         private readonly TicketRepository $tickets,
+        private readonly UserRepository $users,
         private readonly SlaService $sla,
     ) {}
 
@@ -99,7 +102,7 @@ class TicketService
     }
 
     /**
-     * @param  array{priority: string, quality_category_id?: int, it_tag_id?: int, custom_it_tag_text?: string|null, sarpras_category_id?: int}  $data
+     * @param  array{quality_category_id?: int, it_tag_id?: int, custom_it_tag_text?: string|null, sarpras_category_id?: int}  $data
      */
     public function classify(Ticket $ticket, array $data, User $classifiedBy): Ticket
     {
@@ -111,7 +114,6 @@ class TicketService
 
             $this->assertCanTransitionTo($lockedTicket, TicketStatus::Diklasifikasi);
 
-            $priority = TicketPriority::from($data['priority']);
             $classifiedAt = now();
 
             if ($lockedTicket->service === TicketServiceEnum::Tik) {
@@ -132,10 +134,8 @@ class TicketService
                 $classifiedBy,
                 notes: null,
                 attributes: [
-                    'priority' => $priority->value,
                     'classified_by_id' => $classifiedBy->getKey(),
                     'classified_at' => $classifiedAt,
-                    'sla_deadline' => $this->sla->calculateDeadline($classifiedAt, $priority),
                 ],
             );
 
@@ -153,19 +153,56 @@ class TicketService
         );
     }
 
-    public function assign(
-        Ticket $ticket,
-        int $officerId,
-        User $changedBy,
-    ): Ticket {
-        return $this->transitionStatusWithAttributes(
-            $ticket,
+    /**
+     * @param  array{assigned_officer_id: int, priority?: string}  $data
+     */
+    public function assign(Ticket $ticket, array $data, User $changedBy): Ticket
+    {
+        return DB::transaction(function () use ($ticket, $data, $changedBy): Ticket {
+            $lockedTicket = Ticket::query()
+                ->whereKey($ticket->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+            $assignedAt = now();
+            $attributes = [
+                'assigned_officer_id' => $data['assigned_officer_id'],
+                'assigned_at' => $assignedAt,
+            ];
+
+            if ($lockedTicket->status === TicketStatus::Diklasifikasi) {
+                $priority = TicketPriority::from($data['priority']);
+                $attributes['priority'] = $priority->value;
+                $attributes['sla_deadline'] = $this->sla->calculateDeadline($assignedAt, $priority);
+            }
+
+            $this->applyStatusTransition(
+                $lockedTicket,
+                TicketStatus::Ditugaskan,
+                $changedBy,
+                notes: null,
+                attributes: $attributes,
+            );
+
+            return $lockedTicket->refresh();
+        });
+    }
+
+    /**
+     * @return Collection<int, User>
+     */
+    public function assigneeOptions(Ticket $ticket, ?string $search = null): Collection
+    {
+        if (! in_array($ticket->status, [
+            TicketStatus::Diklasifikasi,
             TicketStatus::Ditugaskan,
-            $changedBy,
-            attributes: [
-                'assigned_officer_id' => $officerId,
-                'assigned_at' => now(),
-            ],
+            TicketStatus::Diproses,
+        ], true)) {
+            throw new ConflictHttpException('Kandidat petugas hanya tersedia untuk assignment atau reassignment.');
+        }
+
+        return $this->users->getAssigneeOptions(
+            $ticket->service === TicketServiceEnum::Tik ? 'petugas-tik' : 'petugas-sarpras',
+            $search,
         );
     }
 

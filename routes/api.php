@@ -77,6 +77,10 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             ->middleware('permission:tickets-reject')
             ->name('tickets.reject')
             ->missing(fn () => response()->json(['message' => 'Resource not found.'], 404));
+        Route::get('tickets/{ticket}/assignee-options', [TicketController::class, 'assigneeOptions'])
+            ->middleware('permission:tickets-assign')
+            ->name('tickets.assignee-options')
+            ->missing(fn () => response()->json(['message' => 'Resource not found.'], 404));
         Route::post('tickets/{ticket}/assign', [TicketController::class, 'assign'])
             ->middleware('permission:tickets-assign')
             ->name('tickets.assign')

@@ -8,13 +8,13 @@ use Carbon\Carbon;
 class SlaService
 {
     /**
-     * Menghitung deadline berdasarkan waktu klasifikasi dan priority tiket.
+     * Menghitung deadline berdasarkan waktu assignment pertama dan priority tiket.
      *
      * @return Carbon Waktu deadline SLA
      */
-    public function calculateDeadline(Carbon $classifiedAt, TicketPriority $priority): Carbon
+    public function calculateDeadline(Carbon $assignedAt, TicketPriority $priority): Carbon
     {
-        $deadline = $classifiedAt->copy();
+        $deadline = $assignedAt->copy();
 
         return match ($priority) {
             TicketPriority::Critical => $deadline->addHours(2),
@@ -27,15 +27,15 @@ class SlaService
     /**
      * Menentukan status SLA secara dinamis.
      *
-     * Catatan: Parameter $classifiedAt ditambahkan ke dalam signature untuk menghitung
-     * total durasi SLA (selisih antara classifiedAt dan deadline) agar bisa mendapatkan nilai 25% nya.
+     * Catatan: Parameter $assignedAt digunakan untuk menghitung total durasi SLA
+     * (selisih antara assignedAt dan deadline) agar bisa mendapatkan nilai 25% nya.
      *
-     * @param  Carbon  $classifiedAt  Waktu tiket diklasifikasi (untuk hitung total durasi)
+     * @param  Carbon  $assignedAt  Waktu assignment pertama (untuk hitung total durasi)
      * @param  Carbon  $deadline  Waktu deadline tiket
      * @param  Carbon|null  $completedAt  Waktu tiket selesai (opsional)
      * @return string Status SLA ('Melewati Batas', 'Mendekati Batas', 'Tepat Waktu')
      */
-    public function determineSlaStatus(Carbon $classifiedAt, Carbon $deadline, ?Carbon $completedAt = null): string
+    public function determineSlaStatus(Carbon $assignedAt, Carbon $deadline, ?Carbon $completedAt = null): string
     {
         // 1. Jika tiket sudah selesai
         if ($completedAt !== null) {
@@ -54,7 +54,7 @@ class SlaService
         }
 
         // Hitung sisa waktu dan total waktu
-        $totalMinutes = $classifiedAt->diffInMinutes($deadline);
+        $totalMinutes = $assignedAt->diffInMinutes($deadline);
         $remainingMinutes = $now->diffInMinutes($deadline, false); // false = jangan absolut, jika minus tetap minus
 
         // Jika sisa waktu <= 25% dari total waktu SLA awal

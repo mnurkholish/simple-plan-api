@@ -3,16 +3,13 @@
 ## Implemented
 
 - Klasifikasi TIK menyimpan Kategori Mutu, IT Tag, custom IT Tag untuk
-  `Lain-lain`, priority, classifier, waktu klasifikasi, dan SLA deadline.
+  `Lain-lain`, classifier, dan waktu klasifikasi.
 - Klasifikasi Sarpras menyimpan kategori aktif `Sarpras`, `Elektronik`, atau
-  `Alkes`, beserta priority, classifier, waktu klasifikasi, dan SLA deadline.
-- SLA dihitung 24/7 sejak `classified_at`: critical 2 jam, high 4 jam, medium
-  1 hari, dan low 3 hari.
+  `Alkes`, beserta classifier dan waktu klasifikasi.
 - Klasifikasi mengubah status `baru` menjadi `diklasifikasi` dan membuat status
   history dalam transaksi yang sama dengan detail dan update ticket.
 - Rejection mewajibkan alasan, mengubah `baru` menjadi `ditolak`, dan menyimpan
   alasan pada `ticket_status_histories.notes`.
-- Priority tidak dapat diubah lagi melalui endpoint assignment existing.
 
 ## Authorization
 
@@ -39,6 +36,9 @@ POST /api/v1/tickets/{ticket}/reject
   ulang setelah status berubah ditolak oleh transition foundation.
 - Request klasifikasi hanya menerima master data aktif. Custom IT Tag wajib dan
   hanya boleh diisi ketika IT Tag adalah `Lain-lain`.
+- Sesuai keputusan business rule terbaru, classification tidak lagi menerima
+  `priority` atau menghitung `sla_deadline`; keduanya ditentukan pada assignment
+  pertama.
 - OpenAPI, anotasi Swagger, dan generated Swagger artifact sudah diselaraskan
   dengan request TIK/Sarpras, actor, validation, dan response aktual.
 - Repository ini tidak memiliki UI Helpdesk selain Swagger UI, sehingga tidak

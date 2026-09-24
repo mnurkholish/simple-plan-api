@@ -32,6 +32,14 @@ class TicketPolicy
         return $this->canClassifyService($user, $ticket->service);
     }
 
+    public function assign(User $user, Ticket $ticket): bool
+    {
+        return match ($ticket->service) {
+            TicketService::Tik => $user->hasRole('super-admin'),
+            TicketService::Sarpras => $user->hasRole('koordinator-sarpras'),
+        };
+    }
+
     private function canClassifyService(User $user, TicketService $service): bool
     {
         if ($user->hasRole('super-admin')) {

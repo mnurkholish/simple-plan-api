@@ -304,29 +304,46 @@ use OpenApi\Annotations as OA;
  * @OA\Schema(
  *     schema="ClassifyTikTicketRequest",
  *     type="object",
- *     required={"quality_category_id","it_tag_id","priority"},
+ *     required={"quality_category_id","it_tag_id"},
  *
  *     @OA\Property(property="quality_category_id", type="integer", example=1),
  *     @OA\Property(property="it_tag_id", type="integer", example=1),
- *     @OA\Property(property="custom_it_tag_text", type="string", maxLength=255, nullable=true, description="Required and only accepted when the selected IT Tag is Lain-lain."),
- *     @OA\Property(property="priority", type="string", enum={"critical","high","medium","low"}, example="high")
+ *     @OA\Property(property="custom_it_tag_text", type="string", maxLength=255, nullable=true, description="Required and only accepted when the selected IT Tag is Lain-lain.")
  * )
  *
  * @OA\Schema(
  *     schema="ClassifySarprasTicketRequest",
  *     type="object",
- *     required={"sarpras_category_id","priority"},
+ *     required={"sarpras_category_id"},
  *
- *     @OA\Property(property="sarpras_category_id", type="integer", description="Active Sarpras, Elektronik, or Alkes category ID.", example=1),
- *     @OA\Property(property="priority", type="string", enum={"critical","high","medium","low"}, example="high")
+ *     @OA\Property(property="sarpras_category_id", type="integer", description="Active Sarpras, Elektronik, or Alkes category ID.", example=1)
  * )
  *
  * @OA\Schema(
  *     schema="AssignTicketRequest",
  *     type="object",
- *     required={"officer_id"},
+ *     required={"assigned_officer_id"},
  *
- *     @OA\Property(property="officer_id", type="integer", example=2)
+ *     @OA\Property(property="assigned_officer_id", type="integer", example=2),
+ *     @OA\Property(property="priority", type="string", enum={"critical","high","medium","low"}, description="Required for initial assignment and prohibited for reassignment.", example="high")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="AssigneeOption",
+ *     type="object",
+ *     required={"id","name","jabatan"},
+ *
+ *     @OA\Property(property="id", type="integer", example=2),
+ *     @OA\Property(property="name", type="string", example="Budi Petugas"),
+ *     @OA\Property(property="jabatan", type="string", nullable=true, example="Teknisi Jaringan")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="AssigneeOptionCollectionResponse",
+ *     type="object",
+ *     required={"data"},
+ *
+ *     @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/AssigneeOption"))
  * )
  *
  * @OA\Schema(
@@ -1353,12 +1370,34 @@ class ApiDocumentation
     public function ticketsReject(): void {}
 
     /**
+     * @OA\Get(
+     *     path="/tickets/{ticket}/assignee-options",
+     *     operationId="getTicketAssigneeOptions",
+     *     tags={"Helpdesk"},
+     *     summary="Search eligible officers for assignment",
+     *     description="Returns active Petugas TIK for a TIK ticket or active Petugas Sarpras for a Sarpras ticket. Search matches name or jabatan. TIK is limited to Super Admin; Sarpras is limited to Koordinator Sarpras. Requires the tickets-assign permission.",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="search", in="query", required=false, description="Optional name or jabatan search.", @OA\Schema(type="string", maxLength=255)),
+     *
+     *     @OA\Response(response=200, description="Eligible assignee options", @OA\JsonContent(ref="#/components/schemas/AssigneeOptionCollectionResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Actor cannot assign this ticket service", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=404, description="Ticket not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=409, description="Ticket state conflict", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=422, description="Invalid search query", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
+     * )
+     */
+    public function ticketAssigneeOptions(): void {}
+
+    /**
      * @OA\Post(
      *     path="/tickets/{ticket}/assign",
      *     operationId="assignTicket",
      *     tags={"Helpdesk"},
-     *     summary="Assign an officer without changing classification priority",
-     *     description="Assignment transitions a classified ticket to ditugaskan. Requires the tickets-assign permission.",
+     *     summary="Assign or reassign a ticket officer",
+     *     description="TIK assignment is limited to Super Admin and requires Petugas TIK. Sarpras assignment is limited to Koordinator Sarpras and requires Petugas Sarpras. Initial assignment from diklasifikasi requires priority, sets assigned_at, starts the SLA deadline, and transitions to ditugaskan. Reassignment from ditugaskan or diproses updates the officer and assigned_at without resetting priority or SLA; diproses transitions back to ditugaskan. Requires the tickets-assign permission.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
@@ -1367,7 +1406,7 @@ class ApiDocumentation
      *
      *     @OA\Response(response=200, description="Officer assigned", @OA\JsonContent(ref="#/components/schemas/TicketActionResponse")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
-     *     @OA\Response(response=403, description="Missing tickets-assign permission", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Actor or selected officer is not eligible for this ticket service", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=404, description="Ticket not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=409, description="Ticket state conflict", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=422, description="Invalid assignment data", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
