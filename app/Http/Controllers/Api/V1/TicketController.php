@@ -14,7 +14,9 @@ use App\Services\TicketService;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Gate;
 
 class TicketController extends Controller
 {
@@ -22,9 +24,12 @@ class TicketController extends Controller
 
     public function index(ListTicketRequest $request): AnonymousResourceCollection
     {
+        Gate::authorize('viewAny', Ticket::class);
+
         $filters = $request->validated();
 
         $query = Ticket::query()
+            ->visibleTo($request->user())
             ->with([
                 'assignedOfficer:id,name',
                 'reporter:id,name',
@@ -96,6 +101,8 @@ class TicketController extends Controller
 
     public function show(Ticket $ticket): TicketResource
     {
+        Gate::authorize('view', $ticket);
+
         return new TicketResource($ticket->load([
             'assignedOfficer:id,name',
             'handlings.handledBy:id,name',
@@ -131,9 +138,9 @@ class TicketController extends Controller
             ->setStatusCode(201);
     }
 
-    public function verify(Ticket $ticket): TicketResource
+    public function verify(Request $request, Ticket $ticket): TicketResource
     {
-        $ticket = $this->service->verify($ticket);
+        $ticket = $this->service->verify($ticket, $request->user());
 
         return (new TicketResource($ticket->load([
             'assignedOfficer:id,name',
@@ -143,7 +150,7 @@ class TicketController extends Controller
             'tikDetail.itTag:id,name',
             'tikDetail.qualityCategory:id,name',
             'unit:id,unit_name',
-        ])))->additional(['message' => 'Tiket berhasil diverifikasi.']);
+        ])))->additional(['message' => 'Tiket berhasil diklasifikasi.']);
     }
 
     public function reject(RejectTicketRequest $request, Ticket $ticket): TicketResource
@@ -172,6 +179,7 @@ class TicketController extends Controller
             $ticket,
             TicketPriority::from($validated['priority']),
             $validated['officer_id'],
+            $request->user(),
         );
 
         return (new TicketResource($ticket->load([

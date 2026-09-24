@@ -43,7 +43,7 @@ paths:
           description: Filter status tiket.
           schema:
             type: string
-            enum: [baru, terverifikasi, diproses, selesai, ditolak]
+            enum: [baru, diklasifikasi, ditugaskan, diproses, eskalasi, terselesaikan, terverifikasi, ditutup, ditolak]
             example: baru
         - name: date_from
           in: query
@@ -131,7 +131,7 @@ paths:
   /tickets/{ticket}/verify:
     post:
       tags: [Helpdesk]
-      summary: Memverifikasi tiket baru
+      summary: Menjalankan aksi klasifikasi legacy pada tiket baru
       operationId: verifyTicket
       x-auth-required: true
       x-required-permission: tickets-verify
@@ -191,7 +191,7 @@ paths:
       tags: [Helpdesk]
       summary: Menentukan prioritas dan petugas tiket
       operationId: assignTicket
-      description: Assignment tidak mengubah status tiket dari Terverifikasi menjadi Diproses.
+      description: Assignment mengubah status tiket dari Diklasifikasi menjadi Ditugaskan.
       x-auth-required: true
       x-required-permission: tickets-assign
       parameters:
@@ -227,8 +227,8 @@ paths:
       operationId: createTicketHandling
       description: >-
         Menambahkan satu catatan pada tiket yang sedang Diproses. Status dapat
-        tetap Diproses atau berubah menjadi Selesai. Endpoint ini tidak memulai
-        proses dari status Terverifikasi. Membutuhkan permission tickets-handle.
+        tetap Diproses atau berubah menjadi Terselesaikan. Tiket Ditugaskan dapat
+        mulai ditangani menjadi Diproses. Membutuhkan permission tickets-handle.
       x-auth-required: true
       x-required-permission: tickets-handle
       parameters:
@@ -338,7 +338,7 @@ components:
           example: Komputer tidak dapat menyala.
         status:
           type: string
-          enum: [baru, terverifikasi, diproses, selesai, ditolak]
+          enum: [baru, diklasifikasi, ditugaskan, diproses, eskalasi, terselesaikan, terverifikasi, ditutup, ditolak]
           example: baru
         rejection_reason:
           type:
@@ -547,7 +547,7 @@ components:
           example: Kabel daya dikencangkan dan perangkat diuji.
         status:
           type: string
-          enum: [diproses, selesai]
+          enum: [diproses, terselesaikan]
           description: Status target disimpan pada tickets.status, bukan ticket_handlings.
           example: diproses
         started_at:
@@ -561,7 +561,7 @@ components:
             - 'null'
           format: date-time
           description: >-
-            Wajib ketika status selesai. Harus sama atau setelah started_at jika
+            Wajib ketika status terselesaikan. Harus sama atau setelah started_at jika
             waktu mulai diberikan.
         result_photo:
           type:
@@ -590,7 +590,7 @@ components:
           example: Kabel daya dikencangkan dan perangkat diuji.
         status:
           type: string
-          enum: [diproses, selesai]
+          enum: [diproses, terselesaikan]
           description: Status tiket saat ini; bukan kolom pada ticket_handlings.
           example: diproses
         started_at:
@@ -786,4 +786,4 @@ components:
           schema:
             $ref: '#/components/schemas/TicketReadError'
           example:
-            message: Hanya tiket berstatus baru yang dapat diverifikasi.
+            message: Status tiket tidak dapat diubah dari ditutup menjadi diklasifikasi.

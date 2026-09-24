@@ -96,7 +96,7 @@ class TicketResource extends JsonResource
         }
 
         return $this->statusHistories
-            ->firstWhere('to_status', TicketStatus::Ditolak->value)
+            ->firstWhere('to_status', TicketStatus::Ditolak)
             ?->notes;
     }
 }

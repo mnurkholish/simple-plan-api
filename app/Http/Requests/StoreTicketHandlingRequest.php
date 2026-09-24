@@ -28,12 +28,12 @@ class StoreTicketHandlingRequest extends FormRequest
             'status' => [
                 'required',
                 Rule::enum(TicketStatus::class)
-                    ->only([TicketStatus::Diproses, TicketStatus::Selesai]),
+                    ->only([TicketStatus::Diproses, TicketStatus::Terselesaikan]),
             ],
             'started_at' => ['nullable', 'date'],
             'completed_at' => [
                 'nullable',
-                Rule::requiredIf($this->input('status') === TicketStatus::Selesai->value),
+                Rule::requiredIf($this->input('status') === TicketStatus::Terselesaikan->value),
                 'date',
                 'after_or_equal:started_at',
             ],

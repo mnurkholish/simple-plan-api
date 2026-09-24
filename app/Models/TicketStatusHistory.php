@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\TicketStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -25,6 +26,8 @@ class TicketStatusHistory extends Model
     protected function casts(): array
     {
         return [
+            'from_status' => TicketStatus::class,
+            'to_status' => TicketStatus::class,
             'created_at' => 'datetime',
         ];
     }

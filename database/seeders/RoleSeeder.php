@@ -13,25 +13,41 @@ class RoleSeeder extends Seeder
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        $roles = [
-            'super admin',
-            'koordinator-sarpras',
-            'petugas-tik',
-            'petugas-sarpras',
-            'user',
-            'management',
+        $rolePermissions = [
+            'koordinator-sarpras' => [
+                'tickets-access',
+                'tickets-create',
+            ],
+            'petugas-tik' => [
+                'tickets-access',
+                'tickets-create',
+            ],
+            'petugas-sarpras' => [
+                'tickets-access',
+                'tickets-create',
+            ],
+            'user' => [
+                'tickets-access',
+                'tickets-create',
+            ],
+            'management' => [
+                'tickets-access',
+                'tickets-create',
+            ],
         ];
 
-        foreach ($roles as $role) {
-            Role::firstOrCreate([
-                'name' => $role,
+        foreach ($rolePermissions as $roleName => $permissions) {
+            $role = Role::firstOrCreate([
+                'name' => $roleName,
                 'guard_name' => 'web',
             ]);
+
+            $role->syncPermissions($permissions);
         }
 
-        $superAdmin = Role::where('name', 'super admin')->first();
-        if ($superAdmin) {
-            $superAdmin->syncPermissions(Permission::all());
-        }
+        Role::firstOrCreate([
+            'name' => 'super-admin',
+            'guard_name' => 'web',
+        ])->syncPermissions(Permission::all());
     }
 }

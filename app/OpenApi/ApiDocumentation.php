@@ -172,7 +172,7 @@ use OpenApi\Annotations as OA;
  *
  *     @OA\Property(property="id", type="integer", example=1),
  *     @OA\Property(property="notes", type="string", example="Kabel daya dikencangkan dan perangkat diuji."),
- *     @OA\Property(property="status", type="string", enum={"diproses","selesai"}, description="Current ticket status, not a ticket_handlings column.", example="diproses"),
+ *     @OA\Property(property="status", type="string", enum={"diproses","terselesaikan"}, description="Current ticket status, not a ticket_handlings column.", example="diproses"),
  *     @OA\Property(property="started_at", type="string", format="date-time", nullable=true),
  *     @OA\Property(property="completed_at", type="string", format="date-time", nullable=true),
  *     @OA\Property(property="handled_by", ref="#/components/schemas/TicketOfficerSummary"),
@@ -219,7 +219,7 @@ use OpenApi\Annotations as OA;
  *     @OA\Property(property="tik_detail", ref="#/components/schemas/TicketTikDetail", nullable=true),
  *     @OA\Property(property="sarpras_detail", ref="#/components/schemas/TicketSarprasDetail", nullable=true),
  *     @OA\Property(property="description", type="string", example="Komputer tidak dapat menyala."),
- *     @OA\Property(property="status", type="string", enum={"baru","terverifikasi","diproses","selesai","ditolak"}, example="baru"),
+ *     @OA\Property(property="status", type="string", enum={"baru","diklasifikasi","ditugaskan","diproses","eskalasi","terselesaikan","terverifikasi","ditutup","ditolak"}, example="baru"),
  *     @OA\Property(property="rejection_reason", type="string", nullable=true, description="Compatibility field derived from the latest rejected status history notes.", example="Informasi kerusakan tidak sesuai."),
  *     @OA\Property(property="priority", type="string", enum={"critical","high","medium","low"}, nullable=true, example="high"),
  *     @OA\Property(property="reporter", ref="#/components/schemas/TicketReporterSummary"),
@@ -278,9 +278,9 @@ use OpenApi\Annotations as OA;
  *     required={"notes","status"},
  *
  *     @OA\Property(property="notes", type="string", example="Kabel daya dikencangkan dan perangkat diuji."),
- *     @OA\Property(property="status", type="string", enum={"diproses","selesai"}, example="diproses"),
+ *     @OA\Property(property="status", type="string", enum={"diproses","terselesaikan"}, example="diproses"),
  *     @OA\Property(property="started_at", type="string", format="date-time", nullable=true),
- *     @OA\Property(property="completed_at", type="string", format="date-time", nullable=true, description="Required when status is selesai. Must be equal to or after started_at when a start time is supplied."),
+ *     @OA\Property(property="completed_at", type="string", format="date-time", nullable=true, description="Required when status is terselesaikan. Must be equal to or after started_at when a start time is supplied."),
  *     @OA\Property(property="result_photo", type="string", format="binary", nullable=true)
  * )
  *
@@ -1217,7 +1217,7 @@ class ApiDocumentation
      *     @OA\Parameter(name="page", in="query", required=false, @OA\Schema(type="integer", minimum=1, default=1)),
      *     @OA\Parameter(name="per_page", in="query", required=false, @OA\Schema(type="integer", minimum=1, maximum=100, default=15)),
      *     @OA\Parameter(name="service", in="query", required=false, description="Ticket service.", @OA\Schema(type="string", enum={"tik","sarpras"})),
-     *     @OA\Parameter(name="status", in="query", required=false, description="Ticket status.", @OA\Schema(type="string", enum={"baru","terverifikasi","diproses","selesai","ditolak"})),
+     *     @OA\Parameter(name="status", in="query", required=false, description="Ticket status.", @OA\Schema(type="string", enum={"baru","diklasifikasi","ditugaskan","diproses","eskalasi","terselesaikan","terverifikasi","ditutup","ditolak"})),
      *     @OA\Parameter(name="date_from", in="query", required=false, description="Inclusive created date lower bound.", @OA\Schema(type="string", format="date")),
      *     @OA\Parameter(name="date_to", in="query", required=false, description="Inclusive created date upper bound.", @OA\Schema(type="string", format="date")),
      *     @OA\Parameter(name="search", in="query", required=false, description="Search ticket number, classification, and description.", @OA\Schema(type="string", maxLength=255)),
@@ -1254,13 +1254,13 @@ class ApiDocumentation
      *     path="/tickets/{ticket}/verify",
      *     operationId="verifyTicket",
      *     tags={"Helpdesk"},
-     *     summary="Verify a new Helpdesk ticket",
-     *     description="Requires the tickets-verify permission.",
+     *     summary="Run the retained classification action for a new Helpdesk ticket",
+     *     description="Retained legacy endpoint that transitions baru to diklasifikasi. Requires the tickets-verify permission.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
      *
-     *     @OA\Response(response=200, description="Ticket verified", @OA\JsonContent(ref="#/components/schemas/TicketActionResponse")),
+     *     @OA\Response(response=200, description="Ticket classified", @OA\JsonContent(ref="#/components/schemas/TicketActionResponse")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=403, description="Missing tickets-verify permission", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=404, description="Ticket not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
@@ -1298,7 +1298,7 @@ class ApiDocumentation
      *     operationId="assignTicket",
      *     tags={"Helpdesk"},
      *     summary="Set priority and assign an officer",
-     *     description="Assignment keeps the ticket status as terverifikasi. Requires the tickets-assign permission.",
+     *     description="Assignment transitions a classified ticket to ditugaskan. Requires the tickets-assign permission.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
@@ -1321,7 +1321,7 @@ class ApiDocumentation
      *     operationId="createTicketHandling",
      *     tags={"Helpdesk"},
      *     summary="Add ticket handling history",
-     *     description="Adds history to a ticket currently in progress. The ticket remains diproses or becomes selesai; this endpoint does not start processing from terverifikasi. Requires the tickets-handle permission.",
+     *     description="Adds handling history. A ditugaskan ticket can become diproses; a diproses ticket can remain diproses or become terselesaikan. Requires the tickets-handle permission.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),

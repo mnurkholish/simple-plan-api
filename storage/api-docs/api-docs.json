@@ -2175,9 +2175,13 @@
                             "type": "string",
                             "enum": [
                                 "baru",
-                                "terverifikasi",
+                                "diklasifikasi",
+                                "ditugaskan",
                                 "diproses",
-                                "selesai",
+                                "eskalasi",
+                                "terselesaikan",
+                                "terverifikasi",
+                                "ditutup",
                                 "ditolak"
                             ]
                         }
@@ -2332,8 +2336,8 @@
                 "tags": [
                     "Helpdesk"
                 ],
-                "summary": "Verify a new Helpdesk ticket",
-                "description": "Requires the tickets-verify permission.",
+                "summary": "Run the retained classification action for a new Helpdesk ticket",
+                "description": "Retained legacy endpoint that transitions baru to diklasifikasi. Requires the tickets-verify permission.",
                 "operationId": "verifyTicket",
                 "parameters": [
                     {
@@ -2348,7 +2352,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Ticket verified",
+                        "description": "Ticket classified",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -2509,7 +2513,7 @@
                     "Helpdesk"
                 ],
                 "summary": "Set priority and assign an officer",
-                "description": "Assignment keeps the ticket status as terverifikasi. Requires the tickets-assign permission.",
+                "description": "Assignment transitions a classified ticket to ditugaskan. Requires the tickets-assign permission.",
                 "operationId": "assignTicket",
                 "parameters": [
                     {
@@ -2607,7 +2611,7 @@
                     "Helpdesk"
                 ],
                 "summary": "Add ticket handling history",
-                "description": "Adds history to a ticket currently in progress. The ticket remains diproses or becomes selesai; this endpoint does not start processing from terverifikasi. Requires the tickets-handle permission.",
+                "description": "Adds handling history. A ditugaskan ticket can become diproses; a diproses ticket can remain diproses or become terselesaikan. Requires the tickets-handle permission.",
                 "operationId": "createTicketHandling",
                 "parameters": [
                     {
@@ -3104,7 +3108,7 @@
                         "example": "diproses",
                         "enum": [
                             "diproses",
-                            "selesai"
+                            "terselesaikan"
                         ]
                     },
                     "started_at": {
@@ -3250,9 +3254,13 @@
                         "example": "baru",
                         "enum": [
                             "baru",
-                            "terverifikasi",
+                            "diklasifikasi",
+                            "ditugaskan",
                             "diproses",
-                            "selesai",
+                            "eskalasi",
+                            "terselesaikan",
+                            "terverifikasi",
+                            "ditutup",
                             "ditolak"
                         ]
                     },
@@ -3430,7 +3438,7 @@
                         "example": "diproses",
                         "enum": [
                             "diproses",
-                            "selesai"
+                            "terselesaikan"
                         ]
                     },
                     "started_at": {
@@ -3439,7 +3447,7 @@
                         "nullable": true
                     },
                     "completed_at": {
-                        "description": "Required when status is selesai. Must be equal to or after started_at when a start time is supplied.",
+                        "description": "Required when status is terselesaikan. Must be equal to or after started_at when a start time is supplied.",
                         "type": "string",
                         "format": "date-time",
                         "nullable": true

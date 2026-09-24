@@ -83,47 +83,40 @@ class TicketService
         }
     }
 
-    public function verify(Ticket $ticket): Ticket
+    public function verify(Ticket $ticket, User $changedBy): Ticket
     {
-        return $this->updateWhenStatus(
+        return $this->transitionStatus(
             $ticket,
-            TicketStatus::Baru,
-            ['status' => TicketStatus::Terverifikasi->value],
-            'Hanya tiket berstatus baru yang dapat diverifikasi.',
+            TicketStatus::Diklasifikasi,
+            $changedBy,
         );
     }
 
     public function reject(Ticket $ticket, string $reason, User $changedBy): Ticket
     {
-        return DB::transaction(function () use ($ticket, $reason, $changedBy): Ticket {
-            $updatedTicket = $this->updateWhenStatus(
-                $ticket,
-                TicketStatus::Baru,
-                ['status' => TicketStatus::Ditolak->value],
-                'Hanya tiket berstatus baru yang dapat ditolak.',
-            );
-
-            $updatedTicket->statusHistories()->create([
-                'from_status' => TicketStatus::Baru->value,
-                'to_status' => TicketStatus::Ditolak->value,
-                'changed_by_id' => $changedBy->getKey(),
-                'notes' => $reason,
-            ]);
-
-            return $updatedTicket;
-        });
+        return $this->transitionStatus(
+            $ticket,
+            TicketStatus::Ditolak,
+            $changedBy,
+            $reason,
+        );
     }
 
-    public function assign(Ticket $ticket, TicketPriority $priority, int $officerId): Ticket
-    {
-        return $this->updateWhenStatus(
+    public function assign(
+        Ticket $ticket,
+        TicketPriority $priority,
+        int $officerId,
+        User $changedBy,
+    ): Ticket {
+        return $this->transitionStatusWithAttributes(
             $ticket,
-            TicketStatus::Terverifikasi,
-            [
+            TicketStatus::Ditugaskan,
+            $changedBy,
+            attributes: [
                 'priority' => $priority->value,
                 'assigned_officer_id' => $officerId,
+                'assigned_at' => now(),
             ],
-            'Hanya tiket berstatus terverifikasi yang dapat diberi prioritas dan petugas.',
         );
     }
 
@@ -149,8 +142,8 @@ class TicketService
                     ->lockForUpdate()
                     ->firstOrFail();
 
-                if ($lockedTicket->status !== TicketStatus::Diproses) {
-                    throw new ConflictHttpException('Hanya tiket berstatus diproses yang dapat diperbarui penanganannya.');
+                if (! in_array($lockedTicket->status, [TicketStatus::Ditugaskan, TicketStatus::Diproses], true)) {
+                    throw new ConflictHttpException('Tiket harus berstatus ditugaskan atau diproses untuk menerima penanganan.');
                 }
 
                 $targetStatus = TicketStatus::from($data['status']);
@@ -167,15 +160,21 @@ class TicketService
                     'result_photo_size' => $resultPhoto?->getSize(),
                 ]);
 
-                $attributes = ['status' => $targetStatus->value];
+                $attributes = [];
 
-                if ($targetStatus === TicketStatus::Selesai) {
+                if ($targetStatus === TicketStatus::Terselesaikan) {
                     $attributes['completed_at'] = $completedAt;
                 }
 
-                $lockedTicket->update($attributes);
+                $this->applyStatusTransition(
+                    $lockedTicket,
+                    $targetStatus,
+                    $handledBy,
+                    $data['notes'],
+                    $attributes,
+                );
 
-                return $lockedTicket;
+                return $lockedTicket->refresh();
             });
         } catch (Throwable $exception) {
             if (is_string($objectKey)) {
@@ -186,24 +185,88 @@ class TicketService
         }
     }
 
+    public function transitionStatus(
+        Ticket $ticket,
+        TicketStatus $targetStatus,
+        ?User $changedBy = null,
+        ?string $notes = null,
+    ): Ticket {
+        return $this->transitionStatusWithAttributes(
+            $ticket,
+            $targetStatus,
+            $changedBy,
+            $notes,
+        );
+    }
+
     /**
      * @param  array<string, mixed>  $attributes
      */
-    private function updateWhenStatus(
+    private function transitionStatusWithAttributes(
         Ticket $ticket,
-        TicketStatus $requiredStatus,
-        array $attributes,
-        string $conflictMessage,
+        TicketStatus $targetStatus,
+        ?User $changedBy,
+        ?string $notes = null,
+        array $attributes = [],
     ): Ticket {
-        $updatedRows = Ticket::query()
-            ->whereKey($ticket->getKey())
-            ->where('status', $requiredStatus->value)
-            ->update($attributes);
+        return DB::transaction(function () use ($ticket, $targetStatus, $changedBy, $notes, $attributes): Ticket {
+            $lockedTicket = Ticket::query()
+                ->whereKey($ticket->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        if ($updatedRows === 0) {
-            throw new ConflictHttpException($conflictMessage);
+            $this->applyStatusTransition(
+                $lockedTicket,
+                $targetStatus,
+                $changedBy,
+                $notes,
+                $attributes,
+            );
+
+            return $lockedTicket->refresh();
+        });
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    private function applyStatusTransition(
+        Ticket $ticket,
+        TicketStatus $targetStatus,
+        ?User $changedBy,
+        ?string $notes,
+        array $attributes = [],
+    ): bool {
+        $currentStatus = $ticket->status;
+
+        if ($currentStatus === $targetStatus) {
+            if ($attributes !== []) {
+                $ticket->update($attributes);
+            }
+
+            return false;
         }
 
-        return $ticket->refresh();
+        if (! $currentStatus->canTransitionTo($targetStatus)) {
+            throw new ConflictHttpException(sprintf(
+                'Status tiket tidak dapat diubah dari %s menjadi %s.',
+                $currentStatus->value,
+                $targetStatus->value,
+            ));
+        }
+
+        $ticket->update([
+            ...$attributes,
+            'status' => $targetStatus->value,
+        ]);
+
+        $ticket->statusHistories()->create([
+            'from_status' => $currentStatus->value,
+            'to_status' => $targetStatus->value,
+            'changed_by_id' => $changedBy?->getKey(),
+            'notes' => $notes,
+        ]);
+
+        return true;
     }
 }
