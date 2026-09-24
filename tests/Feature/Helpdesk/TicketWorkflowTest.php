@@ -25,23 +25,29 @@ function actingAsTicketWorkflowUser(string $permissionName): User
     return $user;
 }
 
-test('new ticket can be verified', function (): void {
-    actingAsTicketWorkflowUser('tickets-verify');
+test('legacy verify action uses the classification transition foundation', function (): void {
+    $actor = actingAsTicketWorkflowUser('tickets-verify');
     $ticket = Ticket::factory()->create(['status' => TicketStatus::Baru]);
 
     $response = $this->postJson("/api/v1/tickets/{$ticket->id}/verify");
 
     $response
         ->assertOk()
-        ->assertJsonPath('message', 'Tiket berhasil diverifikasi.')
-        ->assertJsonPath('data.status', TicketStatus::Terverifikasi->value);
+        ->assertJsonPath('message', 'Tiket berhasil diklasifikasi.')
+        ->assertJsonPath('data.status', TicketStatus::Diklasifikasi->value);
     $this->assertDatabaseHas('tickets', [
         'id' => $ticket->id,
-        'status' => TicketStatus::Terverifikasi->value,
+        'status' => TicketStatus::Diklasifikasi->value,
+    ]);
+    $this->assertDatabaseHas('ticket_status_histories', [
+        'ticket_id' => $ticket->id,
+        'from_status' => TicketStatus::Baru->value,
+        'to_status' => TicketStatus::Diklasifikasi->value,
+        'changed_by_id' => $actor->id,
     ]);
 });
 
-test('verify returns 409 when ticket is not new', function (TicketStatus $status): void {
+test('legacy verify action returns 409 outside the classification transition', function (TicketStatus $status): void {
     actingAsTicketWorkflowUser('tickets-verify');
     $ticket = Ticket::factory()->create(['status' => $status]);
 
@@ -49,13 +55,12 @@ test('verify returns 409 when ticket is not new', function (TicketStatus $status
 
     $response
         ->assertConflict()
-        ->assertJsonPath('message', 'Hanya tiket berstatus baru yang dapat diverifikasi.');
+        ->assertJsonPath('message', "Status tiket tidak dapat diubah dari {$status->value} menjadi diklasifikasi.");
     expect($ticket->refresh()->status)->toBe($status);
 })->with([
-    'already verified' => TicketStatus::Terverifikasi,
     'rejected' => TicketStatus::Ditolak,
     'in progress' => TicketStatus::Diproses,
-    'completed' => TicketStatus::Selesai,
+    'completed' => TicketStatus::Terselesaikan,
 ]);
 
 test('new ticket can be rejected with a reason', function (): void {
@@ -106,23 +111,22 @@ test('reject returns 409 when ticket is not new', function (TicketStatus $status
 
     $response
         ->assertConflict()
-        ->assertJsonPath('message', 'Hanya tiket berstatus baru yang dapat ditolak.');
+        ->assertJsonPath('message', "Status tiket tidak dapat diubah dari {$status->value} menjadi ditolak.");
     expect($ticket->refresh()->status)->toBe($status)
         ->and($ticket->statusHistories()->count())->toBe(0);
 })->with([
     'verified' => TicketStatus::Terverifikasi,
-    'already rejected' => TicketStatus::Ditolak,
     'in progress' => TicketStatus::Diproses,
-    'completed' => TicketStatus::Selesai,
+    'completed' => TicketStatus::Terselesaikan,
 ]);
 
-test('verified ticket can be assigned an active officer and priority without changing status', function (TicketPriority $priority): void {
-    actingAsTicketWorkflowUser('tickets-assign');
+test('classified ticket can be assigned an active officer and priority', function (TicketPriority $priority): void {
+    $actor = actingAsTicketWorkflowUser('tickets-assign');
     $officer = User::factory()->create([
         'name' => 'Petugas Terpilih',
         'status' => 'active',
     ]);
-    $ticket = Ticket::factory()->create(['status' => TicketStatus::Terverifikasi]);
+    $ticket = Ticket::factory()->create(['status' => TicketStatus::Diklasifikasi]);
 
     $response = $this->postJson("/api/v1/tickets/{$ticket->id}/assign", [
         'priority' => $priority->value,
@@ -135,12 +139,18 @@ test('verified ticket can be assigned an active officer and priority without cha
         ->assertJsonPath('data.priority', $priority->value)
         ->assertJsonPath('data.assigned_officer.id', $officer->id)
         ->assertJsonPath('data.assigned_officer.name', 'Petugas Terpilih')
-        ->assertJsonPath('data.status', TicketStatus::Terverifikasi->value);
+        ->assertJsonPath('data.status', TicketStatus::Ditugaskan->value);
     $this->assertDatabaseHas('tickets', [
         'id' => $ticket->id,
         'priority' => $priority->value,
         'assigned_officer_id' => $officer->id,
-        'status' => TicketStatus::Terverifikasi->value,
+        'status' => TicketStatus::Ditugaskan->value,
+    ]);
+    $this->assertDatabaseHas('ticket_status_histories', [
+        'ticket_id' => $ticket->id,
+        'from_status' => TicketStatus::Diklasifikasi->value,
+        'to_status' => TicketStatus::Ditugaskan->value,
+        'changed_by_id' => $actor->id,
     ]);
 })->with([
     'critical' => TicketPriority::Critical,
@@ -151,7 +161,7 @@ test('verified ticket can be assigned an active officer and priority without cha
 
 test('assign returns 422 when priority or officer is missing', function (): void {
     actingAsTicketWorkflowUser('tickets-assign');
-    $ticket = Ticket::factory()->create(['status' => TicketStatus::Terverifikasi]);
+    $ticket = Ticket::factory()->create(['status' => TicketStatus::Diklasifikasi]);
 
     $response = $this->postJson("/api/v1/tickets/{$ticket->id}/assign");
 
@@ -165,7 +175,7 @@ test('assign returns 422 when priority or officer is missing', function (): void
 test('assign returns 422 for an unsupported priority', function (string $priority): void {
     actingAsTicketWorkflowUser('tickets-assign');
     $officer = User::factory()->create(['status' => 'active']);
-    $ticket = Ticket::factory()->create(['status' => TicketStatus::Terverifikasi]);
+    $ticket = Ticket::factory()->create(['status' => TicketStatus::Diklasifikasi]);
 
     $response = $this->postJson("/api/v1/tickets/{$ticket->id}/assign", [
         'priority' => $priority,
@@ -184,7 +194,7 @@ test('assign returns 422 for an unsupported priority', function (string $priorit
 
 test('assign returns 422 for an unavailable officer', function (int $officerId): void {
     actingAsTicketWorkflowUser('tickets-assign');
-    $ticket = Ticket::factory()->create(['status' => TicketStatus::Terverifikasi]);
+    $ticket = Ticket::factory()->create(['status' => TicketStatus::Diklasifikasi]);
 
     $response = $this->postJson("/api/v1/tickets/{$ticket->id}/assign", [
         'priority' => TicketPriority::High->value,
@@ -202,7 +212,7 @@ test('assign returns 422 for an unavailable officer', function (int $officerId):
     'suspended user' => fn (): int => User::factory()->create(['status' => 'suspended'])->id,
 ]);
 
-test('assign returns 409 when ticket is not verified', function (TicketStatus $status): void {
+test('assign returns 409 when ticket is not classified', function (TicketStatus $status): void {
     actingAsTicketWorkflowUser('tickets-assign');
     $officer = User::factory()->create(['status' => 'active']);
     $ticket = Ticket::factory()->create(['status' => $status]);
@@ -214,7 +224,7 @@ test('assign returns 409 when ticket is not verified', function (TicketStatus $s
 
     $response
         ->assertConflict()
-        ->assertJsonPath('message', 'Hanya tiket berstatus terverifikasi yang dapat diberi prioritas dan petugas.');
+        ->assertJsonPath('message', "Status tiket tidak dapat diubah dari {$status->value} menjadi ditugaskan.");
     expect($ticket->refresh()->status)->toBe($status)
         ->and($ticket->priority)->toBeNull()
         ->and($ticket->assigned_officer_id)->toBeNull();
@@ -222,7 +232,7 @@ test('assign returns 409 when ticket is not verified', function (TicketStatus $s
     'new' => TicketStatus::Baru,
     'rejected' => TicketStatus::Ditolak,
     'in progress' => TicketStatus::Diproses,
-    'completed' => TicketStatus::Selesai,
+    'completed' => TicketStatus::Terselesaikan,
 ]);
 
 test('guest cannot use ticket workflow endpoints', function (string $endpoint, array $payload): void {

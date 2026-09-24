@@ -83,6 +83,7 @@ paths:
       tags: [Helpdesk]
       summary: Membuat tiket
       operationId: createTicket
+      description: Reporter dan unit diambil dari authenticated user. Status awal selalu baru.
       x-auth-required: true
       x-required-permission: tickets-create
       requestBody:
@@ -301,19 +302,27 @@ components:
         - status
         - rejection_reason
         - priority
+        - asset
         - reporter
         - unit
         - assigned_officer
+        - classified_by
         - initial_evidence
+        - classified_at
+        - assigned_at
+        - sla_deadline
         - completed_at
+        - closed_at
         - created_at
+        - updated_at
       properties:
         id:
           type: integer
           example: 1
         ticket_number:
           type: string
-          example: TIK-2026-0001
+          pattern: '^(TIK|SPR)-[0-9]{4}-[0-9]{6}$'
+          example: TIK-2026-000001
         service:
           type: string
           enum: [tik, sarpras]
@@ -352,6 +361,10 @@ components:
             - 'null'
           enum: [critical, high, medium, low, null]
           example: high
+        asset:
+          anyOf:
+            - $ref: '#/components/schemas/AssetSummary'
+            - type: 'null'
         reporter:
           $ref: '#/components/schemas/UserSummary'
         unit:
@@ -360,11 +373,35 @@ components:
           anyOf:
             - $ref: '#/components/schemas/UserSummary'
             - type: 'null'
+        classified_by:
+          anyOf:
+            - $ref: '#/components/schemas/UserSummary'
+            - type: 'null'
         initial_evidence:
           anyOf:
             - $ref: '#/components/schemas/FileMetadata'
             - type: 'null'
+        classified_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        assigned_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        sla_deadline:
+          type:
+            - string
+            - 'null'
+          format: date-time
         completed_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        closed_at:
           type:
             - string
             - 'null'
@@ -374,7 +411,15 @@ components:
           description: Tersedia pada response detail dan pembaruan penanganan.
           items:
             $ref: '#/components/schemas/TicketHandling'
+        status_histories:
+          type: array
+          description: Tersedia pada response detail tiket.
+          items:
+            $ref: '#/components/schemas/TicketStatusHistory'
         created_at:
+          type: string
+          format: date-time
+        updated_at:
           type: string
           format: date-time
 
@@ -393,6 +438,55 @@ components:
           type: integer
         name:
           type: string
+
+    AssetSummary:
+      type: object
+      additionalProperties: false
+      required: [id, asset_number, name, brand, location, status]
+      properties:
+        id:
+          type: integer
+        asset_number:
+          type: string
+        name:
+          type: string
+        brand:
+          type:
+            - string
+            - 'null'
+        location:
+          type:
+            - string
+            - 'null'
+        status:
+          type: string
+
+    TicketStatusHistory:
+      type: object
+      additionalProperties: false
+      required: [id, from_status, to_status, changed_by, notes, created_at]
+      properties:
+        id:
+          type: integer
+        from_status:
+          type:
+            - string
+            - 'null'
+          enum: [baru, diklasifikasi, ditugaskan, diproses, eskalasi, terselesaikan, terverifikasi, ditutup, ditolak, null]
+        to_status:
+          type: string
+          enum: [baru, diklasifikasi, ditugaskan, diproses, eskalasi, terselesaikan, terverifikasi, ditutup, ditolak]
+        changed_by:
+          anyOf:
+            - $ref: '#/components/schemas/UserSummary'
+            - type: 'null'
+        notes:
+          type:
+            - string
+            - 'null'
+        created_at:
+          type: string
+          format: date-time
 
     TicketNamedReference:
       type: object
@@ -459,36 +553,17 @@ components:
       type: object
       required:
         - service
-        - unit_id
         - description
       properties:
         service:
           type: string
           enum: [tik, sarpras]
           example: tik
-        unit_id:
-          type: integer
-          example: 1
-        quality_category_id:
+        asset_id:
           type:
             - integer
             - 'null'
-          description: Digunakan bersama it_tag_id untuk detail tiket TIK.
-        it_tag_id:
-          type:
-            - integer
-            - 'null'
-          description: Digunakan bersama quality_category_id untuk detail tiket TIK.
-        custom_it_tag_text:
-          type:
-            - string
-            - 'null'
-          maxLength: 255
-        sarpras_category_id:
-          type:
-            - integer
-            - 'null'
-          description: Kategori detail tiket Sarpras.
+          description: Asset aktif yang terkait dengan tiket, jika ada.
         description:
           type: string
         initial_evidence:

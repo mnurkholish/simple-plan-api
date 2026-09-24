@@ -45,9 +45,11 @@ test('the Helpdesk OpenAPI contract only documents implemented ticket operations
         ->and($contract['paths']['/tickets']['post']['requestBody']['content']['multipart/form-data']['schema']['$ref'])
         ->toBe('#/components/schemas/CreateTicketRequest')
         ->and($contract['components']['schemas']['CreateTicketRequest']['required'])
-        ->toBe(['service', 'unit_id', 'description'])
+        ->toBe(['service', 'description'])
         ->and($contract['components']['schemas']['CreateTicketRequest']['properties']['service']['enum'])
         ->toBe(['tik', 'sarpras'])
+        ->and($contract['components']['schemas']['CreateTicketRequest']['properties'])
+        ->toHaveKey('asset_id')
         ->and($contract['components']['schemas']['AssignTicketRequest']['required'])
         ->toBe(['priority', 'officer_id'])
         ->and($contract['components']['schemas']['AssignTicketRequest']['properties']['priority']['enum'])
@@ -61,7 +63,7 @@ test('the Helpdesk OpenAPI contract only documents implemented ticket operations
         ->and($contract['components']['schemas']['CreateTicketHandlingRequest']['required'])
         ->toBe(['notes', 'status'])
         ->and($contract['components']['schemas']['CreateTicketHandlingRequest']['properties']['status']['enum'])
-        ->toBe(['diproses', 'selesai']);
+        ->toBe(['diproses', 'terselesaikan']);
 });
 
 test('it generates the Helpdesk ticket Swagger contract', function (): void {
@@ -106,9 +108,13 @@ test('it generates the Helpdesk ticket Swagger contract', function (): void {
             ->and($parameters['service']['schema']['enum'])->toBe(['tik', 'sarpras'])
             ->and($parameters['status']['schema']['enum'])->toBe([
                 'baru',
-                'terverifikasi',
+                'diklasifikasi',
+                'ditugaskan',
                 'diproses',
-                'selesai',
+                'eskalasi',
+                'terselesaikan',
+                'terverifikasi',
+                'ditutup',
                 'ditolak',
             ])
             ->and($listOperation['responses']['200']['content']['application/json']['schema']['$ref'])
@@ -135,7 +141,9 @@ test('it generates the Helpdesk ticket Swagger contract', function (): void {
             ->and($createOperation['responses']['201']['content']['application/json']['schema']['$ref'])
             ->toBe('#/components/schemas/TicketCreateResponse')
             ->and($documentation['components']['schemas']['CreateTicketRequest']['required'])
-            ->toBe(['service', 'unit_id', 'description'])
+            ->toBe(['service', 'description'])
+            ->and($documentation['components']['schemas']['CreateTicketRequest']['properties'])
+            ->toHaveKey('asset_id')
             ->and($verifyOperation['responses']['409']['content']['application/json']['schema']['$ref'])
             ->toBe('#/components/schemas/TicketReadError')
             ->and($rejectOperation['requestBody']['content']['application/json']['schema']['$ref'])
@@ -155,7 +163,7 @@ test('it generates the Helpdesk ticket Swagger contract', function (): void {
             ->and($documentation['components']['schemas']['CreateTicketHandlingRequest']['required'])
             ->toBe(['notes', 'status'])
             ->and($documentation['components']['schemas']['CreateTicketHandlingRequest']['properties']['status']['enum'])
-            ->toBe(['diproses', 'selesai'])
+            ->toBe(['diproses', 'terselesaikan'])
             ->and($detailOperation['responses']['200']['content']['application/json']['schema']['$ref'])
             ->toBe('#/components/schemas/TicketReadResponse')
             ->and($detailOperation['responses']['404']['content']['application/json']['schema']['$ref'])
@@ -172,12 +180,19 @@ test('it generates the Helpdesk ticket Swagger contract', function (): void {
                 'status',
                 'rejection_reason',
                 'priority',
+                'asset',
                 'reporter',
                 'unit',
                 'assigned_officer',
+                'classified_by',
                 'initial_evidence',
+                'classified_at',
+                'assigned_at',
+                'sla_deadline',
                 'completed_at',
+                'closed_at',
                 'created_at',
+                'updated_at',
             ]);
     } finally {
         File::deleteDirectory($documentationPath);

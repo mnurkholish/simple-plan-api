@@ -2270,7 +2270,7 @@
                     "Helpdesk"
                 ],
                 "summary": "Create a Helpdesk ticket",
-                "description": "Creates a TIK or Sarpras ticket for the authenticated reporter with status baru. Requires the tickets-create permission.",
+                "description": "Creates a TIK or Sarpras ticket with status baru. Reporter and unit are taken from the authenticated user. Requires the tickets-create permission.",
                 "operationId": "createTicket",
                 "requestBody": {
                     "required": true,
@@ -3055,6 +3055,109 @@
                 },
                 "type": "object"
             },
+            "TicketAssetSummary": {
+                "required": [
+                    "id",
+                    "asset_number",
+                    "name",
+                    "brand",
+                    "location",
+                    "status"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "asset_number": {
+                        "type": "string",
+                        "example": "AST-0001"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Komputer Poli"
+                    },
+                    "brand": {
+                        "type": "string",
+                        "example": "Dell",
+                        "nullable": true
+                    },
+                    "location": {
+                        "type": "string",
+                        "example": "Poli Umum",
+                        "nullable": true
+                    },
+                    "status": {
+                        "type": "string",
+                        "example": "active"
+                    }
+                },
+                "type": "object"
+            },
+            "TicketStatusHistory": {
+                "required": [
+                    "id",
+                    "from_status",
+                    "to_status",
+                    "changed_by",
+                    "notes",
+                    "created_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "from_status": {
+                        "type": "string",
+                        "example": "baru",
+                        "nullable": true,
+                        "enum": [
+                            "baru",
+                            "diklasifikasi",
+                            "ditugaskan",
+                            "diproses",
+                            "eskalasi",
+                            "terselesaikan",
+                            "terverifikasi",
+                            "ditutup",
+                            "ditolak"
+                        ]
+                    },
+                    "to_status": {
+                        "type": "string",
+                        "example": "diklasifikasi",
+                        "enum": [
+                            "baru",
+                            "diklasifikasi",
+                            "ditugaskan",
+                            "diproses",
+                            "eskalasi",
+                            "terselesaikan",
+                            "terverifikasi",
+                            "ditutup",
+                            "ditolak"
+                        ]
+                    },
+                    "changed_by": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/TicketReporterSummary"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "notes": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
             "TicketFileMetadata": {
                 "required": [
                     "object_key",
@@ -3199,12 +3302,19 @@
                     "status",
                     "rejection_reason",
                     "priority",
+                    "asset",
                     "reporter",
                     "unit",
                     "assigned_officer",
+                    "classified_by",
                     "initial_evidence",
+                    "classified_at",
+                    "assigned_at",
+                    "sla_deadline",
                     "completed_at",
-                    "created_at"
+                    "closed_at",
+                    "created_at",
+                    "updated_at"
                 ],
                 "properties": {
                     "id": {
@@ -3213,7 +3323,8 @@
                     },
                     "ticket_number": {
                         "type": "string",
-                        "example": "TIK-2026-0001"
+                        "pattern": "^(TIK|SPR)-[0-9]{4}-[0-9]{6}$",
+                        "example": "TIK-2026-000001"
                     },
                     "service": {
                         "type": "string",
@@ -3281,6 +3392,14 @@
                             "low"
                         ]
                     },
+                    "asset": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/TicketAssetSummary"
+                            }
+                        ],
+                        "nullable": true
+                    },
                     "reporter": {
                         "$ref": "#/components/schemas/TicketReporterSummary"
                     },
@@ -3295,6 +3414,14 @@
                         ],
                         "nullable": true
                     },
+                    "classified_by": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/TicketReporterSummary"
+                            }
+                        ],
+                        "nullable": true
+                    },
                     "initial_evidence": {
                         "oneOf": [
                             {
@@ -3303,7 +3430,27 @@
                         ],
                         "nullable": true
                     },
+                    "classified_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "assigned_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "sla_deadline": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
                     "completed_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "closed_at": {
                         "type": "string",
                         "format": "date-time",
                         "nullable": true
@@ -3314,7 +3461,17 @@
                             "$ref": "#/components/schemas/TicketHandling"
                         }
                     },
+                    "status_histories": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/TicketStatusHistory"
+                        }
+                    },
                     "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
                         "type": "string",
                         "format": "date-time"
                     }
@@ -3324,7 +3481,6 @@
             "CreateTicketRequest": {
                 "required": [
                     "service",
-                    "unit_id",
                     "description"
                 ],
                 "properties": {
@@ -3336,26 +3492,7 @@
                             "sarpras"
                         ]
                     },
-                    "unit_id": {
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "quality_category_id": {
-                        "type": "integer",
-                        "example": 1,
-                        "nullable": true
-                    },
-                    "it_tag_id": {
-                        "type": "integer",
-                        "example": 1,
-                        "nullable": true
-                    },
-                    "custom_it_tag_text": {
-                        "type": "string",
-                        "nullable": true,
-                        "maxLength": 255
-                    },
-                    "sarpras_category_id": {
+                    "asset_id": {
                         "type": "integer",
                         "example": 1,
                         "nullable": true

@@ -155,6 +155,32 @@ use OpenApi\Annotations as OA;
  * )
  *
  * @OA\Schema(
+ *     schema="TicketAssetSummary",
+ *     type="object",
+ *     required={"id","asset_number","name","brand","location","status"},
+ *
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="asset_number", type="string", example="AST-0001"),
+ *     @OA\Property(property="name", type="string", example="Komputer Poli"),
+ *     @OA\Property(property="brand", type="string", nullable=true, example="Dell"),
+ *     @OA\Property(property="location", type="string", nullable=true, example="Poli Umum"),
+ *     @OA\Property(property="status", type="string", example="active")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="TicketStatusHistory",
+ *     type="object",
+ *     required={"id","from_status","to_status","changed_by","notes","created_at"},
+ *
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="from_status", type="string", enum={"baru","diklasifikasi","ditugaskan","diproses","eskalasi","terselesaikan","terverifikasi","ditutup","ditolak"}, nullable=true, example="baru"),
+ *     @OA\Property(property="to_status", type="string", enum={"baru","diklasifikasi","ditugaskan","diproses","eskalasi","terselesaikan","terverifikasi","ditutup","ditolak"}, example="diklasifikasi"),
+ *     @OA\Property(property="changed_by", ref="#/components/schemas/TicketReporterSummary", nullable=true),
+ *     @OA\Property(property="notes", type="string", nullable=true),
+ *     @OA\Property(property="created_at", type="string", format="date-time")
+ * )
+ *
+ * @OA\Schema(
  *     schema="TicketFileMetadata",
  *     type="object",
  *     required={"object_key","original_name","mime_type","size"},
@@ -210,10 +236,10 @@ use OpenApi\Annotations as OA;
  * @OA\Schema(
  *     schema="TicketRead",
  *     type="object",
- *     required={"id","ticket_number","service","category","tik_detail","sarpras_detail","description","status","rejection_reason","priority","reporter","unit","assigned_officer","initial_evidence","completed_at","created_at"},
+ *     required={"id","ticket_number","service","category","tik_detail","sarpras_detail","description","status","rejection_reason","priority","asset","reporter","unit","assigned_officer","classified_by","initial_evidence","classified_at","assigned_at","sla_deadline","completed_at","closed_at","created_at","updated_at"},
  *
  *     @OA\Property(property="id", type="integer", example=1),
- *     @OA\Property(property="ticket_number", type="string", example="TIK-2026-0001"),
+ *     @OA\Property(property="ticket_number", type="string", pattern="^(TIK|SPR)-[0-9]{4}-[0-9]{6}$", example="TIK-2026-000001"),
  *     @OA\Property(property="service", type="string", enum={"tik","sarpras"}, example="tik"),
  *     @OA\Property(property="category", type="string", nullable=true, description="Compatibility label derived from the ticket detail relation.", example="Perangkat Komputer"),
  *     @OA\Property(property="tik_detail", ref="#/components/schemas/TicketTikDetail", nullable=true),
@@ -222,26 +248,30 @@ use OpenApi\Annotations as OA;
  *     @OA\Property(property="status", type="string", enum={"baru","diklasifikasi","ditugaskan","diproses","eskalasi","terselesaikan","terverifikasi","ditutup","ditolak"}, example="baru"),
  *     @OA\Property(property="rejection_reason", type="string", nullable=true, description="Compatibility field derived from the latest rejected status history notes.", example="Informasi kerusakan tidak sesuai."),
  *     @OA\Property(property="priority", type="string", enum={"critical","high","medium","low"}, nullable=true, example="high"),
+ *     @OA\Property(property="asset", ref="#/components/schemas/TicketAssetSummary", nullable=true),
  *     @OA\Property(property="reporter", ref="#/components/schemas/TicketReporterSummary"),
  *     @OA\Property(property="unit", ref="#/components/schemas/TicketUnitSummary"),
  *     @OA\Property(property="assigned_officer", ref="#/components/schemas/TicketOfficerSummary", nullable=true),
+ *     @OA\Property(property="classified_by", ref="#/components/schemas/TicketReporterSummary", nullable=true),
  *     @OA\Property(property="initial_evidence", ref="#/components/schemas/TicketFileMetadata", nullable=true),
+ *     @OA\Property(property="classified_at", type="string", format="date-time", nullable=true),
+ *     @OA\Property(property="assigned_at", type="string", format="date-time", nullable=true),
+ *     @OA\Property(property="sla_deadline", type="string", format="date-time", nullable=true),
  *     @OA\Property(property="completed_at", type="string", format="date-time", nullable=true),
+ *     @OA\Property(property="closed_at", type="string", format="date-time", nullable=true),
  *     @OA\Property(property="handlings", type="array", @OA\Items(ref="#/components/schemas/TicketHandling")),
- *     @OA\Property(property="created_at", type="string", format="date-time")
+ *     @OA\Property(property="status_histories", type="array", @OA\Items(ref="#/components/schemas/TicketStatusHistory")),
+ *     @OA\Property(property="created_at", type="string", format="date-time"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time")
  * )
  *
  * @OA\Schema(
  *     schema="CreateTicketRequest",
  *     type="object",
- *     required={"service","unit_id","description"},
+ *     required={"service","description"},
  *
  *     @OA\Property(property="service", type="string", enum={"tik","sarpras"}, example="tik"),
- *     @OA\Property(property="unit_id", type="integer", example=1),
- *     @OA\Property(property="quality_category_id", type="integer", nullable=true, example=1),
- *     @OA\Property(property="it_tag_id", type="integer", nullable=true, example=1),
- *     @OA\Property(property="custom_it_tag_text", type="string", maxLength=255, nullable=true),
- *     @OA\Property(property="sarpras_category_id", type="integer", nullable=true, example=1),
+ *     @OA\Property(property="asset_id", type="integer", nullable=true, example=1),
  *     @OA\Property(property="description", type="string", example="Komputer tidak dapat menyala."),
  *     @OA\Property(property="initial_evidence", type="string", format="binary", nullable=true)
  * )
@@ -1236,7 +1266,7 @@ class ApiDocumentation
      *     operationId="createTicket",
      *     tags={"Helpdesk"},
      *     summary="Create a Helpdesk ticket",
-     *     description="Creates a TIK or Sarpras ticket for the authenticated reporter with status baru. Requires the tickets-create permission.",
+     *     description="Creates a TIK or Sarpras ticket with status baru. Reporter and unit are taken from the authenticated user. Requires the tickets-create permission.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\RequestBody(required=true, @OA\MediaType(mediaType="multipart/form-data", @OA\Schema(ref="#/components/schemas/CreateTicketRequest"))),

@@ -72,7 +72,10 @@ test('a processed ticket can receive a handling note without changing its status
 
 test('handling history keeps multiple notes linked to the same ticket', function (): void {
     $handler = User::factory()->create();
-    $ticket = Ticket::factory()->create(['status' => TicketStatus::Diproses]);
+    $ticket = Ticket::factory()->create([
+        'reporter_id' => $handler,
+        'status' => TicketStatus::Diproses,
+    ]);
     actingAsTicketHandler($handler, ['tickets-access']);
 
     foreach (['Pemeriksaan awal.', 'Penggantian komponen.'] as $notes) {
@@ -98,19 +101,19 @@ test('a processed ticket can be completed atomically with its handling history',
 
     $response = $this->postJson("/api/v1/tickets/{$ticket->id}/handlings", [
         'notes' => 'Perbaikan selesai dan perangkat sudah diuji.',
-        'status' => TicketStatus::Selesai->value,
+        'status' => TicketStatus::Terselesaikan->value,
         'started_at' => '2026-09-11 08:00:00',
         'completed_at' => '2026-09-11 09:30:00',
     ]);
 
     $response
         ->assertOk()
-        ->assertJsonPath('data.status', 'selesai')
-        ->assertJsonPath('data.handlings.0.status', 'selesai');
+        ->assertJsonPath('data.status', 'terselesaikan')
+        ->assertJsonPath('data.handlings.0.status', 'terselesaikan');
 
     $handling = TicketHandling::query()->sole();
 
-    expect($ticket->refresh()->status)->toBe(TicketStatus::Selesai)
+    expect($ticket->refresh()->status)->toBe(TicketStatus::Terselesaikan)
         ->and($ticket->completed_at?->format('Y-m-d H:i:s'))->toBe('2026-09-11 09:30:00')
         ->and($handling->ticket_id)->toBe($ticket->id)
         ->and($handling->completed_at?->format('Y-m-d H:i:s'))->toBe('2026-09-11 09:30:00');
@@ -122,7 +125,7 @@ test('completion time is required when completing a ticket', function (): void {
 
     $this->postJson("/api/v1/tickets/{$ticket->id}/handlings", [
         'notes' => 'Pekerjaan dinyatakan selesai.',
-        'status' => TicketStatus::Selesai->value,
+        'status' => TicketStatus::Terselesaikan->value,
     ])
         ->assertUnprocessable()
         ->assertJsonValidationErrors('completed_at');
@@ -170,18 +173,18 @@ test('a ticket outside in progress cannot receive handling updates', function (T
 
     $this->postJson("/api/v1/tickets/{$ticket->id}/handlings", [
         'notes' => 'Catatan yang tidak boleh tersimpan.',
-        'status' => TicketStatus::Selesai->value,
+        'status' => TicketStatus::Terselesaikan->value,
         'completed_at' => '2026-09-11 09:30:00',
     ])
         ->assertConflict()
-        ->assertJsonPath('message', 'Hanya tiket berstatus diproses yang dapat diperbarui penanganannya.');
+        ->assertJsonPath('message', 'Tiket harus berstatus ditugaskan atau diproses untuk menerima penanganan.');
 
     expect($ticket->handlings()->count())->toBe(0)
         ->and($ticket->refresh()->status)->toBe($status);
 })->with([
     'new' => TicketStatus::Baru,
     'verified' => TicketStatus::Terverifikasi,
-    'completed' => TicketStatus::Selesai,
+    'completed' => TicketStatus::Terselesaikan,
     'rejected' => TicketStatus::Ditolak,
 ]);
 
@@ -191,7 +194,7 @@ test('completion time cannot be before start time', function (): void {
 
     $this->postJson("/api/v1/tickets/{$ticket->id}/handlings", [
         'notes' => 'Waktu tidak konsisten.',
-        'status' => TicketStatus::Selesai->value,
+        'status' => TicketStatus::Terselesaikan->value,
         'started_at' => '2026-09-11 10:00:00',
         'completed_at' => '2026-09-11 09:00:00',
     ])
@@ -269,7 +272,7 @@ test('history status and result photo are rolled back together when the ticket u
     try {
         $this->post("/api/v1/tickets/{$ticket->id}/handlings", [
             'notes' => 'Catatan yang harus ikut dibatalkan.',
-            'status' => TicketStatus::Selesai->value,
+            'status' => TicketStatus::Terselesaikan->value,
             'completed_at' => '2026-09-11 09:30:00',
             'result_photo' => UploadedFile::fake()->image('rollback.jpg'),
         ], ['Accept' => 'application/json'])->assertInternalServerError();
@@ -332,7 +335,7 @@ test('super admin receives all ticket permissions and can add ticket handling hi
         RoleSeeder::class,
     ]);
     $handler = User::factory()->create();
-    $handler->assignRole('super admin');
+    $handler->assignRole('super-admin');
     $ticket = Ticket::factory()->create(['status' => TicketStatus::Diproses]);
     Sanctum::actingAs($handler);
 

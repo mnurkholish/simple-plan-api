@@ -7,21 +7,32 @@ use App\Enums\TicketService as TicketServiceEnum;
 use App\Enums\TicketStatus;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Repositories\TicketRepository;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use RuntimeException;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Throwable;
 
 class TicketService
 {
+    public function __construct(private readonly TicketRepository $tickets) {}
+
     /**
-     * @param  array{service: string, unit_id: int, quality_category_id?: int|null, it_tag_id?: int|null, custom_it_tag_text?: string|null, sarpras_category_id?: int|null, description: string}  $data
+     * @param  array{service: string, description: string, asset_id?: int|null}  $data
      */
     public function create(array $data, User $reporter, ?UploadedFile $initialEvidence = null): Ticket
     {
+        if ($reporter->unit_id === null) {
+            throw ValidationException::withMessages([
+                'unit_id' => ['User yang membuat tiket harus memiliki unit.'],
+            ]);
+        }
+
         $objectKey = $initialEvidence?->store('helpdesk/evidence');
 
         if ($initialEvidence !== null && $objectKey === false) {
@@ -29,51 +40,34 @@ class TicketService
         }
 
         try {
-            return DB::transaction(function () use ($data, $reporter, $initialEvidence, $objectKey): Ticket {
-                $ticket = Ticket::create([
-                    'ticket_number' => 'pending-'.Str::uuid(),
-                    'service' => $data['service'],
-                    'reporter_id' => $reporter->getKey(),
-                    'unit_id' => $data['unit_id'],
-                    'description' => $data['description'],
-                    'status' => TicketStatus::Baru,
-                    'initial_evidence_object_key' => $objectKey ?: null,
-                    'initial_evidence_original_name' => $initialEvidence?->getClientOriginalName(),
-                    'initial_evidence_mime_type' => $initialEvidence?->getMimeType(),
-                    'initial_evidence_size' => $initialEvidence?->getSize(),
-                ]);
+            $service = TicketServiceEnum::from($data['service']);
+            $year = now()->format('Y');
 
-                $ticket->update([
-                    'ticket_number' => sprintf(
-                        '%s-%s-%04d',
-                        strtoupper($ticket->service->value),
-                        $ticket->created_at->format('Y'),
-                        $ticket->getKey(),
-                    ),
-                ]);
-
-                if (
-                    $data['service'] === TicketServiceEnum::Tik->value
-                    && isset($data['quality_category_id'], $data['it_tag_id'])
-                ) {
-                    $ticket->tikDetail()->create([
-                        'quality_category_id' => $data['quality_category_id'],
-                        'it_tag_id' => $data['it_tag_id'],
-                        'custom_it_tag_text' => $data['custom_it_tag_text'] ?? null,
+            $ticket = Cache::lock("ticket-number:{$service->value}:{$year}", 10)
+                ->block(5, fn (): Ticket => DB::transaction(function () use (
+                    $data,
+                    $reporter,
+                    $initialEvidence,
+                    $objectKey,
+                    $service,
+                    $year,
+                ): Ticket {
+                    return $this->tickets->create([
+                        'ticket_number' => $this->nextTicketNumber($service, $year),
+                        'service' => $service->value,
+                        'reporter_id' => $reporter->getKey(),
+                        'unit_id' => $reporter->unit_id,
+                        'asset_id' => $data['asset_id'] ?? null,
+                        'description' => $data['description'],
+                        'status' => TicketStatus::Baru,
+                        'initial_evidence_object_key' => $objectKey ?: null,
+                        'initial_evidence_original_name' => $initialEvidence?->getClientOriginalName(),
+                        'initial_evidence_mime_type' => $initialEvidence?->getMimeType(),
+                        'initial_evidence_size' => $initialEvidence?->getSize(),
                     ]);
-                }
+                }));
 
-                if (
-                    $data['service'] === TicketServiceEnum::Sarpras->value
-                    && isset($data['sarpras_category_id'])
-                ) {
-                    $ticket->sarprasDetail()->create([
-                        'sarpras_category_id' => $data['sarpras_category_id'],
-                    ]);
-                }
-
-                return $ticket;
-            });
+            return $this->tickets->loadSummary($ticket);
         } catch (Throwable $exception) {
             if (is_string($objectKey)) {
                 Storage::delete($objectKey);
@@ -81,6 +75,24 @@ class TicketService
 
             throw $exception;
         }
+    }
+
+    /**
+     * @param  array{service?: string|null, status?: string|null, date_from?: string|null, date_to?: string|null, search?: string|null}  $filters
+     */
+    public function paginateVisibleTo(User $actor, array $filters, int $perPage): LengthAwarePaginator
+    {
+        return $this->tickets->paginateVisibleTo($actor, $filters, $perPage);
+    }
+
+    public function loadDetail(Ticket $ticket): Ticket
+    {
+        return $this->tickets->loadDetail($ticket);
+    }
+
+    public function loadSummary(Ticket $ticket): Ticket
+    {
+        return $this->tickets->loadSummary($ticket);
     }
 
     public function verify(Ticket $ticket, User $changedBy): Ticket
@@ -268,5 +280,20 @@ class TicketService
         ]);
 
         return true;
+    }
+
+    private function nextTicketNumber(TicketServiceEnum $service, string $year): string
+    {
+        $numberPrefix = "{$service->ticketNumberPrefix()}-{$year}-";
+        $latestNumber = $this->tickets->latestTicketNumber($service, $numberPrefix);
+        $nextSequence = $latestNumber === null
+            ? 1
+            : ((int) substr($latestNumber, strlen($numberPrefix))) + 1;
+
+        if ($nextSequence > 999999) {
+            throw new RuntimeException("Urutan nomor tiket {$service->value} tahun {$year} sudah habis.");
+        }
+
+        return $numberPrefix.str_pad((string) $nextSequence, 6, '0', STR_PAD_LEFT);
     }
 }
