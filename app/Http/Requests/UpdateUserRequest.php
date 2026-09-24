@@ -25,7 +25,7 @@ class UpdateUserRequest extends FormRequest
             'unit_id' => ['sometimes', 'required', 'integer', 'exists:units,id'],
             'jabatan' => ['sometimes', 'required', 'string', 'max:255'],
             'no_hp' => ['sometimes', 'required', 'string', 'max:20', 'unique:users,no_hp,'.$userId],
-            'role' => ['sometimes', 'string', Rule::in(['super admin', 'koordinator-sarpras', 'petugas-tik', 'petugas-sarpras', 'user', 'management'])],
+            'role' => ['sometimes', 'string', Rule::in(['super-admin', 'koordinator-sarpras', 'petugas-tik', 'petugas-sarpras', 'user', 'management'])],
         ];
     }
 

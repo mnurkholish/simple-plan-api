@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Enums\TicketStatus;
+use App\Models\Ticket;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -13,7 +14,10 @@ class StoreTicketHandlingRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        $ticket = $this->route('ticket');
+
+        return $ticket instanceof Ticket
+            && $this->user()?->can('handle', $ticket) === true;
     }
 
     /**
@@ -23,17 +27,25 @@ class StoreTicketHandlingRequest extends FormRequest
      */
     public function rules(): array
     {
+        $ticket = $this->route('ticket');
+        $allowedStatuses = match ($ticket instanceof Ticket ? $ticket->status : null) {
+            TicketStatus::Ditugaskan => [TicketStatus::Diproses->value],
+            TicketStatus::Diproses => [
+                TicketStatus::Diproses->value,
+                TicketStatus::Terselesaikan->value,
+            ],
+            default => [
+                TicketStatus::Diproses->value,
+                TicketStatus::Terselesaikan->value,
+            ],
+        };
+
         return [
             'notes' => ['required', 'string'],
-            'status' => [
-                'required',
-                Rule::enum(TicketStatus::class)
-                    ->only([TicketStatus::Diproses, TicketStatus::Selesai]),
-            ],
-            'started_at' => ['nullable', 'date'],
+            'status' => ['required', Rule::in($allowedStatuses)],
+            'started_at' => ['required', 'date'],
             'completed_at' => [
-                'nullable',
-                Rule::requiredIf($this->input('status') === TicketStatus::Selesai->value),
+                'required',
                 'date',
                 'after_or_equal:started_at',
             ],

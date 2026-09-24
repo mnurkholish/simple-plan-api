@@ -67,8 +67,8 @@ class ProfileController extends Controller
         $user = $request->user();
 
         if (
-            $user->hasRole('super admin')
-            && ! User::role('super admin')->whereKeyNot($user->getKey())->exists()
+            $user->hasRole('super-admin')
+            && ! User::role('super-admin')->whereKeyNot($user->getKey())->exists()
         ) {
             throw ValidationException::withMessages([
                 'password' => ['Super admin terakhir tidak dapat menghapus akunnya sendiri.'],

@@ -238,10 +238,10 @@ SLA:
 | `medium`   | 1 hari |
 | `low`      | 3 hari |
 
-SLA menggunakan waktu kalender 24/7 dan mulai dari `classified_at`.
+SLA menggunakan waktu kalender 24/7 dan mulai dari `assigned_at` pada assignment pertama.
 
 ```text
-sla_deadline = classified_at + SLA(priority)
+sla_deadline = assigned_at pertama + SLA(priority)
 ```
 
 Jangan simpan `status_sla`; hitung dinamis.

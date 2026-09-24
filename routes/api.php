@@ -69,13 +69,17 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::post('tickets', [TicketController::class, 'store'])
             ->middleware('permission:tickets-create')
             ->name('tickets.store');
-        Route::post('tickets/{ticket}/verify', [TicketController::class, 'verify'])
+        Route::post('tickets/{ticket}/classify', [TicketController::class, 'classify'])
             ->middleware('permission:tickets-verify')
-            ->name('tickets.verify')
+            ->name('tickets.classify')
             ->missing(fn () => response()->json(['message' => 'Resource not found.'], 404));
         Route::post('tickets/{ticket}/reject', [TicketController::class, 'reject'])
             ->middleware('permission:tickets-reject')
             ->name('tickets.reject')
+            ->missing(fn () => response()->json(['message' => 'Resource not found.'], 404));
+        Route::get('tickets/{ticket}/assignee-options', [TicketController::class, 'assigneeOptions'])
+            ->middleware('permission:tickets-assign')
+            ->name('tickets.assignee-options')
             ->missing(fn () => response()->json(['message' => 'Resource not found.'], 404));
         Route::post('tickets/{ticket}/assign', [TicketController::class, 'assign'])
             ->middleware('permission:tickets-assign')

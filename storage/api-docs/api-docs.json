@@ -2382,9 +2382,13 @@
                             "type": "string",
                             "enum": [
                                 "baru",
-                                "terverifikasi",
+                                "diklasifikasi",
+                                "ditugaskan",
                                 "diproses",
-                                "selesai",
+                                "eskalasi",
+                                "terselesaikan",
+                                "terverifikasi",
+                                "ditutup",
                                 "ditolak"
                             ]
                         }
@@ -2473,7 +2477,7 @@
                     "Helpdesk"
                 ],
                 "summary": "Create a Helpdesk ticket",
-                "description": "Creates a TIK or Sarpras ticket for the authenticated reporter with status baru. Requires the tickets-create permission.",
+                "description": "Creates a TIK or Sarpras ticket with status baru. Reporter and unit are taken from the authenticated user. Requires the tickets-create permission.",
                 "operationId": "createTicket",
                 "requestBody": {
                     "required": true,
@@ -2534,14 +2538,14 @@
                 ]
             }
         },
-        "/tickets/{ticket}/verify": {
+        "/tickets/{ticket}/classify": {
             "post": {
                 "tags": [
                     "Helpdesk"
                 ],
-                "summary": "Verify a new Helpdesk ticket",
-                "description": "Requires the tickets-verify permission.",
-                "operationId": "verifyTicket",
+                "summary": "Classify a new Helpdesk ticket",
+                "description": "TIK classification is limited to Super Admin. Sarpras classification is allowed for Super Admin and Koordinator Sarpras. The endpoint retains tickets-verify as its general capability permission.",
+                "operationId": "classifyTicket",
                 "parameters": [
                     {
                         "name": "ticket",
@@ -2553,9 +2557,19 @@
                         }
                     }
                 ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ClassifyTicketRequest"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
-                        "description": "Ticket verified",
+                        "description": "Ticket classified",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -2575,7 +2589,7 @@
                         }
                     },
                     "403": {
-                        "description": "Missing tickets-verify permission",
+                        "description": "Actor cannot classify this ticket service",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -2603,6 +2617,16 @@
                                 }
                             }
                         }
+                    },
+                    "422": {
+                        "description": "Invalid classification data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -2618,7 +2642,7 @@
                     "Helpdesk"
                 ],
                 "summary": "Reject a new Helpdesk ticket",
-                "description": "Requires the tickets-reject permission.",
+                "description": "The actor must be allowed to classify the ticket service, the ticket must be new, and the tickets-reject permission is required.",
                 "operationId": "rejectTicket",
                 "parameters": [
                     {
@@ -2710,13 +2734,111 @@
                 ]
             }
         },
+        "/tickets/{ticket}/assignee-options": {
+            "get": {
+                "tags": [
+                    "Helpdesk"
+                ],
+                "summary": "Search eligible officers for assignment",
+                "description": "Returns active Petugas TIK for a TIK ticket or active Petugas Sarpras for a Sarpras ticket. Search matches name or jabatan. TIK is limited to Super Admin; Sarpras is limited to Koordinator Sarpras. Requires the tickets-assign permission.",
+                "operationId": "getTicketAssigneeOptions",
+                "parameters": [
+                    {
+                        "name": "ticket",
+                        "in": "path",
+                        "description": "Internal ticket ID.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Optional name or jabatan search.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 255
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Eligible assignee options",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AssigneeOptionCollectionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Actor cannot assign this ticket service",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Ticket not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Ticket state conflict",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Invalid search query",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/tickets/{ticket}/assign": {
             "post": {
                 "tags": [
                     "Helpdesk"
                 ],
-                "summary": "Set priority and assign an officer",
-                "description": "Assignment keeps the ticket status as terverifikasi. Requires the tickets-assign permission.",
+                "summary": "Assign or reassign a ticket officer",
+                "description": "TIK assignment is limited to Super Admin and requires Petugas TIK. Sarpras assignment is limited to Koordinator Sarpras and requires Petugas Sarpras. Initial assignment from diklasifikasi requires priority, sets assigned_at, starts the SLA deadline, and transitions to ditugaskan. Reassignment from ditugaskan or diproses updates the officer and assigned_at without resetting priority or SLA; diproses transitions back to ditugaskan. Requires the tickets-assign permission.",
                 "operationId": "assignTicket",
                 "parameters": [
                     {
@@ -2741,7 +2863,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Priority and officer assigned",
+                        "description": "Officer assigned",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -2761,7 +2883,7 @@
                         }
                     },
                     "403": {
-                        "description": "Missing tickets-assign permission",
+                        "description": "Actor or selected officer is not eligible for this ticket service",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -2814,7 +2936,7 @@
                     "Helpdesk"
                 ],
                 "summary": "Add ticket handling history",
-                "description": "Adds history to a ticket currently in progress. The ticket remains diproses or becomes selesai; this endpoint does not start processing from terverifikasi. Requires the tickets-handle permission.",
+                "description": "Only the currently assigned officer with the service-appropriate role may add handling. A ditugaskan ticket can only become diproses. A diproses ticket can remain diproses without status history or become terselesaikan with status history and tickets.completed_at. Handling never recalculates SLA. Requires the tickets-handle permission.",
                 "operationId": "createTicketHandling",
                 "parameters": [
                     {
@@ -2859,7 +2981,7 @@
                         }
                     },
                     "403": {
-                        "description": "Missing tickets-handle permission",
+                        "description": "Missing tickets-handle permission or actor is not the currently assigned officer",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -3265,6 +3387,109 @@
                 },
                 "type": "object"
             },
+            "TicketAssetSummary": {
+                "required": [
+                    "id",
+                    "asset_number",
+                    "name",
+                    "brand",
+                    "location",
+                    "status"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "asset_number": {
+                        "type": "string",
+                        "example": "AST-0001"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Komputer Poli"
+                    },
+                    "brand": {
+                        "type": "string",
+                        "example": "Dell",
+                        "nullable": true
+                    },
+                    "location": {
+                        "type": "string",
+                        "example": "Poli Umum",
+                        "nullable": true
+                    },
+                    "status": {
+                        "type": "string",
+                        "example": "active"
+                    }
+                },
+                "type": "object"
+            },
+            "TicketStatusHistory": {
+                "required": [
+                    "id",
+                    "from_status",
+                    "to_status",
+                    "changed_by",
+                    "notes",
+                    "created_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "from_status": {
+                        "type": "string",
+                        "example": "baru",
+                        "nullable": true,
+                        "enum": [
+                            "baru",
+                            "diklasifikasi",
+                            "ditugaskan",
+                            "diproses",
+                            "eskalasi",
+                            "terselesaikan",
+                            "terverifikasi",
+                            "ditutup",
+                            "ditolak"
+                        ]
+                    },
+                    "to_status": {
+                        "type": "string",
+                        "example": "diklasifikasi",
+                        "enum": [
+                            "baru",
+                            "diklasifikasi",
+                            "ditugaskan",
+                            "diproses",
+                            "eskalasi",
+                            "terselesaikan",
+                            "terverifikasi",
+                            "ditutup",
+                            "ditolak"
+                        ]
+                    },
+                    "changed_by": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/TicketReporterSummary"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "notes": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
             "TicketFileMetadata": {
                 "required": [
                     "object_key",
@@ -3318,7 +3543,7 @@
                         "example": "diproses",
                         "enum": [
                             "diproses",
-                            "selesai"
+                            "terselesaikan"
                         ]
                     },
                     "started_at": {
@@ -3409,12 +3634,19 @@
                     "status",
                     "rejection_reason",
                     "priority",
+                    "asset",
                     "reporter",
                     "unit",
                     "assigned_officer",
+                    "classified_by",
                     "initial_evidence",
+                    "classified_at",
+                    "assigned_at",
+                    "sla_deadline",
                     "completed_at",
-                    "created_at"
+                    "closed_at",
+                    "created_at",
+                    "updated_at"
                 ],
                 "properties": {
                     "id": {
@@ -3423,7 +3655,8 @@
                     },
                     "ticket_number": {
                         "type": "string",
-                        "example": "TIK-2026-0001"
+                        "pattern": "^(TIK|SPR)-[0-9]{4}-[0-9]{6}$",
+                        "example": "TIK-2026-000001"
                     },
                     "service": {
                         "type": "string",
@@ -3464,9 +3697,13 @@
                         "example": "baru",
                         "enum": [
                             "baru",
-                            "terverifikasi",
+                            "diklasifikasi",
+                            "ditugaskan",
                             "diproses",
-                            "selesai",
+                            "eskalasi",
+                            "terselesaikan",
+                            "terverifikasi",
+                            "ditutup",
                             "ditolak"
                         ]
                     },
@@ -3487,6 +3724,14 @@
                             "low"
                         ]
                     },
+                    "asset": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/TicketAssetSummary"
+                            }
+                        ],
+                        "nullable": true
+                    },
                     "reporter": {
                         "$ref": "#/components/schemas/TicketReporterSummary"
                     },
@@ -3501,6 +3746,14 @@
                         ],
                         "nullable": true
                     },
+                    "classified_by": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/TicketReporterSummary"
+                            }
+                        ],
+                        "nullable": true
+                    },
                     "initial_evidence": {
                         "oneOf": [
                             {
@@ -3509,7 +3762,27 @@
                         ],
                         "nullable": true
                     },
+                    "classified_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "assigned_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "sla_deadline": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
                     "completed_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "closed_at": {
                         "type": "string",
                         "format": "date-time",
                         "nullable": true
@@ -3520,7 +3793,17 @@
                             "$ref": "#/components/schemas/TicketHandling"
                         }
                     },
+                    "status_histories": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/TicketStatusHistory"
+                        }
+                    },
                     "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
                         "type": "string",
                         "format": "date-time"
                     }
@@ -3530,7 +3813,6 @@
             "CreateTicketRequest": {
                 "required": [
                     "service",
-                    "unit_id",
                     "description"
                 ],
                 "properties": {
@@ -3542,26 +3824,7 @@
                             "sarpras"
                         ]
                     },
-                    "unit_id": {
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "quality_category_id": {
-                        "type": "integer",
-                        "example": 1,
-                        "nullable": true
-                    },
-                    "it_tag_id": {
-                        "type": "integer",
-                        "example": 1,
-                        "nullable": true
-                    },
-                    "custom_it_tag_text": {
-                        "type": "string",
-                        "nullable": true,
-                        "maxLength": 255
-                    },
-                    "sarpras_category_id": {
+                    "asset_id": {
                         "type": "integer",
                         "example": 1,
                         "nullable": true
@@ -3606,13 +3869,64 @@
                 },
                 "type": "object"
             },
-            "AssignTicketRequest": {
+            "ClassifyTicketRequest": {
+                "description": "Request shape is selected from the ticket service in the path.",
+                "oneOf": [
+                    {
+                        "$ref": "#/components/schemas/ClassifyTikTicketRequest"
+                    },
+                    {
+                        "$ref": "#/components/schemas/ClassifySarprasTicketRequest"
+                    }
+                ]
+            },
+            "ClassifyTikTicketRequest": {
                 "required": [
-                    "priority",
-                    "officer_id"
+                    "quality_category_id",
+                    "it_tag_id"
                 ],
                 "properties": {
+                    "quality_category_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "it_tag_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "custom_it_tag_text": {
+                        "description": "Required and only accepted when the selected IT Tag is Lain-lain.",
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 255
+                    }
+                },
+                "type": "object"
+            },
+            "ClassifySarprasTicketRequest": {
+                "required": [
+                    "sarpras_category_id"
+                ],
+                "properties": {
+                    "sarpras_category_id": {
+                        "description": "Active Sarpras, Elektronik, or Alkes category ID.",
+                        "type": "integer",
+                        "example": 1
+                    }
+                },
+                "type": "object"
+            },
+            "AssignTicketRequest": {
+                "required": [
+                    "assigned_officer_id"
+                ],
+                "properties": {
+                    "assigned_officer_id": {
+                        "type": "integer",
+                        "example": 2
+                    },
                     "priority": {
+                        "description": "Required for initial assignment and prohibited for reassignment.",
                         "type": "string",
                         "example": "high",
                         "enum": [
@@ -3621,10 +3935,43 @@
                             "medium",
                             "low"
                         ]
-                    },
-                    "officer_id": {
+                    }
+                },
+                "type": "object"
+            },
+            "AssigneeOption": {
+                "required": [
+                    "id",
+                    "name",
+                    "jabatan"
+                ],
+                "properties": {
+                    "id": {
                         "type": "integer",
                         "example": 2
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Budi Petugas"
+                    },
+                    "jabatan": {
+                        "type": "string",
+                        "example": "Teknisi Jaringan",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "AssigneeOptionCollectionResponse": {
+                "required": [
+                    "data"
+                ],
+                "properties": {
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AssigneeOption"
+                        }
                     }
                 },
                 "type": "object"
@@ -3632,7 +3979,9 @@
             "CreateTicketHandlingRequest": {
                 "required": [
                     "notes",
-                    "status"
+                    "status",
+                    "started_at",
+                    "completed_at"
                 ],
                 "properties": {
                     "notes": {
@@ -3640,23 +3989,23 @@
                         "example": "Kabel daya dikencangkan dan perangkat diuji."
                     },
                     "status": {
+                        "description": "Ditugaskan only accepts diproses; Diproses accepts diproses or terselesaikan. Stored on tickets.status, not ticket_handlings.",
                         "type": "string",
                         "example": "diproses",
                         "enum": [
                             "diproses",
-                            "selesai"
+                            "terselesaikan"
                         ]
                     },
                     "started_at": {
+                        "description": "Required repair start time, editable by the officer.",
                         "type": "string",
-                        "format": "date-time",
-                        "nullable": true
+                        "format": "date-time"
                     },
                     "completed_at": {
-                        "description": "Required when status is selesai. Must be equal to or after started_at when a start time is supplied.",
+                        "description": "Required repair completion time. Must be equal to or after started_at.",
                         "type": "string",
-                        "format": "date-time",
-                        "nullable": true
+                        "format": "date-time"
                     },
                     "result_photo": {
                         "type": "string",
@@ -3674,7 +4023,7 @@
                 "properties": {
                     "message": {
                         "type": "string",
-                        "example": "Tiket berhasil diverifikasi."
+                        "example": "Tiket berhasil diklasifikasi."
                     },
                     "data": {
                         "$ref": "#/components/schemas/TicketRead"

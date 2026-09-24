@@ -25,7 +25,7 @@ class UserSeeder extends Seeder
             ],
         );
 
-        $superAdminRole = Role::where('name', 'super admin')->first();
+        $superAdminRole = Role::where('name', 'super-admin')->first();
 
         if ($superAdminRole) {
             $admin->syncRoles([$superAdminRole->name]);

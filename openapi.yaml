@@ -43,7 +43,7 @@ paths:
           description: Filter status tiket.
           schema:
             type: string
-            enum: [baru, terverifikasi, diproses, selesai, ditolak]
+            enum: [baru, diklasifikasi, ditugaskan, diproses, eskalasi, terselesaikan, terverifikasi, ditutup, ditolak]
             example: baru
         - name: date_from
           in: query
@@ -83,6 +83,7 @@ paths:
       tags: [Helpdesk]
       summary: Membuat tiket
       operationId: createTicket
+      description: Reporter dan unit diambil dari authenticated user. Status awal selalu baru.
       x-auth-required: true
       x-required-permission: tickets-create
       requestBody:
@@ -128,18 +129,28 @@ paths:
         '404':
           $ref: '#/components/responses/TicketNotFound'
 
-  /tickets/{ticket}/verify:
+  /tickets/{ticket}/classify:
     post:
       tags: [Helpdesk]
-      summary: Memverifikasi tiket baru
-      operationId: verifyTicket
+      summary: Mengklasifikasikan tiket baru
+      operationId: classifyTicket
+      description: |
+        TIK hanya dapat diklasifikasikan Super Admin. Sarpras dapat
+        diklasifikasikan Super Admin atau Koordinator Sarpras. Capability
+        umum endpoint tetap menggunakan permission tickets-verify.
       x-auth-required: true
       x-required-permission: tickets-verify
       parameters:
         - $ref: '#/components/parameters/TicketId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClassifyTicketRequest'
       responses:
         '200':
-          description: Tiket berhasil diverifikasi.
+          description: Tiket berhasil diklasifikasikan.
           content:
             application/json:
               schema:
@@ -152,12 +163,15 @@ paths:
           $ref: '#/components/responses/TicketNotFound'
         '409':
           $ref: '#/components/responses/TicketConflict'
+        '422':
+          $ref: '#/components/responses/TicketValidationError'
 
   /tickets/{ticket}/reject:
     post:
       tags: [Helpdesk]
       summary: Menolak tiket baru
       operationId: rejectTicket
+      description: Actor mengikuti hak klasifikasi service tiket dan tiket harus berstatus baru.
       x-auth-required: true
       x-required-permission: tickets-reject
       parameters:
@@ -186,12 +200,53 @@ paths:
         '422':
           $ref: '#/components/responses/TicketValidationError'
 
+  /tickets/{ticket}/assignee-options:
+    get:
+      tags: [Helpdesk]
+      summary: Mencari kandidat petugas assignment
+      operationId: listTicketAssigneeOptions
+      description: |
+        Kandidat dibatasi pada user aktif dengan role Petugas TIK atau Petugas
+        Sarpras sesuai service ticket. Search mencocokkan name dan jabatan.
+      x-auth-required: true
+      x-required-permission: tickets-assign
+      parameters:
+        - $ref: '#/components/parameters/TicketId'
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 255
+      responses:
+        '200':
+          description: Kandidat petugas berhasil diambil.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssigneeOptionCollectionResponse'
+        '401':
+          $ref: '#/components/responses/TicketUnauthenticated'
+        '403':
+          $ref: '#/components/responses/TicketForbidden'
+        '404':
+          $ref: '#/components/responses/TicketNotFound'
+        '409':
+          $ref: '#/components/responses/TicketConflict'
+        '422':
+          $ref: '#/components/responses/TicketValidationError'
+
   /tickets/{ticket}/assign:
     post:
       tags: [Helpdesk]
-      summary: Menentukan prioritas dan petugas tiket
+      summary: Assignment atau reassignment tiket
       operationId: assignTicket
-      description: Assignment tidak mengubah status tiket dari Terverifikasi menjadi Diproses.
+      description: |
+        TIK hanya dapat di-assign Super Admin kepada Petugas TIK. Sarpras hanya
+        dapat di-assign Koordinator Sarpras kepada Petugas Sarpras. Assignment
+        pertama dari Diklasifikasi menentukan priority dan SLA dari assigned_at.
+        Reassignment dari Ditugaskan atau Diproses hanya mengganti petugas dan
+        assigned_at; priority serta SLA deadline pertama tidak direset.
       x-auth-required: true
       x-required-permission: tickets-assign
       parameters:
@@ -204,7 +259,7 @@ paths:
               $ref: '#/components/schemas/AssignTicketRequest'
       responses:
         '200':
-          description: Prioritas dan petugas berhasil disimpan.
+          description: Assignment atau reassignment berhasil.
           content:
             application/json:
               schema:
@@ -225,10 +280,13 @@ paths:
       tags: [Helpdesk]
       summary: Menambahkan riwayat penanganan tiket
       operationId: createTicketHandling
-      description: >-
-        Menambahkan satu catatan pada tiket yang sedang Diproses. Status dapat
-        tetap Diproses atau berubah menjadi Selesai. Endpoint ini tidak memulai
-        proses dari status Terverifikasi. Membutuhkan permission tickets-handle.
+      description: |
+        Hanya petugas yang sedang tercatat sebagai assigned_officer_id dan
+        memiliki role sesuai service tiket yang dapat menambahkan penanganan.
+        Tiket Ditugaskan hanya dapat menjadi Diproses. Tiket Diproses dapat
+        tetap Diproses tanpa status history atau menjadi Terselesaikan dengan
+        status history dan pengisian tickets.completed_at. Operasi tidak
+        menghitung ulang SLA. Membutuhkan permission tickets-handle.
       x-auth-required: true
       x-required-permission: tickets-handle
       parameters:
@@ -301,19 +359,27 @@ components:
         - status
         - rejection_reason
         - priority
+        - asset
         - reporter
         - unit
         - assigned_officer
+        - classified_by
         - initial_evidence
+        - classified_at
+        - assigned_at
+        - sla_deadline
         - completed_at
+        - closed_at
         - created_at
+        - updated_at
       properties:
         id:
           type: integer
           example: 1
         ticket_number:
           type: string
-          example: TIK-2026-0001
+          pattern: '^(TIK|SPR)-[0-9]{4}-[0-9]{6}$'
+          example: TIK-2026-000001
         service:
           type: string
           enum: [tik, sarpras]
@@ -338,7 +404,7 @@ components:
           example: Komputer tidak dapat menyala.
         status:
           type: string
-          enum: [baru, terverifikasi, diproses, selesai, ditolak]
+          enum: [baru, diklasifikasi, ditugaskan, diproses, eskalasi, terselesaikan, terverifikasi, ditutup, ditolak]
           example: baru
         rejection_reason:
           type:
@@ -352,6 +418,10 @@ components:
             - 'null'
           enum: [critical, high, medium, low, null]
           example: high
+        asset:
+          anyOf:
+            - $ref: '#/components/schemas/AssetSummary'
+            - type: 'null'
         reporter:
           $ref: '#/components/schemas/UserSummary'
         unit:
@@ -360,11 +430,35 @@ components:
           anyOf:
             - $ref: '#/components/schemas/UserSummary'
             - type: 'null'
+        classified_by:
+          anyOf:
+            - $ref: '#/components/schemas/UserSummary'
+            - type: 'null'
         initial_evidence:
           anyOf:
             - $ref: '#/components/schemas/FileMetadata'
             - type: 'null'
+        classified_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        assigned_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        sla_deadline:
+          type:
+            - string
+            - 'null'
+          format: date-time
         completed_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        closed_at:
           type:
             - string
             - 'null'
@@ -374,7 +468,15 @@ components:
           description: Tersedia pada response detail dan pembaruan penanganan.
           items:
             $ref: '#/components/schemas/TicketHandling'
+        status_histories:
+          type: array
+          description: Tersedia pada response detail tiket.
+          items:
+            $ref: '#/components/schemas/TicketStatusHistory'
         created_at:
+          type: string
+          format: date-time
+        updated_at:
           type: string
           format: date-time
 
@@ -393,6 +495,55 @@ components:
           type: integer
         name:
           type: string
+
+    AssetSummary:
+      type: object
+      additionalProperties: false
+      required: [id, asset_number, name, brand, location, status]
+      properties:
+        id:
+          type: integer
+        asset_number:
+          type: string
+        name:
+          type: string
+        brand:
+          type:
+            - string
+            - 'null'
+        location:
+          type:
+            - string
+            - 'null'
+        status:
+          type: string
+
+    TicketStatusHistory:
+      type: object
+      additionalProperties: false
+      required: [id, from_status, to_status, changed_by, notes, created_at]
+      properties:
+        id:
+          type: integer
+        from_status:
+          type:
+            - string
+            - 'null'
+          enum: [baru, diklasifikasi, ditugaskan, diproses, eskalasi, terselesaikan, terverifikasi, ditutup, ditolak, null]
+        to_status:
+          type: string
+          enum: [baru, diklasifikasi, ditugaskan, diproses, eskalasi, terselesaikan, terverifikasi, ditutup, ditolak]
+        changed_by:
+          anyOf:
+            - $ref: '#/components/schemas/UserSummary'
+            - type: 'null'
+        notes:
+          type:
+            - string
+            - 'null'
+        created_at:
+          type: string
+          format: date-time
 
     TicketNamedReference:
       type: object
@@ -459,36 +610,17 @@ components:
       type: object
       required:
         - service
-        - unit_id
         - description
       properties:
         service:
           type: string
           enum: [tik, sarpras]
           example: tik
-        unit_id:
-          type: integer
-          example: 1
-        quality_category_id:
+        asset_id:
           type:
             - integer
             - 'null'
-          description: Digunakan bersama it_tag_id untuk detail tiket TIK.
-        it_tag_id:
-          type:
-            - integer
-            - 'null'
-          description: Digunakan bersama quality_category_id untuk detail tiket TIK.
-        custom_it_tag_text:
-          type:
-            - string
-            - 'null'
-          maxLength: 255
-        sarpras_category_id:
-          type:
-            - integer
-            - 'null'
-          description: Kategori detail tiket Sarpras.
+          description: Asset aktif yang terkait dengan tiket, jika ada.
         description:
           type: string
         initial_evidence:
@@ -520,20 +652,76 @@ components:
           minLength: 1
           example: Informasi kerusakan tidak sesuai.
 
+    ClassifyTicketRequest:
+      description: Request dipilih berdasarkan service ticket pada path.
+      oneOf:
+        - $ref: '#/components/schemas/ClassifyTikTicketRequest'
+        - $ref: '#/components/schemas/ClassifySarprasTicketRequest'
+
+    ClassifyTikTicketRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - quality_category_id
+        - it_tag_id
+      properties:
+        quality_category_id:
+          type: integer
+        it_tag_id:
+          type: integer
+        custom_it_tag_text:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+          description: Wajib dan hanya boleh diisi ketika IT Tag adalah Lain-lain.
+
+    ClassifySarprasTicketRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - sarpras_category_id
+      properties:
+        sarpras_category_id:
+          type: integer
+          description: ID kategori aktif Sarpras, Elektronik, atau Alkes.
     AssignTicketRequest:
       type: object
       additionalProperties: false
       required:
-        - priority
-        - officer_id
+        - assigned_officer_id
       properties:
+        assigned_officer_id:
+          type: integer
+          example: 2
         priority:
           type: string
           enum: [critical, high, medium, low]
-          example: high
-        officer_id:
+          description: Wajib pada assignment pertama dan tidak boleh dikirim saat reassignment.
+
+    AssigneeOption:
+      type: object
+      additionalProperties: false
+      required: [id, name, jabatan]
+      properties:
+        id:
           type: integer
-          example: 2
+        name:
+          type: string
+        jabatan:
+          type:
+            - string
+            - 'null'
+
+    AssigneeOptionCollectionResponse:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssigneeOption'
 
     CreateTicketHandlingRequest:
       type: object
@@ -541,28 +729,29 @@ components:
       required:
         - notes
         - status
+        - started_at
+        - completed_at
       properties:
         notes:
           type: string
           example: Kabel daya dikencangkan dan perangkat diuji.
         status:
           type: string
-          enum: [diproses, selesai]
-          description: Status target disimpan pada tickets.status, bukan ticket_handlings.
+          enum: [diproses, terselesaikan]
+          description: >-
+            Status target disimpan pada tickets.status, bukan ticket_handlings.
+            Tiket Ditugaskan hanya menerima diproses; tiket Diproses menerima
+            diproses atau terselesaikan.
           example: diproses
         started_at:
-          type:
-            - string
-            - 'null'
+          type: string
           format: date-time
+          description: Waktu mulai perbaikan; wajib dan dapat ditentukan petugas.
         completed_at:
-          type:
-            - string
-            - 'null'
+          type: string
           format: date-time
           description: >-
-            Wajib ketika status selesai. Harus sama atau setelah started_at jika
-            waktu mulai diberikan.
+            Waktu selesai perbaikan; wajib dan harus sama atau setelah started_at.
         result_photo:
           type:
             - string
@@ -590,7 +779,7 @@ components:
           example: Kabel daya dikencangkan dan perangkat diuji.
         status:
           type: string
-          enum: [diproses, selesai]
+          enum: [diproses, terselesaikan]
           description: Status tiket saat ini; bukan kolom pada ticket_handlings.
           example: diproses
         started_at:
@@ -786,4 +975,4 @@ components:
           schema:
             $ref: '#/components/schemas/TicketReadError'
           example:
-            message: Hanya tiket berstatus baru yang dapat diverifikasi.
+            message: Status tiket tidak dapat diubah dari ditutup menjadi diklasifikasi.

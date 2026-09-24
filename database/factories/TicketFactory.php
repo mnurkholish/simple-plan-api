@@ -25,10 +25,10 @@ class TicketFactory extends Factory
 
         return [
             'ticket_number' => sprintf(
-                '%s-%s-%04d',
-                strtoupper($service->value),
+                '%s-%s-%06d',
+                $service->ticketNumberPrefix(),
                 now()->format('Y'),
-                fake()->unique()->numberBetween(1, 9999),
+                fake()->unique()->numberBetween(1, 999999),
             ),
             'service' => $service,
             'reporter_id' => User::factory(),
