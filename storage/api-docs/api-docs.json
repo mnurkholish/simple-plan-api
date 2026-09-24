@@ -813,7 +813,20 @@
                         "$ref": "#/components/parameters/PerPageParam"
                     },
                     {
-                        "$ref": "#/components/parameters/SearchParam"
+                        "name": "filter[search]",
+                        "in": "query",
+                        "description": "Search by name, email, or NIP",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "filter[unit_id]",
+                        "in": "query",
+                        "description": "Filter by unit ID",
+                        "schema": {
+                            "type": "integer"
+                        }
                     },
                     {
                         "$ref": "#/components/parameters/IncludeParam"
@@ -829,7 +842,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Paginated users",
+                        "description": "Normal Flow & Alternative Flow (Pencarian Ditemukan/Tidak Ditemukan)",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -845,6 +858,31 @@
                                         }
                                     },
                                     "type": "object"
+                                },
+                                "examples": {
+                                    "found": {
+                                        "summary": "Normal Flow (Ditemukan berdasar unit)",
+                                        "value": {
+                                            "success": true,
+                                            "message": "Berhasil mengambil daftar user.",
+                                            "data": [
+                                                {
+                                                    "id": 2,
+                                                    "nama": "Dr. Andi Setiawan",
+                                                    "unit_id": 1,
+                                                    "role": "user"
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "not_found": {
+                                        "summary": "Alternative Flow (Tidak ditemukan)",
+                                        "value": {
+                                            "success": true,
+                                            "message": "Berhasil mengambil daftar user.",
+                                            "data": []
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -890,28 +928,39 @@
                                     "password_confirmation": {
                                         "type": "string"
                                     },
-                                    "selectedRoles": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string"
-                                        }
+                                    "unit_id": {
+                                        "type": "integer"
                                     },
-                                    "selectedUnits": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer"
-                                        }
+                                    "jabatan": {
+                                        "type": "string"
                                     },
-                                    "status": {
+                                    "no_hp": {
+                                        "type": "string"
+                                    },
+                                    "role": {
                                         "type": "string",
                                         "enum": [
-                                            "active",
-                                            "inactive",
-                                            "suspended"
+                                            "super admin",
+                                            "koordinator-sarpras",
+                                            "petugas-tik",
+                                            "petugas-sarpras",
+                                            "user",
+                                            "management"
                                         ]
                                     }
                                 },
                                 "type": "object"
+                            },
+                            "example": {
+                                "name": "Dr. Rani",
+                                "email": "rani@hospital.com",
+                                "nip": "19801234567754",
+                                "password": "password123",
+                                "password_confirmation": "password123",
+                                "unit_id": 1,
+                                "jabatan": "Dokter Kandungan",
+                                "no_hp": "081234567890",
+                                "role": "user"
                             }
                         }
                     }
@@ -928,6 +977,25 @@
                                         }
                                     },
                                     "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Alternative Flow: Validasi Gagal (Atribut kosong atau NIP/No HP sudah ada)",
+                        "content": {
+                            "application/json": {
+                                "schema": {},
+                                "example": {
+                                    "message": "Form wajib diisi",
+                                    "errors": {
+                                        "nip": [
+                                            "NIP sudah terdaftar di sistem."
+                                        ],
+                                        "password": [
+                                            "Form wajib diisi"
+                                        ]
+                                    }
                                 }
                             }
                         }
@@ -978,7 +1046,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "User",
+                        "description": "Normal Flow: Berhasil mengambil detail user",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1020,7 +1088,56 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/User"
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string"
+                                    },
+                                    "nip": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "unit_id": {
+                                        "type": "integer"
+                                    },
+                                    "jabatan": {
+                                        "type": "string"
+                                    },
+                                    "no_hp": {
+                                        "type": "string"
+                                    },
+                                    "role": {
+                                        "type": "string",
+                                        "enum": [
+                                            "super admin",
+                                            "koordinator-sarpras",
+                                            "petugas-tik",
+                                            "petugas-sarpras",
+                                            "user",
+                                            "management"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "example": {
+                                "name": "Dr. Rani (Updated)",
+                                "email": "rani.updated@hospital.com",
+                                "nip": "19801234567754",
+                                "unit_id": 1,
+                                "jabatan": "Dokter Kandungan",
+                                "no_hp": "081234567899",
+                                "role": "user"
                             }
                         }
                     }
@@ -1030,13 +1147,34 @@
                         "description": "Updated user",
                         "content": {
                             "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/components/schemas/User"
-                                        }
-                                    },
-                                    "type": "object"
+                                "schema": {},
+                                "example": {
+                                    "data": {
+                                        "id": 2,
+                                        "name": "Dr. Rani (Updated)",
+                                        "email": "rani.updated@hospital.com",
+                                        "nip": "19801234567754",
+                                        "unit_id": 1,
+                                        "jabatan": "Dokter Kandungan",
+                                        "no_hp": "081234567899",
+                                        "role": "user"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Alternative Flow: Data tidak lengkap/format salah",
+                        "content": {
+                            "application/json": {
+                                "schema": {},
+                                "example": {
+                                    "message": "Format data tidak sesuai",
+                                    "errors": {
+                                        "no_hp": [
+                                            "Format data tidak sesuai."
+                                        ]
+                                    }
                                 }
                             }
                         }
@@ -1049,32 +1187,101 @@
                 ]
             }
         },
-        "/users/{ids}": {
-            "delete": {
+        "/users/{user}/status": {
+            "patch": {
                 "tags": [
                     "Users"
                 ],
-                "summary": "Delete one or many users",
-                "operationId": "b912303f10a3b2e71b6c10a44143aaa1",
+                "summary": "Toggle user status (Aktif/Nonaktif)",
+                "operationId": "74f8954dca0688185217a7b41540b53f",
                 "parameters": [
                     {
-                        "name": "ids",
+                        "name": "user",
                         "in": "path",
-                        "description": "Comma separated IDs",
                         "required": true,
                         "schema": {
-                            "type": "string",
-                            "example": "2,3"
+                            "type": "integer"
                         }
                     }
                 ],
+                "requestBody": {
+                    "description": "Menangani dua skenario: Nonaktif dengan alasan, atau Aktif kembali dengan alasan_nonaktif null",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "status_user": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Aktif",
+                                            "Nonaktif"
+                                        ]
+                                    },
+                                    "alasan_nonaktif": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "example": {
+                                "status_user": "Nonaktif",
+                                "alasan_nonaktif": "Pindah tugas"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
-                        "description": "Deleted",
+                        "description": "Normal & Alternative Flow: Berhasil menonaktifkan user ATAU berhasil mengaktifkan kembali user.",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/MessageResponse"
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/User"
+                                        }
+                                    },
+                                    "type": "object"
+                                },
+                                "examples": {
+                                    "deactivated": {
+                                        "summary": "Normal Flow (Berhasil menonaktifkan)",
+                                        "value": {
+                                            "message": "Status user berhasil diubah.",
+                                            "data": {
+                                                "status_user": "Nonaktif",
+                                                "alasan_nonaktif": "Cuti Panjang"
+                                            }
+                                        }
+                                    },
+                                    "reactivated": {
+                                        "summary": "Alternative Flow (Berhasil mengaktifkan kembali)",
+                                        "value": {
+                                            "message": "Status user berhasil diubah.",
+                                            "data": {
+                                                "status_user": "Aktif",
+                                                "alasan_nonaktif": null
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Alternative Flow: Alasan nonaktif tidak dipilih saat menonaktifkan",
+                        "content": {
+                            "application/json": {
+                                "schema": {},
+                                "example": {
+                                    "message": "Format data tidak sesuai",
+                                    "errors": {
+                                        "alasan_nonaktif": [
+                                            "Format data tidak sesuai."
+                                        ]
+                                    }
                                 }
                             }
                         }
@@ -2774,56 +2981,63 @@
                 "properties": {
                     "id": {
                         "type": "integer",
-                        "example": 1
+                        "example": 2
                     },
                     "name": {
                         "type": "string",
-                        "example": "Ahmad Ilyas"
+                        "example": "Dr. Rani"
                     },
                     "email": {
                         "type": "string",
-                        "example": "juniyasyos@gmail.com",
+                        "example": "rani@hospital.com",
                         "nullable": true
                     },
                     "nip": {
                         "type": "string",
-                        "example": "0000.00000",
+                        "example": "19801234567754",
                         "nullable": true
                     },
                     "avatar": {
                         "type": "string",
+                        "example": "https://example.com/avatar.jpg",
                         "nullable": true
                     },
                     "email_verified_at": {
                         "type": "string",
                         "format": "date-time",
+                        "example": "2026-09-24T10:00:00Z",
                         "nullable": true
                     },
-                    "status": {
+                    "jabatan": {
                         "type": "string",
-                        "example": "active"
+                        "example": "Dokter Kandungan",
+                        "nullable": true
                     },
-                    "roles": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/Role"
-                        }
+                    "no_hp": {
+                        "type": "string",
+                        "example": "081234567890",
+                        "nullable": true
                     },
-                    "units": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/Unit"
-                        }
+                    "status_user": {
+                        "type": "string",
+                        "example": "Aktif"
                     },
-                    "permissions": {
-                        "type": "object",
-                        "additionalProperties": {
-                            "type": "boolean"
-                        }
+                    "alasan_nonaktif": {
+                        "type": "string",
+                        "example": "Cuti melahirkan",
+                        "nullable": true
+                    },
+                    "role": {
+                        "type": "string",
+                        "example": "user"
+                    },
+                    "unit": {
+                        "$ref": "#/components/schemas/Unit"
                     },
                     "created_at": {
                         "type": "string",
                         "format": "date-time",
+                        "example": "2026-09-01T10:00:00Z",
                         "nullable": true
                     }
                 },
