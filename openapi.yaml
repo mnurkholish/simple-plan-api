@@ -280,10 +280,13 @@ paths:
       tags: [Helpdesk]
       summary: Menambahkan riwayat penanganan tiket
       operationId: createTicketHandling
-      description: >-
-        Menambahkan satu catatan pada tiket yang sedang Diproses. Status dapat
-        tetap Diproses atau berubah menjadi Terselesaikan. Tiket Ditugaskan dapat
-        mulai ditangani menjadi Diproses. Membutuhkan permission tickets-handle.
+      description: |
+        Hanya petugas yang sedang tercatat sebagai assigned_officer_id dan
+        memiliki role sesuai service tiket yang dapat menambahkan penanganan.
+        Tiket Ditugaskan hanya dapat menjadi Diproses. Tiket Diproses dapat
+        tetap Diproses tanpa status history atau menjadi Terselesaikan dengan
+        status history dan pengisian tickets.completed_at. Operasi tidak
+        menghitung ulang SLA. Membutuhkan permission tickets-handle.
       x-auth-required: true
       x-required-permission: tickets-handle
       parameters:
@@ -726,6 +729,8 @@ components:
       required:
         - notes
         - status
+        - started_at
+        - completed_at
       properties:
         notes:
           type: string
@@ -733,21 +738,20 @@ components:
         status:
           type: string
           enum: [diproses, terselesaikan]
-          description: Status target disimpan pada tickets.status, bukan ticket_handlings.
+          description: >-
+            Status target disimpan pada tickets.status, bukan ticket_handlings.
+            Tiket Ditugaskan hanya menerima diproses; tiket Diproses menerima
+            diproses atau terselesaikan.
           example: diproses
         started_at:
-          type:
-            - string
-            - 'null'
+          type: string
           format: date-time
+          description: Waktu mulai perbaikan; wajib dan dapat ditentukan petugas.
         completed_at:
-          type:
-            - string
-            - 'null'
+          type: string
           format: date-time
           description: >-
-            Wajib ketika status terselesaikan. Harus sama atau setelah started_at jika
-            waktu mulai diberikan.
+            Waktu selesai perbaikan; wajib dan harus sama atau setelah started_at.
         result_photo:
           type:
             - string

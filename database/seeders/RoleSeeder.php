@@ -24,10 +24,12 @@ class RoleSeeder extends Seeder
             'petugas-tik' => [
                 'tickets-access',
                 'tickets-create',
+                'tickets-handle',
             ],
             'petugas-sarpras' => [
                 'tickets-access',
                 'tickets-create',
+                'tickets-handle',
             ],
             'user' => [
                 'tickets-access',

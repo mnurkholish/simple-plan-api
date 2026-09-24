@@ -73,7 +73,7 @@ test('the Helpdesk OpenAPI contract only documents implemented ticket operations
         ->and($contract['paths']['/tickets/{ticket}/handlings']['post']['responses']['403']['$ref'])
         ->toBe('#/components/responses/TicketForbidden')
         ->and($contract['components']['schemas']['CreateTicketHandlingRequest']['required'])
-        ->toBe(['notes', 'status'])
+        ->toBe(['notes', 'status', 'started_at', 'completed_at'])
         ->and($contract['components']['schemas']['CreateTicketHandlingRequest']['properties']['status']['enum'])
         ->toBe(['diproses', 'terselesaikan']);
 });
@@ -183,7 +183,7 @@ test('it generates the Helpdesk ticket Swagger contract', function (): void {
             ->and($handlingOperation['responses']['409']['content']['application/json']['schema']['$ref'])
             ->toBe('#/components/schemas/TicketReadError')
             ->and($documentation['components']['schemas']['CreateTicketHandlingRequest']['required'])
-            ->toBe(['notes', 'status'])
+            ->toBe(['notes', 'status', 'started_at', 'completed_at'])
             ->and($documentation['components']['schemas']['CreateTicketHandlingRequest']['properties']['status']['enum'])
             ->toBe(['diproses', 'terselesaikan'])
             ->and($detailOperation['responses']['200']['content']['application/json']['schema']['$ref'])

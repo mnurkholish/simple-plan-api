@@ -40,6 +40,18 @@ class TicketPolicy
         };
     }
 
+    public function handle(User $user, Ticket $ticket): bool
+    {
+        if ((int) $ticket->assigned_officer_id !== (int) $user->getKey()) {
+            return false;
+        }
+
+        return match ($ticket->service) {
+            TicketService::Tik => $user->hasRole('petugas-tik'),
+            TicketService::Sarpras => $user->hasRole('petugas-sarpras'),
+        };
+    }
+
     private function canClassifyService(User $user, TicketService $service): bool
     {
         if ($user->hasRole('super-admin')) {

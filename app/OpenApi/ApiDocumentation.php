@@ -349,12 +349,12 @@ use OpenApi\Annotations as OA;
  * @OA\Schema(
  *     schema="CreateTicketHandlingRequest",
  *     type="object",
- *     required={"notes","status"},
+ *     required={"notes","status","started_at","completed_at"},
  *
  *     @OA\Property(property="notes", type="string", example="Kabel daya dikencangkan dan perangkat diuji."),
- *     @OA\Property(property="status", type="string", enum={"diproses","terselesaikan"}, example="diproses"),
- *     @OA\Property(property="started_at", type="string", format="date-time", nullable=true),
- *     @OA\Property(property="completed_at", type="string", format="date-time", nullable=true, description="Required when status is terselesaikan. Must be equal to or after started_at when a start time is supplied."),
+ *     @OA\Property(property="status", type="string", enum={"diproses","terselesaikan"}, description="Ditugaskan only accepts diproses; Diproses accepts diproses or terselesaikan. Stored on tickets.status, not ticket_handlings.", example="diproses"),
+ *     @OA\Property(property="started_at", type="string", format="date-time", description="Required repair start time, editable by the officer."),
+ *     @OA\Property(property="completed_at", type="string", format="date-time", description="Required repair completion time. Must be equal to or after started_at."),
  *     @OA\Property(property="result_photo", type="string", format="binary", nullable=true)
  * )
  *
@@ -1420,7 +1420,7 @@ class ApiDocumentation
      *     operationId="createTicketHandling",
      *     tags={"Helpdesk"},
      *     summary="Add ticket handling history",
-     *     description="Adds handling history. A ditugaskan ticket can become diproses; a diproses ticket can remain diproses or become terselesaikan. Requires the tickets-handle permission.",
+     *     description="Only the currently assigned officer with the service-appropriate role may add handling. A ditugaskan ticket can only become diproses. A diproses ticket can remain diproses without status history or become terselesaikan with status history and tickets.completed_at. Handling never recalculates SLA. Requires the tickets-handle permission.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
@@ -1429,7 +1429,7 @@ class ApiDocumentation
      *
      *     @OA\Response(response=200, description="Ticket handling history stored", @OA\JsonContent(ref="#/components/schemas/TicketActionResponse")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
-     *     @OA\Response(response=403, description="Missing tickets-handle permission", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Missing tickets-handle permission or actor is not the currently assigned officer", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=404, description="Ticket not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=409, description="Ticket state conflict", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=422, description="Invalid handling data", @OA\JsonContent(ref="#/components/schemas/ValidationError"))

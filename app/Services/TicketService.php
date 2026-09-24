@@ -9,6 +9,7 @@ use App\Models\Ticket;
 use App\Models\User;
 use App\Repositories\TicketRepository;
 use App\Repositories\UserRepository;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
@@ -207,7 +208,7 @@ class TicketService
     }
 
     /**
-     * @param  array{notes: string, status: string, started_at?: string|null, completed_at?: string|null}  $data
+     * @param  array{notes: string, status: string, started_at: string, completed_at: string}  $data
      */
     public function addHandling(
         Ticket $ticket,
@@ -228,17 +229,21 @@ class TicketService
                     ->lockForUpdate()
                     ->firstOrFail();
 
+                if ((int) $lockedTicket->assigned_officer_id !== (int) $handledBy->getKey()) {
+                    throw new AuthorizationException('Hanya petugas yang sedang ditugaskan yang dapat menangani tiket.');
+                }
+
                 if (! in_array($lockedTicket->status, [TicketStatus::Ditugaskan, TicketStatus::Diproses], true)) {
                     throw new ConflictHttpException('Tiket harus berstatus ditugaskan atau diproses untuk menerima penanganan.');
                 }
 
                 $targetStatus = TicketStatus::from($data['status']);
-                $completedAt = $data['completed_at'] ?? null;
+                $completedAt = $data['completed_at'];
 
                 $lockedTicket->handlings()->create([
                     'handled_by_id' => $handledBy->getKey(),
                     'notes' => $data['notes'],
-                    'started_at' => $data['started_at'] ?? null,
+                    'started_at' => $data['started_at'],
                     'completed_at' => $completedAt,
                     'result_photo_object_key' => $objectKey ?: null,
                     'result_photo_original_name' => $resultPhoto?->getClientOriginalName(),

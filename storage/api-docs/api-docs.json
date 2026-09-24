@@ -2729,7 +2729,7 @@
                     "Helpdesk"
                 ],
                 "summary": "Add ticket handling history",
-                "description": "Adds handling history. A ditugaskan ticket can become diproses; a diproses ticket can remain diproses or become terselesaikan. Requires the tickets-handle permission.",
+                "description": "Only the currently assigned officer with the service-appropriate role may add handling. A ditugaskan ticket can only become diproses. A diproses ticket can remain diproses without status history or become terselesaikan with status history and tickets.completed_at. Handling never recalculates SLA. Requires the tickets-handle permission.",
                 "operationId": "createTicketHandling",
                 "parameters": [
                     {
@@ -2774,7 +2774,7 @@
                         }
                     },
                     "403": {
-                        "description": "Missing tickets-handle permission",
+                        "description": "Missing tickets-handle permission or actor is not the currently assigned officer",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -3765,7 +3765,9 @@
             "CreateTicketHandlingRequest": {
                 "required": [
                     "notes",
-                    "status"
+                    "status",
+                    "started_at",
+                    "completed_at"
                 ],
                 "properties": {
                     "notes": {
@@ -3773,6 +3775,7 @@
                         "example": "Kabel daya dikencangkan dan perangkat diuji."
                     },
                     "status": {
+                        "description": "Ditugaskan only accepts diproses; Diproses accepts diproses or terselesaikan. Stored on tickets.status, not ticket_handlings.",
                         "type": "string",
                         "example": "diproses",
                         "enum": [
@@ -3781,15 +3784,14 @@
                         ]
                     },
                     "started_at": {
+                        "description": "Required repair start time, editable by the officer.",
                         "type": "string",
-                        "format": "date-time",
-                        "nullable": true
+                        "format": "date-time"
                     },
                     "completed_at": {
-                        "description": "Required when status is terselesaikan. Must be equal to or after started_at when a start time is supplied.",
+                        "description": "Required repair completion time. Must be equal to or after started_at.",
                         "type": "string",
-                        "format": "date-time",
-                        "nullable": true
+                        "format": "date-time"
                     },
                     "result_photo": {
                         "type": "string",
