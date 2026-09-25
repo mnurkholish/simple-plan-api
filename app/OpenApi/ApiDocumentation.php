@@ -54,6 +54,25 @@ use OpenApi\Annotations as OA;
  * )
  *
  * @OA\Schema(
+ *     schema="UserSearchUnit",
+ *     type="object",
+ *     required={"id","unit_name"},
+ *
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="unit_name", type="string", example="ICU")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="UserSearchResult",
+ *     type="object",
+ *     required={"id","name","unit"},
+ *
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="name", type="string", example="Dr. Rani"),
+ *     @OA\Property(property="unit", ref="#/components/schemas/UserSearchUnit", nullable=true)
+ * )
+ *
+ * @OA\Schema(
  *     schema="Role",
  *     type="object",
  *
@@ -856,6 +875,43 @@ class ApiDocumentation
      * )
      */
     public function usersOptions(): void {}
+
+    /**
+     * @OA\Get(
+     *     path="/users/search",
+     *     tags={"Users"},
+     *     summary="Search users by name",
+     *     operationId="searchUsersByName",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(
+     *         name="name",
+     *         in="query",
+     *         required=true,
+     *         description="Full or partial user name",
+     *
+     *         @OA\Schema(type="string", minLength=1, maxLength=255, example="Rani")
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="User search results",
+     *
+     *         @OA\JsonContent(
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *
+     *                 @OA\Items(ref="#/components/schemas/UserSearchResult")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthenticated"),
+     *     @OA\Response(response=403, description="Missing users-access permission"),
+     *     @OA\Response(response=422, description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
+     * )
+     */
+    public function usersSearch(): void {}
 
     /**
      * @OA\Get(

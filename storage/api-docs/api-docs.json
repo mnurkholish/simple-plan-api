@@ -959,6 +959,70 @@
                 ]
             }
         },
+        "/users/search": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Search users by name",
+                "operationId": "searchUsersByName",
+                "parameters": [
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "description": "Full or partial user name",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "Rani",
+                            "maxLength": 255,
+                            "minLength": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User search results",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/UserSearchResult"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Missing users-access permission"
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/users/{user}": {
             "get": {
                 "tags": [
@@ -3019,6 +3083,49 @@
                     "created_at": {
                         "type": "string",
                         "format": "date-time",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "UserSearchUnit": {
+                "required": [
+                    "id",
+                    "unit_name"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "unit_name": {
+                        "type": "string",
+                        "example": "ICU"
+                    }
+                },
+                "type": "object"
+            },
+            "UserSearchResult": {
+                "required": [
+                    "id",
+                    "name",
+                    "unit"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Dr. Rani"
+                    },
+                    "unit": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/UserSearchUnit"
+                            }
+                        ],
                         "nullable": true
                     }
                 },
