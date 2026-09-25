@@ -2251,6 +2251,21 @@
                         }
                     },
                     {
+                        "name": "priority",
+                        "in": "query",
+                        "description": "Ticket priority.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "critical",
+                                "high",
+                                "medium",
+                                "low"
+                            ]
+                        }
+                    },
+                    {
                         "name": "date_from",
                         "in": "query",
                         "description": "Inclusive created date lower bound.",

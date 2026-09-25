@@ -25,6 +25,7 @@ test('the Helpdesk OpenAPI contract only documents implemented ticket operations
     $contract = Yaml::parseFile(base_path('openapi.yaml'));
     $expectedPaths = [
         '/tickets',
+        '/tickets/classification-options',
         '/tickets/{ticket}',
         '/tickets/{ticket}/classify',
         '/tickets/{ticket}/reject',
@@ -32,6 +33,11 @@ test('the Helpdesk OpenAPI contract only documents implemented ticket operations
         '/tickets/{ticket}/assign',
         '/tickets/{ticket}/handlings',
     ];
+    $documentedTicketPaths = array_values(array_filter(
+        array_keys($contract['paths']),
+        fn (string $path): bool => str_starts_with($path, '/tickets'),
+    ));
+    $listParameters = collect($contract['paths']['/tickets']['get']['parameters'])->keyBy('name');
 
     foreach (documentedTicketPermissions() as $operation) {
         $documentedOperation = $contract['paths'][$operation['path']][$operation['method']];
@@ -42,7 +48,7 @@ test('the Helpdesk OpenAPI contract only documents implemented ticket operations
     }
 
     expect($contract['paths'])->toHaveKeys($expectedPaths)
-        ->and(array_keys($contract['paths']))->toBe($expectedPaths)
+        ->and($documentedTicketPaths)->toBe($expectedPaths)
         ->and($contract['paths']['/tickets'])->toHaveKeys(['get', 'post'])
         ->and($contract['paths']['/tickets']['post']['requestBody']['content']['multipart/form-data']['schema']['$ref'])
         ->toBe('#/components/schemas/CreateTicketRequest')
@@ -61,6 +67,8 @@ test('the Helpdesk OpenAPI contract only documents implemented ticket operations
         ->and($contract['components']['schemas']['AssignTicketRequest']['required'])
         ->toBe(['assigned_officer_id'])
         ->and($contract['components']['schemas']['AssignTicketRequest']['properties']['priority']['enum'])
+        ->toBe(['critical', 'high', 'medium', 'low'])
+        ->and($listParameters['priority']['schema']['enum'])
         ->toBe(['critical', 'high', 'medium', 'low'])
         ->and($contract['paths']['/tickets/{ticket}/assignee-options']['get']['parameters'][1]['name'])
         ->toBe('search')
@@ -114,6 +122,7 @@ test('it generates the Helpdesk ticket Swagger contract', function (): void {
                 'per_page',
                 'service',
                 'status',
+                'priority',
                 'date_from',
                 'date_to',
                 'search',
@@ -129,6 +138,12 @@ test('it generates the Helpdesk ticket Swagger contract', function (): void {
                 'terverifikasi',
                 'ditutup',
                 'ditolak',
+            ])
+            ->and($parameters['priority']['schema']['enum'])->toBe([
+                'critical',
+                'high',
+                'medium',
+                'low',
             ])
             ->and($listOperation['responses']['200']['content']['application/json']['schema']['$ref'])
             ->toBe('#/components/schemas/TicketCollectionResponse');

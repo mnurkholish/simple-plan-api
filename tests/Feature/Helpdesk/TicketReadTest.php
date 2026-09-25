@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\TicketPriority;
 use App\Enums\TicketService;
 use App\Enums\TicketStatus;
 use App\Models\ItTag;
@@ -160,6 +161,26 @@ test('it filters tickets by status', function (): void {
         ->assertOk()
         ->assertJsonCount(1, 'data')
         ->assertJsonPath('data.0.ticket_number', 'TIK-2026-000002');
+});
+
+test('it filters tickets by priority', function (): void {
+    $user = User::factory()->create();
+    $unit = Unit::factory()->create();
+    actingAsTicketReader($user);
+
+    Ticket::factory()->for($user, 'reporter')->for($unit)->create([
+        'ticket_number' => 'TIK-2026-000001',
+        'priority' => TicketPriority::High,
+    ]);
+    Ticket::factory()->for($user, 'reporter')->for($unit)->create([
+        'ticket_number' => 'TIK-2026-000002',
+        'priority' => TicketPriority::Low,
+    ]);
+
+    $this->getJson('/api/v1/tickets?priority=high')
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.ticket_number', 'TIK-2026-000001');
 });
 
 test('it filters tickets by an inclusive date range', function (): void {
@@ -361,6 +382,7 @@ test('it returns 422 for invalid ticket filters', function (array $query, string
 })->with([
     'unknown service' => [['service' => 'umum'], 'service'],
     'unknown status' => [['status' => 'tertunda'], 'status'],
+    'unknown priority' => [['priority' => 'urgent'], 'priority'],
     'invalid start date' => [['date_from' => '10-09-2026'], 'date_from'],
     'end date before start date' => [[
         'date_from' => '2026-09-10',

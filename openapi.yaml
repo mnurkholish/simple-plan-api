@@ -47,6 +47,14 @@ paths:
             type: string
             enum: [baru, diklasifikasi, ditugaskan, diproses, eskalasi, terselesaikan, terverifikasi, ditutup, ditolak]
             example: baru
+        - name: priority
+          in: query
+          required: false
+          description: Filter prioritas tiket.
+          schema:
+            type: string
+            enum: [critical, high, medium, low]
+            example: high
         - name: date_from
           in: query
           required: false

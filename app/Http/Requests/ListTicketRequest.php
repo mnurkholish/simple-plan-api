@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\TicketPriority;
 use App\Enums\TicketService;
 use App\Enums\TicketStatus;
 use Illuminate\Foundation\Http\FormRequest;
@@ -30,6 +31,7 @@ class ListTicketRequest extends FormRequest
         return [
             'service' => ['nullable', Rule::enum(TicketService::class)],
             'status' => ['nullable', Rule::enum(TicketStatus::class)],
+            'priority' => ['nullable', Rule::enum(TicketPriority::class)],
             'date_from' => ['nullable', 'date_format:Y-m-d'],
             'date_to' => $dateToRules,
             'search' => ['nullable', 'string', 'max:255'],
