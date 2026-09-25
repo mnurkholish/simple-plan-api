@@ -124,6 +124,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::get('users/options', [UserController::class, 'options'])
             ->middleware('permission:users-create|users-update')
             ->name('users.options');
+        Route::get('users/search', [UserController::class, 'search'])
+            ->middleware('permission:users-access')
+            ->name('users.search');
         Route::get('users', [UserController::class, 'index'])
             ->middleware('permission:users-access')
             ->name('users.index');

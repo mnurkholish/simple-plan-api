@@ -490,9 +490,9 @@ class ApiDocumentation
      *
      *     @OA\RequestBody(required=true, @OA\JsonContent(
      *
-     *         @OA\Property(property="email", type="string", example="juniyasyos@gmail.com"),
+     *         @OA\Property(property="email", type="string", example="rsch@gmail.com"),
      *         @OA\Property(property="nip", type="string", example="0000.00000"),
-     *         @OA\Property(property="login", type="string", example="juniyasyos@gmail.com"),
+     *         @OA\Property(property="login", type="string", example="rsch@gmail.com"),
      *         @OA\Property(property="password", type="string", example="password"),
      *         @OA\Property(property="device_name", type="string", example="swagger")
      *     )),

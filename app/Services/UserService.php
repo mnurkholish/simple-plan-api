@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\User;
 use App\Repositories\UserRepository;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
@@ -19,6 +20,14 @@ class UserService
     public function getAllUsers(int $perPage = 15): LengthAwarePaginator
     {
         return $this->userRepository->getPaginatedUsers($perPage);
+    }
+
+    /**
+     * @return Collection<int, User>
+     */
+    public function searchUsersByName(string $name): Collection
+    {
+        return $this->userRepository->searchByName($name);
     }
 
     public function getUserById(int $id): User

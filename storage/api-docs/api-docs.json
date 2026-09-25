@@ -27,7 +27,7 @@
                                 "properties": {
                                     "email": {
                                         "type": "string",
-                                        "example": "juniyasyos@gmail.com"
+                                        "example": "rsch@gmail.com"
                                     },
                                     "nip": {
                                         "type": "string",
@@ -35,7 +35,7 @@
                                     },
                                     "login": {
                                         "type": "string",
-                                        "example": "juniyasyos@gmail.com"
+                                        "example": "rsch@gmail.com"
                                     },
                                     "password": {
                                         "type": "string",

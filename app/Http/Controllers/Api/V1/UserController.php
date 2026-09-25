@@ -5,14 +5,17 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\SearchUsersRequest;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Http\Resources\UserDetailResource;
 use App\Http\Resources\UserResource;
+use App\Http\Resources\UserSearchResource;
 use App\Models\User;
 use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Validation\Rule;
 
 class UserController extends Controller
@@ -32,6 +35,13 @@ class UserController extends Controller
             'message' => $message,
             'data' => UserResource::collection($users)->response()->getData(true),
         ]);
+    }
+
+    public function search(SearchUsersRequest $request): AnonymousResourceCollection
+    {
+        return UserSearchResource::collection(
+            $this->userService->searchUsersByName($request->string('name')->toString())
+        );
     }
 
     public function show(User $user): JsonResponse

@@ -17,6 +17,8 @@ servers:
 tags:
   - name: Helpdesk
     description: Pengelolaan tiket Helpdesk TIK dan Sarpras
+  - name: Users
+    description: Pengelolaan dan pencarian user
 
 paths:
   /tickets:
@@ -349,6 +351,38 @@ paths:
         '422':
           $ref: '#/components/responses/TicketValidationError'
 
+  /users/search:
+    get:
+      tags: [Users]
+      summary: Mencari user berdasarkan nama
+      operationId: searchUsersByName
+      description: Mengembalikan user yang namanya mengandung nilai parameter name beserta unitnya.
+      x-auth-required: true
+      x-required-permission: users-access
+      parameters:
+        - name: name
+          in: query
+          required: true
+          description: Nama atau sebagian nama user yang dicari.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 255
+            example: Rani
+      responses:
+        '200':
+          description: Hasil pencarian user berhasil diambil.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSearchCollectionResponse'
+        '401':
+          $ref: '#/components/responses/UserSearchUnauthenticated'
+        '403':
+          $ref: '#/components/responses/UserSearchForbidden'
+        '422':
+          $ref: '#/components/responses/UserSearchValidationError'
+
 components:
   parameters:
     TicketId:
@@ -379,6 +413,54 @@ components:
         default: 15
 
   schemas:
+    UserSearchResult:
+      type: object
+      additionalProperties: false
+      required: [id, name, unit]
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Dr. Rani
+        unit:
+          oneOf:
+            - $ref: '#/components/schemas/UserSearchUnit'
+            - type: 'null'
+
+    UserSearchUnit:
+      type: object
+      additionalProperties: false
+      required: [id, unit_name]
+      properties:
+        id:
+          type: integer
+          example: 3
+        unit_name:
+          type: string
+          example: ICU
+
+    UserSearchCollectionResponse:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserSearchResult'
+
+    UserSearchError:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties: true
+
     TicketRead:
       type: object
       additionalProperties: false
@@ -992,6 +1074,36 @@ components:
           additionalProperties: true
 
   responses:
+    UserSearchUnauthenticated:
+      description: Pengguna belum terautentikasi.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UserSearchError'
+          example:
+            message: Unauthenticated.
+
+    UserSearchForbidden:
+      description: Pengguna tidak memiliki permission users-access.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UserSearchError'
+          example:
+            message: User does not have the right permissions.
+
+    UserSearchValidationError:
+      description: Parameter pencarian user tidak valid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UserSearchError'
+          example:
+            message: The name field is required.
+            errors:
+              name:
+                - The name field is required.
+
     TicketUnauthenticated:
       description: Pengguna belum terautentikasi.
       content:

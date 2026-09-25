@@ -16,6 +16,19 @@ class UserRepository
     /**
      * @return Collection<int, User>
      */
+    public function searchByName(string $name): Collection
+    {
+        return User::query()
+            ->select(['id', 'name', 'unit_id'])
+            ->with('unit:id,unit_name')
+            ->whereLike('name', "%{$name}%")
+            ->orderBy('name')
+            ->get();
+    }
+
+    /**
+     * @return Collection<int, User>
+     */
     public function getAssigneeOptions(string $roleName, ?string $search = null): Collection
     {
         return User::query()
