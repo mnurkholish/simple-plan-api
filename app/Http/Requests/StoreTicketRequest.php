@@ -3,10 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Enums\TicketService;
-use App\Models\ItTag;
-use App\Models\QualityCategory;
-use App\Models\SarprasCategory;
-use App\Models\Unit;
+use App\Models\Asset;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -26,36 +23,10 @@ class StoreTicketRequest extends FormRequest
     {
         return [
             'service' => ['required', Rule::enum(TicketService::class)],
-            'unit_id' => [
-                'required',
-                'integer',
-                Rule::exists(Unit::class, 'id')->whereNull('deleted_at'),
-            ],
-            'quality_category_id' => [
+            'asset_id' => [
                 'nullable',
                 'integer',
-                'required_with:it_tag_id,custom_it_tag_text',
-                'prohibited_unless:service,tik',
-                Rule::exists(QualityCategory::class, 'id')->where('is_active', true),
-            ],
-            'it_tag_id' => [
-                'nullable',
-                'integer',
-                'required_with:quality_category_id,custom_it_tag_text',
-                'prohibited_unless:service,tik',
-                Rule::exists(ItTag::class, 'id')->where('is_active', true),
-            ],
-            'custom_it_tag_text' => [
-                'nullable',
-                'string',
-                'max:255',
-                'prohibited_unless:service,tik',
-            ],
-            'sarpras_category_id' => [
-                'nullable',
-                'integer',
-                'prohibited_unless:service,sarpras',
-                Rule::exists(SarprasCategory::class, 'id')->where('is_active', true),
+                Rule::exists(Asset::class, 'id')->whereNull('deleted_at'),
             ],
             'description' => ['required', 'string'],
             'initial_evidence' => ['nullable', 'image', 'max:2048'],

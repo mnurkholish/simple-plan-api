@@ -6,6 +6,7 @@ use App\Enums\TicketPriority;
 use App\Enums\TicketService;
 use App\Enums\TicketStatus;
 use Database\Factories\TicketFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -33,6 +34,7 @@ class Ticket extends Model
         'classified_at',
         'assigned_officer_id',
         'assigned_at',
+        'sla_started_at',
         'sla_deadline',
         'completed_at',
         'closed_at',
@@ -54,10 +56,48 @@ class Ticket extends Model
             'initial_evidence_size' => 'integer',
             'classified_at' => 'datetime',
             'assigned_at' => 'datetime',
+            'sla_started_at' => 'datetime',
             'sla_deadline' => 'datetime',
             'completed_at' => 'datetime',
             'closed_at' => 'datetime',
         ];
+    }
+
+    public function scopeVisibleTo(Builder $query, User $actor): Builder
+    {
+        if ($actor->hasAnyRole(['super-admin', 'management'])) {
+            return $query;
+        }
+
+        if ($actor->hasRole('koordinator-sarpras')) {
+            return $query->where('service', TicketService::Sarpras->value);
+        }
+
+        if ($actor->hasRole('petugas-tik')) {
+            return $query->where(function (Builder $query) use ($actor): void {
+                $query
+                    ->where('reporter_id', $actor->getKey())
+                    ->orWhere(function (Builder $query) use ($actor): void {
+                        $query
+                            ->where('service', TicketService::Tik->value)
+                            ->where('assigned_officer_id', $actor->getKey());
+                    });
+            });
+        }
+
+        if ($actor->hasRole('petugas-sarpras')) {
+            return $query->where(function (Builder $query) use ($actor): void {
+                $query
+                    ->where('reporter_id', $actor->getKey())
+                    ->orWhere(function (Builder $query) use ($actor): void {
+                        $query
+                            ->where('service', TicketService::Sarpras->value)
+                            ->where('assigned_officer_id', $actor->getKey());
+                    });
+            });
+        }
+
+        return $query->where('reporter_id', $actor->getKey());
     }
 
     public function reporter(): BelongsTo

@@ -7,11 +7,50 @@ namespace App\Repositories;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
 class UserRepository
 {
+    /**
+     * @return Collection<int, User>
+     */
+    public function searchByName(string $name): Collection
+    {
+        return User::query()
+            ->select(['id', 'name', 'unit_id'])
+            ->with('unit:id,unit_name')
+            ->whereLike('name', "%{$name}%")
+            ->orderBy('name')
+            ->get();
+    }
+
+    /**
+     * @return Collection<int, User>
+     */
+    public function getAssigneeOptions(string $roleName, ?string $search = null): Collection
+    {
+        return User::query()
+            ->select(['id', 'name', 'jabatan'])
+            ->where('status', 'active')
+            ->where('status_user', 'Aktif')
+            ->whereHas('roles', fn (Builder $query): Builder => $query
+                ->where('name', $roleName)
+                ->where('guard_name', 'web'))
+            ->when(
+                filled($search),
+                fn (Builder $query): Builder => $query->where(function (Builder $query) use ($search): void {
+                    $query
+                        ->whereLike('name', "%{$search}%")
+                        ->orWhereLike('jabatan', "%{$search}%");
+                }),
+            )
+            ->orderBy('name')
+            ->limit(20)
+            ->get();
+    }
+
     public function getPaginatedUsers(int $perPage = 15): LengthAwarePaginator
     {
         return QueryBuilder::for(User::with(['unit', 'roles']))

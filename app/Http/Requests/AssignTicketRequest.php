@@ -3,6 +3,9 @@
 namespace App\Http\Requests;
 
 use App\Enums\TicketPriority;
+use App\Enums\TicketService;
+use App\Enums\TicketStatus;
+use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -11,7 +14,10 @@ class AssignTicketRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $ticket = $this->route('ticket');
+
+        return $ticket instanceof Ticket
+            && $this->user()?->can('assign', $ticket) === true;
     }
 
     /**
@@ -21,13 +27,33 @@ class AssignTicketRequest extends FormRequest
      */
     public function rules(): array
     {
+        $ticket = $this->route('ticket');
+        $requiredRole = $ticket instanceof Ticket && $ticket->service === TicketService::Sarpras
+            ? 'petugas-sarpras'
+            : 'petugas-tik';
+        $priorityRules = match ($ticket instanceof Ticket ? $ticket->status : null) {
+            TicketStatus::Diklasifikasi => ['required', Rule::enum(TicketPriority::class)],
+            TicketStatus::Diproses => ['prohibited'],
+            default => ['sometimes', Rule::enum(TicketPriority::class)],
+        };
+
         return [
-            'priority' => ['required', Rule::enum(TicketPriority::class)],
-            'officer_id' => [
+            'assigned_officer_id' => [
+                'bail',
                 'required',
                 'integer',
-                Rule::exists(User::class, 'id')->where('status', 'active'),
+                Rule::exists(User::class, 'id')
+                    ->where('status', 'active')
+                    ->where('status_user', 'Aktif'),
+                function (string $attribute, mixed $value, \Closure $fail) use ($requiredRole): void {
+                    $officer = User::query()->find($value);
+
+                    if ($officer !== null && ! $officer->hasRole($requiredRole)) {
+                        $fail("Petugas yang dipilih harus memiliki role {$requiredRole}.");
+                    }
+                },
             ],
+            'priority' => $priorityRules,
         ];
     }
 }

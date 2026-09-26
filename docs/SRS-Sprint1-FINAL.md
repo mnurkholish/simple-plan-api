@@ -368,7 +368,6 @@ Super Admin menentukan:
 ```text
 Kategori Mutu
 Tags IT
-Priority
 ```
 
 Kategori Mutu hanya satu.
@@ -388,9 +387,8 @@ Normal flow:
 ```text
 Baru
 → Klasifikasikan
-→ simpan Kategori Mutu + Tags IT + Priority
+→ simpan Kategori Mutu + Tags IT
 → classified_at diisi
-→ SLA deadline dihitung
 → Diklasifikasi
 ```
 
@@ -429,8 +427,6 @@ Elektronik
 Alkes
 ```
 
-Aktor juga menentukan Priority.
-
 Jenis/detail kerusakan tidak memiliki field klasifikasi terpisah dan cukup dicatat pada deskripsi tiket.
 
 ## 9.3 Edit Klasifikasi
@@ -443,7 +439,7 @@ diklasifikasi
 
 klasifikasi **tidak dapat diedit**.
 
-Priority juga tidak dapat diubah setelah klasifikasi selesai.
+Priority belum ditentukan pada tahap klasifikasi dan baru ditetapkan pada assignment pertama.
 
 Jika terjadi kesalahan data klasifikasi, koreksi dilakukan melalui prosedur administratif/manual di luar flow normal aplikasi.
 
@@ -473,14 +469,14 @@ SLA:
 
 ```text
 berjalan 24/7
-mulai dari classified_at
+mulai dari assigned_at pada assignment pertama
 tidak pause ketika Eskalasi
 ```
 
 Rumus:
 
 ```text
-sla_deadline = classified_at + SLA(priority)
+sla_deadline = assigned_at pertama + SLA(priority)
 ```
 
 Tiket dianggap selesai untuk pengukuran SLA ketika status berubah menjadi:
@@ -520,16 +516,34 @@ Diklasifikasi
 → Ditugaskan
 ```
 
+Input assignment pertama:
+
+```text
+assigned_officer_id
+priority
+```
+
 Data current assignment:
 
 ```text
 assigned_officer_id
 assigned_at
+priority
+sla_deadline
 ```
+
+`assigned_at` dan `sla_deadline` dihitung backend. SLA dimulai saat assignment pertama.
 
 Tidak ada tabel assignment history khusus.
 
-UI dapat memfilter kandidat petugas berdasarkan service, tetapi database tidak perlu memberikan role constraint pada assignee.
+Kandidat dan assignee wajib user aktif dengan role sesuai service:
+
+```text
+TIK → Petugas TIK
+Sarpras → Petugas Sarpras
+```
+
+Pencarian kandidat dapat menggunakan nama atau jabatan.
 
 ---
 
@@ -544,6 +558,10 @@ Ditugaskan
 ```
 
 current assignee cukup diganti.
+
+`assigned_at` diperbarui ke waktu assignment petugas terbaru. Priority dan
+`sla_deadline` tetap memakai assignment pertama. Status tetap `Ditugaskan` dan
+tidak membuat status history karena status tidak berubah.
 
 Jika tiket sudah:
 
@@ -562,6 +580,10 @@ Diproses
 ```
 
 Reassignment mengganti current assignee pada tiket.
+
+Pada reassignment dari `Diproses`, `assigned_at` diperbarui, priority dan
+`sla_deadline` tidak berubah, dan transition `Diproses → Ditugaskan` dicatat
+pada status history.
 
 ---
 
@@ -905,7 +927,6 @@ service = tik
 quality_category required
 it_tag required
 custom_it_tag_text required when IT Tag = Lain-lain
-priority required
 ```
 
 ## Sarpras Classification
@@ -914,14 +935,17 @@ priority required
 ticket status = baru
 service = sarpras
 sarpras_category required
-priority required
 ```
 
 ## Assignment
 
 ```text
-ticket status = diklasifikasi
 assigned officer required
+assigned officer aktif dan memiliki role sesuai service
+initial assignment: ticket status = diklasifikasi
+initial assignment: priority required and in critical,high,medium,low
+reassignment: ticket status = ditugaskan or diproses
+reassignment: priority tidak dikirim ulang
 ```
 
 ## Handling
@@ -963,7 +987,7 @@ Operasi berikut harus atomic menggunakan database transaction:
 
 ```text
 klasifikasi + status history
-assignment + status history
+assignment/reassignment + status history ketika status berubah
 penanganan + status transition
 escalation + status history
 lanjut penanganan setelah escalation
@@ -1070,6 +1094,6 @@ Sprint 1 Helpdesk dianggap sesuai requirement jika:
 10. Tiket hanya dapat diverifikasi oleh reporter.
 11. Reporter dapat menolak penyelesaian dan tiket kembali `Diproses`.
 12. Tiket yang disetujui menjadi `Terverifikasi` lalu `Ditutup`.
-13. SLA dihitung dari klasifikasi sampai `Terselesaikan`.
+13. SLA dihitung dari assignment pertama sampai `Terselesaikan`.
 14. Notification minimum berjalan pada event Helpdesk utama.
 15. Existing user/master data tidak mengalami refactor naming yang tidak diperlukan.

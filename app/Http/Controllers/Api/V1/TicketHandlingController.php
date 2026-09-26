@@ -7,6 +7,7 @@ use App\Http\Requests\StoreTicketHandlingRequest;
 use App\Http\Resources\TicketResource;
 use App\Models\Ticket;
 use App\Services\TicketService;
+use Illuminate\Support\Facades\Gate;
 
 class TicketHandlingController extends Controller
 {
@@ -14,6 +15,8 @@ class TicketHandlingController extends Controller
 
     public function store(StoreTicketHandlingRequest $request, Ticket $ticket): TicketResource
     {
+        Gate::authorize('handle', $ticket);
+
         $ticket = $this->service->addHandling(
             $ticket,
             $request->validated(),
@@ -21,16 +24,7 @@ class TicketHandlingController extends Controller
             $request->file('result_photo'),
         );
 
-        return (new TicketResource($ticket->load([
-            'assignedOfficer:id,name',
-            'handlings.handledBy:id,name',
-            'handlings.ticket:id,status',
-            'reporter:id,name',
-            'sarprasDetail.sarprasCategory:id,name',
-            'statusHistories:id,ticket_id,to_status,notes,created_at',
-            'tikDetail.itTag:id,name',
-            'tikDetail.qualityCategory:id,name',
-            'unit:id,unit_name',
-        ])))->additional(['message' => 'Riwayat penanganan berhasil disimpan.']);
+        return (new TicketResource($this->service->loadDetail($ticket)))
+            ->additional(['message' => 'Riwayat penanganan berhasil disimpan.']);
     }
 }

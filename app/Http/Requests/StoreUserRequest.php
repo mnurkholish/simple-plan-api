@@ -23,7 +23,7 @@ class StoreUserRequest extends FormRequest
             'unit_id' => ['required', 'integer', 'exists:units,id'],
             'jabatan' => ['required', 'string', 'max:255'],
             'no_hp' => ['required', 'string', 'max:20', 'unique:users,no_hp'],
-            'role' => ['required', 'string', Rule::in(['super admin', 'koordinator-sarpras', 'petugas-tik', 'petugas-sarpras', 'user', 'management'])],
+            'role' => ['required', 'string', Rule::in(['super-admin', 'koordinator-sarpras', 'petugas-tik', 'petugas-sarpras', 'user', 'management'])],
         ];
     }
 

@@ -1,13 +1,16 @@
 <?php
 
 use App\Enums\TicketStatus;
-use App\Models\ItTag;
-use App\Models\QualityCategory;
+use App\Models\Asset;
 use App\Models\Ticket;
 use App\Models\Unit;
 use App\Models\User;
+use Database\Seeders\CorePermissionSeeder;
+use Database\Seeders\DomainPermissionSeeder;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Permission;
@@ -16,7 +19,7 @@ uses(RefreshDatabase::class);
 
 function actingAsTicketCreator(?User $user = null): User
 {
-    $user ??= User::factory()->create();
+    $user ??= User::factory()->create(['unit_id' => Unit::factory()]);
     $permission = Permission::firstOrCreate([
         'name' => 'tickets-create',
         'guard_name' => 'web',
@@ -29,107 +32,120 @@ function actingAsTicketCreator(?User $user = null): User
 }
 
 test('guest cannot create a ticket', function (): void {
-    $unit = Unit::factory()->create();
-
     $this->postJson('/api/v1/tickets', [
         'service' => 'tik',
-        'unit_id' => $unit->id,
         'description' => 'Komputer tidak dapat menyala.',
     ])->assertUnauthorized();
 });
 
 test('authenticated user without tickets-create permission cannot create a ticket', function (): void {
-    $unit = Unit::factory()->create();
-    Sanctum::actingAs(User::factory()->create());
+    Sanctum::actingAs(User::factory()->create(['unit_id' => Unit::factory()]));
 
     $this->postJson('/api/v1/tickets', [
         'service' => 'tik',
-        'unit_id' => $unit->id,
         'description' => 'Komputer tidak dapat menyala.',
     ])->assertForbidden();
 
     expect(Ticket::query()->count())->toBe(0);
 });
 
-test('authenticated user can create a TIK ticket', function (): void {
-    $reporter = User::factory()->create();
+test('every final role can create a ticket', function (string $role): void {
+    $this->seed([
+        CorePermissionSeeder::class,
+        DomainPermissionSeeder::class,
+        RoleSeeder::class,
+    ]);
+
+    $reporter = User::factory()->create(['unit_id' => Unit::factory()]);
+    $reporter->assignRole($role);
+    Sanctum::actingAs($reporter);
+
+    $this->postJson('/api/v1/tickets', [
+        'service' => 'tik',
+        'description' => "Tiket oleh {$role}.",
+    ])->assertCreated();
+})->with([
+    'super admin' => 'super-admin',
+    'sarpras coordinator' => 'koordinator-sarpras',
+    'TIK officer' => 'petugas-tik',
+    'Sarpras officer' => 'petugas-sarpras',
+    'user' => 'user',
+    'management' => 'management',
+]);
+
+test('authenticated user can create a TIK ticket without classification data', function (): void {
     $unit = Unit::factory()->create();
-    $qualityCategory = QualityCategory::create([
-        'name' => 'Ketidaksesuaian Program',
-        'is_active' => true,
-    ]);
-    $itTag = ItTag::create([
-        'name' => 'Perangkat Komputer',
-        'is_active' => true,
-    ]);
+    $reporter = User::factory()->create(['unit_id' => $unit->id]);
     actingAsTicketCreator($reporter);
 
     $response = $this->postJson('/api/v1/tickets', [
         'service' => 'tik',
-        'unit_id' => $unit->id,
-        'quality_category_id' => $qualityCategory->id,
-        'it_tag_id' => $itTag->id,
         'description' => 'Komputer tidak dapat menyala.',
+        'quality_category_id' => 999,
+        'it_tag_id' => 999,
+        'custom_it_tag_text' => 'Tidak boleh dipakai ketika create.',
     ]);
 
     $response
         ->assertCreated()
         ->assertJsonPath('message', 'Tiket berhasil dibuat.')
         ->assertJsonPath('data.service', 'tik')
-        ->assertJsonPath('data.category', 'Perangkat Komputer')
-        ->assertJsonPath('data.tik_detail.quality_category.id', $qualityCategory->id)
-        ->assertJsonPath('data.tik_detail.it_tag.id', $itTag->id)
+        ->assertJsonPath('data.category', null)
+        ->assertJsonPath('data.tik_detail', null)
         ->assertJsonPath('data.sarpras_detail', null)
         ->assertJsonPath('data.description', 'Komputer tidak dapat menyala.')
         ->assertJsonPath('data.status', 'baru')
         ->assertJsonPath('data.reporter.id', $reporter->id)
         ->assertJsonPath('data.unit.id', $unit->id)
+        ->assertJsonPath('data.asset', null)
         ->assertJsonPath('data.initial_evidence', null);
 
-    expect($response->json('data.ticket_number'))
-        ->toMatch('/^TIK-\d{4}-\d{4,}$/');
+    expect($response->json('data.ticket_number'))->toMatch('/^TIK-\d{4}-\d{6}$/');
 
     $this->assertDatabaseHas('tickets', [
         'id' => $response->json('data.id'),
         'reporter_id' => $reporter->id,
         'unit_id' => $unit->id,
+        'asset_id' => null,
         'service' => 'tik',
         'status' => TicketStatus::Baru->value,
     ]);
-    $this->assertDatabaseHas('ticket_tik_details', [
+    $this->assertDatabaseMissing('ticket_tik_details', [
         'ticket_id' => $response->json('data.id'),
-        'quality_category_id' => $qualityCategory->id,
-        'it_tag_id' => $itTag->id,
     ]);
+    expect(Ticket::findOrFail($response->json('data.id'))->statusHistories()->count())->toBe(0);
 });
 
-test('authenticated user can create a Sarpras ticket without a category', function (): void {
-    $reporter = User::factory()->create();
-    $unit = Unit::factory()->create();
+test('authenticated user can create a Sarpras ticket with the final number prefix', function (): void {
+    $reporter = User::factory()->create(['unit_id' => Unit::factory()]);
     actingAsTicketCreator($reporter);
 
     $response = $this->postJson('/api/v1/tickets', [
         'service' => 'sarpras',
-        'unit_id' => $unit->id,
         'description' => 'Lampu ruang pemeriksaan mati.',
+        'sarpras_category_id' => 999,
     ]);
 
     $response
         ->assertCreated()
         ->assertJsonPath('data.service', 'sarpras')
         ->assertJsonPath('data.category', null)
+        ->assertJsonPath('data.sarpras_detail', null)
         ->assertJsonPath('data.status', 'baru');
 
-    expect($response->json('data.ticket_number'))
-        ->toMatch('/^SARPRAS-\d{4}-\d{4,}$/');
+    expect($response->json('data.ticket_number'))->toMatch('/^SPR-\d{4}-\d{6}$/');
+    $this->assertDatabaseMissing('ticket_sarpras_details', [
+        'ticket_id' => $response->json('data.id'),
+    ]);
 });
 
-test('ticket creation requires its documented fields', function (): void {
+test('ticket creation only requires service and description from the client', function (): void {
     actingAsTicketCreator();
 
     $this->postJson('/api/v1/tickets')
         ->assertUnprocessable()
-        ->assertJsonValidationErrors(['service', 'unit_id', 'description']);
+        ->assertJsonValidationErrors(['service', 'description'])
+        ->assertJsonMissingValidationErrors(['unit_id', 'asset_id', 'initial_evidence']);
 });
 
 test('ticket creation rejects an unknown service', function (): void {
@@ -137,79 +153,177 @@ test('ticket creation rejects an unknown service', function (): void {
 
     $this->postJson('/api/v1/tickets', [
         'service' => 'umum',
-        'unit_id' => Unit::factory()->create()->id,
         'description' => 'Kerusakan perlu ditangani.',
     ])
         ->assertUnprocessable()
         ->assertJsonValidationErrors('service');
 });
 
-test('ticket creation rejects an unavailable unit', function (): void {
-    actingAsTicketCreator();
+test('ticket creation requires the authenticated reporter to have a unit', function (): void {
+    $reporter = User::factory()->create(['unit_id' => null]);
+    actingAsTicketCreator($reporter);
 
     $this->postJson('/api/v1/tickets', [
         'service' => 'tik',
-        'unit_id' => 999999,
         'description' => 'Komputer tidak dapat menyala.',
     ])
         ->assertUnprocessable()
         ->assertJsonValidationErrors('unit_id');
+
+    expect(Ticket::query()->count())->toBe(0);
 });
 
-test('ticket creation keeps server controlled fields authoritative', function (): void {
-    $reporter = User::factory()->create();
+test('ticket creation keeps every server-controlled field authoritative', function (): void {
+    $reporterUnit = Unit::factory()->create();
+    $otherUnit = Unit::factory()->create();
+    $reporter = User::factory()->create(['unit_id' => $reporterUnit->id]);
     $otherUser = User::factory()->create();
-    $unit = Unit::factory()->create();
     actingAsTicketCreator($reporter);
 
     $response = $this->postJson('/api/v1/tickets', [
         'service' => 'tik',
-        'unit_id' => $unit->id,
         'description' => 'Komputer tidak dapat menyala.',
+        'unit_id' => $otherUnit->id,
         'reporter_id' => $otherUser->id,
-        'status' => TicketStatus::Selesai->value,
+        'status' => TicketStatus::Ditutup->value,
+        'priority' => 'critical',
+        'classified_by_id' => $otherUser->id,
+        'assigned_officer_id' => $otherUser->id,
+        'classified_at' => now(),
+        'assigned_at' => now(),
+        'sla_started_at' => now(),
+        'sla_deadline' => now(),
+        'completed_at' => now(),
+        'closed_at' => now(),
         'ticket_number' => 'CLIENT-CONTROLLED',
     ])->assertCreated();
 
     $ticket = Ticket::findOrFail($response->json('data.id'));
 
     expect($ticket->reporter_id)->toBe($reporter->id)
+        ->and($ticket->unit_id)->toBe($reporterUnit->id)
         ->and($ticket->status)->toBe(TicketStatus::Baru)
+        ->and($ticket->priority)->toBeNull()
+        ->and($ticket->classified_by_id)->toBeNull()
+        ->and($ticket->assigned_officer_id)->toBeNull()
+        ->and($ticket->classified_at)->toBeNull()
+        ->and($ticket->assigned_at)->toBeNull()
+        ->and($ticket->sla_started_at)->toBeNull()
+        ->and($ticket->sla_deadline)->toBeNull()
+        ->and($ticket->completed_at)->toBeNull()
+        ->and($ticket->closed_at)->toBeNull()
         ->and($ticket->ticket_number)->not->toBe('CLIENT-CONTROLLED');
 });
 
-test('generated ticket numbers are unique', function (): void {
-    $reporter = User::factory()->create();
-    $unit = Unit::factory()->create();
-    actingAsTicketCreator($reporter);
+test('ticket number sequences are separate by service', function (): void {
+    actingAsTicketCreator();
 
-    $payload = [
+    $tikOne = $this->postJson('/api/v1/tickets', [
         'service' => 'tik',
-        'unit_id' => $unit->id,
-        'description' => 'Komputer tidak dapat menyala.',
-    ];
+        'description' => 'TIK pertama.',
+    ])->assertCreated()->json('data.ticket_number');
+    $tikTwo = $this->postJson('/api/v1/tickets', [
+        'service' => 'tik',
+        'description' => 'TIK kedua.',
+    ])->assertCreated()->json('data.ticket_number');
+    $sarprasOne = $this->postJson('/api/v1/tickets', [
+        'service' => 'sarpras',
+        'description' => 'Sarpras pertama.',
+    ])->assertCreated()->json('data.ticket_number');
 
-    $firstNumber = $this->postJson('/api/v1/tickets', $payload)
-        ->assertCreated()
-        ->json('data.ticket_number');
-    $secondNumber = $this->postJson('/api/v1/tickets', $payload)
-        ->assertCreated()
-        ->json('data.ticket_number');
+    $year = now()->format('Y');
 
-    expect($firstNumber)->not->toBe($secondNumber);
+    expect($tikOne)->toBe("TIK-{$year}-000001")
+        ->and($tikTwo)->toBe("TIK-{$year}-000002")
+        ->and($sarprasOne)->toBe("SPR-{$year}-000001");
 });
 
-test('initial evidence image is stored with portable metadata', function (): void {
+test('ticket number sequence resets each year', function (): void {
+    actingAsTicketCreator();
+
+    try {
+        Carbon::setTestNow('2026-12-31 23:59:00');
+        $firstYear = $this->postJson('/api/v1/tickets', [
+            'service' => 'tik',
+            'description' => 'Tiket tahun pertama.',
+        ])->assertCreated()->json('data.ticket_number');
+
+        Carbon::setTestNow('2027-01-01 00:01:00');
+        $nextYear = $this->postJson('/api/v1/tickets', [
+            'service' => 'tik',
+            'description' => 'Tiket tahun berikutnya.',
+        ])->assertCreated()->json('data.ticket_number');
+    } finally {
+        Carbon::setTestNow();
+    }
+
+    expect($firstYear)->toBe('TIK-2026-000001')
+        ->and($nextYear)->toBe('TIK-2027-000001');
+});
+
+test('asset is optional and a valid selected asset is linked to the ticket', function (): void {
+    $unit = Unit::factory()->create();
+    $reporter = User::factory()->create(['unit_id' => $unit->id]);
+    $asset = Asset::create([
+        'asset_number' => 'AST-0001',
+        'name' => 'Komputer Poli',
+        'brand' => 'Dell',
+        'unit_id' => $unit->id,
+        'location' => 'Poli Umum',
+        'status' => 'active',
+    ]);
+    actingAsTicketCreator($reporter);
+
+    $response = $this->postJson('/api/v1/tickets', [
+        'service' => 'tik',
+        'asset_id' => $asset->id,
+        'description' => 'Komputer tidak menyala.',
+    ]);
+
+    $response
+        ->assertCreated()
+        ->assertJsonPath('data.asset.id', $asset->id)
+        ->assertJsonPath('data.asset.asset_number', 'AST-0001')
+        ->assertJsonPath('data.asset.name', 'Komputer Poli');
+    $this->assertDatabaseHas('tickets', [
+        'id' => $response->json('data.id'),
+        'asset_id' => $asset->id,
+    ]);
+});
+
+test('ticket creation rejects an unavailable or deleted asset', function (int $assetId): void {
+    actingAsTicketCreator();
+
+    $this->postJson('/api/v1/tickets', [
+        'service' => 'tik',
+        'asset_id' => $assetId,
+        'description' => 'Komputer tidak menyala.',
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('asset_id');
+})->with([
+    'unknown asset' => 999999,
+    'deleted asset' => function (): int {
+        $unit = Unit::factory()->create();
+        $asset = Asset::create([
+            'asset_number' => 'AST-DELETED',
+            'name' => 'Aset Dihapus',
+            'unit_id' => $unit->id,
+            'status' => 'active',
+        ]);
+        $asset->delete();
+
+        return $asset->id;
+    },
+]);
+
+test('initial evidence is optional and stores portable metadata when supplied', function (): void {
     Storage::fake('local');
     config()->set('filesystems.default', 'local');
-
-    $reporter = User::factory()->create();
-    $unit = Unit::factory()->create();
-    actingAsTicketCreator($reporter);
+    actingAsTicketCreator();
 
     $response = $this->post('/api/v1/tickets', [
         'service' => 'tik',
-        'unit_id' => $unit->id,
         'description' => 'Monitor menampilkan garis.',
         'initial_evidence' => UploadedFile::fake()->image('monitor-rusak.jpg')->size(512),
     ], ['Accept' => 'application/json']);
@@ -238,7 +352,6 @@ test('initial evidence must be an image no larger than two megabytes', function 
 
     $this->post('/api/v1/tickets', [
         'service' => 'tik',
-        'unit_id' => Unit::factory()->create()->id,
         'description' => 'Monitor menampilkan garis.',
         'initial_evidence' => $file,
     ], ['Accept' => 'application/json'])

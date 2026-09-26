@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\TicketPriority;
 use App\Enums\TicketService;
 use App\Enums\TicketStatus;
 use App\Models\ItTag;
@@ -11,8 +12,18 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
+
+beforeEach(function (): void {
+    $role = Role::firstOrCreate(['name' => 'user', 'guard_name' => 'web']);
+    $reporter = User::factory()->for(Unit::factory())->create([
+        'status' => 'active',
+        'status_user' => 'Aktif',
+    ]);
+    $reporter->assignRole($role);
+});
 
 function actingAsTicketReader(?User $user = null): User
 {
@@ -61,18 +72,18 @@ test('it returns tickets newest first with pagination metadata', function (): vo
     actingAsTicketReader($reporter);
 
     Ticket::factory()->for($reporter, 'reporter')->for($unit)->create([
-        'ticket_number' => 'TIK-2026-0001',
+        'ticket_number' => 'TIK-2026-000001',
         'created_at' => '2026-09-09 08:00:00',
     ]);
     Ticket::factory()->for($reporter, 'reporter')->for($unit)->create([
-        'ticket_number' => 'SARPRAS-2026-0002',
+        'ticket_number' => 'SPR-2026-000002',
         'service' => TicketService::Sarpras,
         'created_at' => '2026-09-10 08:00:00',
     ]);
 
     $this->getJson('/api/v1/tickets?per_page=1')
         ->assertOk()
-        ->assertJsonPath('data.0.ticket_number', 'SARPRAS-2026-0002')
+        ->assertJsonPath('data.0.ticket_number', 'SPR-2026-000002')
         ->assertJsonPath('data.0.reporter.name', 'Rina Pelapor')
         ->assertJsonPath('data.0.unit.name', 'Unit Rawat Jalan')
         ->assertJsonPath('meta.current_page', 1)
@@ -92,12 +103,20 @@ test('it returns tickets newest first with pagination metadata', function (): vo
                     'status',
                     'rejection_reason',
                     'priority',
+                    'asset',
                     'reporter' => ['id', 'name'],
                     'unit' => ['id', 'name'],
                     'assigned_officer',
+                    'classified_by',
                     'initial_evidence',
+                    'classified_at',
+                    'assigned_at',
+                    'sla_started_at',
+                    'sla_deadline',
                     'completed_at',
+                    'closed_at',
                     'created_at',
+                    'updated_at',
                 ],
             ],
             'links' => ['first', 'last', 'prev', 'next'],
@@ -120,18 +139,18 @@ test('it filters tickets by service', function (): void {
     actingAsTicketReader($user);
 
     Ticket::factory()->for($user, 'reporter')->for($unit)->create([
-        'ticket_number' => 'TIK-2026-0001',
+        'ticket_number' => 'TIK-2026-000001',
         'service' => TicketService::Tik,
     ]);
     Ticket::factory()->for($user, 'reporter')->for($unit)->create([
-        'ticket_number' => 'SARPRAS-2026-0001',
+        'ticket_number' => 'SPR-2026-000001',
         'service' => TicketService::Sarpras,
     ]);
 
     $this->getJson('/api/v1/tickets?service=tik')
         ->assertOk()
         ->assertJsonCount(1, 'data')
-        ->assertJsonPath('data.0.ticket_number', 'TIK-2026-0001');
+        ->assertJsonPath('data.0.ticket_number', 'TIK-2026-000001');
 });
 
 test('it filters tickets by status', function (): void {
@@ -140,18 +159,38 @@ test('it filters tickets by status', function (): void {
     actingAsTicketReader($user);
 
     Ticket::factory()->for($user, 'reporter')->for($unit)->create([
-        'ticket_number' => 'TIK-2026-0001',
+        'ticket_number' => 'TIK-2026-000001',
         'status' => TicketStatus::Baru,
     ]);
     Ticket::factory()->for($user, 'reporter')->for($unit)->create([
-        'ticket_number' => 'TIK-2026-0002',
-        'status' => TicketStatus::Selesai,
+        'ticket_number' => 'TIK-2026-000002',
+        'status' => TicketStatus::Terselesaikan,
     ]);
 
-    $this->getJson('/api/v1/tickets?status=selesai')
+    $this->getJson('/api/v1/tickets?status=terselesaikan')
         ->assertOk()
         ->assertJsonCount(1, 'data')
-        ->assertJsonPath('data.0.ticket_number', 'TIK-2026-0002');
+        ->assertJsonPath('data.0.ticket_number', 'TIK-2026-000002');
+});
+
+test('it filters tickets by priority', function (): void {
+    $user = User::factory()->create();
+    $unit = Unit::factory()->create();
+    actingAsTicketReader($user);
+
+    Ticket::factory()->for($user, 'reporter')->for($unit)->create([
+        'ticket_number' => 'TIK-2026-000001',
+        'priority' => TicketPriority::High,
+    ]);
+    Ticket::factory()->for($user, 'reporter')->for($unit)->create([
+        'ticket_number' => 'TIK-2026-000002',
+        'priority' => TicketPriority::Low,
+    ]);
+
+    $this->getJson('/api/v1/tickets?priority=high')
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.ticket_number', 'TIK-2026-000001');
 });
 
 test('it filters tickets by an inclusive date range', function (): void {
@@ -160,27 +199,27 @@ test('it filters tickets by an inclusive date range', function (): void {
     actingAsTicketReader($user);
 
     Ticket::factory()->for($user, 'reporter')->for($unit)->create([
-        'ticket_number' => 'TIK-2026-0001',
+        'ticket_number' => 'TIK-2026-000001',
         'created_at' => '2026-09-08 23:59:59',
     ]);
     Ticket::factory()->for($user, 'reporter')->for($unit)->create([
-        'ticket_number' => 'TIK-2026-0002',
+        'ticket_number' => 'TIK-2026-000002',
         'created_at' => '2026-09-09 00:00:00',
     ]);
     Ticket::factory()->for($user, 'reporter')->for($unit)->create([
-        'ticket_number' => 'TIK-2026-0003',
+        'ticket_number' => 'TIK-2026-000003',
         'created_at' => '2026-09-10 23:59:59',
     ]);
     Ticket::factory()->for($user, 'reporter')->for($unit)->create([
-        'ticket_number' => 'TIK-2026-0004',
+        'ticket_number' => 'TIK-2026-000004',
         'created_at' => '2026-09-11 00:00:00',
     ]);
 
     $this->getJson('/api/v1/tickets?date_from=2026-09-09&date_to=2026-09-10')
         ->assertOk()
         ->assertJsonCount(2, 'data')
-        ->assertJsonPath('data.0.ticket_number', 'TIK-2026-0003')
-        ->assertJsonPath('data.1.ticket_number', 'TIK-2026-0002');
+        ->assertJsonPath('data.0.ticket_number', 'TIK-2026-000003')
+        ->assertJsonPath('data.1.ticket_number', 'TIK-2026-000002');
 });
 
 test('it searches ticket number classification and description', function (): void {
@@ -201,7 +240,7 @@ test('it searches ticket number classification and description', function (): vo
     actingAsTicketReader($user);
 
     $tikTicket = Ticket::factory()->for($user, 'reporter')->for($unit)->create([
-        'ticket_number' => 'TIK-2026-0042',
+        'ticket_number' => 'TIK-2026-000042',
         'description' => 'Perangkat tidak dapat menyala.',
     ]);
     $tikTicket->tikDetail()->create([
@@ -210,7 +249,7 @@ test('it searches ticket number classification and description', function (): vo
     ]);
 
     $sarprasTicket = Ticket::factory()->for($user, 'reporter')->for($unit)->create([
-        'ticket_number' => 'SARPRAS-2026-0001',
+        'ticket_number' => 'SPR-2026-000001',
         'description' => 'Ruangan terasa panas.',
         'service' => TicketService::Sarpras,
     ]);
@@ -221,7 +260,7 @@ test('it searches ticket number classification and description', function (): vo
     $this->getJson('/api/v1/tickets?search=komputer')
         ->assertOk()
         ->assertJsonCount(1, 'data')
-        ->assertJsonPath('data.0.ticket_number', 'TIK-2026-0042');
+        ->assertJsonPath('data.0.ticket_number', 'TIK-2026-000042');
 });
 
 test('it binds ticket search input as a value', function (): void {
@@ -230,7 +269,7 @@ test('it binds ticket search input as a value', function (): void {
     actingAsTicketReader($user);
 
     Ticket::factory()->for($user, 'reporter')->for($unit)->create([
-        'ticket_number' => 'TIK-2026-0042',
+        'ticket_number' => 'TIK-2026-000042',
         'description' => 'Komputer tidak dapat menyala.',
     ]);
 
@@ -245,21 +284,21 @@ test('it combines ticket filters', function (): void {
     actingAsTicketReader($user);
 
     Ticket::factory()->for($user, 'reporter')->for($unit)->create([
-        'ticket_number' => 'TIK-2026-0100',
+        'ticket_number' => 'TIK-2026-000100',
         'service' => TicketService::Tik,
         'status' => TicketStatus::Baru,
         'description' => 'Printer tidak dapat mencetak.',
         'created_at' => '2026-09-10 09:00:00',
     ]);
     Ticket::factory()->for($user, 'reporter')->for($unit)->create([
-        'ticket_number' => 'TIK-2026-0101',
+        'ticket_number' => 'TIK-2026-000101',
         'service' => TicketService::Tik,
-        'status' => TicketStatus::Selesai,
+        'status' => TicketStatus::Terselesaikan,
         'description' => 'Printer tidak dapat mencetak.',
         'created_at' => '2026-09-10 09:00:00',
     ]);
     Ticket::factory()->for($user, 'reporter')->for($unit)->create([
-        'ticket_number' => 'SARPRAS-2026-0102',
+        'ticket_number' => 'SPR-2026-000102',
         'service' => TicketService::Sarpras,
         'status' => TicketStatus::Baru,
         'description' => 'Printer tidak dapat mencetak.',
@@ -269,7 +308,7 @@ test('it combines ticket filters', function (): void {
     $this->getJson('/api/v1/tickets?service=tik&status=baru&date_from=2026-09-10&date_to=2026-09-10&search=Printer')
         ->assertOk()
         ->assertJsonCount(1, 'data')
-        ->assertJsonPath('data.0.ticket_number', 'TIK-2026-0100');
+        ->assertJsonPath('data.0.ticket_number', 'TIK-2026-000100');
 });
 
 test('it returns ticket details with reporter and unit summaries', function (): void {
@@ -280,10 +319,10 @@ test('it returns ticket details with reporter and unit summaries', function (): 
         'is_active' => true,
     ]);
     $ticket = Ticket::factory()->for($reporter, 'reporter')->for($unit)->create([
-        'ticket_number' => 'SARPRAS-2026-0007',
+        'ticket_number' => 'SPR-2026-000007',
         'service' => TicketService::Sarpras,
         'description' => 'Lampu ruang pemeriksaan mati.',
-        'status' => TicketStatus::Terverifikasi,
+        'status' => TicketStatus::Ditutup,
     ]);
     $ticket->sarprasDetail()->create([
         'sarpras_category_id' => $sarprasCategory->id,
@@ -295,7 +334,7 @@ test('it returns ticket details with reporter and unit summaries', function (): 
         ->assertExactJson([
             'data' => [
                 'id' => $ticket->id,
-                'ticket_number' => 'SARPRAS-2026-0007',
+                'ticket_number' => 'SPR-2026-000007',
                 'service' => 'sarpras',
                 'category' => 'Kelistrikan',
                 'tik_detail' => null,
@@ -306,9 +345,10 @@ test('it returns ticket details with reporter and unit summaries', function (): 
                     ],
                 ],
                 'description' => 'Lampu ruang pemeriksaan mati.',
-                'status' => 'terverifikasi',
+                'status' => 'ditutup',
                 'rejection_reason' => null,
                 'priority' => null,
+                'asset' => null,
                 'reporter' => [
                     'id' => $reporter->id,
                     'name' => 'Dedi Pelapor',
@@ -318,10 +358,18 @@ test('it returns ticket details with reporter and unit summaries', function (): 
                     'name' => 'Unit Radiologi',
                 ],
                 'assigned_officer' => null,
+                'classified_by' => null,
                 'initial_evidence' => null,
+                'classified_at' => null,
+                'assigned_at' => null,
+                'sla_started_at' => null,
+                'sla_deadline' => null,
                 'completed_at' => null,
+                'closed_at' => null,
                 'handlings' => [],
+                'status_histories' => [],
                 'created_at' => $ticket->created_at->toJSON(),
+                'updated_at' => $ticket->updated_at->toJSON(),
             ],
         ]);
 });
@@ -345,6 +393,7 @@ test('it returns 422 for invalid ticket filters', function (array $query, string
 })->with([
     'unknown service' => [['service' => 'umum'], 'service'],
     'unknown status' => [['status' => 'tertunda'], 'status'],
+    'unknown priority' => [['priority' => 'urgent'], 'priority'],
     'invalid start date' => [['date_from' => '10-09-2026'], 'date_from'],
     'end date before start date' => [[
         'date_from' => '2026-09-10',
@@ -353,3 +402,90 @@ test('it returns 422 for invalid ticket filters', function (array $query, string
     'page below one' => [['page' => 0], 'page'],
     'per page above maximum' => [['per_page' => 101], 'per_page'],
 ]);
+
+test('ticket list applies the actor scope before filters', function (): void {
+    $reporter = User::factory()->for(Unit::factory())->create();
+    $tikOfficer = User::factory()->for(Unit::factory())->create();
+    $sarprasOfficer = User::factory()->create();
+    $coordinator = User::factory()->create();
+    $management = User::factory()->create();
+    $superAdmin = User::factory()->create();
+
+    foreach (['petugas-tik', 'petugas-sarpras', 'koordinator-sarpras', 'user', 'management', 'super-admin'] as $roleName) {
+        Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
+    }
+
+    $reporter->assignRole('user');
+    $tikOfficer->assignRole('petugas-tik');
+    $sarprasOfficer->assignRole('petugas-sarpras');
+    $coordinator->assignRole('koordinator-sarpras');
+    $management->assignRole('management');
+    $superAdmin->assignRole('super-admin');
+
+    $ownSarpras = Ticket::factory()->for($tikOfficer, 'reporter')->create([
+        'ticket_number' => 'SPR-2026-000001',
+        'service' => TicketService::Sarpras,
+    ]);
+    $assignedTik = Ticket::factory()->create([
+        'ticket_number' => 'TIK-2026-000002',
+        'service' => TicketService::Tik,
+        'reporter_id' => $reporter->id,
+        'assigned_officer_id' => $tikOfficer->id,
+    ]);
+    $assignedSarpras = Ticket::factory()->create([
+        'ticket_number' => 'SPR-2026-000003',
+        'service' => TicketService::Sarpras,
+        'reporter_id' => $reporter->id,
+        'assigned_officer_id' => $sarprasOfficer->id,
+    ]);
+    $unrelatedTik = Ticket::factory()->create([
+        'ticket_number' => 'TIK-2026-000004',
+        'service' => TicketService::Tik,
+        'reporter_id' => $reporter->id,
+    ]);
+
+    actingAsTicketReader($tikOfficer);
+    $this->getJson('/api/v1/tickets?service=sarpras')
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonFragment(['ticket_number' => $ownSarpras->ticket_number])
+        ->assertJsonMissing(['ticket_number' => $assignedSarpras->ticket_number]);
+
+    actingAsTicketReader($sarprasOfficer);
+    $this->getJson('/api/v1/tickets')
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonFragment(['ticket_number' => $assignedSarpras->ticket_number]);
+
+    actingAsTicketReader($coordinator);
+    $this->getJson('/api/v1/tickets')
+        ->assertOk()
+        ->assertJsonCount(2, 'data')
+        ->assertJsonFragment(['ticket_number' => $ownSarpras->ticket_number])
+        ->assertJsonFragment(['ticket_number' => $assignedSarpras->ticket_number])
+        ->assertJsonMissing(['ticket_number' => $assignedTik->ticket_number]);
+
+    actingAsTicketReader($reporter);
+    $this->getJson('/api/v1/tickets')
+        ->assertOk()
+        ->assertJsonCount(3, 'data')
+        ->assertJsonMissing(['ticket_number' => $ownSarpras->ticket_number]);
+
+    foreach ([$management, $superAdmin] as $globalReader) {
+        actingAsTicketReader($globalReader);
+        $this->getJson('/api/v1/tickets')
+            ->assertOk()
+            ->assertJsonCount(4, 'data')
+            ->assertJsonFragment(['ticket_number' => $unrelatedTik->ticket_number]);
+    }
+});
+
+test('ticket detail rejects an actor outside the business view scope', function (): void {
+    $reader = User::factory()->create();
+    $ticket = Ticket::factory()->create();
+    actingAsTicketReader($reader);
+
+    $this->getJson("/api/v1/tickets/{$ticket->id}")
+        ->assertForbidden()
+        ->assertJsonMissing(['ticket_number' => $ticket->ticket_number]);
+});
