@@ -4,6 +4,7 @@ use App\Enums\TicketService;
 use App\Enums\TicketStatus;
 use App\Models\Ticket;
 use App\Models\TicketHandling;
+use App\Models\Unit;
 use App\Models\User;
 use Database\Seeders\CorePermissionSeeder;
 use Database\Seeders\DomainPermissionSeeder;
@@ -17,6 +18,15 @@ use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
+
+beforeEach(function (): void {
+    $role = Role::firstOrCreate(['name' => 'user', 'guard_name' => 'web']);
+    $reporter = User::factory()->for(Unit::factory())->create([
+        'status' => 'active',
+        'status_user' => 'Aktif',
+    ]);
+    $reporter->assignRole($role);
+});
 
 /**
  * @param  list<string>  $additionalPermissions
@@ -53,9 +63,9 @@ function actingAsTicketHandler(
     return $user;
 }
 
-test('an assigned ticket starts handling and creates status history', function (): void {
+test('a processed ticket records handling activity without redundant status history', function (): void {
     $handler = User::factory()->create(['name' => 'Petugas Penanganan']);
-    $ticket = Ticket::factory()->create(['status' => TicketStatus::Ditugaskan]);
+    $ticket = Ticket::factory()->create(['status' => TicketStatus::Diproses]);
     actingAsTicketHandler($ticket, $handler);
 
     $response = $this->postJson("/api/v1/tickets/{$ticket->id}/handlings", [
@@ -83,17 +93,12 @@ test('an assigned ticket starts handling and creates status history', function (
     ]);
 
     expect($ticket->refresh()->status)->toBe(TicketStatus::Diproses)
-        ->and($ticket->completed_at)->toBeNull();
-    $this->assertDatabaseHas('ticket_status_histories', [
-        'ticket_id' => $ticket->id,
-        'from_status' => TicketStatus::Ditugaskan->value,
-        'to_status' => TicketStatus::Diproses->value,
-        'changed_by_id' => $handler->id,
-    ]);
+        ->and($ticket->completed_at)->toBeNull()
+        ->and($ticket->statusHistories()->count())->toBe(0);
 });
 
-test('an assigned ticket can only start handling as in progress', function (): void {
-    $ticket = Ticket::factory()->create(['status' => TicketStatus::Ditugaskan]);
+test('handling cannot skip from classified directly to completed', function (): void {
+    $ticket = Ticket::factory()->create(['status' => TicketStatus::Diklasifikasi]);
     actingAsTicketHandler($ticket);
 
     $this->postJson("/api/v1/tickets/{$ticket->id}/handlings", [
@@ -102,16 +107,16 @@ test('an assigned ticket can only start handling as in progress', function (): v
         'started_at' => '2026-09-11 08:00:00',
         'completed_at' => '2026-09-11 09:00:00',
     ])
-        ->assertUnprocessable()
-        ->assertJsonValidationErrors('status');
+        ->assertConflict()
+        ->assertJsonPath('message', 'Tiket harus berstatus diproses untuk menerima penanganan.');
 
     expect($ticket->handlings()->count())->toBe(0)
         ->and($ticket->statusHistories()->count())->toBe(0)
-        ->and($ticket->refresh()->status)->toBe(TicketStatus::Ditugaskan);
+        ->and($ticket->refresh()->status)->toBe(TicketStatus::Diklasifikasi);
 });
 
 test('handling history keeps multiple notes linked to the same ticket', function (): void {
-    $handler = User::factory()->create();
+    $handler = User::factory()->for(Unit::factory())->create();
     $ticket = Ticket::factory()->create([
         'reporter_id' => $handler,
         'status' => TicketStatus::Diproses,
@@ -231,7 +236,7 @@ test('a ticket outside in progress cannot receive handling updates', function (T
         'completed_at' => '2026-09-11 09:30:00',
     ])
         ->assertConflict()
-        ->assertJsonPath('message', 'Tiket harus berstatus ditugaskan atau diproses untuk menerima penanganan.');
+        ->assertJsonPath('message', 'Tiket harus berstatus diproses untuk menerima penanganan.');
 
     expect($ticket->handlings()->count())->toBe(0)
         ->and($ticket->refresh()->status)->toBe($status);

@@ -52,7 +52,6 @@ class ClassifyTicketRequest extends FormRequest
                     Rule::exists(ItTag::class, 'id')->where('is_active', true),
                 ],
                 'custom_it_tag_text' => [
-                    Rule::requiredIf($isOtherTag),
                     Rule::prohibitedIf(! $isOtherTag),
                     'nullable',
                     'string',

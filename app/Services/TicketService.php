@@ -5,6 +5,9 @@ namespace App\Services;
 use App\Enums\TicketPriority;
 use App\Enums\TicketService as TicketServiceEnum;
 use App\Enums\TicketStatus;
+use App\Models\ItTag;
+use App\Models\QualityCategory;
+use App\Models\SarprasCategory;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Repositories\TicketRepository;
@@ -85,7 +88,7 @@ class TicketService
     }
 
     /**
-     * @param  array{service?: string|null, status?: string|null, date_from?: string|null, date_to?: string|null, search?: string|null}  $filters
+     * @param  array{service?: string|null, status?: string|null, priority?: string|null, date_from?: string|null, date_to?: string|null, search?: string|null}  $filters
      */
     public function paginateVisibleTo(User $actor, array $filters, int $perPage): LengthAwarePaginator
     {
@@ -100,6 +103,43 @@ class TicketService
     public function loadSummary(Ticket $ticket): Ticket
     {
         return $this->tickets->loadSummary($ticket);
+    }
+
+    /**
+     * @return array{
+     *     service: string,
+     *     quality_categories: array<int, array{id: int, name: string}>,
+     *     it_tags: array<int, array{id: int, name: string}>,
+     *     sarpras_categories: array<int, array{id: int, name: string}>
+     * }
+     */
+    public function classificationOptions(TicketServiceEnum $service): array
+    {
+        return [
+            'service' => $service->value,
+            'quality_categories' => $service === TicketServiceEnum::Tik
+                ? QualityCategory::query()
+                    ->where('is_active', true)
+                    ->orderBy('name')
+                    ->get(['id', 'name'])
+                    ->toArray()
+                : [],
+            'it_tags' => $service === TicketServiceEnum::Tik
+                ? ItTag::query()
+                    ->where('is_active', true)
+                    ->orderBy('name')
+                    ->get(['id', 'name'])
+                    ->toArray()
+                : [],
+            'sarpras_categories' => $service === TicketServiceEnum::Sarpras
+                ? SarprasCategory::query()
+                    ->where('is_active', true)
+                    ->whereIn('name', ['Sarpras', 'Elektronik', 'Alkes'])
+                    ->orderBy('name')
+                    ->get(['id', 'name'])
+                    ->toArray()
+                : [],
+        ];
     }
 
     /**
@@ -164,6 +204,11 @@ class TicketService
                 ->whereKey($ticket->getKey())
                 ->lockForUpdate()
                 ->firstOrFail();
+
+            if (! in_array($lockedTicket->status, [TicketStatus::Diklasifikasi, TicketStatus::Diproses], true)) {
+                throw new ConflictHttpException('Tiket hanya dapat ditugaskan saat berstatus diklasifikasi atau diproses.');
+            }
+
             $assignedAt = now();
             $attributes = [
                 'assigned_officer_id' => $data['assigned_officer_id'],
@@ -173,12 +218,13 @@ class TicketService
             if ($lockedTicket->status === TicketStatus::Diklasifikasi) {
                 $priority = TicketPriority::from($data['priority']);
                 $attributes['priority'] = $priority->value;
+                $attributes['sla_started_at'] = $assignedAt;
                 $attributes['sla_deadline'] = $this->sla->calculateDeadline($assignedAt, $priority);
             }
 
             $this->applyStatusTransition(
                 $lockedTicket,
-                TicketStatus::Ditugaskan,
+                TicketStatus::Diproses,
                 $changedBy,
                 notes: null,
                 attributes: $attributes,
@@ -195,7 +241,6 @@ class TicketService
     {
         if (! in_array($ticket->status, [
             TicketStatus::Diklasifikasi,
-            TicketStatus::Ditugaskan,
             TicketStatus::Diproses,
         ], true)) {
             throw new ConflictHttpException('Kandidat petugas hanya tersedia untuk assignment atau reassignment.');
@@ -233,8 +278,8 @@ class TicketService
                     throw new AuthorizationException('Hanya petugas yang sedang ditugaskan yang dapat menangani tiket.');
                 }
 
-                if (! in_array($lockedTicket->status, [TicketStatus::Ditugaskan, TicketStatus::Diproses], true)) {
-                    throw new ConflictHttpException('Tiket harus berstatus ditugaskan atau diproses untuk menerima penanganan.');
+                if ($lockedTicket->status !== TicketStatus::Diproses) {
+                    throw new ConflictHttpException('Tiket harus berstatus diproses untuk menerima penanganan.');
                 }
 
                 $targetStatus = TicketStatus::from($data['status']);
@@ -274,6 +319,32 @@ class TicketService
 
             throw $exception;
         }
+    }
+
+    public function verifyResolution(Ticket $ticket, User $reporter): Ticket
+    {
+        return DB::transaction(function () use ($ticket, $reporter): Ticket {
+            $lockedTicket = Ticket::query()
+                ->whereKey($ticket->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ((int) $lockedTicket->reporter_id !== (int) $reporter->getKey()) {
+                throw new AuthorizationException('Hanya reporter tiket yang dapat memverifikasi penyelesaian.');
+            }
+
+            $this->assertCanTransitionTo($lockedTicket, TicketStatus::Ditutup);
+
+            $this->applyStatusTransition(
+                $lockedTicket,
+                TicketStatus::Ditutup,
+                $reporter,
+                notes: null,
+                attributes: ['closed_at' => now()],
+            );
+
+            return $lockedTicket->refresh();
+        });
     }
 
     public function transitionStatus(

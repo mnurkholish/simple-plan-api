@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Builder;
 class TicketRepository
 {
     /**
-     * @param  array{service?: string|null, status?: string|null, date_from?: string|null, date_to?: string|null, search?: string|null}  $filters
+     * @param  array{service?: string|null, status?: string|null, priority?: string|null, date_from?: string|null, date_to?: string|null, search?: string|null}  $filters
      */
     public function paginateVisibleTo(User $actor, array $filters, int $perPage): LengthAwarePaginator
     {
@@ -28,6 +28,10 @@ class TicketRepository
             ->when(
                 $filters['status'] ?? null,
                 fn (Builder $query, string $status): Builder => $query->where('status', $status),
+            )
+            ->when(
+                $filters['priority'] ?? null,
+                fn (Builder $query, string $priority): Builder => $query->where('priority', $priority),
             )
             ->when(
                 $filters['date_from'] ?? null,

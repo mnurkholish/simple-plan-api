@@ -17,6 +17,8 @@ servers:
 tags:
   - name: Helpdesk
     description: Pengelolaan tiket Helpdesk TIK dan Sarpras
+  - name: Users
+    description: Pengelolaan dan pencarian user
 
 paths:
   /tickets:
@@ -43,8 +45,16 @@ paths:
           description: Filter status tiket.
           schema:
             type: string
-            enum: [baru, diklasifikasi, ditugaskan, diproses, eskalasi, terselesaikan, terverifikasi, ditutup, ditolak]
+            enum: [baru, diklasifikasi, diproses, terselesaikan, ditutup, ditolak]
             example: baru
+        - name: priority
+          in: query
+          required: false
+          description: Filter prioritas tiket.
+          schema:
+            type: string
+            enum: [critical, high, medium, low]
+            example: high
         - name: date_from
           in: query
           required: false
@@ -99,6 +109,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TicketCreateResponse'
+        '401':
+          $ref: '#/components/responses/TicketUnauthenticated'
+        '403':
+          $ref: '#/components/responses/TicketForbidden'
+        '422':
+          $ref: '#/components/responses/TicketValidationError'
+
+  /tickets/classification-options:
+    get:
+      tags: [Helpdesk]
+      summary: Mengambil opsi klasifikasi tiket
+      operationId: listTicketClassificationOptions
+      description: |
+        Mengembalikan master aktif yang diperlukan form klasifikasi. Service
+        TIK memperoleh quality_categories dan it_tags, sedangkan service
+        Sarpras memperoleh sarpras_categories.
+      x-auth-required: true
+      x-required-permission: tickets-verify
+      parameters:
+        - name: service
+          in: query
+          required: true
+          description: Jenis layanan tiket yang akan diklasifikasikan.
+          schema:
+            type: string
+            enum: [tik, sarpras]
+            example: tik
+      responses:
+        '200':
+          description: Opsi klasifikasi berhasil diambil.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassificationOptionsResponse'
         '401':
           $ref: '#/components/responses/TicketUnauthenticated'
         '403':
@@ -244,9 +288,10 @@ paths:
       description: |
         TIK hanya dapat di-assign Super Admin kepada Petugas TIK. Sarpras hanya
         dapat di-assign Koordinator Sarpras kepada Petugas Sarpras. Assignment
-        pertama dari Diklasifikasi menentukan priority dan SLA dari assigned_at.
-        Reassignment dari Ditugaskan atau Diproses hanya mengganti petugas dan
-        assigned_at; priority serta SLA deadline pertama tidak direset.
+        pertama dari Diklasifikasi menentukan priority, langsung mengubah status
+        menjadi Diproses, serta mencatat sla_started_at dan SLA deadline.
+        Reassignment dari Diproses hanya mengganti petugas dan assigned_at;
+        waktu mulai serta deadline SLA pertama tidak direset.
       x-auth-required: true
       x-required-permission: tickets-assign
       parameters:
@@ -283,10 +328,10 @@ paths:
       description: |
         Hanya petugas yang sedang tercatat sebagai assigned_officer_id dan
         memiliki role sesuai service tiket yang dapat menambahkan penanganan.
-        Tiket Ditugaskan hanya dapat menjadi Diproses. Tiket Diproses dapat
-        tetap Diproses tanpa status history atau menjadi Terselesaikan dengan
-        status history dan pengisian tickets.completed_at. Operasi tidak
-        menghitung ulang SLA. Membutuhkan permission tickets-handle.
+        Tiket Diproses dapat tetap Diproses tanpa status history atau menjadi
+        Terselesaikan dengan status history. tickets.completed_at berasal dari
+        completed_at yang diinput petugas, bukan dari waktu perubahan status.
+        Operasi tidak menghitung ulang SLA. Membutuhkan permission tickets-handle.
       x-auth-required: true
       x-required-permission: tickets-handle
       parameters:
@@ -314,6 +359,66 @@ paths:
           $ref: '#/components/responses/TicketConflict'
         '422':
           $ref: '#/components/responses/TicketValidationError'
+
+  /tickets/{ticket}/verify:
+    post:
+      tags: [Helpdesk]
+      summary: Memverifikasi penyelesaian tiket
+      operationId: verifyTicketResolution
+      description: |
+        Hanya reporter tiket yang dapat memverifikasi tiket berstatus
+        Terselesaikan. Verifikasi langsung mengubah status menjadi Ditutup tanpa
+        status perantara Terverifikasi dan mencatat closed_at serta status history.
+      x-auth-required: true
+      parameters:
+        - $ref: '#/components/parameters/TicketId'
+      responses:
+        '200':
+          description: Penyelesaian diverifikasi dan tiket ditutup.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketActionResponse'
+        '401':
+          $ref: '#/components/responses/TicketUnauthenticated'
+        '403':
+          $ref: '#/components/responses/TicketForbidden'
+        '404':
+          $ref: '#/components/responses/TicketNotFound'
+        '409':
+          $ref: '#/components/responses/TicketConflict'
+
+  /users/search:
+    get:
+      tags: [Users]
+      summary: Mencari user berdasarkan nama
+      operationId: searchUsersByName
+      description: Mengembalikan user yang namanya mengandung nilai parameter name beserta unitnya.
+      x-auth-required: true
+      x-required-permission: users-access
+      parameters:
+        - name: name
+          in: query
+          required: true
+          description: Nama atau sebagian nama user yang dicari.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 255
+            example: Rani
+      responses:
+        '200':
+          description: Hasil pencarian user berhasil diambil.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSearchCollectionResponse'
+        '401':
+          $ref: '#/components/responses/UserSearchUnauthenticated'
+        '403':
+          $ref: '#/components/responses/UserSearchForbidden'
+        '422':
+          $ref: '#/components/responses/UserSearchValidationError'
 
 components:
   parameters:
@@ -345,6 +450,54 @@ components:
         default: 15
 
   schemas:
+    UserSearchResult:
+      type: object
+      additionalProperties: false
+      required: [id, name, unit]
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Dr. Rani
+        unit:
+          oneOf:
+            - $ref: '#/components/schemas/UserSearchUnit'
+            - type: 'null'
+
+    UserSearchUnit:
+      type: object
+      additionalProperties: false
+      required: [id, unit_name]
+      properties:
+        id:
+          type: integer
+          example: 3
+        unit_name:
+          type: string
+          example: ICU
+
+    UserSearchCollectionResponse:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserSearchResult'
+
+    UserSearchError:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties: true
+
     TicketRead:
       type: object
       additionalProperties: false
@@ -367,6 +520,7 @@ components:
         - initial_evidence
         - classified_at
         - assigned_at
+        - sla_started_at
         - sla_deadline
         - completed_at
         - closed_at
@@ -404,7 +558,7 @@ components:
           example: Komputer tidak dapat menyala.
         status:
           type: string
-          enum: [baru, diklasifikasi, ditugaskan, diproses, eskalasi, terselesaikan, terverifikasi, ditutup, ditolak]
+          enum: [baru, diklasifikasi, diproses, terselesaikan, ditutup, ditolak]
           example: baru
         rejection_reason:
           type:
@@ -448,6 +602,12 @@ components:
             - string
             - 'null'
           format: date-time
+        sla_started_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: Waktu tiket pertama kali masuk Diproses dan SLA mulai berjalan.
         sla_deadline:
           type:
             - string
@@ -556,6 +716,35 @@ components:
           type: integer
         name:
           type: string
+
+    ClassificationOptionsResponse:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [service, quality_categories, it_tags, sarpras_categories]
+          properties:
+            service:
+              type: string
+              enum: [tik, sarpras]
+            quality_categories:
+              type: array
+              description: Berisi data hanya ketika service adalah tik.
+              items:
+                $ref: '#/components/schemas/TicketNamedReference'
+            it_tags:
+              type: array
+              description: Berisi IT tag aktif hanya ketika service adalah tik.
+              items:
+                $ref: '#/components/schemas/TicketNamedReference'
+            sarpras_categories:
+              type: array
+              description: Berisi kategori aktif hanya ketika service adalah sarpras.
+              items:
+                $ref: '#/components/schemas/TicketNamedReference'
 
     TicketTikDetail:
       type: object
@@ -674,7 +863,7 @@ components:
             - string
             - 'null'
           maxLength: 255
-          description: Wajib dan hanya boleh diisi ketika IT Tag adalah Lain-lain.
+          description: Opsional dan hanya boleh diisi ketika IT Tag adalah Lain-lain.
 
     ClassifySarprasTicketRequest:
       type: object
@@ -740,8 +929,7 @@ components:
           enum: [diproses, terselesaikan]
           description: >-
             Status target disimpan pada tickets.status, bukan ticket_handlings.
-            Tiket Ditugaskan hanya menerima diproses; tiket Diproses menerima
-            diproses atau terselesaikan.
+            Tiket Diproses menerima diproses atau terselesaikan.
           example: diproses
         started_at:
           type: string
@@ -929,6 +1117,36 @@ components:
           additionalProperties: true
 
   responses:
+    UserSearchUnauthenticated:
+      description: Pengguna belum terautentikasi.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UserSearchError'
+          example:
+            message: Unauthenticated.
+
+    UserSearchForbidden:
+      description: Pengguna tidak memiliki permission users-access.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UserSearchError'
+          example:
+            message: User does not have the right permissions.
+
+    UserSearchValidationError:
+      description: Parameter pencarian user tidak valid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UserSearchError'
+          example:
+            message: The name field is required.
+            errors:
+              name:
+                - The name field is required.
+
     TicketUnauthenticated:
       description: Pengguna belum terautentikasi.
       content:

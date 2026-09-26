@@ -7,6 +7,7 @@ use App\Models\ItTag;
 use App\Models\QualityCategory;
 use App\Models\SarprasCategory;
 use App\Models\Ticket;
+use App\Models\Unit;
 use App\Models\User;
 use Database\Seeders\DomainPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -16,6 +17,15 @@ use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
+
+beforeEach(function (): void {
+    $role = Role::firstOrCreate(['name' => 'user', 'guard_name' => 'web']);
+    $reporter = User::factory()->for(Unit::factory())->create([
+        'status' => 'active',
+        'status_user' => 'Aktif',
+    ]);
+    $reporter->assignRole($role);
+});
 
 function actingAsTicketWorkflowUser(string $permissionName, ?string $roleName = null): User
 {
@@ -126,7 +136,7 @@ test('Sarpras coordinator classifies a new Sarpras ticket', function (): void {
         ->and($ticket->sla_deadline)->toBeNull();
 });
 
-test('classification requires custom text for the Lain-lain IT tag', function (): void {
+test('classification allows optional custom text for the Lain-lain IT tag', function (): void {
     actingAsTicketWorkflowUser('tickets-verify', 'super-admin');
     $qualityCategory = QualityCategory::create(['name' => 'Ketidaksesuaian Program', 'is_active' => true]);
     $otherTag = ItTag::create(['name' => 'Lain-lain', 'is_active' => true]);
@@ -139,12 +149,12 @@ test('classification requires custom text for the Lain-lain IT tag', function ()
         'quality_category_id' => $qualityCategory->id,
         'it_tag_id' => $otherTag->id,
     ])
-        ->assertUnprocessable()
-        ->assertJsonValidationErrors('custom_it_tag_text');
+        ->assertOk()
+        ->assertJsonPath('data.tik_detail.custom_it_tag_text', null);
 
-    expect($ticket->refresh()->status)->toBe(TicketStatus::Baru)
-        ->and($ticket->tikDetail)->toBeNull()
-        ->and($ticket->statusHistories()->count())->toBe(0);
+    expect($ticket->refresh()->status)->toBe(TicketStatus::Diklasifikasi)
+        ->and($ticket->tikDetail?->custom_it_tag_text)->toBeNull()
+        ->and($ticket->statusHistories()->count())->toBe(1);
 });
 
 test('classification rejects actors and tickets outside the service and state rules', function (): void {
@@ -261,7 +271,7 @@ test('Sarpras coordinator can reject Sarpras but not TIK tickets', function (): 
         ->and($tikTicket->refresh()->status)->toBe(TicketStatus::Baru);
 });
 
-test('super admin assigns a TIK officer with priority and SLA', function (): void {
+test('super admin assigns a TIK officer directly into processing and starts SLA', function (): void {
     $actor = actingAsTicketWorkflowUser('tickets-assign', 'super-admin');
     $officer = createTicketOfficer('petugas-tik', ['name' => 'Petugas TIK Terpilih']);
     $ticket = Ticket::factory()->create([
@@ -284,15 +294,17 @@ test('super admin assigns a TIK officer with priority and SLA', function (): voi
         ->assertJsonPath('message', 'Petugas berhasil ditugaskan.')
         ->assertJsonPath('data.priority', TicketPriority::Critical->value)
         ->assertJsonPath('data.assigned_officer.id', $officer->id)
-        ->assertJsonPath('data.status', TicketStatus::Ditugaskan->value);
+        ->assertJsonPath('data.status', TicketStatus::Diproses->value)
+        ->assertJsonPath('data.sla_started_at', '2026-09-24T08:00:00.000000Z');
 
     $ticket->refresh();
     expect($ticket->assigned_at?->format('Y-m-d H:i:s'))->toBe('2026-09-24 08:00:00')
+        ->and($ticket->sla_started_at?->format('Y-m-d H:i:s'))->toBe('2026-09-24 08:00:00')
         ->and($ticket->sla_deadline?->format('Y-m-d H:i:s'))->toBe('2026-09-24 10:00:00');
     $this->assertDatabaseHas('ticket_status_histories', [
         'ticket_id' => $ticket->id,
         'from_status' => TicketStatus::Diklasifikasi->value,
-        'to_status' => TicketStatus::Ditugaskan->value,
+        'to_status' => TicketStatus::Diproses->value,
         'changed_by_id' => $actor->id,
     ]);
 });
@@ -350,15 +362,16 @@ test('assignment authorization follows the ticket service', function (): void {
     expect($coordinator->id)->not->toBe($superAdmin->id);
 });
 
-test('assigned ticket can be reassigned without resetting priority SLA or history', function (): void {
+test('processed ticket can be reassigned without resetting SLA start deadline or status history', function (): void {
     actingAsTicketWorkflowUser('tickets-assign', 'super-admin');
     $oldOfficer = createTicketOfficer('petugas-tik');
     $newOfficer = createTicketOfficer('petugas-tik');
     $ticket = Ticket::factory()->create([
         'service' => TicketService::Tik,
-        'status' => TicketStatus::Ditugaskan,
+        'status' => TicketStatus::Diproses,
         'assigned_officer_id' => $oldOfficer->id,
         'assigned_at' => '2026-09-24 08:00:00',
+        'sla_started_at' => '2026-09-24 08:00:00',
         'priority' => TicketPriority::High,
         'sla_deadline' => '2026-09-24 12:00:00',
     ]);
@@ -378,38 +391,30 @@ test('assigned ticket can be reassigned without resetting priority SLA or histor
     $ticket->refresh();
     expect($ticket->assigned_officer_id)->toBe($newOfficer->id)
         ->and($ticket->assigned_at?->format('Y-m-d H:i:s'))->toBe('2026-09-24 09:00:00')
+        ->and($ticket->sla_started_at?->format('Y-m-d H:i:s'))->toBe('2026-09-24 08:00:00')
         ->and($ticket->priority)->toBe(TicketPriority::High)
         ->and($ticket->sla_deadline?->format('Y-m-d H:i:s'))->toBe('2026-09-24 12:00:00')
         ->and($ticket->statusHistories()->count())->toBe(0);
 });
 
-test('processed ticket returns to assigned when reassigned without resetting SLA', function (): void {
-    $actor = actingAsTicketWorkflowUser('tickets-assign', 'super-admin');
-    $oldOfficer = createTicketOfficer('petugas-tik');
+test('legacy assigned ticket cannot re-enter the removed assigned flow', function (): void {
+    actingAsTicketWorkflowUser('tickets-assign', 'super-admin');
     $newOfficer = createTicketOfficer('petugas-tik');
     $ticket = Ticket::factory()->create([
         'service' => TicketService::Tik,
-        'status' => TicketStatus::Diproses,
-        'assigned_officer_id' => $oldOfficer->id,
+        'status' => TicketStatus::Ditugaskan,
         'priority' => TicketPriority::Medium,
         'sla_deadline' => '2026-09-25 08:00:00',
     ]);
 
     $this->postJson("/api/v1/tickets/{$ticket->id}/assign", [
         'assigned_officer_id' => $newOfficer->id,
-    ])->assertOk();
+    ])->assertConflict();
 
     $ticket->refresh();
     expect($ticket->status)->toBe(TicketStatus::Ditugaskan)
-        ->and($ticket->assigned_officer_id)->toBe($newOfficer->id)
-        ->and($ticket->priority)->toBe(TicketPriority::Medium)
-        ->and($ticket->sla_deadline?->format('Y-m-d H:i:s'))->toBe('2026-09-25 08:00:00');
-    $this->assertDatabaseHas('ticket_status_histories', [
-        'ticket_id' => $ticket->id,
-        'from_status' => TicketStatus::Diproses->value,
-        'to_status' => TicketStatus::Ditugaskan->value,
-        'changed_by_id' => $actor->id,
-    ]);
+        ->and($ticket->assigned_officer_id)->toBeNull()
+        ->and($ticket->statusHistories()->count())->toBe(0);
 });
 
 test('assignee options search active officers by service name and jabatan', function (): void {
@@ -475,6 +480,7 @@ test('guest cannot use ticket workflow endpoints', function (string $endpoint, a
     'classify' => ['classify', []],
     'reject' => ['reject', ['reason' => 'Tidak dapat diproses.']],
     'assign' => ['assign', ['assigned_officer_id' => 1, 'priority' => 'high']],
+    'verify resolution' => ['verify', []],
 ]);
 
 test('authenticated user without workflow permission receives 403', function (string $endpoint, array $payload): void {

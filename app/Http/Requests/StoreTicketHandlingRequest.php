@@ -29,7 +29,6 @@ class StoreTicketHandlingRequest extends FormRequest
     {
         $ticket = $this->route('ticket');
         $allowedStatuses = match ($ticket instanceof Ticket ? $ticket->status : null) {
-            TicketStatus::Ditugaskan => [TicketStatus::Diproses->value],
             TicketStatus::Diproses => [
                 TicketStatus::Diproses->value,
                 TicketStatus::Terselesaikan->value,

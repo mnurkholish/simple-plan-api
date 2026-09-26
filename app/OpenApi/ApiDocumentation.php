@@ -12,8 +12,8 @@ use OpenApi\Annotations as OA;
  * )
  *
  * @OA\Server(
- *     url="http://localhost:8000/api/v1",
- *     description="Local API server"
+ *     url="/api/v1",
+ *     description="Current API server"
  * )
  *
  * @OA\SecurityScheme(
@@ -53,6 +53,25 @@ use OpenApi\Annotations as OA;
  *     @OA\Property(property="role", type="string", example="user"),
  *     @OA\Property(property="unit", ref="#/components/schemas/Unit"),
  *     @OA\Property(property="created_at", type="string", nullable=true, format="date-time", example="2026-09-01T10:00:00Z")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="UserSearchUnit",
+ *     type="object",
+ *     required={"id","unit_name"},
+ *
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="unit_name", type="string", example="ICU")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="UserSearchResult",
+ *     type="object",
+ *     required={"id","name","unit"},
+ *
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="name", type="string", example="Dr. Rani"),
+ *     @OA\Property(property="unit", ref="#/components/schemas/UserSearchUnit", nullable=true)
  * )
  *
  * @OA\Schema(
@@ -218,6 +237,22 @@ use OpenApi\Annotations as OA;
  * )
  *
  * @OA\Schema(
+ *     schema="ClassificationOptionsResponse",
+ *     type="object",
+ *     required={"data"},
+ *
+ *     @OA\Property(
+ *         property="data",
+ *         type="object",
+ *         required={"service","quality_categories","it_tags","sarpras_categories"},
+ *         @OA\Property(property="service", type="string", enum={"tik","sarpras"}, example="tik"),
+ *         @OA\Property(property="quality_categories", type="array", @OA\Items(ref="#/components/schemas/TicketNamedReference")),
+ *         @OA\Property(property="it_tags", type="array", @OA\Items(ref="#/components/schemas/TicketNamedReference")),
+ *         @OA\Property(property="sarpras_categories", type="array", @OA\Items(ref="#/components/schemas/TicketNamedReference"))
+ *     )
+ * )
+ *
+ * @OA\Schema(
  *     schema="TicketTikDetail",
  *     type="object",
  *     required={"quality_category","it_tag","custom_it_tag_text"},
@@ -238,7 +273,7 @@ use OpenApi\Annotations as OA;
  * @OA\Schema(
  *     schema="TicketRead",
  *     type="object",
- *     required={"id","ticket_number","service","category","tik_detail","sarpras_detail","description","status","rejection_reason","priority","asset","reporter","unit","assigned_officer","classified_by","initial_evidence","classified_at","assigned_at","sla_deadline","completed_at","closed_at","created_at","updated_at"},
+ *     required={"id","ticket_number","service","category","tik_detail","sarpras_detail","description","status","rejection_reason","priority","asset","reporter","unit","assigned_officer","classified_by","initial_evidence","classified_at","assigned_at","sla_started_at","sla_deadline","completed_at","closed_at","created_at","updated_at"},
  *
  *     @OA\Property(property="id", type="integer", example=1),
  *     @OA\Property(property="ticket_number", type="string", pattern="^(TIK|SPR)-[0-9]{4}-[0-9]{6}$", example="TIK-2026-000001"),
@@ -247,7 +282,7 @@ use OpenApi\Annotations as OA;
  *     @OA\Property(property="tik_detail", ref="#/components/schemas/TicketTikDetail", nullable=true),
  *     @OA\Property(property="sarpras_detail", ref="#/components/schemas/TicketSarprasDetail", nullable=true),
  *     @OA\Property(property="description", type="string", example="Komputer tidak dapat menyala."),
- *     @OA\Property(property="status", type="string", enum={"baru","diklasifikasi","ditugaskan","diproses","eskalasi","terselesaikan","terverifikasi","ditutup","ditolak"}, example="baru"),
+ *     @OA\Property(property="status", type="string", enum={"baru","diklasifikasi","diproses","terselesaikan","ditutup","ditolak"}, example="baru"),
  *     @OA\Property(property="rejection_reason", type="string", nullable=true, description="Compatibility field derived from the latest rejected status history notes.", example="Informasi kerusakan tidak sesuai."),
  *     @OA\Property(property="priority", type="string", enum={"critical","high","medium","low"}, nullable=true, example="high"),
  *     @OA\Property(property="asset", ref="#/components/schemas/TicketAssetSummary", nullable=true),
@@ -258,6 +293,7 @@ use OpenApi\Annotations as OA;
  *     @OA\Property(property="initial_evidence", ref="#/components/schemas/TicketFileMetadata", nullable=true),
  *     @OA\Property(property="classified_at", type="string", format="date-time", nullable=true),
  *     @OA\Property(property="assigned_at", type="string", format="date-time", nullable=true),
+ *     @OA\Property(property="sla_started_at", type="string", format="date-time", nullable=true, description="Time the ticket first entered diproses and its SLA started."),
  *     @OA\Property(property="sla_deadline", type="string", format="date-time", nullable=true),
  *     @OA\Property(property="completed_at", type="string", format="date-time", nullable=true),
  *     @OA\Property(property="closed_at", type="string", format="date-time", nullable=true),
@@ -310,7 +346,7 @@ use OpenApi\Annotations as OA;
  *
  *     @OA\Property(property="quality_category_id", type="integer", example=1),
  *     @OA\Property(property="it_tag_id", type="integer", example=1),
- *     @OA\Property(property="custom_it_tag_text", type="string", maxLength=255, nullable=true, description="Required and only accepted when the selected IT Tag is Lain-lain.")
+ *     @OA\Property(property="custom_it_tag_text", type="string", maxLength=255, nullable=true, description="Optional and only accepted when the selected IT Tag is Lain-lain.")
  * )
  *
  * @OA\Schema(
@@ -354,7 +390,7 @@ use OpenApi\Annotations as OA;
  *     required={"notes","status","started_at","completed_at"},
  *
  *     @OA\Property(property="notes", type="string", example="Kabel daya dikencangkan dan perangkat diuji."),
- *     @OA\Property(property="status", type="string", enum={"diproses","terselesaikan"}, description="Ditugaskan only accepts diproses; Diproses accepts diproses or terselesaikan. Stored on tickets.status, not ticket_handlings.", example="diproses"),
+ *     @OA\Property(property="status", type="string", enum={"diproses","terselesaikan"}, description="Diproses accepts diproses or terselesaikan. Stored on tickets.status, not ticket_handlings.", example="diproses"),
  *     @OA\Property(property="started_at", type="string", format="date-time", description="Required repair start time, editable by the officer."),
  *     @OA\Property(property="completed_at", type="string", format="date-time", description="Required repair completion time. Must be equal to or after started_at."),
  *     @OA\Property(property="result_photo", type="string", format="binary", nullable=true)
@@ -476,9 +512,9 @@ class ApiDocumentation
      *
      *     @OA\RequestBody(required=true, @OA\JsonContent(
      *
-     *         @OA\Property(property="email", type="string", example="juniyasyos@gmail.com"),
+     *         @OA\Property(property="email", type="string", example="rsch@gmail.com"),
      *         @OA\Property(property="nip", type="string", example="0000.00000"),
-     *         @OA\Property(property="login", type="string", example="juniyasyos@gmail.com"),
+     *         @OA\Property(property="login", type="string", example="rsch@gmail.com"),
      *         @OA\Property(property="password", type="string", example="password"),
      *         @OA\Property(property="device_name", type="string", example="swagger")
      *     )),
@@ -861,6 +897,45 @@ class ApiDocumentation
      * )
      */
     public function usersOptions(): void {}
+
+    /**
+     * @OA\Get(
+     *     path="/users/search",
+     *     tags={"Users"},
+     *     summary="Search users by name",
+     *     operationId="searchUsersByName",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(
+     *         name="name",
+     *         in="query",
+     *         required=true,
+     *         description="Full or partial user name",
+     *
+     *         @OA\Schema(type="string", minLength=1, maxLength=255, example="Rani")
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="User search results",
+     *
+     *         @OA\JsonContent(
+     *
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *
+     *                 @OA\Items(ref="#/components/schemas/UserSearchResult")
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(response=401, description="Unauthenticated"),
+     *     @OA\Response(response=403, description="Missing users-access permission"),
+     *     @OA\Response(response=422, description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
+     * )
+     */
+    public function usersSearch(): void {}
 
     /**
      * @OA\Get(
@@ -1369,7 +1444,8 @@ class ApiDocumentation
      *     @OA\Parameter(name="page", in="query", required=false, @OA\Schema(type="integer", minimum=1, default=1)),
      *     @OA\Parameter(name="per_page", in="query", required=false, @OA\Schema(type="integer", minimum=1, maximum=100, default=15)),
      *     @OA\Parameter(name="service", in="query", required=false, description="Ticket service.", @OA\Schema(type="string", enum={"tik","sarpras"})),
-     *     @OA\Parameter(name="status", in="query", required=false, description="Ticket status.", @OA\Schema(type="string", enum={"baru","diklasifikasi","ditugaskan","diproses","eskalasi","terselesaikan","terverifikasi","ditutup","ditolak"})),
+     *     @OA\Parameter(name="status", in="query", required=false, description="Ticket status.", @OA\Schema(type="string", enum={"baru","diklasifikasi","diproses","terselesaikan","ditutup","ditolak"})),
+     *     @OA\Parameter(name="priority", in="query", required=false, description="Ticket priority.", @OA\Schema(type="string", enum={"critical","high","medium","low"})),
      *     @OA\Parameter(name="date_from", in="query", required=false, description="Inclusive created date lower bound.", @OA\Schema(type="string", format="date")),
      *     @OA\Parameter(name="date_to", in="query", required=false, description="Inclusive created date upper bound.", @OA\Schema(type="string", format="date")),
      *     @OA\Parameter(name="search", in="query", required=false, description="Search ticket number, classification, and description.", @OA\Schema(type="string", maxLength=255)),
@@ -1400,6 +1476,25 @@ class ApiDocumentation
      * )
      */
     public function ticketsStore(): void {}
+
+    /**
+     * @OA\Get(
+     *     path="/tickets/classification-options",
+     *     operationId="listTicketClassificationOptions",
+     *     tags={"Helpdesk"},
+     *     summary="Get ticket classification options",
+     *     description="Returns active quality categories and IT tags for TIK, or active Sarpras categories for Sarpras. Requires the tickets-verify permission.",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="service", in="query", required=true, description="Ticket service.", @OA\Schema(type="string", enum={"tik","sarpras"}, example="tik")),
+     *
+     *     @OA\Response(response=200, description="Classification options", @OA\JsonContent(ref="#/components/schemas/ClassificationOptionsResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Missing tickets-verify permission", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=422, description="Invalid service", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
+     * )
+     */
+    public function ticketClassificationOptions(): void {}
 
     /**
      * @OA\Post(
@@ -1475,7 +1570,7 @@ class ApiDocumentation
      *     operationId="assignTicket",
      *     tags={"Helpdesk"},
      *     summary="Assign or reassign a ticket officer",
-     *     description="TIK assignment is limited to Super Admin and requires Petugas TIK. Sarpras assignment is limited to Koordinator Sarpras and requires Petugas Sarpras. Initial assignment from diklasifikasi requires priority, sets assigned_at, starts the SLA deadline, and transitions to ditugaskan. Reassignment from ditugaskan or diproses updates the officer and assigned_at without resetting priority or SLA; diproses transitions back to ditugaskan. Requires the tickets-assign permission.",
+     *     description="TIK assignment is limited to Super Admin and requires Petugas TIK. Sarpras assignment is limited to Koordinator Sarpras and requires Petugas Sarpras. Initial assignment from diklasifikasi requires priority, sets assigned_at and sla_started_at, starts the SLA deadline, and transitions directly to diproses. Reassignment from diproses updates the officer and assigned_at without resetting the first SLA start or deadline. Requires the tickets-assign permission.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
@@ -1498,7 +1593,7 @@ class ApiDocumentation
      *     operationId="createTicketHandling",
      *     tags={"Helpdesk"},
      *     summary="Add ticket handling history",
-     *     description="Only the currently assigned officer with the service-appropriate role may add handling. A ditugaskan ticket can only become diproses. A diproses ticket can remain diproses without status history or become terselesaikan with status history and tickets.completed_at. Handling never recalculates SLA. Requires the tickets-handle permission.",
+     *     description="Only the currently assigned officer with the service-appropriate role may add handling. A diproses ticket can remain diproses without status history or become terselesaikan with status history. tickets.completed_at uses the manually supplied completed_at value. Handling never recalculates SLA. Requires the tickets-handle permission.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
@@ -1514,6 +1609,26 @@ class ApiDocumentation
      * )
      */
     public function ticketHandlingsStore(): void {}
+
+    /**
+     * @OA\Post(
+     *     path="/tickets/{ticket}/verify",
+     *     operationId="verifyTicketResolution",
+     *     tags={"Helpdesk"},
+     *     summary="Verify a completed ticket and close it",
+     *     description="Only the ticket reporter may verify a terselesaikan ticket. Verification transitions directly to ditutup, records closed_at, and creates status history without using terverifikasi.",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
+     *
+     *     @OA\Response(response=200, description="Ticket resolution verified and closed", @OA\JsonContent(ref="#/components/schemas/TicketActionResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Actor is not the ticket reporter", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=404, description="Ticket not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=409, description="Ticket is not completed", @OA\JsonContent(ref="#/components/schemas/TicketReadError"))
+     * )
+     */
+    public function ticketVerifyResolution(): void {}
 
     /**
      * @OA\Get(

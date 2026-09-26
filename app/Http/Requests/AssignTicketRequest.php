@@ -33,7 +33,7 @@ class AssignTicketRequest extends FormRequest
             : 'petugas-tik';
         $priorityRules = match ($ticket instanceof Ticket ? $ticket->status : null) {
             TicketStatus::Diklasifikasi => ['required', Rule::enum(TicketPriority::class)],
-            TicketStatus::Ditugaskan, TicketStatus::Diproses => ['prohibited'],
+            TicketStatus::Diproses => ['prohibited'],
             default => ['sometimes', Rule::enum(TicketPriority::class)],
         };
 

@@ -129,6 +129,11 @@ atau waktu sebagai string.
 Timezone handling harus konsisten untuk data seperti waktu tiket, penugasan,
 maintenance, penyelesaian, dan approval.
 
+Untuk Helpdesk, `assigned_at` mencatat assignment terbaru, sedangkan
+`sla_started_at` mencatat waktu pertama tiket masuk status `diproses` dan tidak
+direset saat reassignment. `completed_at` tiket berasal dari waktu selesai yang
+diinput manual pada handling yang mengubah tiket menjadi `terselesaikan`.
+
 ---
 
 ## 8. File Metadata

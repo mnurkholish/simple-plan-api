@@ -89,6 +89,7 @@ class TicketResource extends JsonResource
             ],
             'classified_at' => $this->classified_at,
             'assigned_at' => $this->assigned_at,
+            'sla_started_at' => $this->sla_started_at,
             'sla_deadline' => $this->sla_deadline,
             'completed_at' => $this->completed_at,
             'closed_at' => $this->closed_at,

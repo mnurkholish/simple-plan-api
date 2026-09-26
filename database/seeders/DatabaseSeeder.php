@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             ItTagSeeder::class,
             SarprasCategorySeeder::class,
             UserSeeder::class,
+            UserExcelSeeder::class,
         ]);
     }
 }

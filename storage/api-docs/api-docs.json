@@ -7,8 +7,8 @@
     },
     "servers": [
         {
-            "url": "http://localhost:8000/api/v1",
-            "description": "Local API server"
+            "url": "/api/v1",
+            "description": "Current API server"
         }
     ],
     "paths": {
@@ -27,7 +27,7 @@
                                 "properties": {
                                     "email": {
                                         "type": "string",
-                                        "example": "juniyasyos@gmail.com"
+                                        "example": "rsch@gmail.com"
                                     },
                                     "nip": {
                                         "type": "string",
@@ -35,7 +35,7 @@
                                     },
                                     "login": {
                                         "type": "string",
-                                        "example": "juniyasyos@gmail.com"
+                                        "example": "rsch@gmail.com"
                                     },
                                     "password": {
                                         "type": "string",
@@ -1018,6 +1018,70 @@
                 "responses": {
                     "200": {
                         "description": "User form options"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/users/search": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Search users by name",
+                "operationId": "searchUsersByName",
+                "parameters": [
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "description": "Full or partial user name",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "Rani",
+                            "maxLength": 255,
+                            "minLength": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User search results",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/UserSearchResult"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Missing users-access permission"
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -2394,6 +2458,21 @@
                         }
                     },
                     {
+                        "name": "priority",
+                        "in": "query",
+                        "description": "Ticket priority.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "critical",
+                                "high",
+                                "medium",
+                                "low"
+                            ]
+                        }
+                    },
+                    {
                         "name": "date_from",
                         "in": "query",
                         "description": "Inclusive created date lower bound.",
@@ -2522,6 +2601,79 @@
                     },
                     "422": {
                         "description": "Invalid ticket data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/tickets/classification-options": {
+            "get": {
+                "tags": [
+                    "Helpdesk"
+                ],
+                "summary": "Get ticket classification options",
+                "description": "Returns active quality categories and IT tags for TIK, or active Sarpras categories for Sarpras. Requires the tickets-verify permission.",
+                "operationId": "listTicketClassificationOptions",
+                "parameters": [
+                    {
+                        "name": "service",
+                        "in": "query",
+                        "description": "Ticket service.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "tik",
+                            "enum": [
+                                "tik",
+                                "sarpras"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Classification options",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ClassificationOptionsResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing tickets-verify permission",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Invalid service",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -3165,6 +3317,49 @@
                 },
                 "type": "object"
             },
+            "UserSearchUnit": {
+                "required": [
+                    "id",
+                    "unit_name"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "unit_name": {
+                        "type": "string",
+                        "example": "ICU"
+                    }
+                },
+                "type": "object"
+            },
+            "UserSearchResult": {
+                "required": [
+                    "id",
+                    "name",
+                    "unit"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Dr. Rani"
+                    },
+                    "unit": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/UserSearchUnit"
+                            }
+                        ],
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
             "Role": {
                 "properties": {
                     "id": {
@@ -3591,6 +3786,51 @@
                 },
                 "type": "object"
             },
+            "ClassificationOptionsResponse": {
+                "required": [
+                    "data"
+                ],
+                "properties": {
+                    "data": {
+                        "required": [
+                            "service",
+                            "quality_categories",
+                            "it_tags",
+                            "sarpras_categories"
+                        ],
+                        "properties": {
+                            "service": {
+                                "type": "string",
+                                "example": "tik",
+                                "enum": [
+                                    "tik",
+                                    "sarpras"
+                                ]
+                            },
+                            "quality_categories": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/TicketNamedReference"
+                                }
+                            },
+                            "it_tags": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/TicketNamedReference"
+                                }
+                            },
+                            "sarpras_categories": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/TicketNamedReference"
+                                }
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
             "TicketTikDetail": {
                 "required": [
                     "quality_category",
@@ -3895,7 +4135,7 @@
                         "example": 1
                     },
                     "custom_it_tag_text": {
-                        "description": "Required and only accepted when the selected IT Tag is Lain-lain.",
+                        "description": "Optional and only accepted when the selected IT Tag is Lain-lain.",
                         "type": "string",
                         "nullable": true,
                         "maxLength": 255

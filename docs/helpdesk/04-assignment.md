@@ -5,8 +5,11 @@
 - Assignment TIK kepada user aktif dengan role `petugas-tik`.
 - Assignment Sarpras kepada user aktif dengan role `petugas-sarpras`.
 - Priority ditentukan pada assignment pertama.
-- SLA dihitung dari `assigned_at` assignment pertama.
-- Reassignment dari status `ditugaskan` atau `diproses`.
+- Assignment pertama langsung mengubah tiket dari `diklasifikasi` menjadi
+  `diproses` tanpa status `ditugaskan`.
+- SLA dihitung dari `sla_started_at` ketika tiket pertama kali masuk
+  `diproses`.
+- Reassignment dilakukan saat status `diproses` tanpa mengubah status tiket.
 - Live search kandidat petugas melalui endpoint ringan.
 
 ## Authorization
@@ -22,7 +25,8 @@
 - High: 4 jam.
 - Medium: 1 hari.
 - Low: 3 hari.
-- Priority dan `sla_deadline` tidak direset saat reassignment.
+- `sla_started_at`, priority, dan `sla_deadline` tidak direset saat
+  reassignment.
 - `assigned_at` diperbarui untuk mencatat waktu assignment petugas terbaru.
 
 ## Search Petugas
@@ -45,11 +49,11 @@ POST /api/v1/tickets/{ticket}/assign
 - Classification hanya menyimpan detail klasifikasi, `classified_by_id`, dan
   `classified_at`; priority/SLA dipindahkan ke assignment pertama.
 - Assignment pertama menerima `assigned_officer_id` dan `priority`, mengisi
-  `assigned_at` dan `sla_deadline`, lalu mengubah status `diklasifikasi` menjadi
-  `ditugaskan` beserta status history.
-- Reassignment dari `ditugaskan` mempertahankan status tanpa membuat history.
-- Reassignment dari `diproses` mengubah status kembali ke `ditugaskan` dan
-  membuat status history.
+  `assigned_at`, `sla_started_at`, dan `sla_deadline`, lalu mengubah status
+  `diklasifikasi` langsung menjadi `diproses` beserta status history.
+- Reassignment dari `diproses` memperbarui petugas dan `assigned_at`, tetapi
+  mempertahankan status serta waktu SLA pertama tanpa membuat status history
+  redundan.
 - OpenAPI statis, anotasi Swagger, dan generated Swagger telah diselaraskan.
 - Validation: syntax check PASS; Pint PASS; Swagger generation PASS;
   `php artisan optimize:clear` PASS; route inspection PASS; 35 test terfokus

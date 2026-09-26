@@ -191,6 +191,7 @@ test('ticket creation keeps every server-controlled field authoritative', functi
         'assigned_officer_id' => $otherUser->id,
         'classified_at' => now(),
         'assigned_at' => now(),
+        'sla_started_at' => now(),
         'sla_deadline' => now(),
         'completed_at' => now(),
         'closed_at' => now(),
@@ -207,6 +208,7 @@ test('ticket creation keeps every server-controlled field authoritative', functi
         ->and($ticket->assigned_officer_id)->toBeNull()
         ->and($ticket->classified_at)->toBeNull()
         ->and($ticket->assigned_at)->toBeNull()
+        ->and($ticket->sla_started_at)->toBeNull()
         ->and($ticket->sla_deadline)->toBeNull()
         ->and($ticket->completed_at)->toBeNull()
         ->and($ticket->closed_at)->toBeNull()

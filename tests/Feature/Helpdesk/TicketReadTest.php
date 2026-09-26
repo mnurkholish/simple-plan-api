@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\TicketPriority;
 use App\Enums\TicketService;
 use App\Enums\TicketStatus;
 use App\Models\ItTag;
@@ -14,6 +15,15 @@ use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
+
+beforeEach(function (): void {
+    $role = Role::firstOrCreate(['name' => 'user', 'guard_name' => 'web']);
+    $reporter = User::factory()->for(Unit::factory())->create([
+        'status' => 'active',
+        'status_user' => 'Aktif',
+    ]);
+    $reporter->assignRole($role);
+});
 
 function actingAsTicketReader(?User $user = null): User
 {
@@ -101,6 +111,7 @@ test('it returns tickets newest first with pagination metadata', function (): vo
                     'initial_evidence',
                     'classified_at',
                     'assigned_at',
+                    'sla_started_at',
                     'sla_deadline',
                     'completed_at',
                     'closed_at',
@@ -160,6 +171,26 @@ test('it filters tickets by status', function (): void {
         ->assertOk()
         ->assertJsonCount(1, 'data')
         ->assertJsonPath('data.0.ticket_number', 'TIK-2026-000002');
+});
+
+test('it filters tickets by priority', function (): void {
+    $user = User::factory()->create();
+    $unit = Unit::factory()->create();
+    actingAsTicketReader($user);
+
+    Ticket::factory()->for($user, 'reporter')->for($unit)->create([
+        'ticket_number' => 'TIK-2026-000001',
+        'priority' => TicketPriority::High,
+    ]);
+    Ticket::factory()->for($user, 'reporter')->for($unit)->create([
+        'ticket_number' => 'TIK-2026-000002',
+        'priority' => TicketPriority::Low,
+    ]);
+
+    $this->getJson('/api/v1/tickets?priority=high')
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.ticket_number', 'TIK-2026-000001');
 });
 
 test('it filters tickets by an inclusive date range', function (): void {
@@ -291,7 +322,7 @@ test('it returns ticket details with reporter and unit summaries', function (): 
         'ticket_number' => 'SPR-2026-000007',
         'service' => TicketService::Sarpras,
         'description' => 'Lampu ruang pemeriksaan mati.',
-        'status' => TicketStatus::Terverifikasi,
+        'status' => TicketStatus::Ditutup,
     ]);
     $ticket->sarprasDetail()->create([
         'sarpras_category_id' => $sarprasCategory->id,
@@ -314,7 +345,7 @@ test('it returns ticket details with reporter and unit summaries', function (): 
                     ],
                 ],
                 'description' => 'Lampu ruang pemeriksaan mati.',
-                'status' => 'terverifikasi',
+                'status' => 'ditutup',
                 'rejection_reason' => null,
                 'priority' => null,
                 'asset' => null,
@@ -331,6 +362,7 @@ test('it returns ticket details with reporter and unit summaries', function (): 
                 'initial_evidence' => null,
                 'classified_at' => null,
                 'assigned_at' => null,
+                'sla_started_at' => null,
                 'sla_deadline' => null,
                 'completed_at' => null,
                 'closed_at' => null,
@@ -361,6 +393,7 @@ test('it returns 422 for invalid ticket filters', function (array $query, string
 })->with([
     'unknown service' => [['service' => 'umum'], 'service'],
     'unknown status' => [['status' => 'tertunda'], 'status'],
+    'unknown priority' => [['priority' => 'urgent'], 'priority'],
     'invalid start date' => [['date_from' => '10-09-2026'], 'date_from'],
     'end date before start date' => [[
         'date_from' => '2026-09-10',
@@ -371,8 +404,8 @@ test('it returns 422 for invalid ticket filters', function (array $query, string
 ]);
 
 test('ticket list applies the actor scope before filters', function (): void {
-    $reporter = User::factory()->create();
-    $tikOfficer = User::factory()->create();
+    $reporter = User::factory()->for(Unit::factory())->create();
+    $tikOfficer = User::factory()->for(Unit::factory())->create();
     $sarprasOfficer = User::factory()->create();
     $coordinator = User::factory()->create();
     $management = User::factory()->create();
