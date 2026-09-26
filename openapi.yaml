@@ -45,7 +45,7 @@ paths:
           description: Filter status tiket.
           schema:
             type: string
-            enum: [baru, diklasifikasi, ditugaskan, diproses, eskalasi, terselesaikan, terverifikasi, ditutup, ditolak]
+            enum: [baru, diklasifikasi, diproses, terselesaikan, ditutup, ditolak]
             example: baru
         - name: priority
           in: query
@@ -288,9 +288,10 @@ paths:
       description: |
         TIK hanya dapat di-assign Super Admin kepada Petugas TIK. Sarpras hanya
         dapat di-assign Koordinator Sarpras kepada Petugas Sarpras. Assignment
-        pertama dari Diklasifikasi menentukan priority dan SLA dari assigned_at.
-        Reassignment dari Ditugaskan atau Diproses hanya mengganti petugas dan
-        assigned_at; priority serta SLA deadline pertama tidak direset.
+        pertama dari Diklasifikasi menentukan priority, langsung mengubah status
+        menjadi Diproses, serta mencatat sla_started_at dan SLA deadline.
+        Reassignment dari Diproses hanya mengganti petugas dan assigned_at;
+        waktu mulai serta deadline SLA pertama tidak direset.
       x-auth-required: true
       x-required-permission: tickets-assign
       parameters:
@@ -327,10 +328,10 @@ paths:
       description: |
         Hanya petugas yang sedang tercatat sebagai assigned_officer_id dan
         memiliki role sesuai service tiket yang dapat menambahkan penanganan.
-        Tiket Ditugaskan hanya dapat menjadi Diproses. Tiket Diproses dapat
-        tetap Diproses tanpa status history atau menjadi Terselesaikan dengan
-        status history dan pengisian tickets.completed_at. Operasi tidak
-        menghitung ulang SLA. Membutuhkan permission tickets-handle.
+        Tiket Diproses dapat tetap Diproses tanpa status history atau menjadi
+        Terselesaikan dengan status history. tickets.completed_at berasal dari
+        completed_at yang diinput petugas, bukan dari waktu perubahan status.
+        Operasi tidak menghitung ulang SLA. Membutuhkan permission tickets-handle.
       x-auth-required: true
       x-required-permission: tickets-handle
       parameters:
@@ -358,6 +359,34 @@ paths:
           $ref: '#/components/responses/TicketConflict'
         '422':
           $ref: '#/components/responses/TicketValidationError'
+
+  /tickets/{ticket}/verify:
+    post:
+      tags: [Helpdesk]
+      summary: Memverifikasi penyelesaian tiket
+      operationId: verifyTicketResolution
+      description: |
+        Hanya reporter tiket yang dapat memverifikasi tiket berstatus
+        Terselesaikan. Verifikasi langsung mengubah status menjadi Ditutup tanpa
+        status perantara Terverifikasi dan mencatat closed_at serta status history.
+      x-auth-required: true
+      parameters:
+        - $ref: '#/components/parameters/TicketId'
+      responses:
+        '200':
+          description: Penyelesaian diverifikasi dan tiket ditutup.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketActionResponse'
+        '401':
+          $ref: '#/components/responses/TicketUnauthenticated'
+        '403':
+          $ref: '#/components/responses/TicketForbidden'
+        '404':
+          $ref: '#/components/responses/TicketNotFound'
+        '409':
+          $ref: '#/components/responses/TicketConflict'
 
   /users/search:
     get:
@@ -491,6 +520,7 @@ components:
         - initial_evidence
         - classified_at
         - assigned_at
+        - sla_started_at
         - sla_deadline
         - completed_at
         - closed_at
@@ -528,7 +558,7 @@ components:
           example: Komputer tidak dapat menyala.
         status:
           type: string
-          enum: [baru, diklasifikasi, ditugaskan, diproses, eskalasi, terselesaikan, terverifikasi, ditutup, ditolak]
+          enum: [baru, diklasifikasi, diproses, terselesaikan, ditutup, ditolak]
           example: baru
         rejection_reason:
           type:
@@ -572,6 +602,12 @@ components:
             - string
             - 'null'
           format: date-time
+        sla_started_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: Waktu tiket pertama kali masuk Diproses dan SLA mulai berjalan.
         sla_deadline:
           type:
             - string
@@ -893,8 +929,7 @@ components:
           enum: [diproses, terselesaikan]
           description: >-
             Status target disimpan pada tickets.status, bukan ticket_handlings.
-            Tiket Ditugaskan hanya menerima diproses; tiket Diproses menerima
-            diproses atau terselesaikan.
+            Tiket Diproses menerima diproses atau terselesaikan.
           example: diproses
         started_at:
           type: string

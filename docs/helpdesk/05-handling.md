@@ -2,19 +2,23 @@
 
 ## Implemented
 
-- Mulai penanganan dari tiket berstatus `ditugaskan`.
+- Penanganan dilakukan pada tiket yang sudah berstatus `diproses` setelah
+  assignment.
 - Multiple handling records pada satu tiket.
 - Catatan serta waktu mulai/selesai penanganan wajib.
 - Satu foto hasil opsional melalui Laravel Filesystem beserta metadata file.
-- Penyelesaian pekerjaan teknis mengisi `tickets.completed_at` dari
-  `ticket_handlings.completed_at` tanpa menghitung ulang SLA.
+- Penyelesaian pekerjaan teknis mengisi `tickets.completed_at` dari waktu
+  `ticket_handlings.completed_at` yang diinput manual tanpa menghitung ulang
+  SLA.
+- Reporter dapat memverifikasi tiket `terselesaikan`; tiket langsung menjadi
+  `ditutup` tanpa status perantara `terverifikasi`.
 
 ## Status Flow
 
 ```text
-Ditugaskan → Diproses
 Diproses → Diproses (tanpa status history)
 Diproses → Terselesaikan
+Terselesaikan → Ditutup (verifikasi reporter)
 ```
 
 Transition yang benar-benar mengubah status membuat
@@ -36,8 +40,7 @@ current assignment di backend.
 
 ## Handling Fields
 
-- `status`: `diproses` untuk tiket Ditugaskan; `diproses` atau `terselesaikan`
-  untuk tiket Diproses.
+- `status`: `diproses` atau `terselesaikan` untuk tiket Diproses.
 - `started_at`: wajib dan editable.
 - `completed_at`: wajib, harus sama atau setelah `started_at`.
 - `notes`: wajib.
@@ -48,6 +51,7 @@ current assignment di backend.
 
 ```text
 POST /api/v1/tickets/{ticket}/handlings
+POST /api/v1/tickets/{ticket}/verify
 ```
 
 ## Notes
@@ -66,5 +70,4 @@ POST /api/v1/tickets/{ticket}/handlings
 ## Pending
 
 - escalation;
-- resolution verification;
 - notification.
