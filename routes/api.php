@@ -92,6 +92,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             ->middleware('permission:tickets-handle')
             ->name('tickets.handlings.store')
             ->missing(fn () => response()->json(['message' => 'Resource not found.'], 404));
+        Route::post('tickets/{ticket}/verify', [TicketController::class, 'verifyResolution'])
+            ->name('tickets.verify-resolution')
+            ->missing(fn () => response()->json(['message' => 'Resource not found.'], 404));
         Route::get('tickets/{ticket}', [TicketController::class, 'show'])
             ->middleware('permission:tickets-access')
             ->name('tickets.show')

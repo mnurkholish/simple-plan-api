@@ -12,6 +12,7 @@ use App\Http\Requests\ClassifyTicketRequest;
 use App\Http\Requests\ListTicketRequest;
 use App\Http\Requests\RejectTicketRequest;
 use App\Http\Requests\StoreTicketRequest;
+use App\Http\Requests\VerifyTicketResolutionRequest;
 use App\Http\Resources\AssigneeOptionResource;
 use App\Http\Resources\TicketResource;
 use App\Models\Ticket;
@@ -102,7 +103,7 @@ class TicketController extends Controller
         Gate::authorize('assign', $ticket);
 
         $validated = $request->validated();
-        $isReassignment = in_array($ticket->status, [TicketStatus::Ditugaskan, TicketStatus::Diproses], true);
+        $isReassignment = $ticket->status === TicketStatus::Diproses;
         $ticket = $this->service->assign(
             $ticket,
             $validated,
@@ -113,6 +114,16 @@ class TicketController extends Controller
             ->additional(['message' => $isReassignment
                 ? 'Petugas berhasil ditugaskan ulang.'
                 : 'Petugas berhasil ditugaskan.']);
+    }
+
+    public function verifyResolution(VerifyTicketResolutionRequest $request, Ticket $ticket): TicketResource
+    {
+        Gate::authorize('verifyResolution', $ticket);
+
+        $ticket = $this->service->verifyResolution($ticket, $request->user());
+
+        return (new TicketResource($this->service->loadSummary($ticket)))
+            ->additional(['message' => 'Penyelesaian tiket berhasil diverifikasi dan tiket ditutup.']);
     }
 
     public function assigneeOptions(

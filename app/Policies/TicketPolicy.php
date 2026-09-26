@@ -52,6 +52,11 @@ class TicketPolicy
         };
     }
 
+    public function verifyResolution(User $user, Ticket $ticket): bool
+    {
+        return (int) $ticket->reporter_id === (int) $user->getKey();
+    }
+
     private function canClassifyService(User $user, TicketService $service): bool
     {
         if ($user->hasRole('super-admin')) {

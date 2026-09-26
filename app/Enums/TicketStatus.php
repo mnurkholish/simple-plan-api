@@ -6,10 +6,13 @@ enum TicketStatus: string
 {
     case Baru = 'baru';
     case Diklasifikasi = 'diklasifikasi';
+    // Legacy value retained only so historical records remain readable.
     case Ditugaskan = 'ditugaskan';
     case Diproses = 'diproses';
+    // Reserved legacy value; escalation is not part of the active handling flow.
     case Eskalasi = 'eskalasi';
     case Terselesaikan = 'terselesaikan';
+    // Legacy value retained only so historical records remain readable.
     case Terverifikasi = 'terverifikasi';
     case Ditutup = 'ditutup';
     case Ditolak = 'ditolak';
@@ -21,12 +24,12 @@ enum TicketStatus: string
     {
         return match ($this) {
             self::Baru => [self::Diklasifikasi, self::Ditolak],
-            self::Diklasifikasi => [self::Ditugaskan],
-            self::Ditugaskan => [self::Diproses],
-            self::Diproses => [self::Ditugaskan, self::Eskalasi, self::Terselesaikan],
-            self::Eskalasi => [self::Diproses],
-            self::Terselesaikan => [self::Terverifikasi, self::Diproses],
-            self::Terverifikasi => [self::Ditutup],
+            self::Diklasifikasi => [self::Diproses],
+            self::Ditugaskan => [],
+            self::Diproses => [self::Terselesaikan],
+            self::Eskalasi => [],
+            self::Terselesaikan => [self::Ditutup],
+            self::Terverifikasi => [],
             self::Ditutup, self::Ditolak => [],
         };
     }

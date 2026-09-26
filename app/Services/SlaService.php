@@ -8,13 +8,13 @@ use Carbon\Carbon;
 class SlaService
 {
     /**
-     * Menghitung deadline berdasarkan waktu assignment pertama dan priority tiket.
+     * Menghitung deadline berdasarkan waktu SLA pertama dimulai dan priority tiket.
      *
      * @return Carbon Waktu deadline SLA
      */
-    public function calculateDeadline(Carbon $assignedAt, TicketPriority $priority): Carbon
+    public function calculateDeadline(Carbon $slaStartedAt, TicketPriority $priority): Carbon
     {
-        $deadline = $assignedAt->copy();
+        $deadline = $slaStartedAt->copy();
 
         return match ($priority) {
             TicketPriority::Critical => $deadline->addHours(2),
@@ -27,15 +27,15 @@ class SlaService
     /**
      * Menentukan status SLA secara dinamis.
      *
-     * Catatan: Parameter $assignedAt digunakan untuk menghitung total durasi SLA
-     * (selisih antara assignedAt dan deadline) agar bisa mendapatkan nilai 25% nya.
+     * Catatan: Parameter $slaStartedAt digunakan untuk menghitung total durasi SLA
+     * agar bisa mendapatkan nilai 25% nya.
      *
-     * @param  Carbon  $assignedAt  Waktu assignment pertama (untuk hitung total durasi)
+     * @param  Carbon  $slaStartedAt  Waktu SLA pertama dimulai
      * @param  Carbon  $deadline  Waktu deadline tiket
      * @param  Carbon|null  $completedAt  Waktu tiket selesai (opsional)
      * @return string Status SLA ('Melewati Batas', 'Mendekati Batas', 'Tepat Waktu')
      */
-    public function determineSlaStatus(Carbon $assignedAt, Carbon $deadline, ?Carbon $completedAt = null): string
+    public function determineSlaStatus(Carbon $slaStartedAt, Carbon $deadline, ?Carbon $completedAt = null): string
     {
         // 1. Jika tiket sudah selesai
         if ($completedAt !== null) {
@@ -54,7 +54,7 @@ class SlaService
         }
 
         // Hitung sisa waktu dan total waktu
-        $totalMinutes = $assignedAt->diffInMinutes($deadline);
+        $totalMinutes = $slaStartedAt->diffInMinutes($deadline);
         $remainingMinutes = $now->diffInMinutes($deadline, false); // false = jangan absolut, jika minus tetap minus
 
         // Jika sisa waktu <= 25% dari total waktu SLA awal
