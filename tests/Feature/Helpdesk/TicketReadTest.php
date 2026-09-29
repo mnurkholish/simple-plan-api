@@ -3,8 +3,6 @@
 use App\Enums\TicketPriority;
 use App\Enums\TicketService;
 use App\Enums\TicketStatus;
-use App\Models\ItTag;
-use App\Models\QualityCategory;
 use App\Models\SarprasCategory;
 use App\Models\Ticket;
 use App\Models\Unit;
@@ -284,7 +282,7 @@ test('it binds ticket search input as a value', function (): void {
 });
 
 test('it combines ticket filters', function (): void {
-    $user = User::factory()->create();
+    $user = User::factory()->create(['name' => 'Printer Pelapor']);
     $unit = Unit::factory()->create();
     actingAsTicketReader($user);
 
@@ -370,6 +368,7 @@ test('it returns ticket details with reporter and unit summaries', function (): 
                 'sla_started_at' => null,
                 'sla_deadline' => null,
                 'completed_at' => null,
+                'status_sla' => null,
                 'closed_at' => null,
                 'handlings' => [],
                 'status_histories' => [],

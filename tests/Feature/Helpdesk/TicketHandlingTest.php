@@ -12,6 +12,7 @@ use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Permission;
@@ -62,6 +63,40 @@ function actingAsTicketHandler(
 
     return $user;
 }
+
+test('assigned handler can escalate and resume a processed ticket', function (): void {
+    Notification::fake();
+    Role::firstOrCreate(['name' => 'super-admin', 'guard_name' => 'web']);
+    Role::firstOrCreate(['name' => 'management', 'guard_name' => 'web']);
+
+    $ticket = Ticket::factory()->create(['status' => TicketStatus::Diproses]);
+    $handler = actingAsTicketHandler($ticket);
+
+    $this->postJson("/api/v1/tickets/{$ticket->id}/escalate", [
+        'target' => 'Vendor',
+        'notes' => 'Membutuhkan pemeriksaan dari vendor.',
+    ])
+        ->assertOk()
+        ->assertJsonPath('data.status', TicketStatus::Eskalasi->value);
+
+    $this->assertDatabaseHas('ticket_escalations', [
+        'ticket_id' => $ticket->id,
+        'escalated_by_id' => $handler->id,
+        'target' => 'Vendor',
+    ]);
+
+    $this->postJson("/api/v1/tickets/{$ticket->id}/de-escalate")
+        ->assertOk()
+        ->assertJsonPath('data.status', TicketStatus::Diproses->value);
+
+    expect($ticket->refresh()->status)->toBe(TicketStatus::Diproses);
+    $this->assertDatabaseHas('ticket_status_histories', [
+        'ticket_id' => $ticket->id,
+        'from_status' => TicketStatus::Eskalasi->value,
+        'to_status' => TicketStatus::Diproses->value,
+        'changed_by_id' => $handler->id,
+    ]);
+});
 
 test('a processed ticket records handling activity without redundant status history', function (): void {
     $handler = User::factory()->create(['name' => 'Petugas Penanganan']);

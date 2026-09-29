@@ -18,6 +18,8 @@ function documentedTicketPermissions(): array
         ['path' => '/tickets/{ticket}/assignee-options', 'method' => 'get', 'permission' => 'tickets-assign'],
         ['path' => '/tickets/{ticket}/assign', 'method' => 'post', 'permission' => 'tickets-assign'],
         ['path' => '/tickets/{ticket}/handlings', 'method' => 'post', 'permission' => 'tickets-handle'],
+        ['path' => '/tickets/{ticket}/escalate', 'method' => 'post', 'permission' => 'tickets-handle'],
+        ['path' => '/tickets/{ticket}/de-escalate', 'method' => 'post', 'permission' => 'tickets-handle'],
     ];
 }
 
@@ -32,6 +34,8 @@ test('the Helpdesk OpenAPI contract only documents implemented ticket operations
         '/tickets/{ticket}/assignee-options',
         '/tickets/{ticket}/assign',
         '/tickets/{ticket}/handlings',
+        '/tickets/{ticket}/escalate',
+        '/tickets/{ticket}/de-escalate',
         '/tickets/{ticket}/verify',
     ];
     $documentedTicketPaths = array_values(array_filter(
@@ -116,6 +120,8 @@ test('it generates the Helpdesk ticket Swagger contract', function (): void {
                 '/tickets/{ticket}/assignee-options',
                 '/tickets/{ticket}/assign',
                 '/tickets/{ticket}/handlings',
+                '/tickets/{ticket}/escalate',
+                '/tickets/{ticket}/de-escalate',
                 '/tickets/{ticket}/verify',
             ])
             ->not->toHaveKey('/api/v1/tickets/{ticket}/handlings');
@@ -133,12 +139,14 @@ test('it generates the Helpdesk ticket Swagger contract', function (): void {
                 'date_from',
                 'date_to',
                 'search',
+                'status_sla',
             ])
             ->and($parameters['service']['schema']['enum'])->toBe(['tik', 'sarpras'])
             ->and($parameters['status']['schema']['enum'])->toBe([
                 'baru',
                 'diklasifikasi',
                 'diproses',
+                'eskalasi',
                 'terselesaikan',
                 'ditutup',
                 'ditolak',
