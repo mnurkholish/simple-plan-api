@@ -14,9 +14,7 @@
     "paths": {
         "/tickets/{ticket}/de-escalate": {
             "post": {
-                "tags": [
-                    "Helpdesk"
-                ],
+                "tags": ["Helpdesk"],
                 "summary": "Menarik kembali tiket dari status eskalasi (De-escalate)",
                 "description": "Hanya petugas yang ditugaskan yang dapat melakukan ini.",
                 "operationId": "deEscalateTicket",
@@ -58,9 +56,7 @@
         },
         "/api/v1/tickets/{ticket}/handlings": {
             "post": {
-                "tags": [
-                    "Helpdesk"
-                ],
+                "tags": ["Helpdesk"],
                 "summary": "Menginput penanganan tiket oleh teknisi",
                 "description": "Digunakan oleh petugas untuk melaporkan hasil pengerjaan tiket. Status tiket harus 'diproses' dan akan berubah menjadi 'terselesaikan'.",
                 "operationId": "storeHandling",
@@ -94,9 +90,7 @@
                                     "status": {
                                         "description": "Status penyelesaian",
                                         "type": "string",
-                                        "enum": [
-                                            "terselesaikan"
-                                        ]
+                                        "enum": ["terselesaikan"]
                                     },
                                     "started_at": {
                                         "description": "Waktu mulai pengerjaan (Y-m-d H:i:s)",
@@ -133,9 +127,7 @@
         },
         "/auth/login": {
             "post": {
-                "tags": [
-                    "Auth"
-                ],
+                "tags": ["Auth"],
                 "summary": "Login and create Sanctum bearer token",
                 "operationId": "6312031b3d2ab2e78c76889a12ac2be3",
                 "requestBody": {
@@ -211,9 +203,7 @@
         },
         "/auth/logout": {
             "post": {
-                "tags": [
-                    "Auth"
-                ],
+                "tags": ["Auth"],
                 "summary": "Logout and revoke current token",
                 "operationId": "70b0b9a195044bbce870f42723729c8a",
                 "responses": {
@@ -240,9 +230,7 @@
         },
         "/auth/me": {
             "get": {
-                "tags": [
-                    "Auth"
-                ],
+                "tags": ["Auth"],
                 "summary": "Get authenticated user",
                 "operationId": "15d6b2a8c25fa44f2a7d72081c998140",
                 "responses": {
@@ -274,9 +262,7 @@
         },
         "/auth/register": {
             "post": {
-                "tags": [
-                    "Auth"
-                ],
+                "tags": ["Auth"],
                 "summary": "Register user",
                 "operationId": "e4992080a3aaf44a762440f58d67ed38",
                 "requestBody": {
@@ -357,9 +343,7 @@
         },
         "/auth/forgot-password": {
             "post": {
-                "tags": [
-                    "Auth"
-                ],
+                "tags": ["Auth"],
                 "summary": "Send reset password link",
                 "operationId": "9f50ba1d9005d3226d6ffbd42d3b0430",
                 "requestBody": {
@@ -367,9 +351,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "email"
-                                ],
+                                "required": ["email"],
                                 "properties": {
                                     "email": {
                                         "type": "string"
@@ -396,9 +378,7 @@
         },
         "/auth/reset-password": {
             "post": {
-                "tags": [
-                    "Auth"
-                ],
+                "tags": ["Auth"],
                 "summary": "Reset password",
                 "operationId": "117b225db11f8f5aadf4e7aef5ccbd5a",
                 "requestBody": {
@@ -447,9 +427,7 @@
         },
         "/auth/email/verification-notification": {
             "post": {
-                "tags": [
-                    "Auth"
-                ],
+                "tags": ["Auth"],
                 "summary": "Resend email verification notification",
                 "operationId": "0990c6fe1ceded2b2ebdd961d5136086",
                 "responses": {
@@ -473,9 +451,7 @@
         },
         "/auth/email/verify/{id}/{hash}": {
             "get": {
-                "tags": [
-                    "Auth"
-                ],
+                "tags": ["Auth"],
                 "summary": "Verify email with signed URL",
                 "operationId": "95d36b9e3b8c79f7df38eb7a0e6160f7",
                 "parameters": [
@@ -515,9 +491,7 @@
         },
         "/auth/confirm-password": {
             "post": {
-                "tags": [
-                    "Auth"
-                ],
+                "tags": ["Auth"],
                 "summary": "Confirm current password",
                 "operationId": "1218b461ff7e9fb151a1a70b57fabc70",
                 "requestBody": {
@@ -525,9 +499,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "password"
-                                ],
+                                "required": ["password"],
                                 "properties": {
                                     "password": {
                                         "type": "string"
@@ -559,9 +531,7 @@
         },
         "/auth/sso/config": {
             "get": {
-                "tags": [
-                    "SSO"
-                ],
+                "tags": ["SSO"],
                 "summary": "Get SSO configuration",
                 "operationId": "221306611a5c8337903e112add086d64",
                 "responses": {
@@ -601,9 +571,7 @@
         },
         "/auth/sso/login": {
             "get": {
-                "tags": [
-                    "SSO"
-                ],
+                "tags": ["SSO"],
                 "summary": "Redirect to IAM login",
                 "operationId": "891597ca78e3ce01bf63b302e908b085",
                 "responses": {
@@ -618,9 +586,7 @@
         },
         "/auth/sso/callback": {
             "get": {
-                "tags": [
-                    "SSO"
-                ],
+                "tags": ["SSO"],
                 "summary": "Receive IAM callback and create one-time exchange code",
                 "operationId": "d47603c1a569bfd2d814aeccc322b950",
                 "parameters": [
@@ -642,9 +608,7 @@
         },
         "/auth/sso/exchange": {
             "post": {
-                "tags": [
-                    "SSO"
-                ],
+                "tags": ["SSO"],
                 "summary": "Exchange one-time SSO code for Sanctum token",
                 "operationId": "ccd044b304c8bc8cc253d6370b032659",
                 "requestBody": {
@@ -652,9 +616,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "code"
-                                ],
+                                "required": ["code"],
                                 "properties": {
                                     "code": {
                                         "type": "string"
@@ -700,9 +662,7 @@
         },
         "/dashboard": {
             "get": {
-                "tags": [
-                    "Dashboard"
-                ],
+                "tags": ["Dashboard"],
                 "summary": "Get dashboard data",
                 "operationId": "61606dec7cf4b4479cb05eed70d08b0c",
                 "responses": {
@@ -719,9 +679,7 @@
         },
         "/dashboard/live-stats": {
             "get": {
-                "tags": [
-                    "Dashboard"
-                ],
+                "tags": ["Dashboard"],
                 "summary": "Get live dashboard stats",
                 "operationId": "ad43381bc86db4d930ad17c74d240ded",
                 "responses": {
@@ -738,9 +696,7 @@
         },
         "/profile": {
             "get": {
-                "tags": [
-                    "Profile"
-                ],
+                "tags": ["Profile"],
                 "summary": "Get profile",
                 "operationId": "54195ef94de4111bf84fb1109d46aa21",
                 "responses": {
@@ -767,9 +723,7 @@
                 ]
             },
             "delete": {
-                "tags": [
-                    "Profile"
-                ],
+                "tags": ["Profile"],
                 "summary": "Delete authenticated account",
                 "operationId": "ff7fba3a544146da329718442a15afeb",
                 "requestBody": {
@@ -777,9 +731,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "password"
-                                ],
+                                "required": ["password"],
                                 "properties": {
                                     "password": {
                                         "type": "string"
@@ -809,9 +761,7 @@
                 ]
             },
             "patch": {
-                "tags": [
-                    "Profile"
-                ],
+                "tags": ["Profile"],
                 "summary": "Update profile",
                 "operationId": "30bc54feb7b90b6a347e3f12866f63b0",
                 "requestBody": {
@@ -867,9 +817,7 @@
         },
         "/profile/password": {
             "put": {
-                "tags": [
-                    "Profile"
-                ],
+                "tags": ["Profile"],
                 "summary": "Update password",
                 "operationId": "0cf81f3dad3a0928c132ca3de7f2c6c1",
                 "requestBody": {
@@ -919,9 +867,7 @@
         },
         "/users": {
             "get": {
-                "tags": [
-                    "Users"
-                ],
+                "tags": ["Users"],
                 "summary": "List users",
                 "operationId": "27b08e854ba9f8bb4736a1d2d52fdd9d",
                 "parameters": [
@@ -1014,9 +960,7 @@
                 ]
             },
             "post": {
-                "tags": [
-                    "Users"
-                ],
+                "tags": ["Users"],
                 "summary": "Create user",
                 "operationId": "f60f1c5b77aa8a79fc26758b039cc9d5",
                 "requestBody": {
@@ -1111,9 +1055,7 @@
                                         "nip": [
                                             "NIP sudah terdaftar di sistem."
                                         ],
-                                        "password": [
-                                            "Form wajib diisi"
-                                        ]
+                                        "password": ["Form wajib diisi"]
                                     }
                                 }
                             }
@@ -1129,9 +1071,7 @@
         },
         "/users/options": {
             "get": {
-                "tags": [
-                    "Users"
-                ],
+                "tags": ["Users"],
                 "summary": "Get role and unit options for user forms",
                 "operationId": "a735c78b46fd3b03a6dba36ff0a24e68",
                 "responses": {
@@ -1148,9 +1088,7 @@
         },
         "/users/search": {
             "get": {
-                "tags": [
-                    "Users"
-                ],
+                "tags": ["Users"],
                 "summary": "Search users by name",
                 "operationId": "searchUsersByName",
                 "parameters": [
@@ -1212,9 +1150,7 @@
         },
         "/users/{user}": {
             "get": {
-                "tags": [
-                    "Users"
-                ],
+                "tags": ["Users"],
                 "summary": "Show user",
                 "operationId": "9f1b01cceb251a4616f62279cbc46cf6",
                 "parameters": [
@@ -1251,9 +1187,7 @@
                 ]
             },
             "put": {
-                "tags": [
-                    "Users"
-                ],
+                "tags": ["Users"],
                 "summary": "Update user",
                 "operationId": "13daa11aacadd249e2f588311904baa0",
                 "parameters": [
@@ -1354,9 +1288,7 @@
                                 "example": {
                                     "message": "Format data tidak sesuai",
                                     "errors": {
-                                        "no_hp": [
-                                            "Format data tidak sesuai."
-                                        ]
+                                        "no_hp": ["Format data tidak sesuai."]
                                     }
                                 }
                             }
@@ -1372,9 +1304,7 @@
         },
         "/users/{user}/status": {
             "patch": {
-                "tags": [
-                    "Users"
-                ],
+                "tags": ["Users"],
                 "summary": "Toggle user status (Aktif/Nonaktif)",
                 "operationId": "74f8954dca0688185217a7b41540b53f",
                 "parameters": [
@@ -1396,10 +1326,7 @@
                                 "properties": {
                                     "status_user": {
                                         "type": "string",
-                                        "enum": [
-                                            "Aktif",
-                                            "Nonaktif"
-                                        ]
+                                        "enum": ["Aktif", "Nonaktif"]
                                     },
                                     "alasan_nonaktif": {
                                         "type": "string",
@@ -1479,9 +1406,7 @@
         },
         "/roles": {
             "get": {
-                "tags": [
-                    "Roles"
-                ],
+                "tags": ["Roles"],
                 "summary": "List roles",
                 "operationId": "b42d20d071730b2aefe20028eafcd619",
                 "parameters": [
@@ -1525,9 +1450,7 @@
                 ]
             },
             "post": {
-                "tags": [
-                    "Roles"
-                ],
+                "tags": ["Roles"],
                 "summary": "Create role",
                 "operationId": "f5e8f822301e4c11aa555939d11c70d7",
                 "requestBody": {
@@ -1535,10 +1458,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "name",
-                                    "permissions"
-                                ],
+                                "required": ["name", "permissions"],
                                 "properties": {
                                     "name": {
                                         "type": "string"
@@ -1581,9 +1501,7 @@
         },
         "/roles/permissions": {
             "get": {
-                "tags": [
-                    "Roles"
-                ],
+                "tags": ["Roles"],
                 "summary": "List available permissions",
                 "operationId": "12d1720479509df88d4a83f056f42762",
                 "responses": {
@@ -1615,9 +1533,7 @@
         },
         "/roles/{role}": {
             "get": {
-                "tags": [
-                    "Roles"
-                ],
+                "tags": ["Roles"],
                 "summary": "Show role",
                 "operationId": "2b08b8291014e89cce32d7447ab20620",
                 "parameters": [
@@ -1654,9 +1570,7 @@
                 ]
             },
             "put": {
-                "tags": [
-                    "Roles"
-                ],
+                "tags": ["Roles"],
                 "summary": "Update role",
                 "operationId": "a14713dda8ab05ab89a6068cfc9e605f",
                 "parameters": [
@@ -1674,10 +1588,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "name",
-                                    "permissions"
-                                ],
+                                "required": ["name", "permissions"],
                                 "properties": {
                                     "name": {
                                         "type": "string"
@@ -1720,9 +1631,7 @@
         },
         "/roles/{ids}": {
             "delete": {
-                "tags": [
-                    "Roles"
-                ],
+                "tags": ["Roles"],
                 "summary": "Delete one or many roles",
                 "operationId": "e6bd88439e133ec93ece40c0f2e3655a",
                 "parameters": [
@@ -1757,9 +1666,7 @@
         },
         "/units": {
             "get": {
-                "tags": [
-                    "Units"
-                ],
+                "tags": ["Units"],
                 "summary": "List units",
                 "operationId": "33cd41d5e8f9d492b173d1dbe337feb4",
                 "parameters": [
@@ -1803,9 +1710,7 @@
                 ]
             },
             "post": {
-                "tags": [
-                    "Units"
-                ],
+                "tags": ["Units"],
                 "summary": "Create unit",
                 "operationId": "07073dcb340891f626478bfdee702882",
                 "requestBody": {
@@ -1813,9 +1718,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "unit_name"
-                                ],
+                                "required": ["unit_name"],
                                 "properties": {
                                     "unit_name": {
                                         "type": "string"
@@ -1856,9 +1759,7 @@
         },
         "/units/users": {
             "get": {
-                "tags": [
-                    "Units"
-                ],
+                "tags": ["Units"],
                 "summary": "List users available for unit sync",
                 "operationId": "be85075280071ef3f3665a2d727be8b6",
                 "responses": {
@@ -1875,9 +1776,7 @@
         },
         "/units/{unit}": {
             "get": {
-                "tags": [
-                    "Units"
-                ],
+                "tags": ["Units"],
                 "summary": "Show unit",
                 "operationId": "bea288c1d5234ebba403b172fc4ae687",
                 "parameters": [
@@ -1914,9 +1813,7 @@
                 ]
             },
             "put": {
-                "tags": [
-                    "Units"
-                ],
+                "tags": ["Units"],
                 "summary": "Update unit",
                 "operationId": "37bf7afe857b9e5ed81b2d63e486b028",
                 "parameters": [
@@ -1934,9 +1831,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "unit_name"
-                                ],
+                                "required": ["unit_name"],
                                 "properties": {
                                     "unit_name": {
                                         "type": "string"
@@ -1975,9 +1870,7 @@
                 ]
             },
             "delete": {
-                "tags": [
-                    "Units"
-                ],
+                "tags": ["Units"],
                 "summary": "Delete unit",
                 "operationId": "9f756b32e064e2da44cf16ab03a297db",
                 "parameters": [
@@ -2011,9 +1904,7 @@
         },
         "/units/{unit}/users": {
             "post": {
-                "tags": [
-                    "Units"
-                ],
+                "tags": ["Units"],
                 "summary": "Sync unit users",
                 "operationId": "376e5b4072d49e65a8b6541cc167d268",
                 "parameters": [
@@ -2031,9 +1922,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "user_ids"
-                                ],
+                                "required": ["user_ids"],
                                 "properties": {
                                     "user_ids": {
                                         "type": "array",
@@ -2073,9 +1962,7 @@
         },
         "/backups": {
             "get": {
-                "tags": [
-                    "Backups"
-                ],
+                "tags": ["Backups"],
                 "summary": "List backups and schedule config",
                 "operationId": "81039a5411dc4c6af25205ff47eaa313",
                 "responses": {
@@ -2090,9 +1977,7 @@
                 ]
             },
             "post": {
-                "tags": [
-                    "Backups"
-                ],
+                "tags": ["Backups"],
                 "summary": "Create database backup",
                 "operationId": "6b095efdf43ebf83ce47cfd5d6a0a40e",
                 "responses": {
@@ -2107,9 +1992,7 @@
                 ]
             },
             "delete": {
-                "tags": [
-                    "Backups"
-                ],
+                "tags": ["Backups"],
                 "summary": "Delete backup file",
                 "operationId": "7aab2964659e6ec8f82e4dddfbbc3e63",
                 "requestBody": {
@@ -2117,9 +2000,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "path"
-                                ],
+                                "required": ["path"],
                                 "properties": {
                                     "path": {
                                         "type": "string"
@@ -2151,9 +2032,7 @@
         },
         "/backups/schedule": {
             "post": {
-                "tags": [
-                    "Backups"
-                ],
+                "tags": ["Backups"],
                 "summary": "Save backup schedule",
                 "operationId": "de3592a3c7c705f9e147841404419081",
                 "requestBody": {
@@ -2195,9 +2074,7 @@
         },
         "/backups/download": {
             "get": {
-                "tags": [
-                    "Backups"
-                ],
+                "tags": ["Backups"],
                 "summary": "Download backup file",
                 "operationId": "33c2f4ed9bbe626b3fc70d4bd6b0caff",
                 "parameters": [
@@ -2227,9 +2104,7 @@
         },
         "/example-live": {
             "get": {
-                "tags": [
-                    "Example Live"
-                ],
+                "tags": ["Example Live"],
                 "summary": "Get Example Live metadata",
                 "operationId": "8547b8851ba60df2c31c55c54713ab31",
                 "responses": {
@@ -2246,9 +2121,7 @@
         },
         "/example-live/real-market": {
             "get": {
-                "tags": [
-                    "Example Live"
-                ],
+                "tags": ["Example Live"],
                 "summary": "Get market data proxy",
                 "operationId": "049fda578305799794113ad1ed23a5b9",
                 "parameters": [
@@ -2257,12 +2130,7 @@
                         "in": "query",
                         "schema": {
                             "type": "string",
-                            "enum": [
-                                "live",
-                                "1d",
-                                "7d",
-                                "30d"
-                            ]
+                            "enum": ["live", "1d", "7d", "30d"]
                         }
                     }
                 ],
@@ -2280,9 +2148,7 @@
         },
         "/example-live/start": {
             "post": {
-                "tags": [
-                    "Example Live"
-                ],
+                "tags": ["Example Live"],
                 "summary": "Start background task",
                 "operationId": "a33c2033bc8378077db7f8920cb0a081",
                 "requestBody": {
@@ -2317,9 +2183,7 @@
         },
         "/example-live/status/{taskId}": {
             "get": {
-                "tags": [
-                    "Example Live"
-                ],
+                "tags": ["Example Live"],
                 "summary": "Check background task status",
                 "operationId": "888aa06091f43f38f2240f4bc6e1969e",
                 "parameters": [
@@ -2350,9 +2214,7 @@
         },
         "/impersonation/{user}/start": {
             "post": {
-                "tags": [
-                    "Impersonation"
-                ],
+                "tags": ["Impersonation"],
                 "summary": "Start impersonating a user",
                 "operationId": "2890e9c3bf112f2432ca52941ad7a6f6",
                 "parameters": [
@@ -2385,9 +2247,7 @@
         },
         "/impersonation/stop": {
             "post": {
-                "tags": [
-                    "Impersonation"
-                ],
+                "tags": ["Impersonation"],
                 "summary": "Stop impersonation and revoke impersonation token",
                 "operationId": "1c76967798d608bcdce1ea8ddd813cf9",
                 "responses": {
@@ -2404,9 +2264,7 @@
         },
         "/impersonation/status": {
             "get": {
-                "tags": [
-                    "Impersonation"
-                ],
+                "tags": ["Impersonation"],
                 "summary": "Get impersonation status",
                 "operationId": "c2cdb2f963c801a196343464552a2ab5",
                 "responses": {
@@ -2423,9 +2281,7 @@
         },
         "/notifications": {
             "get": {
-                "tags": [
-                    "Notifications"
-                ],
+                "tags": ["Notifications"],
                 "summary": "List unread notifications and activity summary",
                 "operationId": "b9fc06d756a342643eb5b80259453e01",
                 "responses": {
@@ -2466,9 +2322,7 @@
         },
         "/notifications/{id}/read": {
             "patch": {
-                "tags": [
-                    "Notifications"
-                ],
+                "tags": ["Notifications"],
                 "summary": "Mark one notification as read",
                 "operationId": "9dcc5e50c9350871d93ca9d7047967f5",
                 "parameters": [
@@ -2496,9 +2350,7 @@
         },
         "/notifications/read-all": {
             "patch": {
-                "tags": [
-                    "Notifications"
-                ],
+                "tags": ["Notifications"],
                 "summary": "Mark all notifications as read",
                 "operationId": "ea81cf47228eeaf2e2b6b9cec703993e",
                 "responses": {
@@ -2515,9 +2367,7 @@
         },
         "/tickets": {
             "get": {
-                "tags": [
-                    "Helpdesk"
-                ],
+                "tags": ["Helpdesk"],
                 "summary": "List Helpdesk tickets",
                 "description": "Returns TIK and Sarpras tickets ordered from newest to oldest. Requires the tickets-access permission.",
                 "operationId": "listTickets",
@@ -2550,10 +2400,7 @@
                         "required": false,
                         "schema": {
                             "type": "string",
-                            "enum": [
-                                "tik",
-                                "sarpras"
-                            ]
+                            "enum": ["tik", "sarpras"]
                         }
                     },
                     {
@@ -2580,12 +2427,7 @@
                         "required": false,
                         "schema": {
                             "type": "string",
-                            "enum": [
-                                "critical",
-                                "high",
-                                "medium",
-                                "low"
-                            ]
+                            "enum": ["critical", "high", "medium", "low"]
                         }
                     },
                     {
@@ -2611,7 +2453,7 @@
                     {
                         "name": "search",
                         "in": "query",
-                        "description": "Search ticket number, classification, and description.",
+                        "description": "Search by ticket reporter name or unit name.",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -2682,9 +2524,7 @@
                 ]
             },
             "post": {
-                "tags": [
-                    "Helpdesk"
-                ],
+                "tags": ["Helpdesk"],
                 "summary": "Create a Helpdesk ticket",
                 "description": "Creates a TIK or Sarpras ticket with status baru. Reporter and unit are taken from the authenticated user. Requires the tickets-create permission.",
                 "operationId": "createTicket",
@@ -2749,9 +2589,7 @@
         },
         "/tickets/classification-options": {
             "get": {
-                "tags": [
-                    "Helpdesk"
-                ],
+                "tags": ["Helpdesk"],
                 "summary": "Get ticket classification options",
                 "description": "Returns active quality categories and IT tags for TIK, or active Sarpras categories for Sarpras. Requires the tickets-verify permission.",
                 "operationId": "listTicketClassificationOptions",
@@ -2764,10 +2602,7 @@
                         "schema": {
                             "type": "string",
                             "example": "tik",
-                            "enum": [
-                                "tik",
-                                "sarpras"
-                            ]
+                            "enum": ["tik", "sarpras"]
                         }
                     }
                 ],
@@ -2822,9 +2657,7 @@
         },
         "/tickets/{ticket}/classify": {
             "post": {
-                "tags": [
-                    "Helpdesk"
-                ],
+                "tags": ["Helpdesk"],
                 "summary": "Classify a new Helpdesk ticket",
                 "description": "TIK classification is limited to Super Admin. Sarpras classification is allowed for Super Admin and Koordinator Sarpras. The endpoint retains tickets-verify as its general capability permission.",
                 "operationId": "classifyTicket",
@@ -2920,9 +2753,7 @@
         },
         "/tickets/{ticket}/reject": {
             "post": {
-                "tags": [
-                    "Helpdesk"
-                ],
+                "tags": ["Helpdesk"],
                 "summary": "Reject a new Helpdesk ticket",
                 "description": "The actor must be allowed to classify the ticket service, the ticket must be new, and the tickets-reject permission is required.",
                 "operationId": "rejectTicket",
@@ -3018,9 +2849,7 @@
         },
         "/tickets/{ticket}/assignee-options": {
             "get": {
-                "tags": [
-                    "Helpdesk"
-                ],
+                "tags": ["Helpdesk"],
                 "summary": "Search eligible officers for assignment",
                 "description": "Returns active Petugas TIK for a TIK ticket or active Petugas Sarpras for a Sarpras ticket. Search matches name or jabatan. TIK is limited to Super Admin; Sarpras is limited to Koordinator Sarpras. Requires the tickets-assign permission.",
                 "operationId": "getTicketAssigneeOptions",
@@ -3116,9 +2945,7 @@
         },
         "/tickets/{ticket}/assign": {
             "post": {
-                "tags": [
-                    "Helpdesk"
-                ],
+                "tags": ["Helpdesk"],
                 "summary": "Assign or reassign a ticket officer",
                 "description": "TIK assignment is limited to Super Admin and requires Petugas TIK. Sarpras assignment is limited to Koordinator Sarpras and requires Petugas Sarpras. Initial assignment from diklasifikasi requires priority, sets assigned_at and sla_started_at, starts the SLA deadline, and transitions directly to diproses. Reassignment from diproses updates the officer and assigned_at without resetting the first SLA start or deadline. Requires the tickets-assign permission.",
                 "operationId": "assignTicket",
@@ -3214,9 +3041,7 @@
         },
         "/tickets/{ticket}/escalate": {
             "post": {
-                "tags": [
-                    "Helpdesk"
-                ],
+                "tags": ["Helpdesk"],
                 "summary": "Escalate a processing ticket",
                 "description": "Escalate ticket to Manajemen, Vendor, or Tim Terkait. Requires assigned officer.",
                 "operationId": "escalateTicket",
@@ -3236,10 +3061,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "target",
-                                    "notes"
-                                ],
+                                "required": ["target", "notes"],
                                 "properties": {
                                     "target": {
                                         "type": "string",
@@ -3321,9 +3143,7 @@
         },
         "/tickets/{ticket}/handlings": {
             "post": {
-                "tags": [
-                    "Helpdesk"
-                ],
+                "tags": ["Helpdesk"],
                 "summary": "Add ticket handling history",
                 "description": "Only the currently assigned officer with the service-appropriate role may add handling. A diproses ticket can remain diproses without status history or become terselesaikan with status history. tickets.completed_at uses the manually supplied completed_at value. Handling never recalculates SLA. Requires the tickets-handle permission.",
                 "operationId": "createTicketHandling",
@@ -3419,9 +3239,7 @@
         },
         "/tickets/{ticket}/verify": {
             "post": {
-                "tags": [
-                    "Helpdesk"
-                ],
+                "tags": ["Helpdesk"],
                 "summary": "Verify a completed ticket and close it",
                 "description": "Only the ticket reporter may verify a terselesaikan ticket. Verification transitions directly to ditutup, records closed_at, and creates status history without using terverifikasi.",
                 "operationId": "verifyTicketResolution",
@@ -3441,9 +3259,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "is_approved"
-                                ],
+                                "required": ["is_approved"],
                                 "properties": {
                                     "is_approved": {
                                         "type": "boolean",
@@ -3521,9 +3337,7 @@
         },
         "/tickets/{ticket}": {
             "get": {
-                "tags": [
-                    "Helpdesk"
-                ],
+                "tags": ["Helpdesk"],
                 "summary": "Show a Helpdesk ticket",
                 "description": "Requires the tickets-access permission.",
                 "operationId": "showTicket",
@@ -3657,10 +3471,7 @@
                 "type": "object"
             },
             "UserSearchUnit": {
-                "required": [
-                    "id",
-                    "unit_name"
-                ],
+                "required": ["id", "unit_name"],
                 "properties": {
                     "id": {
                         "type": "integer",
@@ -3674,11 +3485,7 @@
                 "type": "object"
             },
             "UserSearchResult": {
-                "required": [
-                    "id",
-                    "name",
-                    "unit"
-                ],
+                "required": ["id", "name", "unit"],
                 "properties": {
                     "id": {
                         "type": "integer",
@@ -3871,10 +3678,7 @@
                 "type": "object"
             },
             "TicketReporterSummary": {
-                "required": [
-                    "id",
-                    "name"
-                ],
+                "required": ["id", "name"],
                 "properties": {
                     "id": {
                         "type": "integer",
@@ -3888,10 +3692,7 @@
                 "type": "object"
             },
             "TicketUnitSummary": {
-                "required": [
-                    "id",
-                    "name"
-                ],
+                "required": ["id", "name"],
                 "properties": {
                     "id": {
                         "type": "integer",
@@ -3905,10 +3706,7 @@
                 "type": "object"
             },
             "TicketOfficerSummary": {
-                "required": [
-                    "id",
-                    "name"
-                ],
+                "required": ["id", "name"],
                 "properties": {
                     "id": {
                         "type": "integer",
@@ -4075,10 +3873,7 @@
                         "description": "Current ticket status, not a ticket_handlings column.",
                         "type": "string",
                         "example": "diproses",
-                        "enum": [
-                            "diproses",
-                            "terselesaikan"
-                        ]
+                        "enum": ["diproses", "terselesaikan"]
                     },
                     "started_at": {
                         "type": "string",
@@ -4109,10 +3904,7 @@
                 "type": "object"
             },
             "TicketNamedReference": {
-                "required": [
-                    "id",
-                    "name"
-                ],
+                "required": ["id", "name"],
                 "properties": {
                     "id": {
                         "type": "integer",
@@ -4126,9 +3918,7 @@
                 "type": "object"
             },
             "ClassificationOptionsResponse": {
-                "required": [
-                    "data"
-                ],
+                "required": ["data"],
                 "properties": {
                     "data": {
                         "required": [
@@ -4141,10 +3931,7 @@
                             "service": {
                                 "type": "string",
                                 "example": "tik",
-                                "enum": [
-                                    "tik",
-                                    "sarpras"
-                                ]
+                                "enum": ["tik", "sarpras"]
                             },
                             "quality_categories": {
                                 "type": "array",
@@ -4191,9 +3978,7 @@
                 "type": "object"
             },
             "TicketSarprasDetail": {
-                "required": [
-                    "sarpras_category"
-                ],
+                "required": ["sarpras_category"],
                 "properties": {
                     "sarpras_category": {
                         "$ref": "#/components/schemas/TicketNamedReference"
@@ -4241,10 +4026,7 @@
                     "service": {
                         "type": "string",
                         "example": "tik",
-                        "enum": [
-                            "tik",
-                            "sarpras"
-                        ]
+                        "enum": ["tik", "sarpras"]
                     },
                     "category": {
                         "description": "Compatibility label derived from the ticket detail relation.",
@@ -4294,12 +4076,7 @@
                         "type": "string",
                         "example": "high",
                         "nullable": true,
-                        "enum": [
-                            "critical",
-                            "high",
-                            "medium",
-                            "low"
-                        ]
+                        "enum": ["critical", "high", "medium", "low"]
                     },
                     "asset": {
                         "oneOf": [
@@ -4394,18 +4171,12 @@
                 "type": "object"
             },
             "CreateTicketRequest": {
-                "required": [
-                    "service",
-                    "description"
-                ],
+                "required": ["service", "description"],
                 "properties": {
                     "service": {
                         "type": "string",
                         "example": "tik",
-                        "enum": [
-                            "tik",
-                            "sarpras"
-                        ]
+                        "enum": ["tik", "sarpras"]
                     },
                     "asset_id": {
                         "type": "integer",
@@ -4425,10 +4196,7 @@
                 "type": "object"
             },
             "TicketCreateResponse": {
-                "required": [
-                    "message",
-                    "data"
-                ],
+                "required": ["message", "data"],
                 "properties": {
                     "message": {
                         "type": "string",
@@ -4441,9 +4209,7 @@
                 "type": "object"
             },
             "RejectTicketRequest": {
-                "required": [
-                    "reason"
-                ],
+                "required": ["reason"],
                 "properties": {
                     "reason": {
                         "type": "string",
@@ -4464,10 +4230,7 @@
                 ]
             },
             "ClassifyTikTicketRequest": {
-                "required": [
-                    "quality_category_id",
-                    "it_tag_id"
-                ],
+                "required": ["quality_category_id", "it_tag_id"],
                 "properties": {
                     "quality_category_id": {
                         "type": "integer",
@@ -4487,9 +4250,7 @@
                 "type": "object"
             },
             "ClassifySarprasTicketRequest": {
-                "required": [
-                    "sarpras_category_id"
-                ],
+                "required": ["sarpras_category_id"],
                 "properties": {
                     "sarpras_category_id": {
                         "description": "Active Sarpras, Elektronik, or Alkes category ID.",
@@ -4500,9 +4261,7 @@
                 "type": "object"
             },
             "AssignTicketRequest": {
-                "required": [
-                    "assigned_officer_id"
-                ],
+                "required": ["assigned_officer_id"],
                 "properties": {
                     "assigned_officer_id": {
                         "type": "integer",
@@ -4512,22 +4271,13 @@
                         "description": "Required for initial assignment and prohibited for reassignment.",
                         "type": "string",
                         "example": "high",
-                        "enum": [
-                            "critical",
-                            "high",
-                            "medium",
-                            "low"
-                        ]
+                        "enum": ["critical", "high", "medium", "low"]
                     }
                 },
                 "type": "object"
             },
             "AssigneeOption": {
-                "required": [
-                    "id",
-                    "name",
-                    "jabatan"
-                ],
+                "required": ["id", "name", "jabatan"],
                 "properties": {
                     "id": {
                         "type": "integer",
@@ -4546,9 +4296,7 @@
                 "type": "object"
             },
             "AssigneeOptionCollectionResponse": {
-                "required": [
-                    "data"
-                ],
+                "required": ["data"],
                 "properties": {
                     "data": {
                         "type": "array",
@@ -4560,12 +4308,7 @@
                 "type": "object"
             },
             "CreateTicketHandlingRequest": {
-                "required": [
-                    "notes",
-                    "status",
-                    "started_at",
-                    "completed_at"
-                ],
+                "required": ["notes", "status", "started_at", "completed_at"],
                 "properties": {
                     "notes": {
                         "type": "string",
@@ -4575,10 +4318,7 @@
                         "description": "Diproses accepts diproses or terselesaikan. Stored on tickets.status, not ticket_handlings.",
                         "type": "string",
                         "example": "diproses",
-                        "enum": [
-                            "diproses",
-                            "terselesaikan"
-                        ]
+                        "enum": ["diproses", "terselesaikan"]
                     },
                     "started_at": {
                         "description": "Required repair start time, editable by the officer.",
@@ -4599,10 +4339,7 @@
                 "type": "object"
             },
             "TicketActionResponse": {
-                "required": [
-                    "message",
-                    "data"
-                ],
+                "required": ["message", "data"],
                 "properties": {
                     "message": {
                         "type": "string",
@@ -4615,12 +4352,7 @@
                 "type": "object"
             },
             "TicketPaginationLinks": {
-                "required": [
-                    "first",
-                    "last",
-                    "prev",
-                    "next"
-                ],
+                "required": ["first", "last", "prev", "next"],
                 "properties": {
                     "first": {
                         "type": "string",
@@ -4644,12 +4376,7 @@
                 "type": "object"
             },
             "TicketPaginationLinkItem": {
-                "required": [
-                    "url",
-                    "label",
-                    "page",
-                    "active"
-                ],
+                "required": ["url", "label", "page", "active"],
                 "properties": {
                     "url": {
                         "type": "string",
@@ -4721,11 +4448,7 @@
                 "type": "object"
             },
             "TicketCollectionResponse": {
-                "required": [
-                    "data",
-                    "links",
-                    "meta"
-                ],
+                "required": ["data", "links", "meta"],
                 "properties": {
                     "data": {
                         "type": "array",
@@ -4743,9 +4466,7 @@
                 "type": "object"
             },
             "TicketReadResponse": {
-                "required": [
-                    "data"
-                ],
+                "required": ["data"],
                 "properties": {
                     "data": {
                         "$ref": "#/components/schemas/TicketRead"
@@ -4754,9 +4475,7 @@
                 "type": "object"
             },
             "TicketReadError": {
-                "required": [
-                    "message"
-                ],
+                "required": ["message"],
                 "properties": {
                     "message": {
                         "type": "string",
@@ -4797,9 +4516,7 @@
                         },
                         {
                             "type": "string",
-                            "enum": [
-                                "all"
-                            ]
+                            "enum": ["all"]
                         }
                     ]
                 }

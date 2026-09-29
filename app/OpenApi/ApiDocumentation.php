@@ -1459,7 +1459,7 @@ class ApiDocumentation
      *     @OA\Parameter(name="priority", in="query", required=false, description="Ticket priority.", @OA\Schema(type="string", enum={"critical","high","medium","low"})),
      *     @OA\Parameter(name="date_from", in="query", required=false, description="Inclusive created date lower bound.", @OA\Schema(type="string", format="date")),
      *     @OA\Parameter(name="date_to", in="query", required=false, description="Inclusive created date upper bound.", @OA\Schema(type="string", format="date")),
-     *     @OA\Parameter(name="search", in="query", required=false, description="Search ticket number, classification, and description.", @OA\Schema(type="string", maxLength=255)),
+     *     @OA\Parameter(name="search", in="query", required=false, description="Search by ticket reporter name or unit name.", @OA\Schema(type="string", maxLength=255)),
      *     @OA\Parameter(name="status_sla", in="query", required=false, description="Filter tiket berdasarkan status SLA secara on-the-fly.", @OA\Schema(type="string", enum={"melewati_batas","mendekati_batas","tepat_waktu"})),
      *
      *     @OA\Response(response=200, description="Paginated tickets", @OA\JsonContent(ref="#/components/schemas/TicketCollectionResponse")),
