@@ -14,16 +14,21 @@ class StoreEscalationRequest extends FormRequest
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
     public function rules(): array
     {
         return [
-            'target' => ['required', 'string', 'in:management,vendor,related_team'],
-            'notes'  => ['required', 'string'],
+            'target' => ['required', 'string', 'in:Manajemen,Vendor,Tim Terkait'],
+            'notes' => ['required', 'string', 'min:5'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'target.required' => 'Tujuan eskalasi (target) wajib dipilih.',
+            'target.in' => 'Pilihan tujuan eskalasi tidak valid.',
+            'notes.required' => 'Catatan eskalasi (notes) wajib diisi.',
+            'notes.min' => 'Catatan eskalasi minimal 5 karakter.',
         ];
     }
 }

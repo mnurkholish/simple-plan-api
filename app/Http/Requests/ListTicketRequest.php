@@ -44,6 +44,7 @@ class ListTicketRequest extends FormRequest
             'search' => ['nullable', 'string', 'max:255'],
             'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'integer', 'between:1,100'],
+            'status_sla' => ['nullable', 'string', Rule::in(['melewati_batas', 'mendekati_batas', 'tepat_waktu'])],
         ];
     }
 }
