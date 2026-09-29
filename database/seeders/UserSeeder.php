@@ -6,7 +6,6 @@ use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -27,12 +26,12 @@ class UserSeeder extends Seeder
         );
 
         $superAdminRole = Role::where('name', 'super-admin')->first();
-        $itUnit = Unit::where('unit_name', 'IT')->first();;
+        $itUnit = Unit::where('unit_name', 'IT')->first();
 
         if ($superAdminRole) {
             $admin->syncRoles([$superAdminRole->name]);
         }
-        if ($itUnit){
+        if ($itUnit) {
             $admin->update(['unit_id' => $itUnit->id]);
         }
 

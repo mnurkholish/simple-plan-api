@@ -139,4 +139,64 @@ class TicketController extends Controller
             ),
         );
     }
+    /**
+     * @OA\Post(
+     *     path="/tickets/{ticket}/de-escalate",
+     *     operationId="deEscalateTicket",
+     *     tags={"Helpdesk"},
+     *     summary="Menarik kembali tiket dari status eskalasi (De-escalate)",
+     *     description="Hanya petugas yang ditugaskan yang dapat melakukan ini.",
+     *     security={{"sanctum": {}}},
+     *     @OA\Parameter(
+     *         name="ticket",
+     *         in="path",
+     *         required=true,
+     *         description="ID dari tiket",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="Accept",
+     *         in="header",
+     *         required=true,
+     *         description="Wajib diisi application/json agar tidak ter-redirect ke rute login",
+     *         @OA\Schema(type="string", default="application/json")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Berhasil ditarik"
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated - Token tidak valid atau tidak dikirim"
+     *     )
+     * )
+     */
+    public function deEscalate(Ticket $ticket)
+    {
+        // Otorisasi: Pastikan user yang login adalah teknisi yang di-assign
+        if (auth()->id() !== $ticket->assigned_officer_id) {
+            return response()->json(['message' => 'User does not have the right permissions.'], 403);
+        }
+
+        // Validasi: Hanya tiket berstatus eskalasi yang bisa ditarik kembali
+        if ($ticket->status->value !== 'eskalasi') {
+            return response()->json(['message' => 'Hanya tiket berstatus eskalasi yang dapat diproses kembali.'], 409);
+        }
+
+        // Update status kembali ke 'diproses'
+        $ticket->update(['status' => 'diproses']);
+
+        // Catat ke riwayat status
+        $ticket->statusHistories()->create([
+            'from_status' => 'eskalasi',
+            'to_status' => 'diproses',
+            'changed_by_id' => auth()->id(),
+            'notes' => 'Eskalasi selesai, tiket diproses kembali oleh teknisi.'
+        ]);
+
+        return response()->json([
+            'message' => 'Tiket berhasil ditarik kembali dan sedang diproses.',
+            'data' => $ticket
+        ], 200);
+    }
 }

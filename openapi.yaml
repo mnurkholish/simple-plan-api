@@ -76,6 +76,16 @@ paths:
           schema:
             type: string
             maxLength: 255
+        - name: status_sla
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - melewati_batas
+              - mendekati_batas
+              - tepat_waktu
+          description: Filter tiket berdasarkan status SLA secara on-the-fly.
       responses:
         "200":
           description: Daftar tiket berhasil diambil.
@@ -361,6 +371,42 @@ paths:
         "422":
           $ref: "#/components/responses/TicketValidationError"
 
+  /tickets/{ticket}/escalate:
+    post:
+      tags: [Helpdesk]
+      summary: Mengeskalasi tiket Helpdesk
+      operationId: escalateTicket
+      description: |
+        Petugas penanganan tiket dapat mengeskalasi tiket ke Manajemen, Vendor,
+        atau Tim Terkait. Membutuhkan permission tickets-handle.
+      x-auth-required: true
+      x-required-permission: tickets-handle
+      parameters:
+        - $ref: "#/components/parameters/TicketId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EscalateTicketRequest"
+      responses:
+        "200":
+          description: Tiket berhasil dieskalasikan.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketActionResponse"
+        "401":
+          $ref: "#/components/responses/TicketUnauthenticated"
+        "403":
+          $ref: "#/components/responses/TicketForbidden"
+        "404":
+          $ref: "#/components/responses/TicketNotFound"
+        "409":
+          $ref: "#/components/responses/TicketConflict"
+        "422":
+          $ref: "#/components/responses/TicketValidationError"
+
   /tickets/{ticket}/verify:
     post:
       tags: [Helpdesk]
@@ -373,6 +419,12 @@ paths:
       x-auth-required: true
       parameters:
         - $ref: "#/components/parameters/TicketId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyTicketRequest"
       responses:
         "200":
           description: Penyelesaian diverifikasi dan tiket ditutup.
@@ -388,6 +440,8 @@ paths:
           $ref: "#/components/responses/TicketNotFound"
         "409":
           $ref: "#/components/responses/TicketConflict"
+        "422":
+          $ref: "#/components/responses/TicketValidationError"
 
   /users/search:
     get:
@@ -935,6 +989,36 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AssigneeOption"
+
+    EscalateTicketRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - target
+        - notes
+      properties:
+        target:
+          type: string
+          enum: ["Manajemen", "Vendor", "Tim Terkait"]
+          example: Vendor
+        notes:
+          type: string
+          minLength: 5
+          example: Perlu bantuan teknisi eksternal karena kerusakan komponen utama.
+
+    VerifyTicketRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - is_approved
+      properties:
+        is_approved:
+          type: boolean
+          example: true
+        keterangan_kendala:
+          type: string
+          description: Diperlukan jika is_approved bernilai false.
+          example: Perangkat masih belum menyala secara normal.
 
     CreateTicketHandlingRequest:
       type: object

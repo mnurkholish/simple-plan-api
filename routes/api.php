@@ -11,7 +11,9 @@ use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\RoleController;
 use App\Http\Controllers\Api\V1\TicketController;
+use App\Http\Controllers\Api\V1\TicketEscalationController;
 use App\Http\Controllers\Api\V1\TicketHandlingController;
+use App\Http\Controllers\Api\V1\TicketVerificationController;
 use App\Http\Controllers\Api\V1\UnitController;
 use App\Http\Controllers\Api\V1\UserController;
 use Illuminate\Support\Facades\Route;
@@ -92,7 +94,15 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             ->middleware('permission:tickets-handle')
             ->name('tickets.handlings.store')
             ->missing(fn () => response()->json(['message' => 'Resource not found.'], 404));
-        Route::post('tickets/{ticket}/verify', [TicketController::class, 'verifyResolution'])
+        Route::post('tickets/{ticket}/escalate', [TicketEscalationController::class, 'store'])
+            ->middleware('permission:tickets-handle')
+            ->name('tickets.escalate')
+            ->missing(fn () => response()->json(['message' => 'Resource not found.'], 404));
+        Route::post('tickets/{ticket}/de-escalate', [TicketController::class, 'deEscalate'])
+            ->middleware('permission:tickets-handle')
+            ->name('tickets.de-escalate')
+            ->missing(fn () => response()->json(['message' => 'Resource not found.'], 404));
+        Route::post('tickets/{ticket}/verify', [TicketVerificationController::class, 'verify'])
             ->name('tickets.verify-resolution')
             ->missing(fn () => response()->json(['message' => 'Resource not found.'], 404));
         Route::get('tickets/{ticket}', [TicketController::class, 'show'])

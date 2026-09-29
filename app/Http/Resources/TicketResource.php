@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use App\Enums\TicketService;
 use App\Enums\TicketStatus;
+use App\Services\SlaService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -92,6 +93,9 @@ class TicketResource extends JsonResource
             'sla_started_at' => $this->sla_started_at,
             'sla_deadline' => $this->sla_deadline,
             'completed_at' => $this->completed_at,
+            'status_sla' => $this->sla_started_at && $this->sla_deadline
+                ? app(SlaService::class)->determineSlaStatus($this->sla_started_at, $this->sla_deadline, $this->completed_at)
+                : null,
             'closed_at' => $this->closed_at,
             'handlings' => TicketHandlingResource::collection($this->whenLoaded('handlings')),
             'status_histories' => $this->when(

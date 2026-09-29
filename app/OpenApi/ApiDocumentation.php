@@ -40,17 +40,19 @@ use OpenApi\Annotations as OA;
  *     schema="User",
  *     type="object",
  *
- *     @OA\Property(property="id", type="integer", example=1),
- *     @OA\Property(property="name", type="string", example="Ahmad Ilyas"),
- *     @OA\Property(property="email", type="string", nullable=true, example="juniyasyos@gmail.com"),
- *     @OA\Property(property="nip", type="string", nullable=true, example="0000.00000"),
- *     @OA\Property(property="avatar", type="string", nullable=true),
- *     @OA\Property(property="email_verified_at", type="string", nullable=true, format="date-time"),
- *     @OA\Property(property="status", type="string", example="active"),
- *     @OA\Property(property="roles", type="array", @OA\Items(ref="#/components/schemas/Role")),
- *     @OA\Property(property="units", type="array", @OA\Items(ref="#/components/schemas/Unit")),
- *     @OA\Property(property="permissions", type="object", @OA\AdditionalProperties(type="boolean")),
- *     @OA\Property(property="created_at", type="string", nullable=true, format="date-time")
+ *     @OA\Property(property="id", type="integer", example=2),
+ *     @OA\Property(property="name", type="string", example="Dr. Rani"),
+ *     @OA\Property(property="email", type="string", nullable=true, example="rani@hospital.com"),
+ *     @OA\Property(property="nip", type="string", nullable=true, example="19801234567754"),
+ *     @OA\Property(property="avatar", type="string", nullable=true, example="https://example.com/avatar.jpg"),
+ *     @OA\Property(property="email_verified_at", type="string", nullable=true, format="date-time", example="2026-09-24T10:00:00Z"),
+ *     @OA\Property(property="jabatan", type="string", nullable=true, example="Dokter Kandungan"),
+ *     @OA\Property(property="no_hp", type="string", nullable=true, example="081234567890"),
+ *     @OA\Property(property="status_user", type="string", example="Aktif"),
+ *     @OA\Property(property="alasan_nonaktif", type="string", nullable=true, example="Cuti melahirkan"),
+ *     @OA\Property(property="role", type="string", example="user"),
+ *     @OA\Property(property="unit", ref="#/components/schemas/Unit"),
+ *     @OA\Property(property="created_at", type="string", nullable=true, format="date-time", example="2026-09-01T10:00:00Z")
  * )
  *
  * @OA\Schema(
@@ -827,15 +829,24 @@ class ApiDocumentation
      *
      *     @OA\Parameter(ref="#/components/parameters/PageParam"),
      *     @OA\Parameter(ref="#/components/parameters/PerPageParam"),
-     *     @OA\Parameter(ref="#/components/parameters/SearchParam"),
+     *     @OA\Parameter(name="filter[search]", in="query", description="Search by name, email, or NIP", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="filter[unit_id]", in="query", description="Filter by unit ID", @OA\Schema(type="integer")),
      *     @OA\Parameter(ref="#/components/parameters/IncludeParam"),
      *     @OA\Parameter(name="sort", in="query", @OA\Schema(type="string", example="-created_at")),
      *
-     *     @OA\Response(response=200, description="Paginated users", @OA\JsonContent(
+     *     @OA\Response(
+     *         response=200,
+     *         description="Normal Flow & Alternative Flow (Pencarian Ditemukan/Tidak Ditemukan)",
      *
-     *         @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/User")),
-     *         @OA\Property(property="meta", ref="#/components/schemas/PaginationMeta")
-     *     ))
+     *         @OA\JsonContent(
+     *
+     *             @OA\Examples(example="found", summary="Normal Flow (Ditemukan berdasar unit)", value={"success": true, "message": "Berhasil mengambil daftar user.", "data": {{"id": 2, "nama": "Dr. Andi Setiawan", "unit_id": 1, "role": "user"}}}),
+     *             @OA\Examples(example="not_found", summary="Alternative Flow (Tidak ditemukan)", value={"success": true, "message": "Berhasil mengambil daftar user.", "data": {}}),
+     *
+     *             @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/User")),
+     *             @OA\Property(property="meta", ref="#/components/schemas/PaginationMeta")
+     *         )
+     *     )
      * )
      */
     public function usersIndex(): void {}
@@ -849,18 +860,31 @@ class ApiDocumentation
      *
      *     @OA\RequestBody(required=true, @OA\JsonContent(
      *         required={"name","email","password","password_confirmation"},
+     *         example={
+     *             "name": "Dr. Rani",
+     *             "email": "rani@hospital.com",
+     *             "nip": "19801234567754",
+     *             "password": "password123",
+     *             "password_confirmation": "password123",
+     *             "unit_id": 1,
+     *             "jabatan": "Dokter Kandungan",
+     *             "no_hp": "081234567890",
+     *             "role": "user"
+     *         },
      *
      *         @OA\Property(property="name", type="string"),
      *         @OA\Property(property="email", type="string"),
      *         @OA\Property(property="nip", type="string", nullable=true),
      *         @OA\Property(property="password", type="string"),
      *         @OA\Property(property="password_confirmation", type="string"),
-     *         @OA\Property(property="selectedRoles", type="array", @OA\Items(type="string")),
-     *         @OA\Property(property="selectedUnits", type="array", @OA\Items(type="integer")),
-     *         @OA\Property(property="status", type="string", enum={"active","inactive","suspended"})
+     *         @OA\Property(property="unit_id", type="integer"),
+     *         @OA\Property(property="jabatan", type="string"),
+     *         @OA\Property(property="no_hp", type="string"),
+     *         @OA\Property(property="role", type="string", enum={"super admin","koordinator-sarpras","petugas-tik","petugas-sarpras","user","management"})
      *     )),
      *
-     *     @OA\Response(response=201, description="Created user", @OA\JsonContent(@OA\Property(property="data", ref="#/components/schemas/User")))
+     *     @OA\Response(response=201, description="Created user", @OA\JsonContent(@OA\Property(property="data", ref="#/components/schemas/User"))),
+     *     @OA\Response(response=422, description="Alternative Flow: Validasi Gagal (Atribut kosong atau NIP/No HP sudah ada)", @OA\JsonContent(example={"message": "Form wajib diisi", "errors": {"nip": {"NIP sudah terdaftar di sistem."}, "password": {"Form wajib diisi"}}}))
      * )
      */
     public function usersStore(): void {}
@@ -925,7 +949,7 @@ class ApiDocumentation
      *
      *     @OA\Parameter(name="user", in="path", required=true, @OA\Schema(type="integer")),
      *
-     *     @OA\Response(response=200, description="User", @OA\JsonContent(@OA\Property(property="data", ref="#/components/schemas/User")))
+     *     @OA\Response(response=200, description="Normal Flow: Berhasil mengambil detail user", @OA\JsonContent(@OA\Property(property="data", ref="#/components/schemas/User")))
      * )
      */
     public function usersShow(): void {}
@@ -939,26 +963,91 @@ class ApiDocumentation
      *
      *     @OA\Parameter(name="user", in="path", required=true, @OA\Schema(type="integer")),
      *
-     *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/User")),
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *         example={
+     *             "name": "Dr. Rani (Updated)",
+     *             "email": "rani.updated@hospital.com",
+     *             "nip": "19801234567754",
+     *             "unit_id": 1,
+     *             "jabatan": "Dokter Kandungan",
+     *             "no_hp": "081234567899",
+     *             "role": "user"
+     *         },
      *
-     *     @OA\Response(response=200, description="Updated user", @OA\JsonContent(@OA\Property(property="data", ref="#/components/schemas/User")))
+     *         @OA\Property(property="name", type="string"),
+     *         @OA\Property(property="email", type="string"),
+     *         @OA\Property(property="nip", type="string", nullable=true),
+     *         @OA\Property(property="password", type="string", nullable=true),
+     *         @OA\Property(property="password_confirmation", type="string", nullable=true),
+     *         @OA\Property(property="unit_id", type="integer"),
+     *         @OA\Property(property="jabatan", type="string"),
+     *         @OA\Property(property="no_hp", type="string"),
+     *         @OA\Property(property="role", type="string", enum={"super admin","koordinator-sarpras","petugas-tik","petugas-sarpras","user","management"})
+     *     )),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Updated user",
+     *
+     *         @OA\JsonContent(
+     *             example={
+     *                 "data": {
+     *                     "id": 2,
+     *                     "name": "Dr. Rani (Updated)",
+     *                     "email": "rani.updated@hospital.com",
+     *                     "nip": "19801234567754",
+     *                     "unit_id": 1,
+     *                     "jabatan": "Dokter Kandungan",
+     *                     "no_hp": "081234567899",
+     *                     "role": "user"
+     *                 }
+     *             }
+     *         )
+     *     ),
+     *
+     *     @OA\Response(response=422, description="Alternative Flow: Data tidak lengkap/format salah", @OA\JsonContent(example={"message": "Format data tidak sesuai", "errors": {"no_hp": {"Format data tidak sesuai."}}}))
      * )
      */
     public function usersUpdate(): void {}
 
     /**
-     * @OA\Delete(
-     *     path="/users/{ids}",
+     * @OA\Patch(
+     *     path="/users/{user}/status",
      *     tags={"Users"},
-     *     summary="Delete one or many users",
+     *     summary="Toggle user status (Aktif/Nonaktif)",
      *     security={{"sanctum":{}}},
      *
-     *     @OA\Parameter(name="ids", in="path", required=true, description="Comma separated IDs", @OA\Schema(type="string", example="2,3")),
+     *     @OA\Parameter(name="user", in="path", required=true, @OA\Schema(type="integer")),
      *
-     *     @OA\Response(response=200, description="Deleted", @OA\JsonContent(ref="#/components/schemas/MessageResponse"))
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="Menangani dua skenario: Nonaktif dengan alasan, atau Aktif kembali dengan alasan_nonaktif null",
+     *
+     *         @OA\JsonContent(
+     *             example={"status_user": "Nonaktif", "alasan_nonaktif": "Pindah tugas"},
+     *
+     *             @OA\Property(property="status_user", type="string", enum={"Aktif","Nonaktif"}),
+     *             @OA\Property(property="alasan_nonaktif", type="string", nullable=true)
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Normal & Alternative Flow: Berhasil menonaktifkan user ATAU berhasil mengaktifkan kembali user.",
+     *
+     *         @OA\JsonContent(
+     *
+     *             @OA\Examples(example="deactivated", summary="Normal Flow (Berhasil menonaktifkan)", value={"message": "Status user berhasil diubah.", "data": {"status_user": "Nonaktif", "alasan_nonaktif": "Cuti Panjang"}}),
+     *             @OA\Examples(example="reactivated", summary="Alternative Flow (Berhasil mengaktifkan kembali)", value={"message": "Status user berhasil diubah.", "data": {"status_user": "Aktif", "alasan_nonaktif": null}}),
+     *
+     *             @OA\Property(property="data", ref="#/components/schemas/User")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(response=422, description="Alternative Flow: Alasan nonaktif tidak dipilih saat menonaktifkan", @OA\JsonContent(example={"message": "Format data tidak sesuai", "errors": {"alasan_nonaktif": {"Format data tidak sesuai."}}}))
      * )
      */
-    public function usersDestroy(): void {}
+    public function usersToggleStatus(): void {}
 
     /**
      * @OA\Get(
@@ -1371,6 +1460,7 @@ class ApiDocumentation
      *     @OA\Parameter(name="date_from", in="query", required=false, description="Inclusive created date lower bound.", @OA\Schema(type="string", format="date")),
      *     @OA\Parameter(name="date_to", in="query", required=false, description="Inclusive created date upper bound.", @OA\Schema(type="string", format="date")),
      *     @OA\Parameter(name="search", in="query", required=false, description="Search by ticket reporter name or unit name.", @OA\Schema(type="string", maxLength=255)),
+     *     @OA\Parameter(name="status_sla", in="query", required=false, description="Filter tiket berdasarkan status SLA secara on-the-fly.", @OA\Schema(type="string", enum={"melewati_batas","mendekati_batas","tepat_waktu"})),
      *
      *     @OA\Response(response=200, description="Paginated tickets", @OA\JsonContent(ref="#/components/schemas/TicketCollectionResponse")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
@@ -1511,6 +1601,32 @@ class ApiDocumentation
 
     /**
      * @OA\Post(
+     *     path="/tickets/{ticket}/escalate",
+     *     operationId="escalateTicket",
+     *     tags={"Helpdesk"},
+     *     summary="Escalate a processing ticket",
+     *     description="Escalate ticket to Manajemen, Vendor, or Tim Terkait. Requires assigned officer.",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
+     *
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *         required={"target", "notes"},
+     *         @OA\Property(property="target", type="string", enum={"Manajemen","Vendor","Tim Terkait"}, example="Manajemen"),
+     *         @OA\Property(property="notes", type="string", example="Butuh persetujuan anggaran pergantian sparepart.")
+     *     )),
+     *
+     *     @OA\Response(response=200, description="Ticket escalated", @OA\JsonContent(ref="#/components/schemas/TicketActionResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Missing permission or wrong officer", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=404, description="Ticket not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=422, description="Invalid escalation data", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
+     * )
+     */
+    public function ticketsEscalate(): void {}
+
+    /**
+     * @OA\Post(
      *     path="/tickets/{ticket}/handlings",
      *     operationId="createTicketHandling",
      *     tags={"Helpdesk"},
@@ -1542,6 +1658,12 @@ class ApiDocumentation
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
+     *
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *         required={"is_approved"},
+     *         @OA\Property(property="is_approved", type="boolean", example=true),
+     *         @OA\Property(property="keterangan_kendala", type="string", nullable=true, example="Masalah jaringan masih berlanjut.")
+     *     )),
      *
      *     @OA\Response(response=200, description="Ticket resolution verified and closed", @OA\JsonContent(ref="#/components/schemas/TicketActionResponse")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),

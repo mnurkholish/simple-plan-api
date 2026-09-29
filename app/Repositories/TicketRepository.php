@@ -50,6 +50,41 @@ class TicketRepository
                 ),
             )
             ->when(
+                $filters['status_sla'] ?? null,
+                function (Builder $query, string $statusSla): Builder {
+                    $now = now();
+
+                    return $query->where(function (Builder $q) use ($statusSla, $now): void {
+                        $q->whereNotNull('sla_deadline')->whereNotNull('sla_started_at');
+
+                        if ($statusSla === 'melewati_batas') {
+                            $q->where(function (Builder $sub) use ($now): void {
+                                $sub->whereNotNull('completed_at')
+                                    ->whereColumn('completed_at', '>', 'sla_deadline')
+                                    ->orWhere(function (Builder $sub2) use ($now): void {
+                                        $sub2->whereNull('completed_at')
+                                            ->where('sla_deadline', '<', $now);
+                                    });
+                            });
+                        } elseif ($statusSla === 'tepat_waktu') {
+                            $q->where(function (Builder $sub) use ($now): void {
+                                $sub->whereNotNull('completed_at')
+                                    ->whereColumn('completed_at', '<=', 'sla_deadline')
+                                    ->orWhere(function (Builder $sub2) use ($now): void {
+                                        $sub2->whereNull('completed_at')
+                                            ->where('sla_deadline', '>=', $now)
+                                            ->whereRaw('TIMESTAMPDIFF(MINUTE, ?, sla_deadline) > (TIMESTAMPDIFF(MINUTE, sla_started_at, sla_deadline) * 0.25)', [$now]);
+                                    });
+                            });
+                        } elseif ($statusSla === 'mendekati_batas') {
+                            $q->whereNull('completed_at')
+                                ->where('sla_deadline', '>=', $now)
+                                ->whereRaw('TIMESTAMPDIFF(MINUTE, ?, sla_deadline) <= (TIMESTAMPDIFF(MINUTE, sla_started_at, sla_deadline) * 0.25)', [$now]);
+                        }
+                    });
+                }
+            )
+            ->when(
                 $filters['search'] ?? null,
                 function (Builder $query, string $search): Builder {
                     return $query->where(function (Builder $query) use ($search): void {
