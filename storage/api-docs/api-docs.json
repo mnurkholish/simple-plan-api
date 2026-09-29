@@ -16,7 +16,7 @@
             "post": {
                 "tags": ["Helpdesk"],
                 "summary": "Menarik kembali tiket dari status eskalasi (De-escalate)",
-                "description": "Hanya petugas yang ditugaskan yang dapat melakukan ini.",
+                "description": "Hanya petugas yang ditugaskan dengan permission tickets-handle yang dapat melakukan ini.",
                 "operationId": "deEscalateTicket",
                 "parameters": [
                     {
@@ -45,6 +45,36 @@
                     },
                     "401": {
                         "description": "Unauthenticated - Token tidak valid atau tidak dikirim"
+                    },
+                    "403": {
+                        "description": "Missing permission or wrong officer",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Ticket not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Ticket state conflict",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -2973,7 +3003,7 @@
             "post": {
                 "tags": ["Helpdesk"],
                 "summary": "Escalate a processing ticket",
-                "description": "Escalate ticket to Manajemen, Vendor, or Tim Terkait. Requires assigned officer.",
+                "description": "Escalate ticket to Manajemen, Vendor, or Tim Terkait. Requires assigned officer and tickets-handle permission.",
                 "operationId": "escalateTicket",
                 "parameters": [
                     {

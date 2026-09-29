@@ -1605,7 +1605,7 @@ class ApiDocumentation
      *     operationId="escalateTicket",
      *     tags={"Helpdesk"},
      *     summary="Escalate a processing ticket",
-     *     description="Escalate ticket to Manajemen, Vendor, or Tim Terkait. Requires assigned officer.",
+     *     description="Escalate ticket to Manajemen, Vendor, or Tim Terkait. Requires assigned officer and tickets-handle permission.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),

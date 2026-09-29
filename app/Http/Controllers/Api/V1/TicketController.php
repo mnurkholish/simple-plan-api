@@ -128,13 +128,14 @@ class TicketController extends Controller
             ),
         );
     }
+
     /**
      * @OA\Post(
      *     path="/tickets/{ticket}/de-escalate",
      *     operationId="deEscalateTicket",
      *     tags={"Helpdesk"},
      *     summary="Menarik kembali tiket dari status eskalasi (De-escalate)",
-     *     description="Hanya petugas yang ditugaskan yang dapat melakukan ini.",
+     *     description="Hanya petugas yang ditugaskan dengan permission tickets-handle yang dapat melakukan ini.",
      *     security={{"sanctum": {}}},
      *     @OA\Parameter(
      *         name="ticket",
@@ -157,6 +158,21 @@ class TicketController extends Controller
      *     @OA\Response(
      *         response=401,
      *         description="Unauthenticated - Token tidak valid atau tidak dikirim"
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Missing permission or wrong officer",
+     *         @OA\JsonContent(ref="#/components/schemas/TicketReadError")
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Ticket not found",
+     *         @OA\JsonContent(ref="#/components/schemas/TicketReadError")
+     *     ),
+     *     @OA\Response(
+     *         response=409,
+     *         description="Ticket state conflict",
+     *         @OA\JsonContent(ref="#/components/schemas/TicketReadError")
      *     )
      * )
      */

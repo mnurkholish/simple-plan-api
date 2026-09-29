@@ -407,6 +407,34 @@ paths:
         "422":
           $ref: "#/components/responses/TicketValidationError"
 
+  /tickets/{ticket}/de-escalate:
+    post:
+      tags: [Helpdesk]
+      summary: Melanjutkan penanganan tiket setelah eskalasi
+      operationId: deEscalateTicket
+      description: |
+        Petugas yang ditugaskan dapat mengembalikan tiket berstatus Eskalasi
+        ke Diproses. Membutuhkan permission tickets-handle.
+      x-auth-required: true
+      x-required-permission: tickets-handle
+      parameters:
+        - $ref: "#/components/parameters/TicketId"
+      responses:
+        "200":
+          description: Tiket kembali diproses.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketActionResponse"
+        "401":
+          $ref: "#/components/responses/TicketUnauthenticated"
+        "403":
+          $ref: "#/components/responses/TicketForbidden"
+        "404":
+          $ref: "#/components/responses/TicketNotFound"
+        "409":
+          $ref: "#/components/responses/TicketConflict"
+
   /tickets/{ticket}/verify:
     post:
       tags: [Helpdesk]
