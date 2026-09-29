@@ -117,7 +117,8 @@ test('it generates the Helpdesk ticket Swagger contract', function (): void {
                 '/tickets/{ticket}/assign',
                 '/tickets/{ticket}/handlings',
                 '/tickets/{ticket}/verify',
-            ]);
+            ])
+            ->not->toHaveKey('/api/v1/tickets/{ticket}/handlings');
 
         $listOperation = $documentation['paths']['/tickets']['get'];
         $parameters = collect($listOperation['parameters'])->keyBy('name');

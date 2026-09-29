@@ -46,7 +46,7 @@ paths:
           schema:
             type: string
             enum:
-              [baru, diklasifikasi, diproses, terselesaikan, ditutup, ditolak]
+              [baru, diklasifikasi, diproses, eskalasi, terselesaikan, ditutup, ditolak]
             example: baru
         - name: priority
           in: query
@@ -613,7 +613,7 @@ components:
           example: Komputer tidak dapat menyala.
         status:
           type: string
-          enum: [baru, diklasifikasi, diproses, terselesaikan, ditutup, ditolak]
+          enum: [baru, diklasifikasi, diproses, eskalasi, terselesaikan, ditutup, ditolak]
           example: baru
         rejection_reason:
           type:

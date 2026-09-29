@@ -13,16 +13,19 @@ Fitur eskalasi tiket ke pihak eksternal/manajemen.
 
 **Response:**
 - `200 OK`: Jika eskalasi berhasil dilakukan.
+- `409 Conflict`: Jika tiket tidak berstatus `diproses`.
 - `422 Unprocessable Entity`: Jika validasi gagal (misalnya format target salah atau notes kurang dari 5 karakter).
 
 ## Status Flow
-`diproses -> eskalasi`
+`diproses -> eskalasi -> diproses`
 
 ## Authorization
 Hanya dapat dilakukan oleh teknisi yang ditugaskan (`assigned_officer_id`).
 
 ## Routes
 `POST /api/v1/tickets/{ticket}/escalate`
+
+`POST /api/v1/tickets/{ticket}/de-escalate`
 
 ## Notes
 - Frontend dapat mengandalkan error 422 untuk menampilkan feedback validasi.

@@ -54,77 +54,6 @@
                 ]
             }
         },
-        "/api/v1/tickets/{ticket}/handlings": {
-            "post": {
-                "tags": ["Helpdesk"],
-                "summary": "Menginput penanganan tiket oleh teknisi",
-                "description": "Digunakan oleh petugas untuk melaporkan hasil pengerjaan tiket. Status tiket harus 'diproses' dan akan berubah menjadi 'terselesaikan'.",
-                "operationId": "storeHandling",
-                "parameters": [
-                    {
-                        "name": "ticket",
-                        "in": "path",
-                        "description": "ID dari tiket",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "required": [
-                                    "notes",
-                                    "status",
-                                    "started_at",
-                                    "completed_at"
-                                ],
-                                "properties": {
-                                    "notes": {
-                                        "description": "Catatan penanganan dari teknisi",
-                                        "type": "string"
-                                    },
-                                    "status": {
-                                        "description": "Status penyelesaian",
-                                        "type": "string",
-                                        "enum": ["terselesaikan"]
-                                    },
-                                    "started_at": {
-                                        "description": "Waktu mulai pengerjaan (Y-m-d H:i:s)",
-                                        "type": "string",
-                                        "format": "date-time"
-                                    },
-                                    "completed_at": {
-                                        "description": "Waktu selesai pengerjaan (Y-m-d H:i:s)",
-                                        "type": "string",
-                                        "format": "date-time"
-                                    },
-                                    "result_photo": {
-                                        "description": "Foto bukti penyelesaian (opsional)",
-                                        "type": "string",
-                                        "format": "binary"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Penanganan berhasil disimpan"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
         "/auth/login": {
             "post": {
                 "tags": ["Auth"],
@@ -2414,6 +2343,7 @@
                                 "baru",
                                 "diklasifikasi",
                                 "diproses",
+                                "eskalasi",
                                 "terselesaikan",
                                 "ditutup",
                                 "ditolak"
@@ -4061,6 +3991,7 @@
                             "baru",
                             "diklasifikasi",
                             "diproses",
+                            "eskalasi",
                             "terselesaikan",
                             "ditutup",
                             "ditolak"

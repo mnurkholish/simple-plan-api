@@ -34,6 +34,7 @@ class ListTicketRequest extends FormRequest
                 TicketStatus::Baru->value,
                 TicketStatus::Diklasifikasi->value,
                 TicketStatus::Diproses->value,
+                TicketStatus::Eskalasi->value,
                 TicketStatus::Terselesaikan->value,
                 TicketStatus::Ditutup->value,
                 TicketStatus::Ditolak->value,

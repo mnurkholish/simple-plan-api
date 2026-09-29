@@ -2,22 +2,23 @@
 
 namespace App\Services;
 
+use App\Enums\TicketStatus;
 use App\Models\Ticket;
-use Exception;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 class EscalationService
 {
     /**
      * Mengekalasi tiket ke pihak ketiga atau terkait.
      *
-     * @throws Exception
+     * @throws ConflictHttpException
      */
     public function escalateTicket(Ticket $ticket, array $data, int $escalatedById): Ticket
     {
         // a. Pastikan status tiket saat ini adalah 'diproses'
-        if ($ticket->status->value !== 'diproses') {
-            throw new Exception("Hanya tiket berstatus 'diproses' yang dapat dieskalasi.");
+        if ($ticket->status !== TicketStatus::Diproses) {
+            throw new ConflictHttpException("Hanya tiket berstatus 'diproses' yang dapat dieskalasi.");
         }
 
         return DB::transaction(function () use ($ticket, $data, $escalatedById) {
@@ -50,13 +51,13 @@ class EscalationService
     /**
      * Melanjutkan penanganan tiket setelah selesai dari eskalasi.
      *
-     * @throws Exception
+     * @throws ConflictHttpException
      */
     public function resumeTicket(Ticket $ticket, int $resumedById): Ticket
     {
         // a. Pastikan status tiket saat ini adalah 'eskalasi'
-        if ($ticket->status !== 'eskalasi') {
-            throw new Exception("Hanya tiket berstatus 'eskalasi' yang penanganannya dapat dilanjutkan.");
+        if ($ticket->status !== TicketStatus::Eskalasi) {
+            throw new ConflictHttpException("Hanya tiket berstatus 'eskalasi' yang penanganannya dapat dilanjutkan.");
         }
 
         return DB::transaction(function () use ($ticket, $resumedById) {
