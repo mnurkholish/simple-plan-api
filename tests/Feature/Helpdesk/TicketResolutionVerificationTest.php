@@ -32,7 +32,9 @@ test('reporter verification closes a completed ticket directly and records histo
 
     try {
         Carbon::setTestNow('2026-09-26 10:30:00');
-        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/verify");
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/verify", [
+            'is_approved' => true,
+        ]);
     } finally {
         Carbon::setTestNow();
     }
@@ -64,7 +66,7 @@ test('a user other than the reporter cannot verify resolution', function (): voi
         ->create(['status' => TicketStatus::Terselesaikan]);
     Sanctum::actingAs(User::factory()->create());
 
-    $this->postJson("/api/v1/tickets/{$ticket->id}/verify")
+    $this->postJson("/api/v1/tickets/{$ticket->id}/verify", ['is_approved' => true])
         ->assertForbidden();
 
     expect($ticket->refresh()->status)->toBe(TicketStatus::Terselesaikan)
@@ -79,7 +81,7 @@ test('reporter cannot verify a ticket outside completed status', function (Ticke
         ->create(['status' => $status]);
     Sanctum::actingAs($reporter);
 
-    $this->postJson("/api/v1/tickets/{$ticket->id}/verify")
+    $this->postJson("/api/v1/tickets/{$ticket->id}/verify", ['is_approved' => true])
         ->assertConflict()
         ->assertJsonPath(
             'message',
@@ -98,14 +100,49 @@ test('reporter cannot verify a ticket outside completed status', function (Ticke
 test('guest cannot verify a completed ticket', function (): void {
     $ticket = Ticket::factory()->create(['status' => TicketStatus::Terselesaikan]);
 
-    $this->postJson("/api/v1/tickets/{$ticket->id}/verify")
+    $this->postJson("/api/v1/tickets/{$ticket->id}/verify", ['is_approved' => true])
         ->assertUnauthorized();
 });
 
 test('verification endpoint returns 404 when ticket does not exist', function (): void {
     Sanctum::actingAs(User::factory()->create());
 
-    $this->postJson('/api/v1/tickets/999999/verify')
+    $this->postJson('/api/v1/tickets/999999/verify', ['is_approved' => true])
         ->assertNotFound()
         ->assertExactJson(['message' => 'Resource not found.']);
+});
+
+test('reporter can reject a completed ticket with an issue description', function (): void {
+    $reporter = User::factory()->for(Unit::factory())->create();
+    $ticket = Ticket::factory()
+        ->reportedBy($reporter)
+        ->create(['status' => TicketStatus::Terselesaikan]);
+    Sanctum::actingAs($reporter);
+
+    $this->postJson("/api/v1/tickets/{$ticket->id}/verify", [
+        'is_approved' => false,
+        'keterangan_kendala' => 'Masalah masih terjadi setelah penanganan.',
+    ])
+        ->assertOk()
+        ->assertJsonPath('data.status', TicketStatus::Diproses->value);
+
+    $this->assertDatabaseHas('ticket_status_histories', [
+        'ticket_id' => $ticket->id,
+        'from_status' => TicketStatus::Terselesaikan->value,
+        'to_status' => TicketStatus::Diproses->value,
+        'changed_by_id' => $reporter->id,
+        'notes' => 'Masalah masih terjadi setelah penanganan.',
+    ]);
+});
+
+test('verification requires an approval decision', function (): void {
+    $reporter = User::factory()->for(Unit::factory())->create();
+    $ticket = Ticket::factory()
+        ->reportedBy($reporter)
+        ->create(['status' => TicketStatus::Terselesaikan]);
+    Sanctum::actingAs($reporter);
+
+    $this->postJson("/api/v1/tickets/{$ticket->id}/verify")
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('is_approved');
 });

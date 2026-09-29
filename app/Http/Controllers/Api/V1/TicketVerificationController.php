@@ -25,11 +25,6 @@ class TicketVerificationController extends Controller
     {
         $validated = $request->validated();
 
-        // Pastikan tiket berstatus Terselesaikan
-        if ($ticket->status !== TicketStatus::Terselesaikan) {
-            return response()->json(['message' => 'Tiket tidak dalam status Terselesaikan.'], 409);
-        }
-
         $technician = $ticket->assignedOfficer;
 
         if ($validated['is_approved']) {

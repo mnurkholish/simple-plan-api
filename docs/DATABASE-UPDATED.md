@@ -368,11 +368,8 @@ Eskalasi
 └── Diproses
 
 Terselesaikan
-├── Terverifikasi
+├── Ditutup
 └── Diproses
-
-Terverifikasi
-└── Ditutup
 ```
 
 Rules:

@@ -322,11 +322,8 @@ Eskalasi
 └── Diproses
 
 Terselesaikan
-├── Terverifikasi
+├── Ditutup
 └── Diproses
-
-Terverifikasi
-└── Ditutup
 ```
 
 Rules:
@@ -800,11 +797,8 @@ Flow:
 
 ```text
 Terselesaikan
-→ Terverifikasi
 → Ditutup
 ```
-
-`Terverifikasi → Ditutup` dapat dilakukan otomatis oleh sistem.
 
 ## Tolak Penyelesaian
 
@@ -1093,7 +1087,7 @@ Sprint 1 Helpdesk dianggap sesuai requirement jika:
 9. Eskalasi mencatat target dan kembali ke `Diproses` setelah tindak lanjut.
 10. Tiket hanya dapat diverifikasi oleh reporter.
 11. Reporter dapat menolak penyelesaian dan tiket kembali `Diproses`.
-12. Tiket yang disetujui menjadi `Terverifikasi` lalu `Ditutup`.
+12. Tiket yang disetujui langsung menjadi `Ditutup`.
 13. SLA dihitung dari assignment pertama sampai `Terselesaikan`.
 14. Notification minimum berjalan pada event Helpdesk utama.
 15. Existing user/master data tidak mengalami refactor naming yang tidak diperlukan.
