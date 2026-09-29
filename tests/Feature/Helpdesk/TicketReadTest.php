@@ -222,45 +222,50 @@ test('it filters tickets by an inclusive date range', function (): void {
         ->assertJsonPath('data.1.ticket_number', 'TIK-2026-000002');
 });
 
-test('it searches ticket number classification and description', function (): void {
-    $user = User::factory()->create();
-    $unit = Unit::factory()->create();
-    $qualityCategory = QualityCategory::create([
-        'name' => 'Ketidaksesuaian Program',
-        'is_active' => true,
-    ]);
-    $itTag = ItTag::create([
-        'name' => 'Perangkat Komputer',
-        'is_active' => true,
-    ]);
-    $sarprasCategory = SarprasCategory::create([
-        'name' => 'Air Conditioner',
-        'is_active' => true,
-    ]);
-    actingAsTicketReader($user);
+test('it searches tickets by reporter name and unit name', function (): void {
+    $reader = User::factory()->create();
+    $reader->syncRoles('management');
+    actingAsTicketReader($reader);
 
-    $tikTicket = Ticket::factory()->for($user, 'reporter')->for($unit)->create([
-        'ticket_number' => 'TIK-2026-000042',
-        'description' => 'Perangkat tidak dapat menyala.',
-    ]);
-    $tikTicket->tikDetail()->create([
-        'quality_category_id' => $qualityCategory->id,
-        'it_tag_id' => $itTag->id,
+    $radiology = Unit::factory()->create([
+        'unit_name' => 'Unit Radiologi',
     ]);
 
-    $sarprasTicket = Ticket::factory()->for($user, 'reporter')->for($unit)->create([
-        'ticket_number' => 'SPR-2026-000001',
-        'description' => 'Ruangan terasa panas.',
-        'service' => TicketService::Sarpras,
-    ]);
-    $sarprasTicket->sarprasDetail()->create([
-        'sarpras_category_id' => $sarprasCategory->id,
+    $pharmacy = Unit::factory()->create([
+        'unit_name' => 'Unit Farmasi',
     ]);
 
-    $this->getJson('/api/v1/tickets?search=komputer')
+    $rina = User::factory()->create([
+        'name' => 'Rina Pelapor',
+    ]);
+
+    $budi = User::factory()->create([
+        'name' => 'Budi Santoso',
+    ]);
+
+    Ticket::factory()
+        ->for($rina, 'reporter')
+        ->for($radiology)
+        ->create([
+            'ticket_number' => 'TIK-2026-000042',
+        ]);
+
+    Ticket::factory()
+        ->for($budi, 'reporter')
+        ->for($pharmacy)
+        ->create([
+            'ticket_number' => 'TIK-2026-000043',
+        ]);
+
+    $this->getJson('/api/v1/tickets?search=Rina')
         ->assertOk()
         ->assertJsonCount(1, 'data')
         ->assertJsonPath('data.0.ticket_number', 'TIK-2026-000042');
+
+    $this->getJson('/api/v1/tickets?search=Farmasi')
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.ticket_number', 'TIK-2026-000043');
 });
 
 test('it binds ticket search input as a value', function (): void {

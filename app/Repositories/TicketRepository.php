@@ -53,26 +53,16 @@ class TicketRepository
                 $filters['search'] ?? null,
                 function (Builder $query, string $search): Builder {
                     return $query->where(function (Builder $query) use ($search): void {
-                        foreach (['ticket_number', 'description'] as $column) {
-                            $query->orWhereLike($column, "%{$search}%");
-                        }
-
                         $query
-                            ->orWhereHas('tikDetail', function (Builder $detailQuery) use ($search): void {
-                                $detailQuery
-                                    ->whereLike('custom_it_tag_text', "%{$search}%")
-                                    ->orWhereHas(
-                                        'qualityCategory',
-                                        fn (Builder $categoryQuery): Builder => $categoryQuery->whereLike('name', "%{$search}%"),
-                                    )
-                                    ->orWhereHas(
-                                        'itTag',
-                                        fn (Builder $tagQuery): Builder => $tagQuery->whereLike('name', "%{$search}%"),
-                                    );
-                            })
+                            ->whereHas(
+                                'reporter',
+                                fn (Builder $reporterQuery): Builder => $reporterQuery
+                                    ->whereLike('name', "%{$search}%"),
+                            )
                             ->orWhereHas(
-                                'sarprasDetail.sarprasCategory',
-                                fn (Builder $categoryQuery): Builder => $categoryQuery->whereLike('name', "%{$search}%"),
+                                'unit',
+                                fn (Builder $unitQuery): Builder => $unitQuery
+                                    ->whereLike('unit_name', "%{$search}%"),
                             );
                     });
                 },

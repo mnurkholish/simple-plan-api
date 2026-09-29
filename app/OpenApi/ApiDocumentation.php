@@ -1370,7 +1370,7 @@ class ApiDocumentation
      *     @OA\Parameter(name="priority", in="query", required=false, description="Ticket priority.", @OA\Schema(type="string", enum={"critical","high","medium","low"})),
      *     @OA\Parameter(name="date_from", in="query", required=false, description="Inclusive created date lower bound.", @OA\Schema(type="string", format="date")),
      *     @OA\Parameter(name="date_to", in="query", required=false, description="Inclusive created date upper bound.", @OA\Schema(type="string", format="date")),
-     *     @OA\Parameter(name="search", in="query", required=false, description="Search ticket number, classification, and description.", @OA\Schema(type="string", maxLength=255)),
+     *     @OA\Parameter(name="search", in="query", required=false, description="Search by ticket reporter name or unit name.", @OA\Schema(type="string", maxLength=255)),
      *
      *     @OA\Response(response=200, description="Paginated tickets", @OA\JsonContent(ref="#/components/schemas/TicketCollectionResponse")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),

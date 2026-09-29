@@ -2240,11 +2240,8 @@
                             "enum": [
                                 "baru",
                                 "diklasifikasi",
-                                "ditugaskan",
                                 "diproses",
-                                "eskalasi",
                                 "terselesaikan",
-                                "terverifikasi",
                                 "ditutup",
                                 "ditolak"
                             ]
@@ -2288,7 +2285,7 @@
                     {
                         "name": "search",
                         "in": "query",
-                        "description": "Search ticket number, classification, and description.",
+                        "description": "Search by ticket reporter name or unit name.",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -2783,7 +2780,7 @@
                     "Helpdesk"
                 ],
                 "summary": "Assign or reassign a ticket officer",
-                "description": "TIK assignment is limited to Super Admin and requires Petugas TIK. Sarpras assignment is limited to Koordinator Sarpras and requires Petugas Sarpras. Initial assignment from diklasifikasi requires priority, sets assigned_at, starts the SLA deadline, and transitions to ditugaskan. Reassignment from ditugaskan or diproses updates the officer and assigned_at without resetting priority or SLA; diproses transitions back to ditugaskan. Requires the tickets-assign permission.",
+                "description": "TIK assignment is limited to Super Admin and requires Petugas TIK. Sarpras assignment is limited to Koordinator Sarpras and requires Petugas Sarpras. Initial assignment from diklasifikasi requires priority, sets assigned_at and sla_started_at, starts the SLA deadline, and transitions directly to diproses. Reassignment from diproses updates the officer and assigned_at without resetting the first SLA start or deadline. Requires the tickets-assign permission.",
                 "operationId": "assignTicket",
                 "parameters": [
                     {
@@ -2881,7 +2878,7 @@
                     "Helpdesk"
                 ],
                 "summary": "Add ticket handling history",
-                "description": "Only the currently assigned officer with the service-appropriate role may add handling. A ditugaskan ticket can only become diproses. A diproses ticket can remain diproses without status history or become terselesaikan with status history and tickets.completed_at. Handling never recalculates SLA. Requires the tickets-handle permission.",
+                "description": "Only the currently assigned officer with the service-appropriate role may add handling. A diproses ticket can remain diproses without status history or become terselesaikan with status history. tickets.completed_at uses the manually supplied completed_at value. Handling never recalculates SLA. Requires the tickets-handle permission.",
                 "operationId": "createTicketHandling",
                 "parameters": [
                     {
@@ -2961,6 +2958,84 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/tickets/{ticket}/verify": {
+            "post": {
+                "tags": [
+                    "Helpdesk"
+                ],
+                "summary": "Verify a completed ticket and close it",
+                "description": "Only the ticket reporter may verify a terselesaikan ticket. Verification transitions directly to ditutup, records closed_at, and creates status history without using terverifikasi.",
+                "operationId": "verifyTicketResolution",
+                "parameters": [
+                    {
+                        "name": "ticket",
+                        "in": "path",
+                        "description": "Internal ticket ID.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ticket resolution verified and closed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketActionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Actor is not the ticket reporter",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Ticket not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Ticket is not completed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
                                 }
                             }
                         }
@@ -3668,6 +3743,7 @@
                     "initial_evidence",
                     "classified_at",
                     "assigned_at",
+                    "sla_started_at",
                     "sla_deadline",
                     "completed_at",
                     "closed_at",
@@ -3724,11 +3800,8 @@
                         "enum": [
                             "baru",
                             "diklasifikasi",
-                            "ditugaskan",
                             "diproses",
-                            "eskalasi",
                             "terselesaikan",
-                            "terverifikasi",
                             "ditutup",
                             "ditolak"
                         ]
@@ -3794,6 +3867,12 @@
                         "nullable": true
                     },
                     "assigned_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "sla_started_at": {
+                        "description": "Time the ticket first entered diproses and its SLA started.",
                         "type": "string",
                         "format": "date-time",
                         "nullable": true
@@ -4015,7 +4094,7 @@
                         "example": "Kabel daya dikencangkan dan perangkat diuji."
                     },
                     "status": {
-                        "description": "Ditugaskan only accepts diproses; Diproses accepts diproses or terselesaikan. Stored on tickets.status, not ticket_handlings.",
+                        "description": "Diproses accepts diproses or terselesaikan. Stored on tickets.status, not ticket_handlings.",
                         "type": "string",
                         "example": "diproses",
                         "enum": [
