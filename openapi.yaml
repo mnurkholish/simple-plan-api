@@ -17,6 +17,8 @@ servers:
 tags:
   - name: Helpdesk
     description: Pengelolaan tiket Helpdesk TIK dan Sarpras
+  - name: Assets
+    description: Pencarian asset
   - name: Users
     description: Pengelolaan dan pencarian user
 
@@ -470,6 +472,55 @@ paths:
           $ref: "#/components/responses/TicketConflict"
         "422":
           $ref: "#/components/responses/TicketValidationError"
+
+  /assets/search:
+    get:
+      tags: [Assets]
+      summary: Mencari asset berdasarkan nomor atau nama
+      operationId: searchAssets
+      description: Mengembalikan asset pada unit yang dipilih dengan asset_number atau name yang mengandung nilai search.
+      x-auth-required: true
+      x-required-permission: tickets-create
+      parameters:
+        - name: unit
+          in: query
+          required: true
+          description: ID unit asset.
+          schema:
+            type: integer
+            example: 1
+        - name: search
+          in: query
+          required: false
+          description: Nomor atau nama asset yang dicari.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 255
+            example: Meja
+      responses:
+        "200":
+          description: Hasil pencarian asset berhasil diambil.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AssetSummary"
+        "401":
+          $ref: "#/components/responses/TicketUnauthenticated"
+        "403":
+          $ref: "#/components/responses/TicketForbidden"
+        "422":
+          description: Parameter pencarian asset tidak valid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketReadError"
 
   /users/search:
     get:
