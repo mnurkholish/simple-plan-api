@@ -108,6 +108,15 @@ use OpenApi\Annotations as OA;
  * )
  *
  * @OA\Schema(
+ *     schema="UnitSearchResult",
+ *     type="object",
+ *     required={"id","unit_name"},
+ *
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="unit_name", type="string", example="ICU")
+ * )
+ *
+ * @OA\Schema(
  *     schema="Notification",
  *     type="object",
  *
@@ -1181,6 +1190,31 @@ class ApiDocumentation
      * )
      */
     public function unitsIndex(): void {}
+
+    /**
+     * @OA\Get(
+     *     path="/units/search",
+     *     tags={"Units"},
+     *     summary="Search units by name",
+     *     operationId="searchUnits",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="search", in="query", required=false, description="Unit name", @OA\Schema(type="string", minLength=1, maxLength=255, example="ICU")),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Unit search results",
+     *
+     *         @OA\JsonContent(
+     *             @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/UnitSearchResult"))
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthenticated"),
+     *     @OA\Response(response=403, description="Missing tickets-create permission"),
+     *     @OA\Response(response=422, description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
+     * )
+     */
+    public function unitsSearch(): void {}
 
     /**
      * @OA\Post(

@@ -192,6 +192,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::get('units', [UnitController::class, 'index'])
             ->middleware('permission:units-access-all|units-access-owned')
             ->name('units.index');
+        Route::get('units/search', [UnitController::class, 'search'])
+            ->middleware('permission:tickets-create')
+            ->name('units.search');
         Route::post('units', [UnitController::class, 'store'])
             ->middleware('permission:units-create-all')
             ->name('units.store');

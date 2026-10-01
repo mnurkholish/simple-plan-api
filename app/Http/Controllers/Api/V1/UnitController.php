@@ -3,14 +3,17 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\SearchUnitsRequest;
 use App\Http\Requests\SyncUnitUsersRequest;
 use App\Http\Requests\UnitRequest;
 use App\Http\Resources\UnitResource;
+use App\Http\Resources\UnitSearchResource;
 use App\Http\Resources\UserResource;
 use App\Models\Unit;
 use App\Models\User;
 use App\Services\UnitService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Spatie\QueryBuilder\QueryBuilder;
 
 class UnitController extends Controller
@@ -41,6 +44,13 @@ class UnitController extends Controller
         }
 
         return UnitResource::collection($this->dynamicPaginate($query));
+    }
+
+    public function search(SearchUnitsRequest $request): AnonymousResourceCollection
+    {
+        return UnitSearchResource::collection(
+            $this->service->search($request->string('search')->toString() ?: null)
+        );
     }
 
     public function store(UnitRequest $request): JsonResponse

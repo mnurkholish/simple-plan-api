@@ -4,11 +4,28 @@ namespace App\Services;
 
 use App\Models\Unit;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class UnitService
 {
+    /**
+     * @return Collection<int, Unit>
+     */
+    public function search(?string $search): Collection
+    {
+        return Unit::query()
+            ->select(['id', 'unit_name'])
+            ->when(
+                filled($search),
+                fn (Builder $query): Builder => $query->whereLike('unit_name', "%{$search}%"),
+            )
+            ->orderBy('unit_name')
+            ->get();
+    }
+
     public function store(array $data): Unit
     {
         return Unit::create($this->withSlug($data));

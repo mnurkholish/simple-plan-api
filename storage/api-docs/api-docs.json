@@ -1883,6 +1883,70 @@
                 ]
             }
         },
+        "/units/search": {
+            "get": {
+                "tags": [
+                    "Units"
+                ],
+                "summary": "Search units by name",
+                "operationId": "searchUnits",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Unit name",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "ICU",
+                            "maxLength": 255,
+                            "minLength": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Unit search results",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/UnitSearchResult"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Missing tickets-create permission"
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/units/users": {
             "get": {
                 "tags": [
@@ -3803,6 +3867,23 @@
                         "type": "string",
                         "format": "date-time",
                         "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "UnitSearchResult": {
+                "required": [
+                    "id",
+                    "unit_name"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "unit_name": {
+                        "type": "string",
+                        "example": "ICU"
                     }
                 },
                 "type": "object"

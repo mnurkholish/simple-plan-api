@@ -19,6 +19,8 @@ tags:
     description: Pengelolaan tiket Helpdesk TIK dan Sarpras
   - name: Assets
     description: Pencarian asset
+  - name: Units
+    description: Pencarian unit
   - name: Users
     description: Pengelolaan dan pencarian user
 
@@ -522,6 +524,48 @@ paths:
               schema:
                 $ref: "#/components/schemas/TicketReadError"
 
+  /units/search:
+    get:
+      tags: [Units]
+      summary: Mencari unit berdasarkan nama
+      operationId: searchUnits
+      description: Mengembalikan unit yang unit_name-nya mengandung nilai search.
+      x-auth-required: true
+      x-required-permission: tickets-create
+      parameters:
+        - name: search
+          in: query
+          required: false
+          description: Nama atau sebagian nama unit yang dicari.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 255
+            example: ICU
+      responses:
+        "200":
+          description: Hasil pencarian unit berhasil diambil.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/UnitSearchResult"
+        "401":
+          $ref: "#/components/responses/TicketUnauthenticated"
+        "403":
+          $ref: "#/components/responses/TicketForbidden"
+        "422":
+          description: Parameter pencarian unit tidak valid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketReadError"
+
   /users/search:
     get:
       tags: [Users]
@@ -584,6 +628,18 @@ components:
         default: 15
 
   schemas:
+    UnitSearchResult:
+      type: object
+      additionalProperties: false
+      required: [id, unit_name]
+      properties:
+        id:
+          type: integer
+          example: 1
+        unit_name:
+          type: string
+          example: ICU
+
     UserSearchResult:
       type: object
       additionalProperties: false
