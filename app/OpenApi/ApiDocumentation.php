@@ -34,6 +34,7 @@ use OpenApi\Annotations as OA;
  * @OA\Tag(name="Example Live", description="Market proxy and background task demo")
  * @OA\Tag(name="Impersonation", description="Sanctum token impersonation")
  * @OA\Tag(name="Notifications", description="Notification and activity summary")
+ * @OA\Tag(name="Assets", description="Asset lookup")
  * @OA\Tag(name="Helpdesk", description="Helpdesk TIK and Sarpras tickets")
  *
  * @OA\Schema(
@@ -939,6 +940,34 @@ class ApiDocumentation
      * )
      */
     public function usersSearch(): void {}
+
+    /**
+     * @OA\Get(
+     *     path="/assets/search",
+     *     tags={"Assets"},
+     *     summary="Search assets by asset number or name",
+     *     operationId="searchAssets",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="unit", in="query", required=true, description="Unit ID", @OA\Schema(type="integer", example=1)),
+     *     @OA\Parameter(name="search", in="query", required=false, description="Asset number or name", @OA\Schema(type="string", minLength=1, maxLength=255, example="Meja")),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Asset search results",
+     *
+     *         @OA\JsonContent(
+     *
+     *             @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/TicketAssetSummary"))
+     *         )
+     *     ),
+     *
+     *     @OA\Response(response=401, description="Unauthenticated"),
+     *     @OA\Response(response=403, description="Missing tickets-create permission"),
+     *     @OA\Response(response=422, description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
+     * )
+     */
+    public function assetsSearch(): void {}
 
     /**
      * @OA\Get(
