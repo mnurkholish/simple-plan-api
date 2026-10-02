@@ -103,7 +103,7 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             ->middleware('permission:tickets-handle')
             ->name('tickets.escalate')
             ->missing(fn () => response()->json(['message' => 'Resource not found.'], 404));
-        Route::post('tickets/{ticket}/de-escalate', [TicketController::class, 'deEscalate'])
+        Route::post('tickets/{ticket}/de-escalate', [TicketEscalationController::class, 'deEscalate'])
             ->middleware('permission:tickets-handle')
             ->name('tickets.de-escalate')
             ->missing(fn () => response()->json(['message' => 'Resource not found.'], 404));

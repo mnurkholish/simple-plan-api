@@ -36,7 +36,7 @@ class TicketPolicy
     {
         return match ($ticket->service) {
             TicketService::Tik => $user->hasRole('super-admin'),
-            TicketService::Sarpras => $user->hasRole('koordinator-sarpras'),
+            TicketService::Sarpras => $user->hasAnyRole('super-admin', 'koordinator-sarpras'),
         };
     }
 
@@ -47,8 +47,15 @@ class TicketPolicy
         }
 
         return match ($ticket->service) {
-            TicketService::Tik => $user->hasRole('petugas-tik'),
-            TicketService::Sarpras => $user->hasRole('petugas-sarpras'),
+            TicketService::Tik => $user->hasAnyRole(
+                'super-admin',
+                'petugas-tik',
+                ),
+            TicketService::Sarpras => $user->hasAnyRole(
+                'super-admin',
+                'koordinator-sarpras',
+                'petugas-sarpras',
+                ),
         };
     }
 

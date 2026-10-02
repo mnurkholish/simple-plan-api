@@ -70,7 +70,11 @@ class Ticket extends Model
         }
 
         if ($actor->hasRole('koordinator-sarpras')) {
-            return $query->where('service', TicketService::Sarpras->value);
+            return $query->where(function (Builder $query) use ($actor): void {
+                $query
+                    ->where('service', TicketService::Sarpras->value)
+                    ->orWhere('reporter_id', $actor->getKey());
+            });
         }
 
         if ($actor->hasRole('petugas-tik')) {
