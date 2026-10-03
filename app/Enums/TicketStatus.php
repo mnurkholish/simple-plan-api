@@ -6,13 +6,9 @@ enum TicketStatus: string
 {
     case Baru = 'baru';
     case Diklasifikasi = 'diklasifikasi';
-    // Legacy value retained only so historical records remain readable.
-    case Ditugaskan = 'ditugaskan';
     case Diproses = 'diproses';
     case Eskalasi = 'eskalasi';
     case Terselesaikan = 'terselesaikan';
-    // Legacy value retained only so historical records remain readable.
-    case Terverifikasi = 'terverifikasi';
     case Ditutup = 'ditutup';
     case Ditolak = 'ditolak';
 
@@ -24,12 +20,10 @@ enum TicketStatus: string
         return match ($this) {
             self::Baru => [self::Diklasifikasi, self::Ditolak],
             self::Diklasifikasi => [self::Diproses],
-            self::Ditugaskan => [],
             self::Diproses => [self::Eskalasi, self::Terselesaikan],
             self::Eskalasi => [self::Diproses],
             self::Terselesaikan => [self::Ditutup, self::Diproses],
-            self::Terverifikasi => [],
-            self::Ditutup, self::Ditolak => [],
+            self::Ditutup, self::Ditolak => [], 
         };
     }
 

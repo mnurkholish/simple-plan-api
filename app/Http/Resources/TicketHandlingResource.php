@@ -25,7 +25,6 @@ class TicketHandlingResource extends JsonResource
                 'name' => $this->handledBy->name,
             ]),
             'result_photo' => $this->result_photo_object_key === null ? null : [
-                'object_key' => $this->result_photo_object_key,
                 'original_name' => $this->result_photo_original_name,
                 'mime_type' => $this->result_photo_mime_type,
                 'size' => $this->result_photo_size,

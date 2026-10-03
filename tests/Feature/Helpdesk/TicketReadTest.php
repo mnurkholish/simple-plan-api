@@ -5,9 +5,11 @@ use App\Enums\TicketService;
 use App\Enums\TicketStatus;
 use App\Models\SarprasCategory;
 use App\Models\Ticket;
+use App\Models\TicketHandling;
 use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -129,6 +131,23 @@ test('it returns an empty paginated ticket collection', function (): void {
         ->assertOk()
         ->assertJsonCount(0, 'data')
         ->assertJsonPath('meta.total', 0);
+});
+
+test('ticket lists do not generate temporary evidence URLs', function (): void {
+    $reporter = User::factory()->for(Unit::factory())->create();
+    Ticket::factory()->reportedBy($reporter)->create([
+        'initial_evidence_object_key' => 'helpdesk/evidence/kerusakan-komputer.jpg',
+        'initial_evidence_original_name' => 'kerusakan-komputer.jpg',
+        'initial_evidence_mime_type' => 'image/jpeg',
+        'initial_evidence_size' => 245760,
+    ]);
+    actingAsTicketReader($reporter);
+
+    $this->getJson('/api/v1/tickets')
+        ->assertOk()
+        ->assertJsonPath('data.0.initial_evidence.original_name', 'kerusakan-komputer.jpg')
+        ->assertJsonMissingPath('data.0.initial_evidence.object_key')
+        ->assertJsonMissingPath('data.0.initial_evidence.url');
 });
 
 test('it filters tickets by service', function (): void {
@@ -376,6 +395,94 @@ test('it returns ticket details with reporter and unit summaries', function (): 
                 'updated_at' => $ticket->updated_at->toJSON(),
             ],
         ]);
+});
+
+test('it returns runtime file URLs without exposing object keys in ticket details', function (): void {
+    Storage::fake('local');
+    config()->set('filesystems.default', 'local');
+
+    $evidenceObjectKey = 'helpdesk/evidence/kerusakan-komputer.jpg';
+    $resultObjectKey = 'helpdesk/handling-results/hasil-perbaikan.jpg';
+    Storage::put($evidenceObjectKey, 'evidence');
+    Storage::put($resultObjectKey, 'result');
+
+    $reporter = User::factory()->for(Unit::factory())->create();
+    $handler = User::factory()->create();
+    $ticket = Ticket::factory()->reportedBy($reporter)->create([
+        'initial_evidence_object_key' => $evidenceObjectKey,
+        'initial_evidence_original_name' => 'kerusakan-komputer.jpg',
+        'initial_evidence_mime_type' => 'image/jpeg',
+        'initial_evidence_size' => 245760,
+    ]);
+    TicketHandling::factory()->for($ticket)->for($handler, 'handledBy')->create([
+        'result_photo_object_key' => $resultObjectKey,
+        'result_photo_original_name' => 'hasil-perbaikan.jpg',
+        'result_photo_mime_type' => 'image/jpeg',
+        'result_photo_size' => 245760,
+    ]);
+    TicketHandling::factory()->for($ticket)->for($handler, 'handledBy')->create();
+    actingAsTicketReader($reporter);
+
+    $response = $this->getJson("/api/v1/tickets/{$ticket->id}")
+        ->assertOk()
+        ->assertJsonPath('data.initial_evidence.original_name', 'kerusakan-komputer.jpg')
+        ->assertJsonPath('data.initial_evidence.mime_type', 'image/jpeg')
+        ->assertJsonPath('data.initial_evidence.size', 245760)
+        ->assertJsonPath('data.handlings.0.result_photo', null)
+        ->assertJsonPath('data.handlings.1.result_photo.original_name', 'hasil-perbaikan.jpg')
+        ->assertJsonPath('data.handlings.1.result_photo.mime_type', 'image/jpeg')
+        ->assertJsonPath('data.handlings.1.result_photo.size', 245760)
+        ->assertJsonMissingPath('data.initial_evidence.object_key')
+        ->assertJsonMissingPath('data.handlings.1.result_photo.object_key');
+
+    expect($response->json('data.initial_evidence.url'))
+        ->toBeString()
+        ->toContain($evidenceObjectKey, 'expiration=')
+        ->and($response->json('data.handlings.1.result_photo.url'))
+        ->toBeString()
+        ->toContain($resultObjectKey, 'expiration=');
+});
+
+test('it generates file URLs through the configured S3 compatible disk', function (): void {
+    $originalDefault = config('filesystems.default');
+    $originalS3 = config('filesystems.disks.s3');
+    $objectKey = 'helpdesk/evidence/kerusakan-komputer.jpg';
+
+    config()->set('filesystems.default', 's3');
+    config()->set('filesystems.disks.s3', [
+        'driver' => 's3',
+        'key' => 'test-key',
+        'secret' => 'test-secret',
+        'region' => 'us-east-1',
+        'bucket' => 'simple-plan',
+        'endpoint' => 'http://minio.test:9000',
+        'use_path_style_endpoint' => true,
+        'throw' => false,
+    ]);
+    Storage::forgetDisk('s3');
+
+    try {
+        $reporter = User::factory()->for(Unit::factory())->create();
+        $ticket = Ticket::factory()->reportedBy($reporter)->create([
+            'initial_evidence_object_key' => $objectKey,
+            'initial_evidence_original_name' => 'kerusakan-komputer.jpg',
+            'initial_evidence_mime_type' => 'image/jpeg',
+            'initial_evidence_size' => 245760,
+        ]);
+        actingAsTicketReader($reporter);
+
+        $response = $this->getJson("/api/v1/tickets/{$ticket->id}")
+            ->assertOk()
+            ->assertJsonMissingPath('data.initial_evidence.object_key');
+
+        expect($response->json('data.initial_evidence.url'))
+            ->toStartWith("http://minio.test:9000/simple-plan/{$objectKey}?")
+            ->toContain('X-Amz-Signature=');
+    } finally {
+        Storage::forgetDisk('s3');
+        config()->set('filesystems.default', $originalDefault);
+        config()->set('filesystems.disks.s3', $originalS3);
+    }
 });
 
 test('it returns 404 when a ticket does not exist', function (): void {

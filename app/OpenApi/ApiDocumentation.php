@@ -214,12 +214,12 @@ use OpenApi\Annotations as OA;
  * @OA\Schema(
  *     schema="TicketFileMetadata",
  *     type="object",
- *     required={"object_key","original_name","mime_type","size"},
+ *     required={"original_name","mime_type","size"},
  *
- *     @OA\Property(property="object_key", type="string", example="helpdesk/evidence/550e8400-e29b-41d4-a716-446655440000.jpg"),
  *     @OA\Property(property="original_name", type="string", example="kerusakan-komputer.jpg"),
  *     @OA\Property(property="mime_type", type="string", example="image/jpeg"),
- *     @OA\Property(property="size", type="integer", example=245760)
+ *     @OA\Property(property="size", type="integer", example=245760),
+ *     @OA\Property(property="url", type="string", format="uri", description="Temporary URL included only in the ticket detail/show response and generated at runtime from the object key on the configured filesystem disk.", example="https://simple-plan.internal/storage/local/helpdesk/evidence/example.jpg?expires=1790985600&signature=example")
  * )
  *
  * @OA\Schema(

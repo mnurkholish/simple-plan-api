@@ -229,9 +229,12 @@ test('initial evidence yang valid dapat disimpan beserta portable metadata yang 
     $response
         ->assertCreated()
         ->assertJsonPath('data.initial_evidence.original_name', 'monitor-rusak.jpg')
-        ->assertJsonPath('data.initial_evidence.mime_type', 'image/jpeg');
+        ->assertJsonPath('data.initial_evidence.mime_type', 'image/jpeg')
+        ->assertJsonMissingPath('data.initial_evidence.object_key')
+        ->assertJsonMissingPath('data.initial_evidence.url');
 
-    $objectKey = $response->json('data.initial_evidence.object_key');
+    $ticket = Ticket::query()->findOrFail($response->json('data.id'));
+    $objectKey = $ticket->initial_evidence_object_key;
 
     expect($objectKey)->toStartWith('helpdesk/evidence/');
     Storage::disk('local')->assertExists($objectKey);

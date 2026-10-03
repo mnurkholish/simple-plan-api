@@ -83,7 +83,6 @@ class TicketResource extends JsonResource
                 ],
             ),
             'initial_evidence' => $this->initial_evidence_object_key === null ? null : [
-                'object_key' => $this->initial_evidence_object_key,
                 'original_name' => $this->initial_evidence_original_name,
                 'mime_type' => $this->initial_evidence_mime_type,
                 'size' => $this->initial_evidence_size,
