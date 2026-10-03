@@ -80,11 +80,13 @@ DB_USERNAME=
 DB_PASSWORD=
 
 FILESYSTEM_DISK=s3
+FILESYSTEM_TEMPORARY_URL_EXPIRATION_MINUTES=5
 AWS_ACCESS_KEY_ID=
 AWS_SECRET_ACCESS_KEY=
 AWS_DEFAULT_REGION=us-east-1
 AWS_BUCKET=simple-plan
 AWS_ENDPOINT=
+AWS_TEMPORARY_URL=
 AWS_USE_PATH_STYLE_ENDPOINT=true
 ```
 
@@ -102,6 +104,14 @@ Production dapat menggunakan MinIO melalui S3-compatible Laravel Filesystem:
 ```env
 FILESYSTEM_DISK=s3
 ```
+
+URL file pada response API dibuat saat runtime sebagai temporary URL. Atur masa
+berlakunya dalam menit melalui `FILESYSTEM_TEMPORARY_URL_EXPIRATION_MINUTES`.
+Disk local dan S3/MinIO harus mendukung temporary URL; bucket production tetap
+private dan tidak memerlukan penyimpanan URL permanen di database.
+`AWS_ENDPOINT` harus dapat dijangkau oleh browser frontend. Jika base URL untuk
+akses frontend berbeda dari endpoint koneksi aplikasi, konfigurasi opsional
+`AWS_TEMPORARY_URL` dapat digunakan.
 
 Jika ada file lama di local storage, migrasikan file ke MinIO sebelum atau saat
 cutover production.
