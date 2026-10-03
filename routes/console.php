@@ -8,6 +8,10 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
+Schedule::command('tickets:auto-close-unverified')
+    ->everyMinute()
+    ->withoutOverlapping();
+
 $scheduleFile = config('backup.schedule_file', storage_path('app/backup_schedule.json'));
 
 if (file_exists($scheduleFile)) {

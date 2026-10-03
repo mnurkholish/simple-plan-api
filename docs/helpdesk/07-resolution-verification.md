@@ -15,6 +15,8 @@ Verifikasi penyelesaian tiket oleh pelapor (user/unit).
 ## Status Flow
 - **Disetujui**: `terselesaikan -> ditutup`
 - **Ditolak**: `terselesaikan -> diproses`
+- **Tidak diverifikasi selama 2 hari sejak `completed_at`**:
+  `terselesaikan -> ditutup` secara otomatis oleh scheduler.
 
 ## Authorization
 Hanya dapat dilakukan oleh pelapor tiket (`reporter_id`).
@@ -25,5 +27,8 @@ Hanya dapat dilakukan oleh pelapor tiket (`reporter_id`).
 ## Notes
 - **UI/Frontend:** Frontend perlu menyiapkan tombol "Setuju" dan "Tolak", serta memunculkan modal/form isian kendala secara dinamis jika tombol "Tolak" ditekan sebelum mengirimkan request ke backend.
 
-## Pending
-- Mekanisme auto-close apabila pelapor tidak memverifikasi tiket dalam jangka waktu tertentu (opsional untuk pengembangan berikutnya).
+## Automatic Close
+
+Command `tickets:auto-close-unverified` dijalankan scheduler setiap menit.
+Penutupan bersifat idempotent, mengisi `closed_at`, dan membuat status history
+dengan `changed_by_id = null` untuk menandai aksi sistem.

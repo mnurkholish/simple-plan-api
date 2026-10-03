@@ -195,7 +195,8 @@ URL.
 
 ## 10. Scheduler and Queue
 
-Jika project menggunakan Laravel Scheduler, konfigurasi cron sesuai server:
+Laravel Scheduler wajib dijalankan untuk memproses auto-close tiket yang tidak
+diverifikasi reporter. Konfigurasi cron sesuai server:
 
 ```cron
 * * * * * cd /path/to/simple-plan && php artisan schedule:run >> /dev/null 2>&1
@@ -204,7 +205,7 @@ Jika project menggunakan Laravel Scheduler, konfigurasi cron sesuai server:
 Jika project menggunakan Queue, jalankan worker dengan process manager yang
 sesuai server.
 
-Queue dan scheduler hanya dikonfigurasi jika fitur production menggunakannya.
+Queue dikonfigurasi jika fitur production menggunakannya.
 
 ---
 

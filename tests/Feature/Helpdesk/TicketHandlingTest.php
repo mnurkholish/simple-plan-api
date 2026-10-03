@@ -254,10 +254,10 @@ test('handling only accepts in progress or completed as its target status', func
     expect($ticket->handlings()->count())->toBe(0)
         ->and($ticket->refresh()->status)->toBe(TicketStatus::Diproses);
 })->with([
-    'new' => TicketStatus::Baru->value,
-    'verified' => TicketStatus::Terverifikasi->value,
-    'rejected' => TicketStatus::Ditolak->value,
-    'unknown' => 'tertunda',
+    'new' => [TicketStatus::Baru->value],
+    'closed' => [TicketStatus::Ditutup->value],
+    'rejected' => [TicketStatus::Ditolak->value],
+    'unknown' => ['tertunda'],
 ]);
 
 test('a ticket outside in progress cannot receive handling updates', function (TicketStatus $status): void {
@@ -276,10 +276,10 @@ test('a ticket outside in progress cannot receive handling updates', function (T
     expect($ticket->handlings()->count())->toBe(0)
         ->and($ticket->refresh()->status)->toBe($status);
 })->with([
-    'new' => TicketStatus::Baru,
-    'verified' => TicketStatus::Terverifikasi,
-    'completed' => TicketStatus::Terselesaikan,
-    'rejected' => TicketStatus::Ditolak,
+    'new' => [TicketStatus::Baru],
+    'closed' => [TicketStatus::Ditutup],
+    'completed' => [TicketStatus::Terselesaikan],
+    'rejected' => [TicketStatus::Ditolak],
 ]);
 
 test('completion time cannot be before start time', function (): void {

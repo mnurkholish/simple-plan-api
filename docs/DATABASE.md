@@ -133,6 +133,9 @@ Untuk Helpdesk, `assigned_at` mencatat assignment terbaru, sedangkan
 `sla_started_at` mencatat waktu pertama tiket masuk status `diproses` dan tidak
 direset saat reassignment. `completed_at` tiket berasal dari waktu selesai yang
 diinput manual pada handling yang mengubah tiket menjadi `terselesaikan`.
+Tiket `terselesaikan` yang belum diverifikasi selama 2 hari sejak
+`completed_at` ditutup otomatis; `closed_at` diisi waktu eksekusi scheduler dan
+status history menggunakan `changed_by_id = null` untuk aksi sistem.
 
 ---
 

@@ -448,6 +448,8 @@ paths:
         Hanya reporter tiket yang dapat memverifikasi tiket berstatus
         Terselesaikan. Verifikasi langsung mengubah status menjadi Ditutup tanpa
         status perantara Terverifikasi dan mencatat closed_at serta status history.
+        Jika tidak diverifikasi dalam 2 hari sejak completed_at, scheduler menutup
+        tiket secara otomatis dan mencatat status history sebagai aksi sistem.
       x-auth-required: true
       parameters:
         - $ref: "#/components/parameters/TicketId"

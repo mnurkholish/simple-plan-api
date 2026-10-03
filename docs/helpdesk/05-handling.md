@@ -12,6 +12,8 @@
   SLA.
 - Reporter dapat memverifikasi tiket `terselesaikan`; tiket langsung menjadi
   `ditutup` tanpa status perantara `terverifikasi`.
+- Tiket `terselesaikan` yang belum diverifikasi selama 2 hari sejak
+  `tickets.completed_at` ditutup otomatis oleh scheduler.
 
 ## Status Flow
 
@@ -19,6 +21,7 @@
 Diproses → Diproses (tanpa status history)
 Diproses → Terselesaikan
 Terselesaikan → Ditutup (verifikasi reporter)
+Terselesaikan → Ditutup (otomatis setelah 2 hari tanpa verifikasi)
 ```
 
 Transition yang benar-benar mengubah status membuat

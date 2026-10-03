@@ -55,7 +55,7 @@ test('reporter verification closes a completed ticket directly and records histo
     ]);
     $this->assertDatabaseMissing('ticket_status_histories', [
         'ticket_id' => $ticket->id,
-        'to_status' => TicketStatus::Terverifikasi->value,
+        'to_status' => 'terverifikasi',
     ]);
 });
 

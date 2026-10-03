@@ -12,6 +12,7 @@ use App\Models\Ticket;
 use App\Models\User;
 use App\Repositories\TicketRepository;
 use App\Repositories\UserRepository;
+use Carbon\CarbonInterface;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -26,6 +27,8 @@ use Throwable;
 
 class TicketService
 {
+    private const int AUTO_CLOSE_AFTER_DAYS = 2;
+
     public function __construct(
         private readonly TicketRepository $tickets,
         private readonly UserRepository $users,
@@ -347,6 +350,21 @@ class TicketService
         });
     }
 
+    public function autoCloseUnverifiedResolutions(): int
+    {
+        $closedAt = now();
+        $cutoff = $closedAt->copy()->subDays(self::AUTO_CLOSE_AFTER_DAYS);
+        $closedCount = 0;
+
+        foreach ($this->tickets->unverifiedResolutionIdsCompletedBy($cutoff) as $ticketId) {
+            if ($this->autoCloseUnverifiedResolution($ticketId, $cutoff, $closedAt)) {
+                $closedCount++;
+            }
+        }
+
+        return $closedCount;
+    }
+
     public function transitionStatus(
         Ticket $ticket,
         TicketStatus $targetStatus,
@@ -424,6 +442,37 @@ class TicketService
         ]);
 
         return true;
+    }
+
+    private function autoCloseUnverifiedResolution(
+        int $ticketId,
+        CarbonInterface $cutoff,
+        CarbonInterface $closedAt,
+    ): bool {
+        return DB::transaction(function () use ($ticketId, $cutoff, $closedAt): bool {
+            $ticket = Ticket::query()
+                ->whereKey($ticketId)
+                ->lockForUpdate()
+                ->first();
+
+            if ($ticket === null
+                || $ticket->status !== TicketStatus::Terselesaikan
+                || $ticket->completed_at === null
+                || $ticket->completed_at->gt($cutoff)
+                || $ticket->closed_at !== null) {
+                return false;
+            }
+
+            $this->applyStatusTransition(
+                $ticket,
+                TicketStatus::Ditutup,
+                changedBy: null,
+                notes: 'Ditutup otomatis setelah 2 hari tanpa verifikasi reporter.',
+                attributes: ['closed_at' => $closedAt],
+            );
+
+            return true;
+        });
     }
 
     private function assertCanTransitionTo(Ticket $ticket, TicketStatus $targetStatus): void

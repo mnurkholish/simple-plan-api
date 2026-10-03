@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Enums\TicketService;
+use App\Enums\TicketStatus;
 use App\Models\Ticket;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\LazyCollection;
 
 class TicketRepository
 {
@@ -124,6 +127,21 @@ class TicketRepository
             ->lockForUpdate()
             ->orderByDesc('ticket_number')
             ->value('ticket_number');
+    }
+
+    /**
+     * @return LazyCollection<int, int>
+     */
+    public function unverifiedResolutionIdsCompletedBy(CarbonInterface $cutoff): LazyCollection
+    {
+        return Ticket::query()
+            ->select('id')
+            ->where('status', TicketStatus::Terselesaikan->value)
+            ->whereNotNull('completed_at')
+            ->where('completed_at', '<=', $cutoff)
+            ->whereNull('closed_at')
+            ->lazyById(100)
+            ->map(fn (Ticket $ticket): int => (int) $ticket->getKey());
     }
 
     public function loadSummary(Ticket $ticket): Ticket

@@ -821,15 +821,15 @@ Assigned officer menerima notification untuk menangani kembali.
 
 ## Tidak Ada Verifikasi
 
-Tidak ada auto-close.
-
-Tiket tetap:
+Jika reporter tidak melakukan verifikasi selama 2 hari sejak
+`tickets.completed_at`, sistem menutup tiket secara otomatis:
 
 ```text
-terselesaikan
+Terselesaikan
+→ Ditutup
 ```
 
-sampai reporter memberikan konfirmasi.
+Penutupan otomatis mencatat `closed_at` dan status history sebagai aksi sistem.
 
 ---
 
@@ -1088,6 +1088,7 @@ Sprint 1 Helpdesk dianggap sesuai requirement jika:
 10. Tiket hanya dapat diverifikasi oleh reporter.
 11. Reporter dapat menolak penyelesaian dan tiket kembali `Diproses`.
 12. Tiket yang disetujui langsung menjadi `Ditutup`.
-13. SLA dihitung dari assignment pertama sampai `Terselesaikan`.
-14. Notification minimum berjalan pada event Helpdesk utama.
-15. Existing user/master data tidak mengalami refactor naming yang tidak diperlukan.
+13. Tiket yang tidak diverifikasi selama 2 hari sejak `completed_at` otomatis menjadi `Ditutup`.
+14. SLA dihitung dari assignment pertama sampai `Terselesaikan`.
+15. Notification minimum berjalan pada event Helpdesk utama.
+16. Existing user/master data tidak mengalami refactor naming yang tidak diperlukan.

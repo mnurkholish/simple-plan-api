@@ -1717,7 +1717,7 @@ class ApiDocumentation
      *     operationId="verifyTicketResolution",
      *     tags={"Helpdesk"},
      *     summary="Verify a completed ticket and close it",
-     *     description="Only the ticket reporter may verify a terselesaikan ticket. Verification transitions directly to ditutup, records closed_at, and creates status history without using terverifikasi.",
+     *     description="Only the ticket reporter may verify a terselesaikan ticket. Verification transitions directly to ditutup, records closed_at, and creates status history without using terverifikasi. If no verification occurs within two days of completed_at, the scheduler closes the ticket automatically and records the system transition.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
