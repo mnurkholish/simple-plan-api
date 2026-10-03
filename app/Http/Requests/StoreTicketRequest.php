@@ -29,7 +29,7 @@ class StoreTicketRequest extends FormRequest
                 Rule::exists(Asset::class, 'id')->whereNull('deleted_at'),
             ],
             'description' => ['required', 'string'],
-            'initial_evidence' => ['nullable', 'image', 'max:2048'],
+            'initial_evidence' => ['nullable', 'image', 'max:5120'],
         ];
     }
 }

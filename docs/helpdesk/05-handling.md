@@ -44,7 +44,7 @@ current assignment di backend.
 - `started_at`: wajib dan editable.
 - `completed_at`: wajib, harus sama atau setelah `started_at`.
 - `notes`: wajib.
-- `result_photo`: opsional, satu image maksimal 2 MB.
+- `result_photo`: opsional, satu image maksimal 5 MB.
 - `handled_by_id`: selalu berasal dari authenticated user.
 
 ## Routes

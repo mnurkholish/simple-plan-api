@@ -247,7 +247,7 @@ test('initial evidence yang valid dapat disimpan beserta portable metadata yang 
     ]);
 });
 
-test('initial evidence harus sebuah gambar dan tidak lebih besar dari 2 mb', function (UploadedFile $file): void {
+test('initial evidence harus sebuah gambar dan tidak lebih besar dari 5 mb', function (UploadedFile $file): void {
     Storage::fake('local');
     actingAsTicketCreator();
 
@@ -260,5 +260,5 @@ test('initial evidence harus sebuah gambar dan tidak lebih besar dari 2 mb', fun
         ->assertJsonValidationErrors('initial_evidence');
 })->with([
     'bukan berupa gambar' => fn (): UploadedFile => UploadedFile::fake()->create('evidence.pdf', 100, 'application/pdf'),
-    'gambar melebihi limit size' => fn (): UploadedFile => UploadedFile::fake()->image('large.jpg')->size(2049),
+    'gambar melebihi limit size' => fn (): UploadedFile => UploadedFile::fake()->image('large.jpg')->size(5121),
 ]);

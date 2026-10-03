@@ -48,7 +48,7 @@ class StoreTicketHandlingRequest extends FormRequest
                 'date',
                 'after_or_equal:started_at',
             ],
-            'result_photo' => ['nullable', 'image', 'max:2048'],
+            'result_photo' => ['nullable', 'image', 'max:5120'],
         ];
     }
 }
