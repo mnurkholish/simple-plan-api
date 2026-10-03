@@ -331,11 +331,16 @@ test('initial evidence is optional and stores portable metadata when supplied', 
     $response
         ->assertCreated()
         ->assertJsonPath('data.initial_evidence.original_name', 'monitor-rusak.jpg')
-        ->assertJsonPath('data.initial_evidence.mime_type', 'image/jpeg');
+        ->assertJsonPath('data.initial_evidence.mime_type', 'image/jpeg')
+        ->assertJsonMissingPath('data.initial_evidence.object_key');
 
-    $objectKey = $response->json('data.initial_evidence.object_key');
+    $ticket = Ticket::query()->findOrFail($response->json('data.id'));
+    $objectKey = $ticket->initial_evidence_object_key;
 
-    expect($objectKey)->toStartWith('helpdesk/evidence/');
+    expect($objectKey)->toStartWith('helpdesk/evidence/')
+        ->and($response->json('data.initial_evidence.url'))
+        ->toBeString()
+        ->toContain($objectKey, 'expiration=');
     Storage::disk('local')->assertExists($objectKey);
 
     $this->assertDatabaseHas('tickets', [
