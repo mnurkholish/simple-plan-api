@@ -7,6 +7,7 @@ use App\Enums\TicketStatus;
 use App\Services\SlaService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 class TicketResource extends JsonResource
 {
@@ -83,10 +84,13 @@ class TicketResource extends JsonResource
                 ],
             ),
             'initial_evidence' => $this->initial_evidence_object_key === null ? null : [
-                'object_key' => $this->initial_evidence_object_key,
                 'original_name' => $this->initial_evidence_original_name,
                 'mime_type' => $this->initial_evidence_mime_type,
                 'size' => $this->initial_evidence_size,
+                'url' => Storage::temporaryUrl(
+                    $this->initial_evidence_object_key,
+                    now()->addMinutes((int) config('filesystems.temporary_url_expiration_minutes', 5)),
+                ),
             ],
             'classified_at' => $this->classified_at,
             'assigned_at' => $this->assigned_at,
