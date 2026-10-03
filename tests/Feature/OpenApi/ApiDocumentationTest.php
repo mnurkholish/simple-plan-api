@@ -94,7 +94,7 @@ test('the Helpdesk OpenAPI contract only documents implemented ticket operations
         ->and($contract['components']['schemas']['CreateTicketHandlingRequest']['properties']['status']['enum'])
         ->toBe(['diproses', 'terselesaikan'])
         ->and($contract['components']['schemas']['FileMetadata']['required'])
-        ->toBe(['original_name', 'mime_type', 'size', 'url'])
+        ->toBe(['original_name', 'mime_type', 'size'])
         ->and($contract['components']['schemas']['FileMetadata']['properties'])
         ->toHaveKey('url')
         ->not->toHaveKey('object_key');
@@ -224,7 +224,7 @@ test('it generates the Helpdesk ticket Swagger contract', function (): void {
             ->and($documentation['components']['schemas']['CreateTicketHandlingRequest']['properties']['status']['enum'])
             ->toBe(['diproses', 'terselesaikan'])
             ->and($documentation['components']['schemas']['TicketFileMetadata']['required'])
-            ->toBe(['original_name', 'mime_type', 'size', 'url'])
+            ->toBe(['original_name', 'mime_type', 'size'])
             ->and($documentation['components']['schemas']['TicketFileMetadata']['properties'])
             ->toHaveKey('url')
             ->not->toHaveKey('object_key')

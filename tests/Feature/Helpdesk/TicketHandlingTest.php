@@ -320,15 +320,13 @@ test('a result photo is stored through the configured filesystem with portable m
         ->assertOk()
         ->assertJsonPath('data.handlings.0.result_photo.original_name', 'hasil-perbaikan.jpg')
         ->assertJsonPath('data.handlings.0.result_photo.mime_type', 'image/jpeg')
-        ->assertJsonMissingPath('data.handlings.0.result_photo.object_key');
+        ->assertJsonMissingPath('data.handlings.0.result_photo.object_key')
+        ->assertJsonMissingPath('data.handlings.0.result_photo.url');
 
     $handling = TicketHandling::query()->whereBelongsTo($ticket)->sole();
     $objectKey = $handling->result_photo_object_key;
 
-    expect($objectKey)->toStartWith('helpdesk/handling-results/')
-        ->and($response->json('data.handlings.0.result_photo.url'))
-        ->toBeString()
-        ->toContain($objectKey, 'expiration=');
+    expect($objectKey)->toStartWith('helpdesk/handling-results/');
     Storage::disk('local')->assertExists($objectKey);
 
     $this->assertDatabaseHas('ticket_handlings', [

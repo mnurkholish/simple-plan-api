@@ -133,6 +133,23 @@ test('it returns an empty paginated ticket collection', function (): void {
         ->assertJsonPath('meta.total', 0);
 });
 
+test('ticket lists do not generate temporary evidence URLs', function (): void {
+    $reporter = User::factory()->for(Unit::factory())->create();
+    Ticket::factory()->reportedBy($reporter)->create([
+        'initial_evidence_object_key' => 'helpdesk/evidence/kerusakan-komputer.jpg',
+        'initial_evidence_original_name' => 'kerusakan-komputer.jpg',
+        'initial_evidence_mime_type' => 'image/jpeg',
+        'initial_evidence_size' => 245760,
+    ]);
+    actingAsTicketReader($reporter);
+
+    $this->getJson('/api/v1/tickets')
+        ->assertOk()
+        ->assertJsonPath('data.0.initial_evidence.original_name', 'kerusakan-komputer.jpg')
+        ->assertJsonMissingPath('data.0.initial_evidence.object_key')
+        ->assertJsonMissingPath('data.0.initial_evidence.url');
+});
+
 test('it filters tickets by service', function (): void {
     $user = User::factory()->create();
     $unit = Unit::factory()->create();

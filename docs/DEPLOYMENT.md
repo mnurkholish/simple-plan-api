@@ -105,8 +105,9 @@ Production dapat menggunakan MinIO melalui S3-compatible Laravel Filesystem:
 FILESYSTEM_DISK=s3
 ```
 
-URL file pada response API dibuat saat runtime sebagai temporary URL. Atur masa
-berlakunya dalam menit melalui `FILESYSTEM_TEMPORARY_URL_EXPIRATION_MINUTES`.
+URL file pada response detail/show ticket dibuat saat runtime sebagai temporary
+URL. Atur masa berlakunya dalam menit melalui
+`FILESYSTEM_TEMPORARY_URL_EXPIRATION_MINUTES`.
 Disk local dan S3/MinIO harus mendukung temporary URL; bucket production tetap
 private dan tidak memerlukan penyimpanan URL permanen di database.
 `AWS_ENDPOINT` harus dapat dijangkau oleh browser frontend. Jika base URL untuk

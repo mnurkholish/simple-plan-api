@@ -4139,8 +4139,7 @@
                 "required": [
                     "original_name",
                     "mime_type",
-                    "size",
-                    "url"
+                    "size"
                 ],
                 "properties": {
                     "original_name": {
@@ -4156,7 +4155,7 @@
                         "example": 245760
                     },
                     "url": {
-                        "description": "Temporary URL generated at runtime from the object key on the configured filesystem disk.",
+                        "description": "Temporary URL included only in the ticket detail/show response and generated at runtime from the object key on the configured filesystem disk.",
                         "type": "string",
                         "format": "uri",
                         "example": "https://simple-plan.internal/storage/local/helpdesk/evidence/example.jpg?expires=1790985600&signature=example"

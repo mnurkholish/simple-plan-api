@@ -13,6 +13,7 @@ use App\Http\Requests\ListTicketRequest;
 use App\Http\Requests\RejectTicketRequest;
 use App\Http\Requests\StoreTicketRequest;
 use App\Http\Resources\AssigneeOptionResource;
+use App\Http\Resources\TicketDetailResource;
 use App\Http\Resources\TicketResource;
 use App\Models\Ticket;
 use App\Services\TicketService;
@@ -39,11 +40,11 @@ class TicketController extends Controller
         );
     }
 
-    public function show(Ticket $ticket): TicketResource
+    public function show(Ticket $ticket): TicketDetailResource
     {
         Gate::authorize('view', $ticket);
 
-        return new TicketResource($this->service->loadDetail($ticket));
+        return new TicketDetailResource($this->service->loadDetail($ticket));
     }
 
     public function store(StoreTicketRequest $request): JsonResponse
@@ -128,5 +129,4 @@ class TicketController extends Controller
             ),
         );
     }
-
 }

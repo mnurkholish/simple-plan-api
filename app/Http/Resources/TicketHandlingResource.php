@@ -4,7 +4,6 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Storage;
 
 class TicketHandlingResource extends JsonResource
 {
@@ -29,10 +28,6 @@ class TicketHandlingResource extends JsonResource
                 'original_name' => $this->result_photo_original_name,
                 'mime_type' => $this->result_photo_mime_type,
                 'size' => $this->result_photo_size,
-                'url' => Storage::temporaryUrl(
-                    $this->result_photo_object_key,
-                    now()->addMinutes((int) config('filesystems.temporary_url_expiration_minutes', 5)),
-                ),
             ],
             'created_at' => $this->created_at,
         ];
