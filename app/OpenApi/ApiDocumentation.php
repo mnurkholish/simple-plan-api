@@ -1668,7 +1668,7 @@ class ApiDocumentation
      *     operationId="escalateTicket",
      *     tags={"Helpdesk"},
      *     summary="Escalate a processing ticket",
-     *     description="Escalate ticket to Manajemen, Vendor, or Tim Terkait. Requires assigned officer and tickets-handle permission.",
+     *     description="Super Admin may escalate TIK and Sarpras tickets without assignment. Koordinator Sarpras may escalate Sarpras tickets without assignment. Petugas TIK and Petugas Sarpras may only escalate assigned tickets for their respective service. Targets are Manajemen, Vendor, or Tim Terkait. Requires tickets-handle permission.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
@@ -1681,7 +1681,7 @@ class ApiDocumentation
      *
      *     @OA\Response(response=200, description="Ticket escalated", @OA\JsonContent(ref="#/components/schemas/TicketActionResponse")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
-     *     @OA\Response(response=403, description="Missing permission or wrong officer", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Missing permission or actor is outside the allowed service and assignment scope", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=404, description="Ticket not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=422, description="Invalid escalation data", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
      * )

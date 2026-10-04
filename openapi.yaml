@@ -383,8 +383,11 @@ paths:
       summary: Mengeskalasi tiket Helpdesk
       operationId: escalateTicket
       description: |
-        Petugas penanganan tiket dapat mengeskalasi tiket ke Manajemen, Vendor,
-        atau Tim Terkait. Membutuhkan permission tickets-handle.
+        Super Admin dapat mengeskalasi tiket TIK dan Sarpras tanpa assignment.
+        Koordinator Sarpras dapat mengeskalasi tiket Sarpras tanpa assignment.
+        Petugas hanya dapat mengeskalasi tiket yang ditugaskan kepadanya sesuai
+        service. Target eskalasi adalah Manajemen, Vendor, atau Tim Terkait.
+        Membutuhkan permission tickets-handle.
       x-auth-required: true
       x-required-permission: tickets-handle
       parameters:
@@ -419,8 +422,10 @@ paths:
       summary: Melanjutkan penanganan tiket setelah eskalasi
       operationId: deEscalateTicket
       description: |
-        Petugas yang ditugaskan dapat mengembalikan tiket berstatus Eskalasi
-        ke Diproses. Membutuhkan permission tickets-handle.
+        Cakupan actor sama dengan endpoint eskalasi: Super Admin untuk TIK dan
+        Sarpras, Koordinator Sarpras untuk Sarpras, serta petugas yang ditugaskan
+        sesuai service. Mengembalikan status Eskalasi ke Diproses dan
+        membutuhkan permission tickets-handle.
       x-auth-required: true
       x-required-permission: tickets-handle
       parameters:

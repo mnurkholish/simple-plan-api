@@ -51,7 +51,7 @@ class TicketEscalationController extends Controller
      *     operationId="deEscalateTicket",
      *     tags={"Helpdesk"},
      *     summary="Menarik kembali tiket dari status eskalasi (De-escalate)",
-     *     description="Hanya petugas yang ditugaskan dengan permission tickets-handle yang dapat melakukan ini.",
+     *     description="Super Admin dapat melanjutkan tiket TIK dan Sarpras tanpa assignment. Koordinator Sarpras dapat melanjutkan tiket Sarpras tanpa assignment. Petugas hanya dapat melanjutkan tiket yang ditugaskan sesuai layanan. Membutuhkan permission tickets-handle.",
      *     security={{"sanctum": {}}},
      *     @OA\Parameter(
      *         name="ticket",
@@ -77,7 +77,7 @@ class TicketEscalationController extends Controller
      *     ),
      *     @OA\Response(
      *         response=403,
-     *         description="Missing permission or wrong officer",
+     *         description="Missing permission or actor berada di luar cakupan layanan dan assignment",
      *         @OA\JsonContent(ref="#/components/schemas/TicketReadError")
      *     ),
      *     @OA\Response(

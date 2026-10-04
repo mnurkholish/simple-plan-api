@@ -896,7 +896,7 @@ Komunikasi dengan target eskalasi tetap dilakukan di luar sistem.
 | Assign Sarpras | No | Yes | No | No | No | No |
 | Handle TIK | Yes, tanpa assignment | No | Jika ditugaskan | No | No | No |
 | Handle Sarpras | Yes, tanpa assignment | Yes, tanpa assignment | No | Jika ditugaskan | No | No |
-| Escalate | According to management scope | Sarpras scope | Assigned TIK | Assigned Sarpras | No | No |
+| Escalate / de-escalate | TIK dan Sarpras tanpa assignment | Sarpras tanpa assignment | Assigned TIK | Assigned Sarpras | No | No |
 | Verify resolution | Only when reporter | Only when reporter | Only when reporter | Only when reporter | Only when reporter | Only when reporter |
 
 ---
