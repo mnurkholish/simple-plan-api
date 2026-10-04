@@ -42,7 +42,10 @@ class TicketPolicy
 
     public function handle(User $user, Ticket $ticket): bool
     {
-        if ((int) $ticket->assigned_officer_id !== (int) $user->getKey()) {
+        if (
+            ! $user->hasAnyRole('super-admin', 'koordinator-sarpras')
+            && (int) $ticket->assigned_officer_id !== (int) $user->getKey()
+        ) {
             return false;
         }
 
