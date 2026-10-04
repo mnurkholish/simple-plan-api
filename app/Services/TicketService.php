@@ -274,10 +274,12 @@ class TicketService
                     ->lockForUpdate()
                     ->firstOrFail();
 
-                if (
-                    ! $handledBy->hasAnyRole('super-admin', 'koordinator-sarpras')
-                    && (int) $lockedTicket->assigned_officer_id !== (int) $handledBy->getKey()
-                ) {
+                $canHandleWithoutAssignment = $handledBy->hasRole('super-admin')
+                    || ($lockedTicket->service === TicketServiceEnum::Sarpras
+                        && $handledBy->hasRole('koordinator-sarpras'));
+
+                if (! $canHandleWithoutAssignment
+                    && (int) $lockedTicket->assigned_officer_id !== (int) $handledBy->getKey()) {
                     throw new AuthorizationException('Hanya petugas yang sedang ditugaskan yang dapat menangani tiket.');
                 }
 
