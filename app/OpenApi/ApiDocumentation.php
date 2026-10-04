@@ -1694,7 +1694,7 @@ class ApiDocumentation
      *     operationId="createTicketHandling",
      *     tags={"Helpdesk"},
      *     summary="Add ticket handling history",
-     *     description="Only the currently assigned officer with the service-appropriate role may add handling. A diproses ticket can remain diproses without status history or become terselesaikan with status history. tickets.completed_at uses the manually supplied completed_at value. Handling never recalculates SLA. Requires the tickets-handle permission.",
+     *     description="Super Admin may handle TIK and Sarpras tickets without assignment. Koordinator Sarpras may handle Sarpras tickets without assignment. Petugas TIK and Petugas Sarpras may only handle tickets currently assigned to them for their respective service. A diproses ticket can remain diproses without status history or become terselesaikan with status history. tickets.completed_at uses the manually supplied completed_at value. Handling never recalculates SLA. Requires the tickets-handle permission.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
@@ -1703,7 +1703,7 @@ class ApiDocumentation
      *
      *     @OA\Response(response=200, description="Ticket handling history stored", @OA\JsonContent(ref="#/components/schemas/TicketActionResponse")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
-     *     @OA\Response(response=403, description="Missing tickets-handle permission or actor is not the currently assigned officer", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Missing tickets-handle permission or actor is outside the allowed service and assignment scope", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=404, description="Ticket not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=409, description="Ticket state conflict", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=422, description="Invalid handling data", @OA\JsonContent(ref="#/components/schemas/ValidationError"))

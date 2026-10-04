@@ -27,16 +27,19 @@ Transition yang benar-benar mengubah status membuat
 
 ## Authorization
 
-Handling hanya dapat dilakukan oleh authenticated user yang:
+Handling hanya dapat dilakukan oleh authenticated user yang memiliki permission
+`tickets-handle`, dengan cakupan berikut:
 
-- memiliki permission `tickets-handle`;
-- sama dengan `tickets.assigned_officer_id`; dan
-- memiliki role `petugas-tik` untuk tiket TIK atau `petugas-sarpras` untuk
-  tiket Sarpras.
+- Super Admin dapat menangani seluruh tiket TIK dan Sarpras tanpa harus menjadi
+  `tickets.assigned_officer_id`.
+- Koordinator Sarpras dapat menangani seluruh tiket Sarpras tanpa harus menjadi
+  `tickets.assigned_officer_id`, tetapi tidak dapat menangani tiket TIK.
+- Petugas TIK hanya dapat menangani tiket TIK yang ditugaskan kepadanya.
+- Petugas Sarpras hanya dapat menangani tiket Sarpras yang ditugaskan kepadanya.
 
-Role Petugas TIK dan Petugas Sarpras menerima permission `tickets-handle` dari
-role seeder. Policy dan pemeriksaan ulang pada ticket yang dikunci menegakkan
-current assignment di backend.
+Role terkait menerima permission `tickets-handle` dari role seeder. Policy dan
+pemeriksaan ulang pada ticket yang dikunci menegakkan cakupan layanan dan
+current assignment petugas di backend.
 
 ## Handling Fields
 

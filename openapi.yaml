@@ -341,8 +341,10 @@ paths:
       summary: Menambahkan riwayat penanganan tiket
       operationId: createTicketHandling
       description: |
-        Hanya petugas yang sedang tercatat sebagai assigned_officer_id dan
-        memiliki role sesuai service tiket yang dapat menambahkan penanganan.
+        Super Admin dapat menangani tiket TIK dan Sarpras tanpa assignment.
+        Koordinator Sarpras dapat menangani tiket Sarpras tanpa assignment.
+        Petugas TIK dan Petugas Sarpras hanya dapat menangani tiket yang sedang
+        ditugaskan kepadanya sesuai service masing-masing.
         Tiket Diproses dapat tetap Diproses tanpa status history atau menjadi
         Terselesaikan dengan status history. tickets.completed_at berasal dari
         completed_at yang diinput petugas, bukan dari waktu perubahan status.

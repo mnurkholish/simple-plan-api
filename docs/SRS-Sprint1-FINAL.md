@@ -894,8 +894,8 @@ Komunikasi dengan target eskalasi tetap dilakukan di luar sistem.
 | Classify Sarpras | Yes | Yes | No | No | No | No |
 | Assign TIK | Yes | No | No | No | No | No |
 | Assign Sarpras | No | Yes | No | No | No | No |
-| Handle assigned TIK | Normal flow via assigned officer | No | Yes | No | No | No |
-| Handle assigned Sarpras | Normal flow via assigned officer | Supervisory scope | No | Yes | No | No |
+| Handle TIK | Yes, tanpa assignment | No | Jika ditugaskan | No | No | No |
+| Handle Sarpras | Yes, tanpa assignment | Yes, tanpa assignment | No | Jika ditugaskan | No | No |
 | Escalate | According to management scope | Sarpras scope | Assigned TIK | Assigned Sarpras | No | No |
 | Verify resolution | Only when reporter | Only when reporter | Only when reporter | Only when reporter | Only when reporter | Only when reporter |
 

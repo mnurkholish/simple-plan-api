@@ -3419,7 +3419,7 @@
                     "Helpdesk"
                 ],
                 "summary": "Add ticket handling history",
-                "description": "Only the currently assigned officer with the service-appropriate role may add handling. A diproses ticket can remain diproses without status history or become terselesaikan with status history. tickets.completed_at uses the manually supplied completed_at value. Handling never recalculates SLA. Requires the tickets-handle permission.",
+                "description": "Super Admin may handle TIK and Sarpras tickets without assignment. Koordinator Sarpras may handle Sarpras tickets without assignment. Petugas TIK and Petugas Sarpras may only handle tickets currently assigned to them for their respective service. A diproses ticket can remain diproses without status history or become terselesaikan with status history. tickets.completed_at uses the manually supplied completed_at value. Handling never recalculates SLA. Requires the tickets-handle permission.",
                 "operationId": "createTicketHandling",
                 "parameters": [
                     {
@@ -3464,7 +3464,7 @@
                         }
                     },
                     "403": {
-                        "description": "Missing tickets-handle permission or actor is not the currently assigned officer",
+                        "description": "Missing tickets-handle permission or actor is outside the allowed service and assignment scope",
                         "content": {
                             "application/json": {
                                 "schema": {
