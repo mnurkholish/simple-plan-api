@@ -247,7 +247,9 @@ class TicketService
         }
 
         return $this->users->getAssigneeOptions(
-            $ticket->service === TicketServiceEnum::Tik ? 'petugas-tik' : 'petugas-sarpras',
+            $ticket->service === TicketServiceEnum::Tik
+                ? ['super-admin', 'petugas-tik']
+                : ['koordinator-sarpras', 'petugas-sarpras'],
             $search,
         );
     }
