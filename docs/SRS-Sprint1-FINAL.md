@@ -536,8 +536,8 @@ Tidak ada tabel assignment history khusus.
 Kandidat dan assignee wajib user aktif dengan role sesuai service:
 
 ```text
-TIK → Petugas TIK
-Sarpras → Petugas Sarpras
+TIK → Super Admin atau Petugas TIK
+Sarpras → Koordinator Sarpras atau Petugas Sarpras
 ```
 
 Pencarian kandidat dapat menggunakan nama atau jabatan.

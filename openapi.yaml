@@ -265,8 +265,10 @@ paths:
       summary: Mencari kandidat petugas assignment
       operationId: listTicketAssigneeOptions
       description: |
-        Kandidat dibatasi pada user aktif dengan role Petugas TIK atau Petugas
-        Sarpras sesuai service ticket. Search mencocokkan name dan jabatan.
+        Kandidat TIK dibatasi pada user aktif dengan role Super Admin atau
+        Petugas TIK. Kandidat Sarpras dibatasi pada user aktif dengan role
+        Koordinator Sarpras atau Petugas Sarpras. Search mencocokkan name dan
+        jabatan.
       x-auth-required: true
       x-required-permission: tickets-assign
       parameters:
@@ -301,10 +303,11 @@ paths:
       summary: Assignment atau reassignment tiket
       operationId: assignTicket
       description: |
-        TIK hanya dapat di-assign Super Admin kepada Petugas TIK. Sarpras hanya
-        dapat di-assign Koordinator Sarpras kepada Petugas Sarpras. Assignment
-        pertama dari Diklasifikasi menentukan priority, langsung mengubah status
-        menjadi Diproses, serta mencatat sla_started_at dan SLA deadline.
+        TIK hanya dapat di-assign Super Admin kepada Super Admin atau Petugas
+        TIK. Sarpras hanya dapat di-assign Koordinator Sarpras kepada Koordinator
+        Sarpras atau Petugas Sarpras. Assignment pertama dari Diklasifikasi
+        menentukan priority, langsung mengubah status menjadi Diproses, serta
+        mencatat sla_started_at dan SLA deadline.
         Reassignment dari Diproses hanya mengganti petugas dan assigned_at;
         waktu mulai serta deadline SLA pertama tidak direset.
       x-auth-required: true

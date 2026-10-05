@@ -1623,7 +1623,7 @@ class ApiDocumentation
      *     operationId="getTicketAssigneeOptions",
      *     tags={"Helpdesk"},
      *     summary="Search eligible officers for assignment",
-     *     description="Returns active Petugas TIK for a TIK ticket or active Petugas Sarpras for a Sarpras ticket. Search matches name or jabatan. TIK is limited to Super Admin; Sarpras is limited to Koordinator Sarpras. Requires the tickets-assign permission.",
+     *     description="Returns active Super Admin or Petugas TIK for a TIK ticket, and active Koordinator Sarpras or Petugas Sarpras for a Sarpras ticket. Search matches name or jabatan. TIK is limited to Super Admin; Sarpras is limited to Koordinator Sarpras. Requires the tickets-assign permission.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
@@ -1645,7 +1645,7 @@ class ApiDocumentation
      *     operationId="assignTicket",
      *     tags={"Helpdesk"},
      *     summary="Assign or reassign a ticket officer",
-     *     description="TIK assignment is limited to Super Admin and requires Petugas TIK. Sarpras assignment is limited to Koordinator Sarpras and requires Petugas Sarpras. Initial assignment from diklasifikasi requires priority, sets assigned_at and sla_started_at, starts the SLA deadline, and transitions directly to diproses. Reassignment from diproses updates the officer and assigned_at without resetting the first SLA start or deadline. Requires the tickets-assign permission.",
+     *     description="TIK assignment is limited to Super Admin and accepts Super Admin or Petugas TIK as assignee. Sarpras assignment is limited to Koordinator Sarpras and accepts Koordinator Sarpras or Petugas Sarpras as assignee. Initial assignment from diklasifikasi requires priority, sets assigned_at and sla_started_at, starts the SLA deadline, and transitions directly to diproses. Reassignment from diproses updates the officer and assigned_at without resetting the first SLA start or deadline. Requires the tickets-assign permission.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
