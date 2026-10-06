@@ -1206,9 +1206,11 @@ class ApiDocumentation
      *         description="Unit search results",
      *
      *         @OA\JsonContent(
+     *
      *             @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/UnitSearchResult"))
      *         )
      *     ),
+     *
      *     @OA\Response(response=401, description="Unauthenticated"),
      *     @OA\Response(response=403, description="Missing tickets-create permission"),
      *     @OA\Response(response=422, description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
@@ -1675,6 +1677,7 @@ class ApiDocumentation
      *
      *     @OA\RequestBody(required=true, @OA\JsonContent(
      *         required={"target", "notes"},
+     *
      *         @OA\Property(property="target", type="string", enum={"Manajemen","Vendor","Tim Terkait"}, example="Manajemen"),
      *         @OA\Property(property="notes", type="string", example="Butuh persetujuan anggaran pergantian sparepart.")
      *     )),
@@ -1724,6 +1727,7 @@ class ApiDocumentation
      *
      *     @OA\RequestBody(required=true, @OA\JsonContent(
      *         required={"is_approved"},
+     *
      *         @OA\Property(property="is_approved", type="boolean", example=true),
      *         @OA\Property(property="keterangan_kendala", type="string", nullable=true, example="Masalah jaringan masih berlanjut.")
      *     )),

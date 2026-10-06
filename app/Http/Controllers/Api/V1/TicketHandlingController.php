@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\TicketStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreTicketHandlingRequest;
 use App\Http\Resources\TicketResource;
 use App\Models\Ticket;
+use App\Notifications\TicketStatusUpdatedNotification;
 use App\Services\TicketService;
 use Illuminate\Support\Facades\Gate;
 
@@ -24,8 +26,8 @@ class TicketHandlingController extends Controller
             $request->file('result_photo'),
         );
 
-        if ($ticket->status === \App\Enums\TicketStatus::Terselesaikan) {
-            $ticket->reporter->notify(new \App\Notifications\TicketStatusUpdatedNotification(
+        if ($ticket->status === TicketStatus::Terselesaikan) {
+            $ticket->reporter->notify(new TicketStatusUpdatedNotification(
                 $ticket,
                 'Tiket Anda telah diselesaikan oleh teknisi dan menunggu verifikasi.'
             ));

@@ -229,7 +229,7 @@ test('endpoint eskalasi dan de-eskalasi mengembalikan 404 ketika tiket tidak dit
     )
         ->assertNotFound()
         ->assertExactJson(['message' => 'Resource not found.']);
-    
+
     $this->postJson(
         '/api/v1/tickets/999999/de-escalate',
         validTicketEscalationPayload(),
