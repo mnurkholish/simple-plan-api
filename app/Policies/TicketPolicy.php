@@ -42,20 +42,13 @@ class TicketPolicy
 
     public function handle(User $user, Ticket $ticket): bool
     {
-        if ((int) $ticket->assigned_officer_id !== (int) $user->getKey()) {
-            return false;
-        }
-
         return match ($ticket->service) {
-            TicketService::Tik => $user->hasAnyRole(
-                'super-admin',
-                'petugas-tik',
-                ),
-            TicketService::Sarpras => $user->hasAnyRole(
-                'super-admin',
-                'koordinator-sarpras',
-                'petugas-sarpras',
-                ),
+            TicketService::Tik => $user->hasRole('super-admin')
+                || ($user->hasRole('petugas-tik')
+                    && (int) $ticket->assigned_officer_id === (int) $user->getKey()),
+            TicketService::Sarpras => $user->hasAnyRole('super-admin', 'koordinator-sarpras')
+                || ($user->hasRole('petugas-sarpras')
+                    && (int) $ticket->assigned_officer_id === (int) $user->getKey()),
         };
     }
 

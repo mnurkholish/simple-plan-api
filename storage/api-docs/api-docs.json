@@ -18,7 +18,7 @@
                     "Helpdesk"
                 ],
                 "summary": "Menarik kembali tiket dari status eskalasi (De-escalate)",
-                "description": "Hanya petugas yang ditugaskan dengan permission tickets-handle yang dapat melakukan ini.",
+                "description": "Super Admin dapat melanjutkan tiket TIK dan Sarpras tanpa assignment. Koordinator Sarpras dapat melanjutkan tiket Sarpras tanpa assignment. Petugas hanya dapat melanjutkan tiket yang ditugaskan sesuai layanan. Membutuhkan permission tickets-handle.",
                 "operationId": "deEscalateTicket",
                 "parameters": [
                     {
@@ -49,7 +49,7 @@
                         "description": "Unauthenticated - Token tidak valid atau tidak dikirim"
                     },
                     "403": {
-                        "description": "Missing permission or wrong officer",
+                        "description": "Missing permission or actor berada di luar cakupan layanan dan assignment",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -3116,7 +3116,7 @@
                     "Helpdesk"
                 ],
                 "summary": "Search eligible officers for assignment",
-                "description": "Returns active Petugas TIK for a TIK ticket or active Petugas Sarpras for a Sarpras ticket. Search matches name or jabatan. TIK is limited to Super Admin; Sarpras is limited to Koordinator Sarpras. Requires the tickets-assign permission.",
+                "description": "Returns active Super Admin or Petugas TIK for a TIK ticket, and active Koordinator Sarpras or Petugas Sarpras for a Sarpras ticket. Search matches name or jabatan. TIK is limited to Super Admin; Sarpras is limited to Koordinator Sarpras. Requires the tickets-assign permission.",
                 "operationId": "getTicketAssigneeOptions",
                 "parameters": [
                     {
@@ -3214,7 +3214,7 @@
                     "Helpdesk"
                 ],
                 "summary": "Assign or reassign a ticket officer",
-                "description": "TIK assignment is limited to Super Admin and requires Petugas TIK. Sarpras assignment is limited to Koordinator Sarpras and requires Petugas Sarpras. Initial assignment from diklasifikasi requires priority, sets assigned_at and sla_started_at, starts the SLA deadline, and transitions directly to diproses. Reassignment from diproses updates the officer and assigned_at without resetting the first SLA start or deadline. Requires the tickets-assign permission.",
+                "description": "TIK assignment is limited to Super Admin and accepts Super Admin or Petugas TIK as assignee. Sarpras assignment is limited to Koordinator Sarpras and accepts Koordinator Sarpras or Petugas Sarpras as assignee. Initial assignment from diklasifikasi requires priority, sets assigned_at and sla_started_at, starts the SLA deadline, and transitions directly to diproses. Reassignment from diproses updates the officer and assigned_at without resetting the first SLA start or deadline. Requires the tickets-assign permission.",
                 "operationId": "assignTicket",
                 "parameters": [
                     {
@@ -3312,7 +3312,7 @@
                     "Helpdesk"
                 ],
                 "summary": "Escalate a processing ticket",
-                "description": "Escalate ticket to Manajemen, Vendor, or Tim Terkait. Requires assigned officer and tickets-handle permission.",
+                "description": "Super Admin may escalate TIK and Sarpras tickets without assignment. Koordinator Sarpras may escalate Sarpras tickets without assignment. Petugas TIK and Petugas Sarpras may only escalate assigned tickets for their respective service. Targets are Manajemen, Vendor, or Tim Terkait. Requires tickets-handle permission.",
                 "operationId": "escalateTicket",
                 "parameters": [
                     {
@@ -3376,7 +3376,7 @@
                         }
                     },
                     "403": {
-                        "description": "Missing permission or wrong officer",
+                        "description": "Missing permission or actor is outside the allowed service and assignment scope",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -3419,7 +3419,7 @@
                     "Helpdesk"
                 ],
                 "summary": "Add ticket handling history",
-                "description": "Only the currently assigned officer with the service-appropriate role may add handling. A diproses ticket can remain diproses without status history or become terselesaikan with status history. tickets.completed_at uses the manually supplied completed_at value. Handling never recalculates SLA. Requires the tickets-handle permission.",
+                "description": "Super Admin may handle TIK and Sarpras tickets without assignment. Koordinator Sarpras may handle Sarpras tickets without assignment. Petugas TIK and Petugas Sarpras may only handle tickets currently assigned to them for their respective service. A diproses ticket can remain diproses without status history or become terselesaikan with status history. tickets.completed_at uses the manually supplied completed_at value. Handling never recalculates SLA. Requires the tickets-handle permission.",
                 "operationId": "createTicketHandling",
                 "parameters": [
                     {
@@ -3464,7 +3464,7 @@
                         }
                     },
                     "403": {
-                        "description": "Missing tickets-handle permission or actor is not the currently assigned officer",
+                        "description": "Missing tickets-handle permission or actor is outside the allowed service and assignment scope",
                         "content": {
                             "application/json": {
                                 "schema": {

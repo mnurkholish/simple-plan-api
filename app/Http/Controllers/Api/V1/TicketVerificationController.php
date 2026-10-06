@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\VerifyTicketRequest;
 use App\Http\Resources\TicketResource;
 use App\Models\Ticket;
+use App\Notifications\TicketStatusUpdatedNotification;
 use App\Services\TicketService;
 use Illuminate\Http\JsonResponse;
 
@@ -33,7 +34,7 @@ class TicketVerificationController extends Controller
 
             if ($technician) {
                 $notifMsg = 'Penyelesaian tiket #'.$ticket->ticket_number.' telah disetujui (Ditutup).';
-                $technician->notify(new \App\Notifications\TicketStatusUpdatedNotification($ticket, $notifMsg));
+                $technician->notify(new TicketStatusUpdatedNotification($ticket, $notifMsg));
             }
         } else {
             $ticket = $this->ticketService->transitionStatus(
@@ -46,7 +47,7 @@ class TicketVerificationController extends Controller
 
             if ($technician) {
                 $notifMsg = 'Verifikasi tiket #'.$ticket->ticket_number.' ditolak/dikembalikan dengan kendala: '.$validated['keterangan_kendala'];
-                $technician->notify(new \App\Notifications\TicketStatusUpdatedNotification($ticket, $notifMsg));
+                $technician->notify(new TicketStatusUpdatedNotification($ticket, $notifMsg));
             }
         }
 

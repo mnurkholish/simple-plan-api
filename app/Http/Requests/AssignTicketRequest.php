@@ -28,9 +28,9 @@ class AssignTicketRequest extends FormRequest
     public function rules(): array
     {
         $ticket = $this->route('ticket');
-        $requiredRole = $ticket instanceof Ticket && $ticket->service === TicketService::Sarpras
-            ? 'petugas-sarpras'
-            : 'petugas-tik';
+        $allowedRoles = $ticket instanceof Ticket && $ticket->service === TicketService::Sarpras
+            ? ['koordinator-sarpras', 'petugas-sarpras']
+            : ['super-admin', 'petugas-tik'];
         $priorityRules = match ($ticket instanceof Ticket ? $ticket->status : null) {
             TicketStatus::Diklasifikasi => ['required', Rule::enum(TicketPriority::class)],
             TicketStatus::Diproses => ['prohibited'],
@@ -45,11 +45,11 @@ class AssignTicketRequest extends FormRequest
                 Rule::exists(User::class, 'id')
                     ->where('status', 'active')
                     ->where('status_user', 'Aktif'),
-                function (string $attribute, mixed $value, \Closure $fail) use ($requiredRole): void {
+                function (string $attribute, mixed $value, \Closure $fail) use ($allowedRoles): void {
                     $officer = User::query()->find($value);
 
-                    if ($officer !== null && ! $officer->hasRole($requiredRole)) {
-                        $fail("Petugas yang dipilih harus memiliki role {$requiredRole}.");
+                    if ($officer !== null && ! $officer->hasAnyRole($allowedRoles)) {
+                        $fail('Petugas yang dipilih harus memiliki salah satu role: '.implode(', ', $allowedRoles).'.');
                     }
                 },
             ],

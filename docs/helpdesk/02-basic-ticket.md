@@ -135,7 +135,7 @@ menambahkan CRUD asset atau barcode scanner.
 
 ## Initial Evidence
 
-`initial_evidence` tidak wajib dan divalidasi sebagai image maksimal 2 MB.
+`initial_evidence` tidak wajib dan divalidasi sebagai image maksimal 5 MB.
 File disimpan menggunakan default Laravel Filesystem dan database hanya
 menyimpan object key, original name, MIME type, serta size. Jika proses create
 gagal setelah file tersimpan, service menghapus file tersebut agar tidak

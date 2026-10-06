@@ -23,7 +23,7 @@ enum TicketStatus: string
             self::Diproses => [self::Eskalasi, self::Terselesaikan],
             self::Eskalasi => [self::Diproses],
             self::Terselesaikan => [self::Ditutup, self::Diproses],
-            self::Ditutup, self::Ditolak => [], 
+            self::Ditutup, self::Ditolak => [],
         };
     }
 

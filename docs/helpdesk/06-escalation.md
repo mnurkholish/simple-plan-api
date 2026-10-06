@@ -20,7 +20,15 @@ Fitur eskalasi tiket ke pihak eksternal/manajemen.
 `diproses -> eskalasi -> diproses`
 
 ## Authorization
-Hanya dapat dilakukan oleh teknisi yang ditugaskan (`assigned_officer_id`).
+
+Kedua action memerlukan permission `tickets-handle`, dengan cakupan:
+
+- Super Admin dapat mengeskalasi dan melanjutkan seluruh tiket TIK dan Sarpras
+  tanpa harus ditugaskan.
+- Koordinator Sarpras dapat mengeskalasi dan melanjutkan seluruh tiket Sarpras
+  tanpa harus ditugaskan, tetapi tidak dapat melakukannya pada tiket TIK.
+- Petugas TIK dan Petugas Sarpras hanya dapat melakukan action pada tiket yang
+  ditugaskan kepadanya sesuai layanan masing-masing.
 
 ## Routes
 `POST /api/v1/tickets/{ticket}/escalate`
