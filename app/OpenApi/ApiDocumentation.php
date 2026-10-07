@@ -1693,6 +1693,65 @@ class ApiDocumentation
 
     /**
      * @OA\Post(
+     *     path="/tickets/{ticket}/de-escalate",
+     *     operationId="deEscalateTicket",
+     *     tags={"Helpdesk"},
+     *     summary="Menarik kembali tiket dari status eskalasi (De-escalate)",
+     *     description="Hanya petugas yang ditugaskan dengan permission tickets-handle yang dapat melakukan ini.",
+     *     security={{"sanctum": {}}},
+     *
+     *     @OA\Parameter(
+     *         name="ticket",
+     *         in="path",
+     *         required=true,
+     *         description="ID dari tiket",
+     *
+     *         @OA\Schema(type="integer")
+     *     ),
+     *
+     *     @OA\Parameter(
+     *         name="Accept",
+     *         in="header",
+     *         required=true,
+     *         description="Wajib diisi application/json agar tidak ter-redirect ke rute login",
+     *
+     *         @OA\Schema(type="string", default="application/json")
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Berhasil ditarik"
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated - Token tidak valid atau tidak dikirim"
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Missing permission or wrong officer",
+     *
+     *         @OA\JsonContent(ref="#/components/schemas/TicketReadError")
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=404,
+     *         description="Ticket not found",
+     *
+     *         @OA\JsonContent(ref="#/components/schemas/TicketReadError")
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=409,
+     *         description="Ticket state conflict",
+     *
+     *         @OA\JsonContent(ref="#/components/schemas/TicketReadError")
+     *     )
+     * )
+     */
+    public function ticketsDeEscalate(): void {}
+
+    /**
+     * @OA\Post(
      *     path="/tickets/{ticket}/handlings",
      *     operationId="createTicketHandling",
      *     tags={"Helpdesk"},

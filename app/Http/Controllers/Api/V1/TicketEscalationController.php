@@ -47,63 +47,6 @@ class TicketEscalationController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Post(
-     *     path="/tickets/{ticket}/de-escalate",
-     *     operationId="deEscalateTicket",
-     *     tags={"Helpdesk"},
-     *     summary="Menarik kembali tiket dari status eskalasi (De-escalate)",
-     *     description="Super Admin dapat melanjutkan tiket TIK dan Sarpras tanpa assignment. Koordinator Sarpras dapat melanjutkan tiket Sarpras tanpa assignment. Petugas hanya dapat melanjutkan tiket yang ditugaskan sesuai layanan. Membutuhkan permission tickets-handle.",
-     *     security={{"sanctum": {}}},
-     *
-     *     @OA\Parameter(
-     *         name="ticket",
-     *         in="path",
-     *         required=true,
-     *         description="ID dari tiket",
-     *
-     *         @OA\Schema(type="integer")
-     *     ),
-     *
-     *     @OA\Parameter(
-     *         name="Accept",
-     *         in="header",
-     *         required=true,
-     *         description="Wajib diisi application/json agar tidak ter-redirect ke rute login",
-     *
-     *         @OA\Schema(type="string", default="application/json")
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=200,
-     *         description="Berhasil ditarik"
-     *     ),
-     *     @OA\Response(
-     *         response=401,
-     *         description="Unauthenticated - Token tidak valid atau tidak dikirim"
-     *     ),
-     *     @OA\Response(
-     *         response=403,
-     *         description="Missing permission or actor berada di luar cakupan layanan dan assignment",
-     *
-     *         @OA\JsonContent(ref="#/components/schemas/TicketReadError")
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=404,
-     *         description="Ticket not found",
-     *
-     *         @OA\JsonContent(ref="#/components/schemas/TicketReadError")
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=409,
-     *         description="Ticket state conflict",
-     *
-     *         @OA\JsonContent(ref="#/components/schemas/TicketReadError")
-     *     )
-     * )
-     */
     public function deEscalate(Ticket $ticket): JsonResponse
     {
         Gate::authorize('handle', $ticket);

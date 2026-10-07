@@ -37,7 +37,6 @@ class SlaService
      */
     public function determineSlaStatus(Carbon $slaStartedAt, Carbon $deadline, ?Carbon $completedAt = null): string
     {
-        // 1. Jika tiket sudah selesai
         if ($completedAt !== null) {
             if ($completedAt->greaterThan($deadline)) {
                 return 'Melewati Batas';
@@ -46,18 +45,15 @@ class SlaService
             return 'Tepat Waktu';
         }
 
-        // 2. Jika tiket belum selesai
         $now = now();
 
         if ($now->greaterThan($deadline)) {
             return 'Melewati Batas';
         }
 
-        // Hitung sisa waktu dan total waktu
         $totalMinutes = $slaStartedAt->diffInMinutes($deadline);
-        $remainingMinutes = $now->diffInMinutes($deadline, false); // false = jangan absolut, jika minus tetap minus
+        $remainingMinutes = $now->diffInMinutes($deadline, false);
 
-        // Jika sisa waktu <= 25% dari total waktu SLA awal
         if ($totalMinutes > 0 && $remainingMinutes <= ($totalMinutes * 0.25)) {
             return 'Mendekati Batas';
         }

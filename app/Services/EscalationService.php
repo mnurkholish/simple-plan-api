@@ -16,13 +16,11 @@ class EscalationService
      */
     public function escalateTicket(Ticket $ticket, array $data, int $escalatedById): Ticket
     {
-        // a. Pastikan status tiket saat ini adalah 'diproses'
         if ($ticket->status !== TicketStatus::Diproses) {
             throw new ConflictHttpException("Hanya tiket berstatus 'diproses' yang dapat dieskalasi.");
         }
 
         return DB::transaction(function () use ($ticket, $data, $escalatedById) {
-            // b. Insert data ke tabel ticket_escalations
             $ticket->escalations()->create([
                 'escalated_by_id' => $escalatedById,
                 'target' => $data['target'],
@@ -30,8 +28,6 @@ class EscalationService
                 'escalated_at' => now(),
             ]);
 
-            // d. Insert data ke ticket_status_histories
-            // Harus dilakukan sebelum update karena mengambil status tiket saat ini ('diproses')
             $ticket->statusHistories()->create([
                 'from_status' => $ticket->status,
                 'to_status' => 'eskalasi',
@@ -39,7 +35,6 @@ class EscalationService
                 'notes' => $data['notes'],
             ]);
 
-            // c. Update status tickets menjadi 'eskalasi'
             $ticket->update([
                 'status' => 'eskalasi',
             ]);
@@ -55,21 +50,18 @@ class EscalationService
      */
     public function resumeTicket(Ticket $ticket, int $resumedById): Ticket
     {
-        // a. Pastikan status tiket saat ini adalah 'eskalasi'
         if ($ticket->status !== TicketStatus::Eskalasi) {
             throw new ConflictHttpException("Hanya tiket berstatus 'eskalasi' yang penanganannya dapat dilanjutkan.");
         }
 
         return DB::transaction(function () use ($ticket, $resumedById) {
-            // c. Insert data ke ticket_status_histories
             $ticket->statusHistories()->create([
-                'from_status' => $ticket->status, // 'eskalasi'
+                'from_status' => $ticket->status,
                 'to_status' => 'diproses',
                 'changed_by_id' => $resumedById,
                 'notes' => 'Penanganan dilanjutkan pasca eskalasi',
             ]);
 
-            // b. Update status tickets kembali menjadi 'diproses'
             $ticket->update([
                 'status' => 'diproses',
             ]);
