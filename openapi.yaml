@@ -265,8 +265,10 @@ paths:
       summary: Mencari kandidat petugas assignment
       operationId: listTicketAssigneeOptions
       description: |
-        Kandidat dibatasi pada user aktif dengan role Petugas TIK atau Petugas
-        Sarpras sesuai service ticket. Search mencocokkan name dan jabatan.
+        Kandidat TIK dibatasi pada user aktif dengan role Super Admin atau
+        Petugas TIK. Kandidat Sarpras dibatasi pada user aktif dengan role
+        Koordinator Sarpras atau Petugas Sarpras. Search mencocokkan name dan
+        jabatan.
       x-auth-required: true
       x-required-permission: tickets-assign
       parameters:
@@ -301,10 +303,11 @@ paths:
       summary: Assignment atau reassignment tiket
       operationId: assignTicket
       description: |
-        TIK hanya dapat di-assign Super Admin kepada Petugas TIK. Sarpras hanya
-        dapat di-assign Koordinator Sarpras kepada Petugas Sarpras. Assignment
-        pertama dari Diklasifikasi menentukan priority, langsung mengubah status
-        menjadi Diproses, serta mencatat sla_started_at dan SLA deadline.
+        TIK hanya dapat di-assign Super Admin kepada Super Admin atau Petugas
+        TIK. Sarpras hanya dapat di-assign Koordinator Sarpras kepada Koordinator
+        Sarpras atau Petugas Sarpras. Assignment pertama dari Diklasifikasi
+        menentukan priority, langsung mengubah status menjadi Diproses, serta
+        mencatat sla_started_at dan SLA deadline.
         Reassignment dari Diproses hanya mengganti petugas dan assigned_at;
         waktu mulai serta deadline SLA pertama tidak direset.
       x-auth-required: true
@@ -341,8 +344,10 @@ paths:
       summary: Menambahkan riwayat penanganan tiket
       operationId: createTicketHandling
       description: |
-        Hanya petugas yang sedang tercatat sebagai assigned_officer_id dan
-        memiliki role sesuai service tiket yang dapat menambahkan penanganan.
+        Super Admin dapat menangani tiket TIK dan Sarpras tanpa assignment.
+        Koordinator Sarpras dapat menangani tiket Sarpras tanpa assignment.
+        Petugas TIK dan Petugas Sarpras hanya dapat menangani tiket yang sedang
+        ditugaskan kepadanya sesuai service masing-masing.
         Tiket Diproses dapat tetap Diproses tanpa status history atau menjadi
         Terselesaikan dengan status history. tickets.completed_at berasal dari
         completed_at yang diinput petugas, bukan dari waktu perubahan status.
@@ -381,8 +386,11 @@ paths:
       summary: Mengeskalasi tiket Helpdesk
       operationId: escalateTicket
       description: |
-        Petugas penanganan tiket dapat mengeskalasi tiket ke Manajemen, Vendor,
-        atau Tim Terkait. Membutuhkan permission tickets-handle.
+        Super Admin dapat mengeskalasi tiket TIK dan Sarpras tanpa assignment.
+        Koordinator Sarpras dapat mengeskalasi tiket Sarpras tanpa assignment.
+        Petugas hanya dapat mengeskalasi tiket yang ditugaskan kepadanya sesuai
+        service. Target eskalasi adalah Manajemen, Vendor, atau Tim Terkait.
+        Membutuhkan permission tickets-handle.
       x-auth-required: true
       x-required-permission: tickets-handle
       parameters:
@@ -417,8 +425,10 @@ paths:
       summary: Melanjutkan penanganan tiket setelah eskalasi
       operationId: deEscalateTicket
       description: |
-        Petugas yang ditugaskan dapat mengembalikan tiket berstatus Eskalasi
-        ke Diproses. Membutuhkan permission tickets-handle.
+        Cakupan actor sama dengan endpoint eskalasi: Super Admin untuk TIK dan
+        Sarpras, Koordinator Sarpras untuk Sarpras, serta petugas yang ditugaskan
+        sesuai service. Mengembalikan status Eskalasi ke Diproses dan
+        membutuhkan permission tickets-handle.
       x-auth-required: true
       x-required-permission: tickets-handle
       parameters:

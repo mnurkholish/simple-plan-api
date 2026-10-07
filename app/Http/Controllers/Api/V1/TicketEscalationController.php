@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreEscalationRequest;
 use App\Http\Resources\TicketResource;
 use App\Models\Ticket;
+use App\Models\User;
+use App\Notifications\TicketStatusUpdatedNotification;
 use App\Services\EscalationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
@@ -33,10 +35,10 @@ class TicketEscalationController extends Controller
             $request->user()->id
         );
 
-        $notifiableUsers = \App\Models\User::role(['super-admin', 'management'])->get();
+        $notifiableUsers = User::role(['super-admin', 'management'])->get();
         $message = 'Tiket #'.$ticket->ticket_number.' telah dieskalasi ke '.$validated['target'];
         foreach ($notifiableUsers as $user) {
-            $user->notify(new \App\Notifications\TicketStatusUpdatedNotification($ticket, $message));
+            $user->notify(new TicketStatusUpdatedNotification($ticket, $message));
         }
 
         return response()->json([

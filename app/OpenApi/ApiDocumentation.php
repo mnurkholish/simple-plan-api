@@ -1206,9 +1206,11 @@ class ApiDocumentation
      *         description="Unit search results",
      *
      *         @OA\JsonContent(
+     *
      *             @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/UnitSearchResult"))
      *         )
      *     ),
+     *
      *     @OA\Response(response=401, description="Unauthenticated"),
      *     @OA\Response(response=403, description="Missing tickets-create permission"),
      *     @OA\Response(response=422, description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
@@ -1623,7 +1625,7 @@ class ApiDocumentation
      *     operationId="getTicketAssigneeOptions",
      *     tags={"Helpdesk"},
      *     summary="Search eligible officers for assignment",
-     *     description="Returns active Petugas TIK for a TIK ticket or active Petugas Sarpras for a Sarpras ticket. Search matches name or jabatan. TIK is limited to Super Admin; Sarpras is limited to Koordinator Sarpras. Requires the tickets-assign permission.",
+     *     description="Returns active Super Admin or Petugas TIK for a TIK ticket, and active Koordinator Sarpras or Petugas Sarpras for a Sarpras ticket. Search matches name or jabatan. TIK is limited to Super Admin; Sarpras is limited to Koordinator Sarpras. Requires the tickets-assign permission.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
@@ -1645,7 +1647,7 @@ class ApiDocumentation
      *     operationId="assignTicket",
      *     tags={"Helpdesk"},
      *     summary="Assign or reassign a ticket officer",
-     *     description="TIK assignment is limited to Super Admin and requires Petugas TIK. Sarpras assignment is limited to Koordinator Sarpras and requires Petugas Sarpras. Initial assignment from diklasifikasi requires priority, sets assigned_at and sla_started_at, starts the SLA deadline, and transitions directly to diproses. Reassignment from diproses updates the officer and assigned_at without resetting the first SLA start or deadline. Requires the tickets-assign permission.",
+     *     description="TIK assignment is limited to Super Admin and accepts Super Admin or Petugas TIK as assignee. Sarpras assignment is limited to Koordinator Sarpras and accepts Koordinator Sarpras or Petugas Sarpras as assignee. Initial assignment from diklasifikasi requires priority, sets assigned_at and sla_started_at, starts the SLA deadline, and transitions directly to diproses. Reassignment from diproses updates the officer and assigned_at without resetting the first SLA start or deadline. Requires the tickets-assign permission.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
@@ -1668,20 +1670,21 @@ class ApiDocumentation
      *     operationId="escalateTicket",
      *     tags={"Helpdesk"},
      *     summary="Escalate a processing ticket",
-     *     description="Escalate ticket to Manajemen, Vendor, or Tim Terkait. Requires assigned officer and tickets-handle permission.",
+     *     description="Super Admin may escalate TIK and Sarpras tickets without assignment. Koordinator Sarpras may escalate Sarpras tickets without assignment. Petugas TIK and Petugas Sarpras may only escalate assigned tickets for their respective service. Targets are Manajemen, Vendor, or Tim Terkait. Requires tickets-handle permission.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
      *
      *     @OA\RequestBody(required=true, @OA\JsonContent(
      *         required={"target", "notes"},
+     *
      *         @OA\Property(property="target", type="string", enum={"Manajemen","Vendor","Tim Terkait"}, example="Manajemen"),
      *         @OA\Property(property="notes", type="string", example="Butuh persetujuan anggaran pergantian sparepart.")
      *     )),
      *
      *     @OA\Response(response=200, description="Ticket escalated", @OA\JsonContent(ref="#/components/schemas/TicketActionResponse")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
-     *     @OA\Response(response=403, description="Missing permission or wrong officer", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Missing permission or actor is outside the allowed service and assignment scope", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=404, description="Ticket not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=422, description="Invalid escalation data", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
      * )
@@ -1743,7 +1746,7 @@ class ApiDocumentation
      *     operationId="createTicketHandling",
      *     tags={"Helpdesk"},
      *     summary="Add ticket handling history",
-     *     description="Only the currently assigned officer with the service-appropriate role may add handling. A diproses ticket can remain diproses without status history or become terselesaikan with status history. tickets.completed_at uses the manually supplied completed_at value. Handling never recalculates SLA. Requires the tickets-handle permission.",
+     *     description="Super Admin may handle TIK and Sarpras tickets without assignment. Koordinator Sarpras may handle Sarpras tickets without assignment. Petugas TIK and Petugas Sarpras may only handle tickets currently assigned to them for their respective service. A diproses ticket can remain diproses without status history or become terselesaikan with status history. tickets.completed_at uses the manually supplied completed_at value. Handling never recalculates SLA. Requires the tickets-handle permission.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(name="ticket", in="path", required=true, description="Internal ticket ID.", @OA\Schema(type="integer")),
@@ -1752,7 +1755,7 @@ class ApiDocumentation
      *
      *     @OA\Response(response=200, description="Ticket handling history stored", @OA\JsonContent(ref="#/components/schemas/TicketActionResponse")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
-     *     @OA\Response(response=403, description="Missing tickets-handle permission or actor is not the currently assigned officer", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Missing tickets-handle permission or actor is outside the allowed service and assignment scope", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=404, description="Ticket not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=409, description="Ticket state conflict", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=422, description="Invalid handling data", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
@@ -1773,6 +1776,7 @@ class ApiDocumentation
      *
      *     @OA\RequestBody(required=true, @OA\JsonContent(
      *         required={"is_approved"},
+     *
      *         @OA\Property(property="is_approved", type="boolean", example=true),
      *         @OA\Property(property="keterangan_kendala", type="string", nullable=true, example="Masalah jaringan masih berlanjut.")
      *     )),

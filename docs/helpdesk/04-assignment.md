@@ -2,8 +2,9 @@
 
 ## Implemented
 
-- Assignment TIK kepada user aktif dengan role `petugas-tik`.
-- Assignment Sarpras kepada user aktif dengan role `petugas-sarpras`.
+- Assignment TIK kepada user aktif dengan role `super-admin` atau `petugas-tik`.
+- Assignment Sarpras kepada user aktif dengan role `koordinator-sarpras` atau
+  `petugas-sarpras`.
 - Priority ditentukan pada assignment pertama.
 - Assignment pertama langsung mengubah tiket dari `diklasifikasi` menjadi
   `diproses` tanpa status `ditugaskan`.

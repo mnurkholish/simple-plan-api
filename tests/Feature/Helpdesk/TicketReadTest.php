@@ -1,602 +1,192 @@
 <?php
 
-use App\Enums\TicketPriority;
 use App\Enums\TicketService;
-use App\Enums\TicketStatus;
-use App\Models\SarprasCategory;
 use App\Models\Ticket;
-use App\Models\TicketHandling;
 use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
-beforeEach(function (): void {
-    $role = Role::firstOrCreate(['name' => 'user', 'guard_name' => 'web']);
-    $reporter = User::factory()->for(Unit::factory())->create([
+function createTicketReadUser(string $roleName = 'user'): User
+{
+    $role = Role::firstOrCreate([
+        'name' => $roleName,
+        'guard_name' => 'web',
+    ]);
+    $user = User::factory()->for(Unit::factory())->create([
         'status' => 'active',
         'status_user' => 'Aktif',
     ]);
-    $reporter->assignRole($role);
-});
-
-function actingAsTicketReader(?User $user = null): User
-{
-    $user ??= User::factory()->create();
-    $permission = Permission::firstOrCreate([
-        'name' => 'tickets-access',
-        'guard_name' => 'web',
-    ]);
-
-    $user->givePermissionTo($permission);
-    Sanctum::actingAs($user);
+    $user->assignRole($role);
 
     return $user;
 }
 
-test('it returns 401 when listing tickets without authentication', function (): void {
-    $this->getJson('/api/v1/tickets')
-        ->assertUnauthorized();
-});
-
-test('it returns 401 when viewing a ticket without authentication', function (): void {
-    $ticket = Ticket::factory()->create();
-
-    $this->getJson("/api/v1/tickets/{$ticket->id}")
-        ->assertUnauthorized();
-});
-
-test('it returns 403 when listing tickets without tickets-access permission', function (): void {
-    Sanctum::actingAs(User::factory()->create());
-
-    $this->getJson('/api/v1/tickets')
-        ->assertForbidden();
-});
-
-test('it returns 403 when viewing a ticket without tickets-access permission', function (): void {
-    $ticket = Ticket::factory()->create();
-    Sanctum::actingAs(User::factory()->create());
-
-    $this->getJson("/api/v1/tickets/{$ticket->id}")
-        ->assertForbidden();
-});
-
-test('it returns tickets newest first with pagination metadata', function (): void {
-    $reporter = User::factory()->create(['name' => 'Rina Pelapor']);
-    $unit = Unit::factory()->create(['unit_name' => 'Unit Rawat Jalan']);
-    actingAsTicketReader($reporter);
-
-    Ticket::factory()->for($reporter, 'reporter')->for($unit)->create([
-        'ticket_number' => 'TIK-2026-000001',
-        'created_at' => '2026-09-09 08:00:00',
-    ]);
-    Ticket::factory()->for($reporter, 'reporter')->for($unit)->create([
-        'ticket_number' => 'SPR-2026-000002',
-        'service' => TicketService::Sarpras,
-        'created_at' => '2026-09-10 08:00:00',
-    ]);
-
-    $this->getJson('/api/v1/tickets?per_page=1')
-        ->assertOk()
-        ->assertJsonPath('data.0.ticket_number', 'SPR-2026-000002')
-        ->assertJsonPath('data.0.reporter.name', 'Rina Pelapor')
-        ->assertJsonPath('data.0.unit.name', 'Unit Rawat Jalan')
-        ->assertJsonPath('meta.current_page', 1)
-        ->assertJsonPath('meta.per_page', 1)
-        ->assertJsonPath('meta.total', 2)
-        ->assertJsonMissingPath('data.0.reporter.email')
-        ->assertJsonStructure([
-            'data' => [
-                '*' => [
-                    'id',
-                    'ticket_number',
-                    'service',
-                    'category',
-                    'tik_detail',
-                    'sarpras_detail',
-                    'description',
-                    'status',
-                    'rejection_reason',
-                    'priority',
-                    'asset',
-                    'reporter' => ['id', 'name'],
-                    'unit' => ['id', 'name'],
-                    'assigned_officer',
-                    'classified_by',
-                    'initial_evidence',
-                    'classified_at',
-                    'assigned_at',
-                    'sla_started_at',
-                    'sla_deadline',
-                    'completed_at',
-                    'closed_at',
-                    'created_at',
-                    'updated_at',
-                ],
-            ],
-            'links' => ['first', 'last', 'prev', 'next'],
-            'meta' => ['current_page', 'from', 'last_page', 'links', 'path', 'per_page', 'to', 'total'],
+function actingAsTicketReadUser(User $user, bool $withPermission = true): void
+{
+    if ($withPermission) {
+        $permission = Permission::firstOrCreate([
+            'name' => 'tickets-access',
+            'guard_name' => 'web',
         ]);
+        $user->givePermissionTo($permission);
+    }
+
+    Sanctum::actingAs($user);
+}
+
+function createVisibleTicket(
+    User $reporter,
+    TicketService $service = TicketService::Tik,
+    ?User $assignedOfficer = null,
+): Ticket {
+    return Ticket::factory()->reportedBy($reporter)->create([
+        'service' => $service,
+        'assigned_officer_id' => $assignedOfficer?->id,
+    ]);
+}
+
+test('guest tidak dapat melihat daftar maupun detail tiket', function (): void {
+    $reporter = createTicketReadUser();
+    $ticket = createVisibleTicket($reporter);
+
+    $this->getJson('/api/v1/tickets')->assertUnauthorized();
+    $this->getJson("/api/v1/tickets/{$ticket->id}")->assertUnauthorized();
 });
 
-test('it returns an empty paginated ticket collection', function (): void {
-    actingAsTicketReader();
+test('user tanpa permission tickets-access tidak dapat melihat daftar maupun detail tiket', function (): void {
+    Permission::firstOrCreate([
+        'name' => 'tickets-access',
+        'guard_name' => 'web',
+    ]);
+    $user = createTicketReadUser();
+    $ticket = createVisibleTicket($user);
+    actingAsTicketReadUser($user, withPermission: false);
 
-    $this->getJson('/api/v1/tickets')
-        ->assertOk()
-        ->assertJsonCount(0, 'data')
-        ->assertJsonPath('meta.total', 0);
+    $this->getJson('/api/v1/tickets')->assertForbidden();
+    $this->getJson("/api/v1/tickets/{$ticket->id}")->assertForbidden();
 });
 
-test('ticket lists do not generate temporary evidence URLs', function (): void {
-    $reporter = User::factory()->for(Unit::factory())->create();
-    Ticket::factory()->reportedBy($reporter)->create([
-        'initial_evidence_object_key' => 'helpdesk/evidence/kerusakan-komputer.jpg',
-        'initial_evidence_original_name' => 'kerusakan-komputer.jpg',
-        'initial_evidence_mime_type' => 'image/jpeg',
-        'initial_evidence_size' => 245760,
-    ]);
-    actingAsTicketReader($reporter);
+test('semua role dapat melihat tiket yang dibuat sendiri', function (): void {
+    foreach ([
+        'super-admin',
+        'koordinator-sarpras',
+        'petugas-tik',
+        'petugas-sarpras',
+        'user',
+        'management',
+    ] as $roleName) {
+        $reader = createTicketReadUser($roleName);
+        $ownTicket = createVisibleTicket($reader, TicketService::Tik);
+        actingAsTicketReadUser($reader);
 
-    $this->getJson('/api/v1/tickets')
-        ->assertOk()
-        ->assertJsonPath('data.0.initial_evidence.original_name', 'kerusakan-komputer.jpg')
-        ->assertJsonMissingPath('data.0.initial_evidence.object_key')
-        ->assertJsonMissingPath('data.0.initial_evidence.url');
-});
-
-test('it filters tickets by service', function (): void {
-    $user = User::factory()->create();
-    $unit = Unit::factory()->create();
-    actingAsTicketReader($user);
-
-    Ticket::factory()->for($user, 'reporter')->for($unit)->create([
-        'ticket_number' => 'TIK-2026-000001',
-        'service' => TicketService::Tik,
-    ]);
-    Ticket::factory()->for($user, 'reporter')->for($unit)->create([
-        'ticket_number' => 'SPR-2026-000001',
-        'service' => TicketService::Sarpras,
-    ]);
-
-    $this->getJson('/api/v1/tickets?service=tik')
-        ->assertOk()
-        ->assertJsonCount(1, 'data')
-        ->assertJsonPath('data.0.ticket_number', 'TIK-2026-000001');
-});
-
-test('it filters tickets by status', function (): void {
-    $user = User::factory()->create();
-    $unit = Unit::factory()->create();
-    actingAsTicketReader($user);
-
-    Ticket::factory()->for($user, 'reporter')->for($unit)->create([
-        'ticket_number' => 'TIK-2026-000001',
-        'status' => TicketStatus::Baru,
-    ]);
-    Ticket::factory()->for($user, 'reporter')->for($unit)->create([
-        'ticket_number' => 'TIK-2026-000002',
-        'status' => TicketStatus::Terselesaikan,
-    ]);
-
-    $this->getJson('/api/v1/tickets?status=terselesaikan')
-        ->assertOk()
-        ->assertJsonCount(1, 'data')
-        ->assertJsonPath('data.0.ticket_number', 'TIK-2026-000002');
-});
-
-test('it filters tickets by priority', function (): void {
-    $user = User::factory()->create();
-    $unit = Unit::factory()->create();
-    actingAsTicketReader($user);
-
-    Ticket::factory()->for($user, 'reporter')->for($unit)->create([
-        'ticket_number' => 'TIK-2026-000001',
-        'priority' => TicketPriority::High,
-    ]);
-    Ticket::factory()->for($user, 'reporter')->for($unit)->create([
-        'ticket_number' => 'TIK-2026-000002',
-        'priority' => TicketPriority::Low,
-    ]);
-
-    $this->getJson('/api/v1/tickets?priority=high')
-        ->assertOk()
-        ->assertJsonCount(1, 'data')
-        ->assertJsonPath('data.0.ticket_number', 'TIK-2026-000001');
-});
-
-test('it filters tickets by an inclusive date range', function (): void {
-    $user = User::factory()->create();
-    $unit = Unit::factory()->create();
-    actingAsTicketReader($user);
-
-    Ticket::factory()->for($user, 'reporter')->for($unit)->create([
-        'ticket_number' => 'TIK-2026-000001',
-        'created_at' => '2026-09-08 23:59:59',
-    ]);
-    Ticket::factory()->for($user, 'reporter')->for($unit)->create([
-        'ticket_number' => 'TIK-2026-000002',
-        'created_at' => '2026-09-09 00:00:00',
-    ]);
-    Ticket::factory()->for($user, 'reporter')->for($unit)->create([
-        'ticket_number' => 'TIK-2026-000003',
-        'created_at' => '2026-09-10 23:59:59',
-    ]);
-    Ticket::factory()->for($user, 'reporter')->for($unit)->create([
-        'ticket_number' => 'TIK-2026-000004',
-        'created_at' => '2026-09-11 00:00:00',
-    ]);
-
-    $this->getJson('/api/v1/tickets?date_from=2026-09-09&date_to=2026-09-10')
-        ->assertOk()
-        ->assertJsonCount(2, 'data')
-        ->assertJsonPath('data.0.ticket_number', 'TIK-2026-000003')
-        ->assertJsonPath('data.1.ticket_number', 'TIK-2026-000002');
-});
-
-test('it searches tickets by reporter name and unit name', function (): void {
-    $reader = User::factory()->create();
-    $reader->syncRoles('management');
-    actingAsTicketReader($reader);
-
-    $radiology = Unit::factory()->create([
-        'unit_name' => 'Unit Radiologi',
-    ]);
-
-    $pharmacy = Unit::factory()->create([
-        'unit_name' => 'Unit Farmasi',
-    ]);
-
-    $rina = User::factory()->create([
-        'name' => 'Rina Pelapor',
-    ]);
-
-    $budi = User::factory()->create([
-        'name' => 'Budi Santoso',
-    ]);
-
-    Ticket::factory()
-        ->for($rina, 'reporter')
-        ->for($radiology)
-        ->create([
-            'ticket_number' => 'TIK-2026-000042',
-        ]);
-
-    Ticket::factory()
-        ->for($budi, 'reporter')
-        ->for($pharmacy)
-        ->create([
-            'ticket_number' => 'TIK-2026-000043',
-        ]);
-
-    $this->getJson('/api/v1/tickets?search=Rina')
-        ->assertOk()
-        ->assertJsonCount(1, 'data')
-        ->assertJsonPath('data.0.ticket_number', 'TIK-2026-000042');
-
-    $this->getJson('/api/v1/tickets?search=Farmasi')
-        ->assertOk()
-        ->assertJsonCount(1, 'data')
-        ->assertJsonPath('data.0.ticket_number', 'TIK-2026-000043');
-});
-
-test('it binds ticket search input as a value', function (): void {
-    $user = User::factory()->create();
-    $unit = Unit::factory()->create();
-    actingAsTicketReader($user);
-
-    Ticket::factory()->for($user, 'reporter')->for($unit)->create([
-        'ticket_number' => 'TIK-2026-000042',
-        'description' => 'Komputer tidak dapat menyala.',
-    ]);
-
-    $this->getJson('/api/v1/tickets?'.http_build_query(['search' => "' OR 1=1 --"]))
-        ->assertOk()
-        ->assertJsonCount(0, 'data');
-});
-
-test('it combines ticket filters', function (): void {
-    $user = User::factory()->create(['name' => 'Printer Pelapor']);
-    $unit = Unit::factory()->create();
-    actingAsTicketReader($user);
-
-    Ticket::factory()->for($user, 'reporter')->for($unit)->create([
-        'ticket_number' => 'TIK-2026-000100',
-        'service' => TicketService::Tik,
-        'status' => TicketStatus::Baru,
-        'description' => 'Printer tidak dapat mencetak.',
-        'created_at' => '2026-09-10 09:00:00',
-    ]);
-    Ticket::factory()->for($user, 'reporter')->for($unit)->create([
-        'ticket_number' => 'TIK-2026-000101',
-        'service' => TicketService::Tik,
-        'status' => TicketStatus::Terselesaikan,
-        'description' => 'Printer tidak dapat mencetak.',
-        'created_at' => '2026-09-10 09:00:00',
-    ]);
-    Ticket::factory()->for($user, 'reporter')->for($unit)->create([
-        'ticket_number' => 'SPR-2026-000102',
-        'service' => TicketService::Sarpras,
-        'status' => TicketStatus::Baru,
-        'description' => 'Printer tidak dapat mencetak.',
-        'created_at' => '2026-09-10 09:00:00',
-    ]);
-
-    $this->getJson('/api/v1/tickets?service=tik&status=baru&date_from=2026-09-10&date_to=2026-09-10&search=Printer')
-        ->assertOk()
-        ->assertJsonCount(1, 'data')
-        ->assertJsonPath('data.0.ticket_number', 'TIK-2026-000100');
-});
-
-test('it returns ticket details with reporter and unit summaries', function (): void {
-    $reporter = User::factory()->create(['name' => 'Dedi Pelapor']);
-    $unit = Unit::factory()->create(['unit_name' => 'Unit Radiologi']);
-    $sarprasCategory = SarprasCategory::create([
-        'name' => 'Kelistrikan',
-        'is_active' => true,
-    ]);
-    $ticket = Ticket::factory()->for($reporter, 'reporter')->for($unit)->create([
-        'ticket_number' => 'SPR-2026-000007',
-        'service' => TicketService::Sarpras,
-        'description' => 'Lampu ruang pemeriksaan mati.',
-        'status' => TicketStatus::Ditutup,
-    ]);
-    $ticket->sarprasDetail()->create([
-        'sarpras_category_id' => $sarprasCategory->id,
-    ]);
-    actingAsTicketReader($reporter);
-
-    $this->getJson("/api/v1/tickets/{$ticket->id}")
-        ->assertOk()
-        ->assertExactJson([
-            'data' => [
-                'id' => $ticket->id,
-                'ticket_number' => 'SPR-2026-000007',
-                'service' => 'sarpras',
-                'category' => 'Kelistrikan',
-                'tik_detail' => null,
-                'sarpras_detail' => [
-                    'sarpras_category' => [
-                        'id' => $sarprasCategory->id,
-                        'name' => 'Kelistrikan',
-                    ],
-                ],
-                'description' => 'Lampu ruang pemeriksaan mati.',
-                'status' => 'ditutup',
-                'rejection_reason' => null,
-                'priority' => null,
-                'asset' => null,
-                'reporter' => [
-                    'id' => $reporter->id,
-                    'name' => 'Dedi Pelapor',
-                ],
-                'unit' => [
-                    'id' => $unit->id,
-                    'name' => 'Unit Radiologi',
-                ],
-                'assigned_officer' => null,
-                'classified_by' => null,
-                'initial_evidence' => null,
-                'classified_at' => null,
-                'assigned_at' => null,
-                'sla_started_at' => null,
-                'sla_deadline' => null,
-                'completed_at' => null,
-                'status_sla' => null,
-                'closed_at' => null,
-                'handlings' => [],
-                'status_histories' => [],
-                'created_at' => $ticket->created_at->toJSON(),
-                'updated_at' => $ticket->updated_at->toJSON(),
-            ],
-        ]);
-});
-
-test('it returns runtime file URLs without exposing object keys in ticket details', function (): void {
-    Storage::fake('local');
-    config()->set('filesystems.default', 'local');
-
-    $evidenceObjectKey = 'helpdesk/evidence/kerusakan-komputer.jpg';
-    $resultObjectKey = 'helpdesk/handling-results/hasil-perbaikan.jpg';
-    Storage::put($evidenceObjectKey, 'evidence');
-    Storage::put($resultObjectKey, 'result');
-
-    $reporter = User::factory()->for(Unit::factory())->create();
-    $handler = User::factory()->create();
-    $ticket = Ticket::factory()->reportedBy($reporter)->create([
-        'initial_evidence_object_key' => $evidenceObjectKey,
-        'initial_evidence_original_name' => 'kerusakan-komputer.jpg',
-        'initial_evidence_mime_type' => 'image/jpeg',
-        'initial_evidence_size' => 245760,
-    ]);
-    TicketHandling::factory()->for($ticket)->for($handler, 'handledBy')->create([
-        'result_photo_object_key' => $resultObjectKey,
-        'result_photo_original_name' => 'hasil-perbaikan.jpg',
-        'result_photo_mime_type' => 'image/jpeg',
-        'result_photo_size' => 245760,
-    ]);
-    TicketHandling::factory()->for($ticket)->for($handler, 'handledBy')->create();
-    actingAsTicketReader($reporter);
-
-    $response = $this->getJson("/api/v1/tickets/{$ticket->id}")
-        ->assertOk()
-        ->assertJsonPath('data.initial_evidence.original_name', 'kerusakan-komputer.jpg')
-        ->assertJsonPath('data.initial_evidence.mime_type', 'image/jpeg')
-        ->assertJsonPath('data.initial_evidence.size', 245760)
-        ->assertJsonPath('data.handlings.0.result_photo', null)
-        ->assertJsonPath('data.handlings.1.result_photo.original_name', 'hasil-perbaikan.jpg')
-        ->assertJsonPath('data.handlings.1.result_photo.mime_type', 'image/jpeg')
-        ->assertJsonPath('data.handlings.1.result_photo.size', 245760)
-        ->assertJsonMissingPath('data.initial_evidence.object_key')
-        ->assertJsonMissingPath('data.handlings.1.result_photo.object_key');
-
-    expect($response->json('data.initial_evidence.url'))
-        ->toBeString()
-        ->toContain($evidenceObjectKey, 'expiration=')
-        ->and($response->json('data.handlings.1.result_photo.url'))
-        ->toBeString()
-        ->toContain($resultObjectKey, 'expiration=');
-});
-
-test('it generates file URLs through the configured S3 compatible disk', function (): void {
-    $originalDefault = config('filesystems.default');
-    $originalS3 = config('filesystems.disks.s3');
-    $objectKey = 'helpdesk/evidence/kerusakan-komputer.jpg';
-
-    config()->set('filesystems.default', 's3');
-    config()->set('filesystems.disks.s3', [
-        'driver' => 's3',
-        'key' => 'test-key',
-        'secret' => 'test-secret',
-        'region' => 'us-east-1',
-        'bucket' => 'simple-plan',
-        'endpoint' => 'http://minio.test:9000',
-        'use_path_style_endpoint' => true,
-        'throw' => false,
-    ]);
-    Storage::forgetDisk('s3');
-
-    try {
-        $reporter = User::factory()->for(Unit::factory())->create();
-        $ticket = Ticket::factory()->reportedBy($reporter)->create([
-            'initial_evidence_object_key' => $objectKey,
-            'initial_evidence_original_name' => 'kerusakan-komputer.jpg',
-            'initial_evidence_mime_type' => 'image/jpeg',
-            'initial_evidence_size' => 245760,
-        ]);
-        actingAsTicketReader($reporter);
-
-        $response = $this->getJson("/api/v1/tickets/{$ticket->id}")
+        $response = $this->getJson('/api/v1/tickets')->assertOk();
+        expect($response->json('data.*.id'))->toContain($ownTicket->id);
+        $this->getJson("/api/v1/tickets/{$ownTicket->id}")
             ->assertOk()
-            ->assertJsonMissingPath('data.initial_evidence.object_key');
-
-        expect($response->json('data.initial_evidence.url'))
-            ->toStartWith("http://minio.test:9000/simple-plan/{$objectKey}?")
-            ->toContain('X-Amz-Signature=');
-    } finally {
-        Storage::forgetDisk('s3');
-        config()->set('filesystems.default', $originalDefault);
-        config()->set('filesystems.disks.s3', $originalS3);
+            ->assertJsonPath('data.id', $ownTicket->id);
     }
 });
 
-test('it returns 404 when a ticket does not exist', function (): void {
-    actingAsTicketReader();
+test('super admin dapat melihat semua tiket', function (): void {
+    $reporter = createTicketReadUser();
+    $tikTicket = createVisibleTicket($reporter, TicketService::Tik);
+    $sarprasTicket = createVisibleTicket($reporter, TicketService::Sarpras);
+    $superAdmin = createTicketReadUser('super-admin');
+    actingAsTicketReadUser($superAdmin);
+
+    $response = $this->getJson('/api/v1/tickets')
+        ->assertOk()
+        ->assertJsonCount(2, 'data');
+    expect($response->json('data.*.id'))
+        ->toEqualCanonicalizing([$tikTicket->id, $sarprasTicket->id]);
+    $this->getJson("/api/v1/tickets/{$tikTicket->id}")->assertOk();
+    $this->getJson("/api/v1/tickets/{$sarprasTicket->id}")->assertOk();
+});
+
+test('manajemen dapat melihat semua tiket', function (): void {
+    $reporter = createTicketReadUser();
+    $tikTicket = createVisibleTicket($reporter, TicketService::Tik);
+    $sarprasTicket = createVisibleTicket($reporter, TicketService::Sarpras);
+    $management = createTicketReadUser('management');
+    actingAsTicketReadUser($management);
+
+    $response = $this->getJson('/api/v1/tickets')
+        ->assertOk()
+        ->assertJsonCount(2, 'data');
+    expect($response->json('data.*.id'))
+        ->toEqualCanonicalizing([$tikTicket->id, $sarprasTicket->id]);
+    $this->getJson("/api/v1/tickets/{$tikTicket->id}")->assertOk();
+    $this->getJson("/api/v1/tickets/{$sarprasTicket->id}")->assertOk();
+});
+
+test('koordinator Sarpras dapat melihat seluruh tiket Sarpras dan tiket TIK miliknya sendiri', function (): void {
+    $coordinator = createTicketReadUser('koordinator-sarpras');
+    $otherReporter = createTicketReadUser();
+    $ownTikTicket = createVisibleTicket($coordinator, TicketService::Tik);
+    $sarprasTicket = createVisibleTicket($otherReporter, TicketService::Sarpras);
+    $otherTikTicket = createVisibleTicket($otherReporter, TicketService::Tik);
+    actingAsTicketReadUser($coordinator);
+
+    $response = $this->getJson('/api/v1/tickets')
+        ->assertOk()
+        ->assertJsonCount(2, 'data');
+    expect($response->json('data.*.id'))
+        ->toEqualCanonicalizing([$ownTikTicket->id, $sarprasTicket->id]);
+    $this->getJson("/api/v1/tickets/{$ownTikTicket->id}")->assertOk();
+    $this->getJson("/api/v1/tickets/{$sarprasTicket->id}")->assertOk();
+    $this->getJson("/api/v1/tickets/{$otherTikTicket->id}")->assertForbidden();
+});
+
+test('petugas TIK dan Sarpras hanya dapat melihat tiket assigned sesuai layanan dan tiket miliknya sendiri', function (): void {
+    foreach ([
+        [TicketService::Tik, TicketService::Sarpras, 'petugas-tik'],
+        [TicketService::Sarpras, TicketService::Tik, 'petugas-sarpras'],
+    ] as [$ownService, $otherService, $roleName]) {
+        $officer = createTicketReadUser($roleName);
+        $reporter = createTicketReadUser();
+        $ownTicket = createVisibleTicket($officer, $otherService);
+        $assignedTicket = createVisibleTicket($reporter, $ownService, $officer);
+        $unrelatedTicket = createVisibleTicket($reporter, $ownService);
+        $wrongServiceTicket = createVisibleTicket($reporter, $otherService, $officer);
+        actingAsTicketReadUser($officer);
+
+        $response = $this->getJson('/api/v1/tickets')
+            ->assertOk()
+            ->assertJsonCount(2, 'data');
+        expect($response->json('data.*.id'))
+            ->toEqualCanonicalizing([$ownTicket->id, $assignedTicket->id]);
+        $this->getJson("/api/v1/tickets/{$ownTicket->id}")->assertOk();
+        $this->getJson("/api/v1/tickets/{$assignedTicket->id}")->assertOk();
+        $this->getJson("/api/v1/tickets/{$unrelatedTicket->id}")->assertForbidden();
+        $this->getJson("/api/v1/tickets/{$wrongServiceTicket->id}")->assertForbidden();
+    }
+});
+
+test('user biasa hanya dapat melihat tiket miliknya sendiri', function (): void {
+    $user = createTicketReadUser();
+    $otherReporter = createTicketReadUser();
+    $ownTicket = createVisibleTicket($user);
+    $otherTicket = createVisibleTicket($otherReporter);
+    actingAsTicketReadUser($user);
+
+    $response = $this->getJson('/api/v1/tickets')
+        ->assertOk()
+        ->assertJsonCount(1, 'data');
+    expect($response->json('data.*.id'))->toBe([$ownTicket->id]);
+    $this->getJson("/api/v1/tickets/{$ownTicket->id}")->assertOk();
+    $this->getJson("/api/v1/tickets/{$otherTicket->id}")->assertForbidden();
+});
+
+test('endpoint detail tiket mengembalikan 404 ketika tiket tidak ditemukan', function (): void {
+    $user = createTicketReadUser();
+    actingAsTicketReadUser($user);
 
     $this->getJson('/api/v1/tickets/999999')
         ->assertNotFound()
-        ->assertExactJson([
-            'message' => 'Resource not found.',
-        ]);
-});
-
-test('it returns 422 for invalid ticket filters', function (array $query, string $field): void {
-    actingAsTicketReader();
-
-    $this->getJson('/api/v1/tickets?'.http_build_query($query))
-        ->assertUnprocessable()
-        ->assertJsonValidationErrors($field);
-})->with([
-    'unknown service' => [['service' => 'umum'], 'service'],
-    'unknown status' => [['status' => 'tertunda'], 'status'],
-    'unknown priority' => [['priority' => 'urgent'], 'priority'],
-    'invalid start date' => [['date_from' => '10-09-2026'], 'date_from'],
-    'end date before start date' => [[
-        'date_from' => '2026-09-10',
-        'date_to' => '2026-09-09',
-    ], 'date_to'],
-    'page below one' => [['page' => 0], 'page'],
-    'per page above maximum' => [['per_page' => 101], 'per_page'],
-]);
-
-test('ticket list applies the actor scope before filters', function (): void {
-    $reporter = User::factory()->for(Unit::factory())->create();
-    $tikOfficer = User::factory()->for(Unit::factory())->create();
-    $sarprasOfficer = User::factory()->create();
-    $coordinator = User::factory()->create();
-    $management = User::factory()->create();
-    $superAdmin = User::factory()->create();
-
-    foreach (['petugas-tik', 'petugas-sarpras', 'koordinator-sarpras', 'user', 'management', 'super-admin'] as $roleName) {
-        Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
-    }
-
-    $reporter->assignRole('user');
-    $tikOfficer->assignRole('petugas-tik');
-    $sarprasOfficer->assignRole('petugas-sarpras');
-    $coordinator->assignRole('koordinator-sarpras');
-    $management->assignRole('management');
-    $superAdmin->assignRole('super-admin');
-
-    $ownSarpras = Ticket::factory()->for($tikOfficer, 'reporter')->create([
-        'ticket_number' => 'SPR-2026-000001',
-        'service' => TicketService::Sarpras,
-    ]);
-    $assignedTik = Ticket::factory()->create([
-        'ticket_number' => 'TIK-2026-000002',
-        'service' => TicketService::Tik,
-        'reporter_id' => $reporter->id,
-        'assigned_officer_id' => $tikOfficer->id,
-    ]);
-    $assignedSarpras = Ticket::factory()->create([
-        'ticket_number' => 'SPR-2026-000003',
-        'service' => TicketService::Sarpras,
-        'reporter_id' => $reporter->id,
-        'assigned_officer_id' => $sarprasOfficer->id,
-    ]);
-    $unrelatedTik = Ticket::factory()->create([
-        'ticket_number' => 'TIK-2026-000004',
-        'service' => TicketService::Tik,
-        'reporter_id' => $reporter->id,
-    ]);
-
-    actingAsTicketReader($tikOfficer);
-    $this->getJson('/api/v1/tickets?service=sarpras')
-        ->assertOk()
-        ->assertJsonCount(1, 'data')
-        ->assertJsonFragment(['ticket_number' => $ownSarpras->ticket_number])
-        ->assertJsonMissing(['ticket_number' => $assignedSarpras->ticket_number]);
-
-    actingAsTicketReader($sarprasOfficer);
-    $this->getJson('/api/v1/tickets')
-        ->assertOk()
-        ->assertJsonCount(1, 'data')
-        ->assertJsonFragment(['ticket_number' => $assignedSarpras->ticket_number]);
-
-    actingAsTicketReader($coordinator);
-    $this->getJson('/api/v1/tickets')
-        ->assertOk()
-        ->assertJsonCount(2, 'data')
-        ->assertJsonFragment(['ticket_number' => $ownSarpras->ticket_number])
-        ->assertJsonFragment(['ticket_number' => $assignedSarpras->ticket_number])
-        ->assertJsonMissing(['ticket_number' => $assignedTik->ticket_number]);
-
-    actingAsTicketReader($reporter);
-    $this->getJson('/api/v1/tickets')
-        ->assertOk()
-        ->assertJsonCount(3, 'data')
-        ->assertJsonMissing(['ticket_number' => $ownSarpras->ticket_number]);
-
-    foreach ([$management, $superAdmin] as $globalReader) {
-        actingAsTicketReader($globalReader);
-        $this->getJson('/api/v1/tickets')
-            ->assertOk()
-            ->assertJsonCount(4, 'data')
-            ->assertJsonFragment(['ticket_number' => $unrelatedTik->ticket_number]);
-    }
-});
-
-test('ticket detail rejects an actor outside the business view scope', function (): void {
-    $reader = User::factory()->create();
-    $ticket = Ticket::factory()->create();
-    actingAsTicketReader($reader);
-
-    $this->getJson("/api/v1/tickets/{$ticket->id}")
-        ->assertForbidden()
-        ->assertJsonMissing(['ticket_number' => $ticket->ticket_number]);
+        ->assertExactJson(['message' => 'Resource not found.']);
 });

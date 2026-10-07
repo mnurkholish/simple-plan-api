@@ -29,14 +29,14 @@ class UserRepository
     /**
      * @return Collection<int, User>
      */
-    public function getAssigneeOptions(string $roleName, ?string $search = null): Collection
+    public function getAssigneeOptions(array $roleNames, ?string $search = null): Collection
     {
         return User::query()
             ->select(['id', 'name', 'jabatan'])
             ->where('status', 'active')
             ->where('status_user', 'Aktif')
             ->whereHas('roles', fn (Builder $query): Builder => $query
-                ->where('name', $roleName)
+                ->whereIn('name', $roleNames)
                 ->where('guard_name', 'web'))
             ->when(
                 filled($search),

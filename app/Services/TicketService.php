@@ -247,7 +247,9 @@ class TicketService
         }
 
         return $this->users->getAssigneeOptions(
-            $ticket->service === TicketServiceEnum::Tik ? 'petugas-tik' : 'petugas-sarpras',
+            $ticket->service === TicketServiceEnum::Tik
+                ? ['super-admin', 'petugas-tik']
+                : ['koordinator-sarpras', 'petugas-sarpras'],
             $search,
         );
     }
@@ -274,7 +276,12 @@ class TicketService
                     ->lockForUpdate()
                     ->firstOrFail();
 
-                if ((int) $lockedTicket->assigned_officer_id !== (int) $handledBy->getKey()) {
+                $canHandleWithoutAssignment = $handledBy->hasRole('super-admin')
+                    || ($lockedTicket->service === TicketServiceEnum::Sarpras
+                        && $handledBy->hasRole('koordinator-sarpras'));
+
+                if (! $canHandleWithoutAssignment
+                    && (int) $lockedTicket->assigned_officer_id !== (int) $handledBy->getKey()) {
                     throw new AuthorizationException('Hanya petugas yang sedang ditugaskan yang dapat menangani tiket.');
                 }
 
