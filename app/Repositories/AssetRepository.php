@@ -5,28 +5,28 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Models\Asset;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection;
+use App\Repositories\Contracts\AssetRepositoryInterface;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
-class AssetRepository
+class AssetRepository implements AssetRepositoryInterface
 {
-    /**
-     * @return Collection<int, Asset>
-     */
-    public function search(int $unitId, ?string $search): Collection
+    public function findById(string $id): ?Asset
     {
-        return Asset::query()
-            ->select(['id', 'asset_number', 'name', 'brand', 'location', 'status'])
-            ->where('unit_id', $unitId)
-            ->when(
-                filled($search),
-                fn (Builder $query): Builder => $query->where(function (Builder $query) use ($search): void {
-                    $query
-                        ->whereLike('asset_number', "%{$search}%")
-                        ->orWhereLike('name', "%{$search}%");
-                }),
-            )
-            ->orderBy('name')
-            ->get();
+        return Asset::find($id);
+    }
+
+    public function getPaginated(int $perPage = 15): LengthAwarePaginator
+    {
+        return Asset::with(['masterKlasifikasi', 'masterRuang', 'masterBarang'])->paginate($perPage);
+    }
+
+    public function create(array $data): Asset
+    {
+        return Asset::create($data);
+    }
+
+    public function update(Asset $asset, array $data): bool
+    {
+        return $asset->update($data);
     }
 }
