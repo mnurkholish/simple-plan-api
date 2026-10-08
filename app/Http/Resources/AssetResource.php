@@ -16,11 +16,22 @@ class AssetResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'asset_number' => $this->asset_number,
-            'name' => $this->name,
-            'brand' => $this->brand,
-            'location' => $this->location,
+            'item_uuid' => $this->item_uuid,
+            'inventory_number' => $this->inventory_number,
+            'sequence_number' => $this->sequence_number,
+            'specification_model' => $this->specification_model,
+            'serial_number' => $this->serial_number,
+            'purchase_year' => $this->purchase_year,
             'status' => $this->status,
+            'condition' => $this->condition,
+            'warranty_until' => $this->warranty_until,
+            'notes' => $this->notes,
+            'photo_path' => $this->photo_path,
+            'calibration_document_path' => $this->calibration_document_path,
+            'classification' => $this->whenLoaded('classification'),
+            'location' => $this->whenLoaded('location'),
+            'item' => $this->whenLoaded('item'),
+            'mutations' => $this->whenLoaded('mutations'),
         ];
     }
 }

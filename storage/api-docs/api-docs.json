@@ -12,80 +12,6 @@
         }
     ],
     "paths": {
-        "/tickets/{ticket}/de-escalate": {
-            "post": {
-                "tags": [
-                    "Helpdesk"
-                ],
-                "summary": "Menarik kembali tiket dari status eskalasi (De-escalate)",
-                "description": "Hanya petugas yang ditugaskan dengan permission tickets-handle yang dapat melakukan ini.",
-                "operationId": "deEscalateTicket",
-                "parameters": [
-                    {
-                        "name": "ticket",
-                        "in": "path",
-                        "description": "ID dari tiket",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "Accept",
-                        "in": "header",
-                        "description": "Wajib diisi application/json agar tidak ter-redirect ke rute login",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "default": "application/json"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Berhasil ditarik"
-                    },
-                    "401": {
-                        "description": "Unauthenticated - Token tidak valid atau tidak dikirim"
-                    },
-                    "403": {
-                        "description": "Missing permission or wrong officer",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/TicketReadError"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Ticket not found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/TicketReadError"
-                                }
-                            }
-                        }
-                    },
-                    "409": {
-                        "description": "Ticket state conflict",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/TicketReadError"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            }
-        },
         "/auth/login": {
             "post": {
                 "tags": [
@@ -3413,6 +3339,80 @@
                 ]
             }
         },
+        "/tickets/{ticket}/de-escalate": {
+            "post": {
+                "tags": [
+                    "Helpdesk"
+                ],
+                "summary": "Menarik kembali tiket dari status eskalasi (De-escalate)",
+                "description": "Hanya petugas yang ditugaskan dengan permission tickets-handle yang dapat melakukan ini.",
+                "operationId": "deEscalateTicket",
+                "parameters": [
+                    {
+                        "name": "ticket",
+                        "in": "path",
+                        "description": "ID dari tiket",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "Accept",
+                        "in": "header",
+                        "description": "Wajib diisi application/json agar tidak ter-redirect ke rute login",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "default": "application/json"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Berhasil ditarik"
+                    },
+                    "401": {
+                        "description": "Unauthenticated - Token tidak valid atau tidak dikirim"
+                    },
+                    "403": {
+                        "description": "Missing permission or wrong officer",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Ticket not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Ticket state conflict",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/tickets/{ticket}/handlings": {
             "post": {
                 "tags": [
@@ -3613,19 +3613,73 @@
                 ]
             }
         },
-        "/tickets/{ticket}": {
+        "/asset-classifications": {
             "get": {
                 "tags": [
-                    "Helpdesk"
+                    "Inventory - Master Data"
                 ],
-                "summary": "Show a Helpdesk ticket",
-                "description": "Requires the tickets-access permission.",
-                "operationId": "showTicket",
+                "summary": "List all Asset Classifications",
+                "operationId": "07e1bd601d9e9aa39f9bd967d59614ea",
+                "responses": {
+                    "200": {
+                        "description": "List of classifications"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Inventory - Master Data"
+                ],
+                "summary": "Create new Asset Classification",
+                "operationId": "84f125a4d5fee6090f8be454b2b556ea",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "code": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Alat Medis"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created classification"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/asset-classifications/{id}": {
+            "get": {
+                "tags": [
+                    "Inventory - Master Data"
+                ],
+                "summary": "Get an Asset Classification",
+                "operationId": "3c15c7ae28f13e5c1291c7eab4b878fa",
                 "parameters": [
                     {
-                        "name": "ticket",
+                        "name": "id",
                         "in": "path",
-                        "description": "Internal ticket ID.",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -3634,44 +3688,624 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Ticket detail",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/TicketReadResponse"
-                                }
+                        "description": "Classification detail"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Inventory - Master Data"
+                ],
+                "summary": "Update Asset Classification",
+                "operationId": "a19f4456884d39fa17d52574b5d5220c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "code": {
+                                        "type": "integer"
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
                             }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated classification"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/asset-locations": {
+            "get": {
+                "tags": [
+                    "Inventory - Master Data"
+                ],
+                "summary": "List all Asset Locations",
+                "operationId": "da6db69b6af627210189eecb4784ca66",
+                "responses": {
+                    "200": {
+                        "description": "List of locations"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Inventory - Master Data"
+                ],
+                "summary": "Create new Asset Location",
+                "operationId": "c0240a9bbc635304c49239a0e30570c3",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "code": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Ruang IGD"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created location"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/asset-locations/{id}": {
+            "get": {
+                "tags": [
+                    "Inventory - Master Data"
+                ],
+                "summary": "Get an Asset Location",
+                "operationId": "f3c4a5051e1e0fca8939015151670ba7",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Location detail"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Inventory - Master Data"
+                ],
+                "summary": "Update Asset Location",
+                "operationId": "8340ed8a09519d2fcd1d591627441c47",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "code": {
+                                        "type": "integer"
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated location"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/asset-items": {
+            "get": {
+                "tags": [
+                    "Inventory - Master Data"
+                ],
+                "summary": "List all Asset Items",
+                "operationId": "9c0a4a7d69f74fbca12fccef89e97343",
+                "responses": {
+                    "200": {
+                        "description": "List of items"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Inventory - Master Data"
+                ],
+                "summary": "Create new Asset Item",
+                "operationId": "e1de700e0439db03a203f79810057c14",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "code": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Kursi"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created item"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/asset-items/{id}": {
+            "get": {
+                "tags": [
+                    "Inventory - Master Data"
+                ],
+                "summary": "Get an Asset Item",
+                "operationId": "03d6dd166752c1657c64cba84cd7d36a",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Item detail"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Inventory - Master Data"
+                ],
+                "summary": "Update Asset Item",
+                "operationId": "893267cf6cfcb070b16356d6725dec67",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "code": {
+                                        "type": "integer"
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated item"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/assets/generate-number": {
+            "get": {
+                "tags": [
+                    "Inventory - Assets"
+                ],
+                "summary": "Preview/Generate Inventory Number",
+                "operationId": "b1171f18c50938d400d333a4c7b9a239",
+                "parameters": [
+                    {
+                        "name": "asset_classification_id",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
                         }
                     },
-                    "401": {
-                        "description": "Unauthenticated",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/TicketReadError"
-                                }
-                            }
+                    {
+                        "name": "asset_location_id",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
                         }
                     },
-                    "403": {
-                        "description": "Missing tickets-access permission",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/TicketReadError"
-                                }
-                            }
+                    {
+                        "name": "asset_item_id",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
                         }
                     },
-                    "404": {
-                        "description": "Ticket not found",
+                    {
+                        "name": "purchase_year",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Generated code detail",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/TicketReadError"
+                                    "properties": {
+                                        "inventory_number": {
+                                            "type": "string",
+                                            "example": "3/1/1/1/2020"
+                                        },
+                                        "sequence_number": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
+                                    },
+                                    "type": "object"
                                 }
                             }
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/assets": {
+            "get": {
+                "tags": [
+                    "Inventory - Assets"
+                ],
+                "summary": "List all Assets",
+                "operationId": "9d3c28249bbce50e95d422c0b18d1ff8",
+                "parameters": [
+                    {
+                        "name": "location_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "Digunakan",
+                                "Tidak Digunakan",
+                                "Rusak",
+                                "Dipinjam"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "classification_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "mutated_last_3_months",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of assets"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Inventory - Assets"
+                ],
+                "summary": "Create new Asset",
+                "operationId": "a30dd78a051d5d9b6912fe49d8bb4ed1",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "asset_classification_id": {
+                                        "type": "integer"
+                                    },
+                                    "asset_location_id": {
+                                        "type": "integer"
+                                    },
+                                    "asset_item_id": {
+                                        "type": "integer"
+                                    },
+                                    "purchase_year": {
+                                        "type": "integer"
+                                    },
+                                    "status": {
+                                        "description": "Status operasional: Digunakan, Tidak Digunakan, Rusak, Dipinjam",
+                                        "type": "string",
+                                        "enum": [
+                                            "Digunakan",
+                                            "Tidak Digunakan",
+                                            "Rusak",
+                                            "Dipinjam"
+                                        ]
+                                    },
+                                    "condition": {
+                                        "description": "Kondisi fisik: Baik, Rusak Ringan, Rusak Berat",
+                                        "type": "string",
+                                        "enum": [
+                                            "Baik",
+                                            "Rusak Ringan",
+                                            "Rusak Berat"
+                                        ]
+                                    },
+                                    "photo_path": {
+                                        "type": "string",
+                                        "format": "binary",
+                                        "nullable": true
+                                    },
+                                    "calibration_document_path": {
+                                        "type": "string",
+                                        "format": "binary",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created asset"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/assets/{asset}": {
+            "get": {
+                "tags": [
+                    "Inventory - Assets"
+                ],
+                "summary": "Get an Asset Detail",
+                "operationId": "e3490b4ea99a9575d56f9d6c4c9a01df",
+                "parameters": [
+                    {
+                        "name": "asset",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Asset detail with mutations"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Inventory - Assets"
+                ],
+                "summary": "Update Asset with file upload support",
+                "operationId": "f53905473b09971f610cde46c0660253",
+                "parameters": [
+                    {
+                        "name": "asset",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "_method": {
+                                        "type": "string",
+                                        "example": "PUT"
+                                    },
+                                    "asset_classification_id": {
+                                        "type": "integer"
+                                    },
+                                    "asset_location_id": {
+                                        "type": "integer"
+                                    },
+                                    "asset_item_id": {
+                                        "type": "integer"
+                                    },
+                                    "purchase_year": {
+                                        "type": "integer"
+                                    },
+                                    "status": {
+                                        "description": "Status operasional: Digunakan, Tidak Digunakan, Rusak, Dipinjam",
+                                        "type": "string",
+                                        "enum": [
+                                            "Digunakan",
+                                            "Tidak Digunakan",
+                                            "Rusak",
+                                            "Dipinjam"
+                                        ]
+                                    },
+                                    "condition": {
+                                        "description": "Kondisi fisik: Baik, Rusak Ringan, Rusak Berat",
+                                        "type": "string",
+                                        "enum": [
+                                            "Baik",
+                                            "Rusak Ringan",
+                                            "Rusak Berat"
+                                        ]
+                                    },
+                                    "photo_path": {
+                                        "type": "string",
+                                        "format": "binary",
+                                        "nullable": true
+                                    },
+                                    "calibration_document_path": {
+                                        "type": "string",
+                                        "format": "binary",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated asset"
                     }
                 },
                 "security": [
@@ -4994,6 +5628,14 @@
         {
             "name": "Helpdesk",
             "description": "Helpdesk TIK and Sarpras tickets"
+        },
+        {
+            "name": "Inventory - Master Data",
+            "description": "Inventory Master Data endpoints"
+        },
+        {
+            "name": "Inventory - Assets",
+            "description": "Asset Management endpoints"
         }
     ]
 }
