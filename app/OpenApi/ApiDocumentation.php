@@ -317,7 +317,8 @@ use OpenApi\Annotations as OA;
  *     schema="CreateTicketRequest",
  *     type="object",
  *     required={"service","description"},
- *
+ * 
+ *     @OA\Property(property="reporter_id", type="integer", nullable=true, example=1),
  *     @OA\Property(property="service", type="string", enum={"tik","sarpras"}, example="tik"),
  *     @OA\Property(property="asset_id", type="integer", nullable=true, example=1),
  *     @OA\Property(property="description", type="string", example="Komputer tidak dapat menyala."),
@@ -1541,7 +1542,7 @@ class ApiDocumentation
      *     operationId="createTicket",
      *     tags={"Helpdesk"},
      *     summary="Create a Helpdesk ticket",
-     *     description="Creates a TIK or Sarpras ticket with status baru. Reporter and unit are taken from the authenticated user. Requires the tickets-create permission.",
+     *     description="Creates a TIK or Sarpras ticket with status baru. Reporter and unit are taken from the authenticated user or customized by super-admin role. Requires the tickets-create permission.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\RequestBody(required=true, @OA\MediaType(mediaType="multipart/form-data", @OA\Schema(ref="#/components/schemas/CreateTicketRequest"))),

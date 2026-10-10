@@ -12,80 +12,6 @@
         }
     ],
     "paths": {
-        "/tickets/{ticket}/de-escalate": {
-            "post": {
-                "tags": [
-                    "Helpdesk"
-                ],
-                "summary": "Menarik kembali tiket dari status eskalasi (De-escalate)",
-                "description": "Super Admin dapat melanjutkan tiket TIK dan Sarpras tanpa assignment. Koordinator Sarpras dapat melanjutkan tiket Sarpras tanpa assignment. Petugas hanya dapat melanjutkan tiket yang ditugaskan sesuai layanan. Membutuhkan permission tickets-handle.",
-                "operationId": "deEscalateTicket",
-                "parameters": [
-                    {
-                        "name": "ticket",
-                        "in": "path",
-                        "description": "ID dari tiket",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "Accept",
-                        "in": "header",
-                        "description": "Wajib diisi application/json agar tidak ter-redirect ke rute login",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "default": "application/json"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Berhasil ditarik"
-                    },
-                    "401": {
-                        "description": "Unauthenticated - Token tidak valid atau tidak dikirim"
-                    },
-                    "403": {
-                        "description": "Missing permission or actor berada di luar cakupan layanan dan assignment",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/TicketReadError"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Ticket not found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/TicketReadError"
-                                }
-                            }
-                        }
-                    },
-                    "409": {
-                        "description": "Ticket state conflict",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/TicketReadError"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            }
-        },
         "/auth/login": {
             "post": {
                 "tags": [
@@ -2780,7 +2706,7 @@
                     "Helpdesk"
                 ],
                 "summary": "Create a Helpdesk ticket",
-                "description": "Creates a TIK or Sarpras ticket with status baru. Reporter and unit are taken from the authenticated user. Requires the tickets-create permission.",
+                "description": "Creates a TIK or Sarpras ticket with status baru. Reporter and unit are taken from the authenticated user or customized by super-admin role. Requires the tickets-create permission.",
                 "operationId": "createTicket",
                 "requestBody": {
                     "required": true,
@@ -3401,6 +3327,80 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/tickets/{ticket}/de-escalate": {
+            "post": {
+                "tags": [
+                    "Helpdesk"
+                ],
+                "summary": "Menarik kembali tiket dari status eskalasi (De-escalate)",
+                "description": "Hanya petugas yang ditugaskan dengan permission tickets-handle yang dapat melakukan ini.",
+                "operationId": "deEscalateTicket",
+                "parameters": [
+                    {
+                        "name": "ticket",
+                        "in": "path",
+                        "description": "ID dari tiket",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "Accept",
+                        "in": "header",
+                        "description": "Wajib diisi application/json agar tidak ter-redirect ke rute login",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "default": "application/json"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Berhasil ditarik"
+                    },
+                    "401": {
+                        "description": "Unauthenticated - Token tidak valid atau tidak dikirim"
+                    },
+                    "403": {
+                        "description": "Missing permission or wrong officer",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Ticket not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Ticket state conflict",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
                                 }
                             }
                         }
@@ -4512,6 +4512,11 @@
                     "description"
                 ],
                 "properties": {
+                    "reporter_id": {
+                        "type": "integer",
+                        "example": 1,
+                        "nullable": true
+                    },
                     "service": {
                         "type": "string",
                         "example": "tik",

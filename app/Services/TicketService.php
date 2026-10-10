@@ -33,10 +33,24 @@ class TicketService
     ) {}
 
     /**
-     * @param  array{service: string, description: string, asset_id?: int|null}  $data
+     * @param  array{reporter_id?: int|null, service: string, description: string, asset_id?: int|null}  $data
      */
     public function create(array $data, User $reporter, ?UploadedFile $initialEvidence = null): Ticket
     {
+        if (!empty($data['reporter_id'])) {
+            if (!$reporter->hasRole('super-admin')) {
+                throw ValidationException::withMessages([
+                    'reporter_id' => [
+                        'Hanya super-admin yang dapat menentukan pelapor.',
+                    ],
+                ]);
+            }
+
+            $reporter = User::query()
+                ->whereKey($data['reporter_id'])
+                ->firstOrFail();
+        }
+
         if ($reporter->unit_id === null) {
             throw ValidationException::withMessages([
                 'unit_id' => ['User yang membuat tiket harus memiliki unit.'],
