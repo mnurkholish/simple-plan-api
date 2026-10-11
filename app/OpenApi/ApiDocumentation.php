@@ -317,7 +317,7 @@ use OpenApi\Annotations as OA;
  *     schema="CreateTicketRequest",
  *     type="object",
  *     required={"service","description"},
- * 
+ *
  *     @OA\Property(property="reporter_id", type="integer", nullable=true, example=1),
  *     @OA\Property(property="service", type="string", enum={"tik","sarpras"}, example="tik"),
  *     @OA\Property(property="asset_id", type="integer", nullable=true, example=1),
