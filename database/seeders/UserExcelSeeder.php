@@ -44,9 +44,7 @@ class UserExcelSeeder extends Seeder
         'Nama',
         'Jabatan',
         'Unit',
-        'Tipe Pegawai',
         'NIP',
-        'No.HP',
         'Role',
         'Password',
     ];
@@ -79,7 +77,6 @@ class UserExcelSeeder extends Seeder
                 'Jabatan' => ['required', 'string', 'max:255'],
                 'Unit' => ['required', 'string'],
                 'NIP' => ['required', 'string', 'max:255'],
-                'No\.HP' => ['required', 'string', 'max:20'],
                 'Role' => ['required', 'string'],
                 'Password' => ['required', 'string'],
             ]);
@@ -115,8 +112,7 @@ class UserExcelSeeder extends Seeder
                     $conflictingUser = User::query()
                         ->where(function ($query) use ($email, $values): void {
                             $query
-                                ->where('email', $email)
-                                ->orWhere('no_hp', $values['No.HP']);
+                                ->where('email', $email);
                         })
                         ->when($user, fn ($query) => $query->where('id', '!=', $user->getKey()))
                         ->exists();
@@ -131,7 +127,6 @@ class UserExcelSeeder extends Seeder
                         'name' => $values['Nama'],
                         'jabatan' => $values['Jabatan'],
                         'nip' => $values['NIP'],
-                        'no_hp' => $values['No.HP'],
                         'email' => $email,
                         'unit_id' => $unit->getKey(),
                     ];
