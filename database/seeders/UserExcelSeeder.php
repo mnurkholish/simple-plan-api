@@ -110,7 +110,7 @@ class UserExcelSeeder extends Seeder
                     $user = User::query()->where('nip', $values['NIP'])->first();
                     $email = $values['NIP'].'@simpleplan.local';
                     $conflictingUser = User::query()
-                        ->where(function ($query) use ($email, $values): void {
+                        ->where(function ($query) use ($email): void {
                             $query
                                 ->where('email', $email);
                         })
