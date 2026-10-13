@@ -15,7 +15,7 @@ return new class extends Migration
             $table->string('brand', 100)->nullable();
             $table->foreignId('unit_id');
             $table->string('location', 150)->nullable();
-            $table->string('status', 30)->default('active')->index();
+            $table->string('status', 30)->default('Digunakan')->index();
             $table->timestamps();
             $table->softDeletes();
 

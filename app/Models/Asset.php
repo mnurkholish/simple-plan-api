@@ -15,6 +15,11 @@ class Asset extends Model
 
     protected $fillable = [
         'asset_code_id',
+        'asset_number',
+        'name',
+        'brand',
+        'unit_id',
+        'location',
         'serial_number',
         'purchase_year',
         'status',
@@ -40,5 +45,10 @@ class Asset extends Model
     public function assetCode(): BelongsTo
     {
         return $this->belongsTo(AssetCode::class);
+    }
+
+    public function unit(): BelongsTo
+    {
+        return $this->belongsTo(Unit::class);
     }
 }

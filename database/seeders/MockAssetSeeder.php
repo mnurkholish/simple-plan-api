@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Enums\AssetCondition;
+use App\Enums\AssetStatus;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -19,7 +21,8 @@ class MockAssetSeeder extends Seeder
                 'brand' => 'Meja',
                 'unit_id' => 1,
                 'location' => 'IGD',
-                'status' => 'active',
+                'status' => AssetStatus::InUse->value,
+                'condition' => AssetCondition::Good->value,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -29,7 +32,8 @@ class MockAssetSeeder extends Seeder
                 'brand' => 'Samsung',
                 'unit_id' => 1,
                 'location' => 'Ruang IT',
-                'status' => 'active',
+                'status' => AssetStatus::InUse->value,
+                'condition' => AssetCondition::Good->value,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -39,7 +43,8 @@ class MockAssetSeeder extends Seeder
                 'brand' => 'Philips',
                 'unit_id' => 2,
                 'location' => 'Rosalina 3',
-                'status' => 'active',
+                'status' => AssetStatus::InUse->value,
+                'condition' => AssetCondition::Good->value,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
