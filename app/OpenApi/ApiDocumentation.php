@@ -317,7 +317,7 @@ use OpenApi\Annotations as OA;
  *     schema="CreateTicketRequest",
  *     type="object",
  *     required={"service","description"},
- * 
+ *
  *     @OA\Property(property="reporter_id", type="integer", nullable=true, example=1),
  *     @OA\Property(property="service", type="string", enum={"tik","sarpras"}, example="tik"),
  *     @OA\Property(property="asset_id", type="integer", nullable=true, example=1),
@@ -1818,5 +1818,328 @@ class ApiDocumentation
      *     @OA\Response(response=404, description="Ticket not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError"))
      * )
      */
-    public function ticketsShow(): void {}
+    /**
+     * @OA\Get(
+     *     path="/asset-classifications",
+     *     tags={"Inventory - Master Data"},
+     *     summary="List asset classifications",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="search", in="query", required=false, description="Live search by name or code", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="per_page", in="query", required=false, description="Items per page", @OA\Schema(type="integer", default=15)),
+     *
+     *     @OA\Response(response=200, description="Successful operation")
+     * )
+     */
+    public function assetClassificationsIndex(): void {}
+
+    /**
+     * @OA\Post(
+     *     path="/asset-classifications",
+     *     tags={"Inventory - Master Data"},
+     *     summary="Create asset classification",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *
+     *         @OA\Property(property="code", type="integer"),
+     *         @OA\Property(property="name", type="string")
+     *     )),
+     *
+     *     @OA\Response(response=201, description="Created")
+     * )
+     */
+    public function assetClassificationsStore(): void {}
+
+    /**
+     * @OA\Get(
+     *     path="/asset-classifications/{id}",
+     *     tags={"Inventory - Master Data"},
+     *     summary="Get asset classification",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *
+     *     @OA\Response(response=200, description="Successful operation")
+     * )
+     */
+    public function assetClassificationsShow(): void {}
+
+    /**
+     * @OA\Put(
+     *     path="/asset-classifications/{id}",
+     *     tags={"Inventory - Master Data"},
+     *     summary="Update asset classification",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *
+     *         @OA\Property(property="name", type="string")
+     *     )),
+     *
+     *     @OA\Response(response=200, description="Updated")
+     * )
+     */
+    public function assetClassificationsUpdate(): void {}
+
+    /**
+     * @OA\Get(
+     *     path="/asset-locations",
+     *     tags={"Inventory - Master Data"},
+     *     summary="List asset locations",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="search", in="query", required=false, description="Live search by name or code", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="per_page", in="query", required=false, description="Items per page", @OA\Schema(type="integer", default=15)),
+     *
+     *     @OA\Response(response=200, description="Successful operation")
+     * )
+     */
+    public function assetLocationsIndex(): void {}
+
+    /**
+     * @OA\Post(
+     *     path="/asset-locations",
+     *     tags={"Inventory - Master Data"},
+     *     summary="Create asset location",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *
+     *         @OA\Property(property="code", type="integer"),
+     *         @OA\Property(property="name", type="string")
+     *     )),
+     *
+     *     @OA\Response(response=201, description="Created")
+     * )
+     */
+    public function assetLocationsStore(): void {}
+
+    /**
+     * @OA\Get(
+     *     path="/asset-locations/{id}",
+     *     tags={"Inventory - Master Data"},
+     *     summary="Get asset location",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *
+     *     @OA\Response(response=200, description="Successful operation")
+     * )
+     */
+    public function assetLocationsShow(): void {}
+
+    /**
+     * @OA\Put(
+     *     path="/asset-locations/{id}",
+     *     tags={"Inventory - Master Data"},
+     *     summary="Update asset location",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *
+     *         @OA\Property(property="name", type="string")
+     *     )),
+     *
+     *     @OA\Response(response=200, description="Updated")
+     * )
+     */
+    public function assetLocationsUpdate(): void {}
+
+    /**
+     * @OA\Get(
+     *     path="/asset-items",
+     *     tags={"Inventory - Master Data"},
+     *     summary="List asset items",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="search", in="query", required=false, description="Live search by name, brand, or code", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="per_page", in="query", required=false, description="Items per page", @OA\Schema(type="integer", default=15)),
+     *
+     *     @OA\Response(response=200, description="Successful operation")
+     * )
+     */
+    public function assetItemsIndex(): void {}
+
+    /**
+     * @OA\Post(
+     *     path="/asset-items",
+     *     tags={"Inventory - Master Data"},
+     *     summary="Create asset item",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *
+     *         @OA\Property(property="code", type="integer"),
+     *         @OA\Property(property="name", type="string"),
+     *         @OA\Property(property="brand", type="string", nullable=true)
+     *     )),
+     *
+     *     @OA\Response(response=201, description="Created")
+     * )
+     */
+    public function assetItemsStore(): void {}
+
+    /**
+     * @OA\Get(
+     *     path="/asset-items/{id}",
+     *     tags={"Inventory - Master Data"},
+     *     summary="Get asset item",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *
+     *     @OA\Response(response=200, description="Successful operation")
+     * )
+     */
+    public function assetItemsShow(): void {}
+
+    /**
+     * @OA\Put(
+     *     path="/asset-items/{id}",
+     *     tags={"Inventory - Master Data"},
+     *     summary="Update asset item",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *
+     *         @OA\Property(property="name", type="string"),
+     *         @OA\Property(property="brand", type="string", nullable=true)
+     *     )),
+     *
+     *     @OA\Response(response=200, description="Updated")
+     * )
+     */
+    public function assetItemsUpdate(): void {}
+
+    /**
+     * @OA\Get(
+     *     path="/assets/generate-number",
+     *     tags={"Inventory - Assets"},
+     *     summary="Preview asset code generation",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="asset_classification_id", in="query", required=true, @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="asset_location_id", in="query", required=true, @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="asset_item_id", in="query", required=true, @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="year", in="query", required=true, @OA\Schema(type="integer")),
+     *
+     *     @OA\Response(response=200, description="Preview code")
+     * )
+     */
+    public function assetsGenerateNumber(): void {}
+
+    /**
+     * @OA\Get(
+     *     path="/assets",
+     *     tags={"Inventory - Assets"},
+     *     summary="List assets",
+     *     description="List assets with live search and multi-filter support",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="search", in="query", required=false, description="Live search by serial number, notes, full code, item name/brand, location name, or classification name", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="asset_classification_id", in="query", required=false, description="Filter by classification ID", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="asset_location_id", in="query", required=false, description="Filter by location ID", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="asset_item_id", in="query", required=false, description="Filter by item ID", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="status", in="query", required=false, description="Filter by asset status", @OA\Schema(type="string", enum={"Digunakan", "Tidak Digunakan", "Rusak", "Dipinjam"})),
+     *     @OA\Parameter(name="condition", in="query", required=false, description="Filter by asset condition", @OA\Schema(type="string", enum={"Baik", "Rusak Ringan", "Rusak Berat"})),
+     *     @OA\Parameter(name="purchase_year", in="query", required=false, description="Filter by purchase year", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="per_page", in="query", required=false, description="Items per page (max 100)", @OA\Schema(type="integer", default=15)),
+     *
+     *     @OA\Response(response=200, description="List of assets")
+     * )
+     */
+    public function assetsIndex(): void {}
+
+    /**
+     * @OA\Post(
+     *     path="/assets",
+     *     tags={"Inventory - Assets"},
+     *     summary="Create asset",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\RequestBody(required=true, @OA\MediaType(mediaType="multipart/form-data", @OA\Schema(
+     *
+     *         @OA\Property(property="asset_classification_id", type="integer"),
+     *         @OA\Property(property="asset_location_id", type="integer"),
+     *         @OA\Property(property="asset_item_id", type="integer"),
+     *         @OA\Property(property="purchase_year", type="integer"),
+     *         @OA\Property(property="serial_number", type="string", nullable=true),
+     *         @OA\Property(property="status", type="string", enum={"Digunakan", "Tidak Digunakan", "Rusak", "Dipinjam"}),
+     *         @OA\Property(property="condition", type="string", enum={"Baik", "Rusak Ringan", "Rusak Berat"}),
+     *         @OA\Property(property="warranty_until", type="string", format="date", nullable=true),
+     *         @OA\Property(property="notes", type="string", nullable=true),
+     *         @OA\Property(property="photo", type="string", format="binary", nullable=true),
+     *         @OA\Property(property="calibration_document", type="string", format="binary", nullable=true)
+     *     ))),
+     *
+     *     @OA\Response(response=201, description="Created")
+     * )
+     */
+    public function assetsStore(): void {}
+
+    /**
+     * @OA\Get(
+     *     path="/assets/{asset}",
+     *     tags={"Inventory - Assets"},
+     *     summary="Get asset",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="asset", in="path", required=true, @OA\Schema(type="integer")),
+     *
+     *     @OA\Response(response=200, description="Asset details")
+     * )
+     */
+    public function assetsShow(): void {}
+
+    /**
+     * @OA\Post(
+     *     path="/assets/{asset}",
+     *     tags={"Inventory - Assets"},
+     *     summary="Update asset",
+     *     description="Update asset details (supports multipart/form-data and partial update). Uses POST with method spoofing _method=PUT.",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="asset", in="path", required=true, @OA\Schema(type="integer")),
+     *
+     *     @OA\RequestBody(required=false, @OA\MediaType(mediaType="multipart/form-data", @OA\Schema(
+     *
+     *         @OA\Property(property="_method", type="string", enum={"PUT"}, default="PUT", description="Method spoofing for PUT multipart"),
+     *         @OA\Property(property="asset_classification_id", type="integer", nullable=true),
+     *         @OA\Property(property="asset_location_id", type="integer", nullable=true),
+     *         @OA\Property(property="asset_item_id", type="integer", nullable=true),
+     *         @OA\Property(property="purchase_year", type="integer", nullable=true),
+     *         @OA\Property(property="serial_number", type="string", nullable=true),
+     *         @OA\Property(property="status", type="string", enum={"Digunakan", "Tidak Digunakan", "Rusak", "Dipinjam"}, nullable=true),
+     *         @OA\Property(property="condition", type="string", enum={"Baik", "Rusak Ringan", "Rusak Berat"}, nullable=true),
+     *         @OA\Property(property="warranty_until", type="string", format="date", nullable=true),
+     *         @OA\Property(property="notes", type="string", nullable=true),
+     *         @OA\Property(property="photo", type="string", format="binary", nullable=true),
+     *         @OA\Property(property="calibration_document", type="string", format="binary", nullable=true)
+     *     ))),
+     *
+     *     @OA\Response(response=200, description="Updated")
+     * )
+     */
+    public function assetsUpdate(): void {}
+
+    /**
+     * @OA\Delete(
+     *     path="/assets/{asset}",
+     *     tags={"Inventory - Assets"},
+     *     summary="Delete asset",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="asset", in="path", required=true, @OA\Schema(type="integer")),
+     *
+     *     @OA\Response(response=200, description="Deleted")
+     * )
+     */
+    public function assetsDestroy(): void {}
 }

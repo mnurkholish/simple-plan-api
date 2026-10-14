@@ -1,6 +1,9 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AssetClassificationController;
 use App\Http\Controllers\Api\V1\AssetController;
+use App\Http\Controllers\Api\V1\AssetItemController;
+use App\Http\Controllers\Api\V1\AssetLocationController;
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Auth\ExtendedAuthController;
 use App\Http\Controllers\Api\V1\Auth\SsoController;
@@ -66,9 +69,16 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::patch('notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
         Route::patch('notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
 
+        Route::get('assets/generate-number', [AssetController::class, 'previewCode']);
         Route::get('assets/search', [AssetController::class, 'search'])
             ->middleware('permission:tickets-create')
             ->name('assets.search');
+        Route::apiResource('assets', AssetController::class);
+        Route::post('assets/{asset}', [AssetController::class, 'update'])->name('assets.update.post');
+
+        Route::apiResource('asset-classifications', AssetClassificationController::class)->except(['destroy']);
+        Route::apiResource('asset-locations', AssetLocationController::class)->except(['destroy']);
+        Route::apiResource('asset-items', AssetItemController::class)->except(['destroy']);
 
         Route::get('tickets', [TicketController::class, 'index'])
             ->middleware('permission:tickets-access')

@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\AssetCondition;
+use App\Enums\AssetStatus;
 use App\Enums\TicketStatus;
 use App\Models\Asset;
 use App\Models\Ticket;
@@ -168,7 +170,8 @@ test('asset opsional dan asset yang valid dapat disambungkan ke tiket', function
         'brand' => 'Dell',
         'unit_id' => $unit->id,
         'location' => 'Poli Umum',
-        'status' => 'active',
+        'status' => AssetStatus::InUse->value,
+        'condition' => AssetCondition::Good->value,
     ]);
     actingAsTicketCreator($reporter);
 
@@ -207,7 +210,8 @@ test('asset yang tidak ditemukan akan ditolak', function (int $assetId): void {
             'asset_number' => 'AST-DELETED',
             'name' => 'Aset Dihapus',
             'unit_id' => $unit->id,
-            'status' => 'active',
+            'status' => AssetStatus::InUse->value,
+            'condition' => AssetCondition::Good->value,
         ]);
         $asset->delete();
 

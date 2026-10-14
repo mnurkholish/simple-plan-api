@@ -37,8 +37,8 @@ class TicketService
      */
     public function create(array $data, User $reporter, ?UploadedFile $initialEvidence = null): Ticket
     {
-        if (!empty($data['reporter_id'])) {
-            if (!$reporter->hasRole('super-admin')) {
+        if (! empty($data['reporter_id'])) {
+            if (! $reporter->hasRole('super-admin')) {
                 throw ValidationException::withMessages([
                     'reporter_id' => [
                         'Hanya super-admin yang dapat menentukan pelapor.',
