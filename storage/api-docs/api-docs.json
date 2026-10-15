@@ -4483,6 +4483,103 @@
                     }
                 ]
             }
+        },
+        "/assets/{asset}/qr": {
+            "get": {
+                "tags": [
+                    "Inventory - QrCode"
+                ],
+                "summary": "Generate Asset QR Code",
+                "description": "Generates an SVG QR code containing the asset detail URL based on the asset's permanent asset_uid.",
+                "operationId": "getAssetQrCode",
+                "parameters": [
+                    {
+                        "name": "asset",
+                        "in": "path",
+                        "description": "Unique asset ID (assets.id)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Asset QR code generated successfully",
+                        "content": {
+                            "image/svg+xml": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Forbidden. You do not have permission to access this asset."
+                    },
+                    "404": {
+                        "description": "Asset not found"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/assets/{asset}/label": {
+            "get": {
+                "tags": [
+                    "Inventory"
+                ],
+                "summary": "Get Asset Label",
+                "description": "Returns an HTML asset label containing the inventory number, asset information, and QR code.",
+                "operationId": "getAssetLabel",
+                "parameters": [
+                    {
+                        "name": "asset",
+                        "in": "path",
+                        "description": "Unique asset ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Asset label retrieved successfully",
+                        "content": {
+                            "text/html": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Asset not found"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -5810,6 +5907,14 @@
         {
             "name": "Inventory - Assets",
             "description": "Inventory - Assets"
+        },
+        {
+            "name": "Inventory - QrCode",
+            "description": "Inventory - QrCode"
+        },
+        {
+            "name": "Inventory",
+            "description": "Inventory"
         }
     ]
 }

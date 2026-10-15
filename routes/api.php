@@ -3,7 +3,9 @@
 use App\Http\Controllers\Api\V1\AssetClassificationController;
 use App\Http\Controllers\Api\V1\AssetController;
 use App\Http\Controllers\Api\V1\AssetItemController;
+use App\Http\Controllers\Api\V1\AssetLabelController;
 use App\Http\Controllers\Api\V1\AssetLocationController;
+use App\Http\Controllers\Api\V1\AssetQrCodeController;
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Auth\ExtendedAuthController;
 use App\Http\Controllers\Api\V1\Auth\SsoController;
@@ -79,6 +81,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::apiResource('asset-classifications', AssetClassificationController::class)->except(['destroy']);
         Route::apiResource('asset-locations', AssetLocationController::class)->except(['destroy']);
         Route::apiResource('asset-items', AssetItemController::class)->except(['destroy']);
+
+        Route::get('/assets/{asset}/qr', [AssetQrCodeController::class, 'show']);
+        Route::get('/assets/{asset}/label', [AssetLabelController::class, 'show']);
 
         Route::get('tickets', [TicketController::class, 'index'])
             ->middleware('permission:tickets-access')

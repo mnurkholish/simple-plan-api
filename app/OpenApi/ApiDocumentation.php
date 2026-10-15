@@ -2146,4 +2146,92 @@ class ApiDocumentation
      * )
      */
     public function assetsDestroy(): void {}
+
+    /**
+     * @OA\Get(
+     *     path="/assets/{asset}/qr",
+     *     operationId="getAssetQrCode",
+     *     tags={"Inventory - QrCode"},
+     *     summary="Generate Asset QR Code",
+     *     description="Generates an SVG QR code containing the asset detail URL based on the asset's permanent asset_uid.",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(
+     *         name="asset",
+     *         in="path",
+     *         required=true,
+     *         description="Unique asset ID (assets.id)",
+     *         @OA\Schema(
+     *             type="integer",
+     *             example=1
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Asset QR code generated successfully",
+     *         @OA\MediaType(
+     *             mediaType="image/svg+xml",
+     *             @OA\Schema(
+     *                 type="string",
+     *                 format="binary"
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated"
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Forbidden. You do not have permission to access this asset."
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Asset not found"
+     *     )
+     * )
+     */
+    public function assetsQrCodeShow() : void {}
+
+    /**
+     * @OA\Get(
+     *     path="/assets/{asset}/label",
+     *     operationId="getAssetLabel",
+     *     tags={"Inventory"},
+     *     summary="Get Asset Label",
+     *     description="Returns an HTML asset label containing the inventory number, asset information, and QR code.",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(
+     *         name="asset",
+     *         in="path",
+     *         required=true,
+     *         description="Unique asset ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Asset label retrieved successfully",
+     *         @OA\MediaType(
+     *             mediaType="text/html",
+     *             @OA\Schema(type="string")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated"
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Forbidden"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Asset not found"
+     *     )
+     * )
+     */
+    public function assetLabelShow() : Void {}
 }
