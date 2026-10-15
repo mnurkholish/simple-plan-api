@@ -10,6 +10,7 @@ use App\Models\AssetCode;
 use App\Models\AssetItem;
 use App\Models\AssetLocation;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class MockAssetSeeder extends Seeder
 {
@@ -34,12 +35,16 @@ class MockAssetSeeder extends Seeder
                 'sequence_number' => $sequence,
             ]);
 
-            Asset::firstOrCreate(['asset_code_id' => $assetCode->id], [
-                'brand' => $brand,
-                'purchase_year' => $year,
-                'status' => AssetStatus::InUse->value,
-                'condition' => AssetCondition::Good->value,
-            ]);
+            $asset = Asset::firstOrNew(['asset_code_id' => $assetCode->id]);
+            if (! $asset->exists) {
+                $asset->forceFill([
+                    'asset_uid' => (string) Str::ulid(),
+                    'brand' => $brand,
+                    'purchase_year' => $year,
+                    'status' => AssetStatus::InUse->value,
+                    'condition' => AssetCondition::Good->value,
+                ])->save();
+            }
         }
     }
 }
