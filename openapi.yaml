@@ -25,6 +25,186 @@ tags:
     description: Pengelolaan dan pencarian user
 
 paths:
+  /assets:
+    get:
+      tags: [Assets]
+      summary: Daftar inventaris
+      operationId: listInventoryAssets
+      x-auth-required: true
+      parameters:
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: asset_classification_id
+          in: query
+          schema: { type: integer }
+        - name: asset_location_id
+          in: query
+          schema: { type: integer }
+        - name: asset_item_id
+          in: query
+          schema: { type: integer }
+        - name: purchase_year
+          in: query
+          schema: { type: integer }
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+      responses:
+        "200":
+          description: Daftar aset dengan pagination.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/InventoryAsset" }
+    post:
+      tags: [Assets]
+      summary: Registrasi aset fisik
+      operationId: createInventoryAsset
+      x-auth-required: true
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema: { $ref: "#/components/schemas/InventoryAssetInput" }
+          application/json:
+            schema: { $ref: "#/components/schemas/InventoryAssetInput" }
+      responses:
+        "201":
+          description: Aset dan nomor inventaris dibuat.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InventoryAssetResponse" }
+
+  /assets/generate-number:
+    get:
+      tags: [Assets]
+      summary: Pratinjau nomor inventaris berdasarkan tahun pembelian
+      operationId: previewInventoryNumber
+      x-auth-required: true
+      description: Pratinjau tidak mereservasi nomor; nomor final ditetapkan saat aset disimpan.
+      parameters:
+        - name: asset_classification_id
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: asset_location_id
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: asset_item_id
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: year
+          in: query
+          required: true
+          description: Tahun pembelian, 1900–2100.
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Nomor inventaris yang diperkirakan.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      full_code: { type: string }
+
+  /assets/{asset}:
+    parameters:
+      - name: asset
+        in: path
+        required: true
+        schema: { type: integer }
+    get:
+      tags: [Assets]
+      operationId: getInventoryAsset
+      x-auth-required: true
+      responses:
+        "200":
+          description: Detail aset.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InventoryAssetResponse" }
+    put:
+      tags: [Assets]
+      operationId: updateInventoryAsset
+      x-auth-required: true
+      description: Update parsial; asset_uid tetap. Perubahan nomor tersimpan dalam satu riwayat update.
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InventoryAssetInput" }
+          multipart/form-data:
+            schema: { $ref: "#/components/schemas/InventoryAssetInput" }
+      responses:
+        "200":
+          description: Aset diperbarui.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InventoryAssetResponse" }
+    post:
+      tags: [Assets]
+      operationId: updateInventoryAssetMultipart
+      x-auth-required: true
+      description: Pembaruan multipart memakai field _method=PUT.
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/InventoryAssetInput"
+                - type: object
+                  properties:
+                    _method: { type: string, enum: [PUT] }
+      responses:
+        "200":
+          description: Aset diperbarui.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InventoryAssetResponse" }
+    delete:
+      tags: [Assets]
+      operationId: deleteInventoryAsset
+      x-auth-required: true
+      responses:
+        "200": { description: Aset dihapus secara soft delete; kode tetap tersimpan. }
+
+  /asset-items:
+    post:
+      tags: [Assets]
+      operationId: createAssetItem
+      x-auth-required: true
+      description: Master nama barang. Merek disimpan pada aset fisik.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InventoryMasterInput" }
+      responses:
+        "201": { description: Master barang dibuat. }
+
+  /asset-locations:
+    post:
+      tags: [Assets]
+      operationId: createAssetLocation
+      x-auth-required: true
+      description: Master lokasi ruangan dengan kode integer unik.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InventoryMasterInput" }
+      responses:
+        "201": { description: Master lokasi dibuat. }
+
   /tickets:
     get:
       tags: [Helpdesk]
@@ -638,6 +818,66 @@ components:
         default: 15
 
   schemas:
+    InventoryMasterInput:
+      type: object
+      required: [code, name]
+      properties:
+        code: { type: integer, minimum: 1 }
+        name: { type: string }
+
+    InventoryAssetInput:
+      type: object
+      description: Semua field wajib saat registrasi; seluruhnya opsional saat update parsial. asset_uid dibuat server.
+      properties:
+        asset_classification_id: { type: integer }
+        asset_location_id: { type: integer, description: Lokasi ruangan. }
+        asset_item_id: { type: integer }
+        purchase_year: { type: integer, minimum: 1900, maximum: 2100 }
+        brand: { type: [string, "null"], maxLength: 100 }
+        model_specification: { type: [string, "null"], maxLength: 100 }
+        location_detail: { type: [string, "null"], maxLength: 100 }
+        serial_number: { type: [string, "null"] }
+        status: { type: string, enum: [Digunakan, Tidak Digunakan, Rusak, Dipinjam] }
+        condition: { type: string, enum: [Baik, Rusak Ringan, Rusak Berat] }
+        warranty_until: { type: [string, "null"], format: date }
+        notes: { type: [string, "null"] }
+        photo: { type: string, format: binary }
+        calibration_document: { type: string, format: binary }
+
+    InventoryAsset:
+      type: object
+      required: [id, asset_uid, status, condition]
+      properties:
+        id: { type: integer, description: Primary key internal dan relasi tickets.asset_id. }
+        asset_uid: { type: string, minLength: 26, maxLength: 26, description: ULID permanen untuk identitas QR. }
+        asset_code:
+          type: [object, "null"]
+          properties:
+            id: { type: integer }
+            full_code: { type: string }
+            sequence_number: { type: integer }
+            classification: { type: [object, "null"] }
+            location: { type: [object, "null"] }
+            item: { type: [object, "null"] }
+        brand: { type: [string, "null"] }
+        model_specification: { type: [string, "null"] }
+        location_detail: { type: [string, "null"] }
+        serial_number: { type: [string, "null"] }
+        purchase_year: { type: [integer, "null"] }
+        status: { type: string }
+        condition: { type: string }
+        warranty_until: { type: [string, "null"], format: date }
+        notes: { type: [string, "null"] }
+        photo: { type: [object, "null"] }
+        calibration_document: { type: [object, "null"] }
+
+    InventoryAssetResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: "#/components/schemas/InventoryAsset" }
+        message: { type: string }
+
     UnitSearchResult:
       type: object
       additionalProperties: false

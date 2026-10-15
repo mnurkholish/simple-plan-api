@@ -7,8 +7,8 @@ Pengelolaan siklus hidup aset fisik rumah sakit mulai dari registrasi berkas, pe
 - **Preview Kode**: `GET /api/v1/assets/generate-number` untuk mempratinjau kode fisik aset sebelum penyimpanan.
 - **Live Search & Multi-Filter**: Pencarian teks bebas pada serial number, full code, nama barang, dan merek barang, serta filter `status`, `condition`, `asset_classification_id`, `asset_location_id`, `asset_item_id`, `purchase_year`, dan `per_page`.
 - **Create Asset**: Mendukung upload `photo` (JPG/PNG maks 5MB) dan `calibration_document` (PDF maks 5MB) atomik dalam `DB::transaction`.
-- **Partial Update & Smart Code Recalculation**: Seluruh field menggunakan aturan `sometimes`; sistem otomatis menghitung ulang `sequence_number` dan `full_code` baru hanya jika klasifikasi, lokasi, barang, atau tahun berubah. Mendukung `multipart/form-data` via spoofing `POST _method=PUT`.
-- **Safe Soft Delete**: `DELETE /api/v1/assets/{asset}` melakukan soft delete pada `assets` dan `asset_codes` tanpa menghapus file fisik di Storage, mencegah kegagalan relasi pada tabel `tickets` serta menjaga integritas nomor urut fisik.
+- **Partial Update & Riwayat**: Seluruh field menggunakan aturan `sometimes`; perubahan klasifikasi, lokasi ruangan, barang, atau tahun pembelian memperbarui record `asset_codes` yang sama. Satu aksi update mencatat satu `asset_histories` berisi field yang berubah. Detail lokasi tidak mengubah nomor inventaris. Mendukung `multipart/form-data` via spoofing `POST _method=PUT`.
+- **Safe Soft Delete**: `DELETE /api/v1/assets/{asset}` melakukan soft delete pada `assets`, sedangkan record `asset_codes` tetap ada agar nomor tidak terbit ulang dan relasi `tickets.asset_id` tetap aman.
 
 ## Authorization
 - **Full Access (CRUD & Soft Delete)**: `super-admin`, `koordinator-sarpras`, `petugas-tik`, `petugas-sarpras`.

@@ -24,7 +24,6 @@ class UpdateAssetItemRequest extends FormRequest
                 Rule::unique('asset_items', 'code')->ignore($id),
             ],
             'name' => ['required', 'string'],
-            'brand' => ['nullable', 'string'],
         ];
     }
 }

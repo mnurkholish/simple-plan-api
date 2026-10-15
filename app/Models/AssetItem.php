@@ -12,6 +12,5 @@ class AssetItem extends Model
     protected $fillable = [
         'code',
         'name',
-        'brand',
     ];
 }

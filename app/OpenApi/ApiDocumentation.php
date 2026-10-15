@@ -1957,7 +1957,7 @@ class ApiDocumentation
      *     summary="List asset items",
      *     security={{"sanctum":{}}},
      *
-     *     @OA\Parameter(name="search", in="query", required=false, description="Live search by name, brand, or code", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="search", in="query", required=false, description="Live search by name or code", @OA\Schema(type="string")),
      *     @OA\Parameter(name="per_page", in="query", required=false, description="Items per page", @OA\Schema(type="integer", default=15)),
      *
      *     @OA\Response(response=200, description="Successful operation")
@@ -1975,8 +1975,7 @@ class ApiDocumentation
      *     @OA\RequestBody(required=true, @OA\JsonContent(
      *
      *         @OA\Property(property="code", type="integer"),
-     *         @OA\Property(property="name", type="string"),
-     *         @OA\Property(property="brand", type="string", nullable=true)
+     *         @OA\Property(property="name", type="string")
      *     )),
      *
      *     @OA\Response(response=201, description="Created")
@@ -2009,8 +2008,7 @@ class ApiDocumentation
      *
      *     @OA\RequestBody(required=true, @OA\JsonContent(
      *
-     *         @OA\Property(property="name", type="string"),
-     *         @OA\Property(property="brand", type="string", nullable=true)
+     *         @OA\Property(property="name", type="string")
      *     )),
      *
      *     @OA\Response(response=200, description="Updated")
@@ -2028,7 +2026,7 @@ class ApiDocumentation
      *     @OA\Parameter(name="asset_classification_id", in="query", required=true, @OA\Schema(type="integer")),
      *     @OA\Parameter(name="asset_location_id", in="query", required=true, @OA\Schema(type="integer")),
      *     @OA\Parameter(name="asset_item_id", in="query", required=true, @OA\Schema(type="integer")),
-     *     @OA\Parameter(name="year", in="query", required=true, @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="year", in="query", required=true, description="Purchase year", @OA\Schema(type="integer")),
      *
      *     @OA\Response(response=200, description="Preview code")
      * )
@@ -2043,7 +2041,7 @@ class ApiDocumentation
      *     description="List assets with live search and multi-filter support",
      *     security={{"sanctum":{}}},
      *
-     *     @OA\Parameter(name="search", in="query", required=false, description="Live search by serial number, notes, full code, item name/brand, location name, or classification name", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="search", in="query", required=false, description="Live search by serial number, notes, full code, item name, asset brand, location name, or classification name", @OA\Schema(type="string")),
      *     @OA\Parameter(name="asset_classification_id", in="query", required=false, description="Filter by classification ID", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="asset_location_id", in="query", required=false, description="Filter by location ID", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="asset_item_id", in="query", required=false, description="Filter by item ID", @OA\Schema(type="integer")),
@@ -2071,6 +2069,9 @@ class ApiDocumentation
      *         @OA\Property(property="asset_item_id", type="integer"),
      *         @OA\Property(property="purchase_year", type="integer"),
      *         @OA\Property(property="serial_number", type="string", nullable=true),
+     *         @OA\Property(property="brand", type="string", nullable=true, maxLength=100),
+     *         @OA\Property(property="model_specification", type="string", nullable=true, maxLength=100),
+     *         @OA\Property(property="location_detail", type="string", nullable=true, maxLength=100),
      *         @OA\Property(property="status", type="string", enum={"Digunakan", "Tidak Digunakan", "Rusak", "Dipinjam"}),
      *         @OA\Property(property="condition", type="string", enum={"Baik", "Rusak Ringan", "Rusak Berat"}),
      *         @OA\Property(property="warranty_until", type="string", format="date", nullable=true),
@@ -2116,6 +2117,9 @@ class ApiDocumentation
      *         @OA\Property(property="asset_item_id", type="integer", nullable=true),
      *         @OA\Property(property="purchase_year", type="integer", nullable=true),
      *         @OA\Property(property="serial_number", type="string", nullable=true),
+     *         @OA\Property(property="brand", type="string", nullable=true, maxLength=100),
+     *         @OA\Property(property="model_specification", type="string", nullable=true, maxLength=100),
+     *         @OA\Property(property="location_detail", type="string", nullable=true, maxLength=100),
      *         @OA\Property(property="status", type="string", enum={"Digunakan", "Tidak Digunakan", "Rusak", "Dipinjam"}, nullable=true),
      *         @OA\Property(property="condition", type="string", enum={"Baik", "Rusak Ringan", "Rusak Berat"}, nullable=true),
      *         @OA\Property(property="warranty_until", type="string", format="date", nullable=true),

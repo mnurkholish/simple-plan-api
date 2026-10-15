@@ -6,6 +6,7 @@ use App\Enums\AssetCondition;
 use App\Enums\AssetStatus;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class MockAssetSeeder extends Seeder
 {
@@ -16,6 +17,7 @@ class MockAssetSeeder extends Seeder
     {
         DB::table('assets')->insert([
             [
+                'asset_uid' => (string) Str::ulid(),
                 'asset_number' => '3/1/1/1/2020',
                 'name' => 'Meja IGD 1',
                 'brand' => 'Meja',
@@ -27,6 +29,7 @@ class MockAssetSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
+                'asset_uid' => (string) Str::ulid(),
                 'asset_number' => '5/1/1/31/2024',
                 'name' => 'AC IGD 2PK 1',
                 'brand' => 'Samsung',
@@ -38,6 +41,7 @@ class MockAssetSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
+                'asset_uid' => (string) Str::ulid(),
                 'asset_number' => '3/61/607/10/2023',
                 'name' => 'Lampu (Rosalina 3) 1',
                 'brand' => 'Philips',

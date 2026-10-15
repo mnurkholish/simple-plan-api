@@ -5,14 +5,18 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreAssetClassificationRequest;
 use App\Http\Requests\UpdateAssetClassificationRequest;
+use App\Models\Asset;
 use App\Models\AssetClassification;
+use App\Models\AssetCode;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class AssetClassificationController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Asset::class);
         $query = AssetClassification::query();
 
         if ($search = $request->string('search')->trim()->value()) {
@@ -35,6 +39,7 @@ class AssetClassificationController extends Controller
 
     public function store(StoreAssetClassificationRequest $request): JsonResponse
     {
+        $this->authorize('create', Asset::class);
         $classification = AssetClassification::create($request->validated());
 
         return response()->json([
@@ -45,6 +50,7 @@ class AssetClassificationController extends Controller
 
     public function show(string $id): JsonResponse
     {
+        $this->authorize('viewAny', Asset::class);
         $classification = AssetClassification::findOrFail($id);
 
         return response()->json([
@@ -54,7 +60,12 @@ class AssetClassificationController extends Controller
 
     public function update(UpdateAssetClassificationRequest $request, string $id): JsonResponse
     {
+        $this->authorize('create', Asset::class);
         $classification = AssetClassification::findOrFail($id);
+        if ((int) $classification->code !== (int) $request->validated('code')
+            && AssetCode::where('asset_classification_id', $classification->id)->exists()) {
+            throw ValidationException::withMessages(['code' => 'Kode klasifikasi yang telah dipakai aset tidak dapat diubah.']);
+        }
         $classification->update($request->validated());
 
         return response()->json([

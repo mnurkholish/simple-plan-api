@@ -5,20 +5,23 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreAssetItemRequest;
 use App\Http\Requests\UpdateAssetItemRequest;
+use App\Models\Asset;
+use App\Models\AssetCode;
 use App\Models\AssetItem;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class AssetItemController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Asset::class);
         $query = AssetItem::query();
 
         if ($search = $request->string('search')->trim()->value()) {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('brand', 'like', "%{$search}%")
                     ->orWhere('code', 'like', "%{$search}%");
             });
         }
@@ -36,6 +39,7 @@ class AssetItemController extends Controller
 
     public function store(StoreAssetItemRequest $request): JsonResponse
     {
+        $this->authorize('create', Asset::class);
         $item = AssetItem::create($request->validated());
 
         return response()->json([
@@ -46,6 +50,7 @@ class AssetItemController extends Controller
 
     public function show(string $id): JsonResponse
     {
+        $this->authorize('viewAny', Asset::class);
         $item = AssetItem::findOrFail($id);
 
         return response()->json([
@@ -55,7 +60,12 @@ class AssetItemController extends Controller
 
     public function update(UpdateAssetItemRequest $request, string $id): JsonResponse
     {
+        $this->authorize('create', Asset::class);
         $item = AssetItem::findOrFail($id);
+        if ((int) $item->code !== (int) $request->validated('code')
+            && AssetCode::where('asset_item_id', $item->id)->exists()) {
+            throw ValidationException::withMessages(['code' => 'Kode barang yang telah dipakai aset tidak dapat diubah.']);
+        }
         $item->update($request->validated());
 
         return response()->json([

@@ -16,7 +16,6 @@ class StoreAssetItemRequest extends FormRequest
         return [
             'code' => ['required', 'integer', 'min:1', 'unique:asset_items,code'],
             'name' => ['required', 'string'],
-            'brand' => ['nullable', 'string'],
         ];
     }
 }
