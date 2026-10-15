@@ -14,9 +14,7 @@ return new class extends Migration
             $table->foreignId('asset_location_id')->constrained()->restrictOnDelete();
             $table->foreignId('asset_item_id')->constrained()->restrictOnDelete();
             $table->integer('sequence_number');
-            $table->integer('year');
             $table->string('full_code')->unique();
-            $table->boolean('is_assigned')->default(false);
             $table->timestamps();
         });
     }

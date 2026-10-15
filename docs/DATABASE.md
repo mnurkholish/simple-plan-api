@@ -10,6 +10,17 @@ Arsitektur backend mengacu pada `docs/BACKEND-ARCHITECTURE.md`.
 Dokumen ini tidak mendefinisikan schema final. Schema berkembang mengikuti
 requirement yang sudah disepakati.
 
+## Inventory identity and history
+
+- `assets.asset_uid` adalah ULID `CHAR(26)` unik dan permanen untuk identitas QR; `assets.id` tetap primary key dan target `tickets.asset_id`.
+- `assets.asset_code_id` unik. Aset Inventory selalu memiliki satu record `asset_codes`; aset Helpdesk tanpa kode tetap dapat dibaca.
+- Aset tidak memiliki relasi ke unit pengguna. Lokasi ruangan aset berasal dari `asset_codes.asset_location_id`; `tickets.unit_id` tetap menyimpan unit pelapor.
+- Merek, model/spesifikasi, dan detail lokasi disimpan pada aset fisik. `asset_items` hanya menyimpan kode dan nama barang; `asset_locations` adalah master ruangan.
+- Tahun di akhir `asset_codes.full_code` berasal dari `assets.purchase_year`. `asset_codes.year` dan `is_assigned` tidak digunakan. Kolom `asset_codes.deleted_at` tersedia, tetapi kode tidak di-soft-delete saat mutasi.
+- Mutasi kode memperbarui record yang sama. `asset_histories.old_values` dan `new_values` menyimpan hanya perubahan, termasuk `full_code` lama dan baru. Kode saat ini maupun kode dalam riwayat tidak boleh terbit ulang.
+- Kode master yang telah dirujuk aset tidak dapat diubah agar kode inventaris yang tersimpan tetap konsisten.
+- Migration Inventory pada tahap development mengasumsikan database kosong; aset contoh dibuat melalui seeder.
+
 ---
 
 ## 1. Database Platform

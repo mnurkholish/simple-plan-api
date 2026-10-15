@@ -10,14 +10,12 @@ use App\Http\Requests\StoreAssetRequest;
 use App\Http\Requests\UpdateAssetRequest;
 use App\Http\Resources\AssetResource;
 use App\Models\Asset;
-use App\Models\AssetCode;
 use App\Services\AssetCodeService;
 use App\Services\AssetService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class AssetController extends Controller
 {
@@ -35,12 +33,14 @@ class AssetController extends Controller
         if ($search = $request->string('search')->trim()->value()) {
             $query->where(function ($q) use ($search) {
                 $q->where('serial_number', 'like', "%{$search}%")
+                    ->orWhere('brand', 'like', "%{$search}%")
+                    ->orWhere('model_specification', 'like', "%{$search}%")
+                    ->orWhere('location_detail', 'like', "%{$search}%")
                     ->orWhere('notes', 'like', "%{$search}%")
                     ->orWhereHas('assetCode', function ($qCode) use ($search) {
                         $qCode->where('full_code', 'like', "%{$search}%")
                             ->orWhereHas('item', function ($qItem) use ($search) {
-                                $qItem->where('name', 'like', "%{$search}%")
-                                    ->orWhere('brand', 'like', "%{$search}%");
+                                $qItem->where('name', 'like', "%{$search}%");
                             })
                             ->orWhereHas('location', function ($qLoc) use ($search) {
                                 $qLoc->where('name', 'like', "%{$search}%");
@@ -95,11 +95,13 @@ class AssetController extends Controller
 
     public function previewCode(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Asset::class);
+
         $request->validate([
             'asset_classification_id' => 'required|integer|exists:asset_classifications,id',
             'asset_location_id' => 'required|integer|exists:asset_locations,id',
             'asset_item_id' => 'required|integer|exists:asset_items,id',
-            'year' => 'required|integer',
+            'year' => 'required|integer|min:1900|max:2100',
         ]);
 
         $codeData = $this->assetCodeService->generate(
@@ -120,53 +122,11 @@ class AssetController extends Controller
     {
         $this->authorize('create', Asset::class);
 
-        $asset = DB::transaction(function () use ($request) {
-            $codeData = $this->assetCodeService->generate(
-                (int) $request->asset_classification_id,
-                (int) $request->asset_location_id,
-                (int) $request->asset_item_id,
-                (int) $request->purchase_year
-            );
-
-            $assetCode = AssetCode::create([
-                'asset_classification_id' => $request->asset_classification_id,
-                'asset_location_id' => $request->asset_location_id,
-                'asset_item_id' => $request->asset_item_id,
-                'sequence_number' => $codeData['sequence_number'],
-                'year' => $request->purchase_year,
-                'full_code' => $codeData['full_code'],
-                'is_assigned' => true,
-            ]);
-
-            $assetData = [
-                'asset_code_id' => $assetCode->id,
-                'serial_number' => $request->serial_number,
-                'purchase_year' => $request->purchase_year,
-                'status' => $request->status,
-                'condition' => $request->condition,
-                'warranty_until' => $request->warranty_until,
-                'notes' => $request->notes,
-            ];
-
-            if ($request->hasFile('photo')) {
-                $file = $request->file('photo');
-                $assetData['photo_object_key'] = $file->store('assets/photos');
-                $assetData['photo_original_name'] = $file->getClientOriginalName();
-                $assetData['photo_mime_type'] = $file->getMimeType();
-                $assetData['photo_size'] = $file->getSize();
-            }
-
-            if ($request->hasFile('calibration_document')) {
-                $file = $request->file('calibration_document');
-                $assetData['calibration_object_key'] = $file->store('assets/calibrations');
-                $assetData['calibration_original_name'] = $file->getClientOriginalName();
-                $assetData['calibration_mime_type'] = $file->getMimeType();
-                $assetData['calibration_size'] = $file->getSize();
-            }
-
-            return Asset::create($assetData);
-        });
-
+        $asset = $this->assetService->create(
+            $request->validated(),
+            $request->file('photo'),
+            $request->file('calibration_document')
+        );
         $asset->load(['assetCode.classification', 'assetCode.location', 'assetCode.item']);
 
         return response()->json([
@@ -187,86 +147,13 @@ class AssetController extends Controller
     {
         $this->authorize('update', $asset);
 
-        $asset = DB::transaction(function () use ($request, $asset) {
-            $validated = $request->validated();
-            $assetCode = $asset->assetCode;
-
-            if ($assetCode) {
-                $newClassId = isset($validated['asset_classification_id'])
-                    ? (int) $validated['asset_classification_id']
-                    : (int) $assetCode->asset_classification_id;
-                $newLocId = isset($validated['asset_location_id'])
-                    ? (int) $validated['asset_location_id']
-                    : (int) $assetCode->asset_location_id;
-                $newItemId = isset($validated['asset_item_id'])
-                    ? (int) $validated['asset_item_id']
-                    : (int) $assetCode->asset_item_id;
-                $newYear = isset($validated['purchase_year'])
-                    ? (int) $validated['purchase_year']
-                    : (int) $assetCode->year;
-
-                if (
-                    $newClassId !== (int) $assetCode->asset_classification_id ||
-                    $newLocId !== (int) $assetCode->asset_location_id ||
-                    $newItemId !== (int) $assetCode->asset_item_id ||
-                    $newYear !== (int) $assetCode->year
-                ) {
-                    $codeData = $this->assetCodeService->generate(
-                        $newClassId,
-                        $newLocId,
-                        $newItemId,
-                        $newYear,
-                        $assetCode->id
-                    );
-
-                    $assetCode->update([
-                        'asset_classification_id' => $newClassId,
-                        'asset_location_id' => $newLocId,
-                        'asset_item_id' => $newItemId,
-                        'year' => $newYear,
-                        'sequence_number' => $codeData['sequence_number'],
-                        'full_code' => $codeData['full_code'],
-                    ]);
-                }
-            }
-
-            $assetData = $validated;
-            unset(
-                $assetData['_method'],
-                $assetData['asset_classification_id'],
-                $assetData['asset_location_id'],
-                $assetData['asset_item_id'],
-                $assetData['photo'],
-                $assetData['calibration_document']
-            );
-
-            if ($request->hasFile('photo')) {
-                if ($asset->photo_object_key) {
-                    Storage::delete($asset->photo_object_key);
-                }
-                $file = $request->file('photo');
-                $assetData['photo_object_key'] = $file->store('assets/photos');
-                $assetData['photo_original_name'] = $file->getClientOriginalName();
-                $assetData['photo_mime_type'] = $file->getMimeType();
-                $assetData['photo_size'] = $file->getSize();
-            }
-
-            if ($request->hasFile('calibration_document')) {
-                if ($asset->calibration_object_key) {
-                    Storage::delete($asset->calibration_object_key);
-                }
-                $file = $request->file('calibration_document');
-                $assetData['calibration_object_key'] = $file->store('assets/calibrations');
-                $assetData['calibration_original_name'] = $file->getClientOriginalName();
-                $assetData['calibration_mime_type'] = $file->getMimeType();
-                $assetData['calibration_size'] = $file->getSize();
-            }
-
-            $asset->update($assetData);
-
-            return $asset;
-        });
-
+        $asset = $this->assetService->update(
+            $asset,
+            $request->validated(),
+            $request->file('photo'),
+            $request->file('calibration_document'),
+            $request->user()?->id
+        );
         $asset->load(['assetCode.classification', 'assetCode.location', 'assetCode.item']);
 
         return response()->json([
@@ -281,7 +168,6 @@ class AssetController extends Controller
 
         DB::transaction(function () use ($asset) {
             $asset->delete();
-            $asset->assetCode?->delete();
         });
 
         return response()->json([
@@ -294,7 +180,7 @@ class AssetController extends Controller
 
         return AssetResource::collection(
             $this->assetService->search(
-                $request->integer('unit'),
+                $request->integer('location_id'),
                 $request->string('search')->toString() ?: null,
             )
         );
