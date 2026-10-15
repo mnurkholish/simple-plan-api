@@ -40,6 +40,7 @@ return new class extends Migration
             $table->dropColumn('unit_id');
         });
     }
+
     public function down(): void
     {
         Schema::table('assets', function (Blueprint $table): void {
