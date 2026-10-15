@@ -3916,7 +3916,7 @@
                     {
                         "name": "search",
                         "in": "query",
-                        "description": "Live search by name, brand, or code",
+                        "description": "Live search by name or code",
                         "required": false,
                         "schema": {
                             "type": "string"
@@ -3961,10 +3961,6 @@
                                     },
                                     "name": {
                                         "type": "string"
-                                    },
-                                    "brand": {
-                                        "type": "string",
-                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -4036,10 +4032,6 @@
                                 "properties": {
                                     "name": {
                                         "type": "string"
-                                    },
-                                    "brand": {
-                                        "type": "string",
-                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -4094,6 +4086,7 @@
                     {
                         "name": "year",
                         "in": "query",
+                        "description": "Purchase year",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -4124,7 +4117,7 @@
                     {
                         "name": "search",
                         "in": "query",
-                        "description": "Live search by serial number, notes, full code, item name/brand, location name, or classification name",
+                        "description": "Live search by serial number, notes, full code, item name, asset brand, location name, or classification name",
                         "required": false,
                         "schema": {
                             "type": "string"
@@ -4244,6 +4237,21 @@
                                     "serial_number": {
                                         "type": "string",
                                         "nullable": true
+                                    },
+                                    "brand": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "maxLength": 100
+                                    },
+                                    "model_specification": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "maxLength": 100
+                                    },
+                                    "location_detail": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "maxLength": 100
                                     },
                                     "status": {
                                         "type": "string",
@@ -4377,6 +4385,21 @@
                                     "serial_number": {
                                         "type": "string",
                                         "nullable": true
+                                    },
+                                    "brand": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "maxLength": 100
+                                    },
+                                    "model_specification": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "maxLength": 100
+                                    },
+                                    "location_detail": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "maxLength": 100
                                     },
                                     "status": {
                                         "type": "string",
