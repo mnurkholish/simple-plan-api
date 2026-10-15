@@ -35,7 +35,6 @@ class Asset extends Model
         'brand',
         'model_specification',
         'location_detail',
-        'unit_id',
         'location',
         'serial_number',
         'purchase_year',
@@ -62,11 +61,6 @@ class Asset extends Model
     public function assetCode(): BelongsTo
     {
         return $this->belongsTo(AssetCode::class);
-    }
-
-    public function unit(): BelongsTo
-    {
-        return $this->belongsTo(Unit::class);
     }
 
     public function histories(): HasMany

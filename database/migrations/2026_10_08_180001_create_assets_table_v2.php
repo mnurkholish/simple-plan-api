@@ -32,16 +32,23 @@ return new class extends Migration
         Schema::table('assets', function (Blueprint $table): void {
             $table->string('asset_number', 50)->nullable()->change();
             $table->string('name', 100)->nullable()->change();
-            $table->foreignId('unit_id')->nullable()->change();
+        });
+
+        Schema::table('assets', function (Blueprint $table): void {
+            $table->dropForeign(['unit_id']);
+            $table->dropIndex(['unit_id']);
+            $table->dropColumn('unit_id');
         });
     }
-
     public function down(): void
     {
         Schema::table('assets', function (Blueprint $table): void {
+            $table->foreignId('unit_id')->nullable()->constrained()->restrictOnDelete();
+        });
+
+        Schema::table('assets', function (Blueprint $table): void {
             $table->string('asset_number', 50)->nullable(false)->change();
             $table->string('name', 100)->nullable(false)->change();
-            $table->foreignId('unit_id')->nullable(false)->change();
         });
 
         Schema::table('assets', function (Blueprint $table): void {

@@ -23,9 +23,9 @@ class AssetService
     /**
      * @return Collection<int, Asset>
      */
-    public function search(int $unitId, ?string $search): Collection
+    public function search(int $locationId, ?string $search): Collection
     {
-        return $this->assetRepository->search($unitId, $search);
+        return $this->assetRepository->search($locationId, $search);
     }
 
     public function create(array $data, ?UploadedFile $photo = null, ?UploadedFile $calibration = null): Asset

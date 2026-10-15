@@ -134,7 +134,9 @@ class TicketRepository
     public function loadDetail(Ticket $ticket): Ticket
     {
         return $ticket->load([
-            'asset:id,asset_number,name,brand,location,status',
+            'asset:id,asset_code_id,asset_number,name,brand,location,status',
+            'asset.assetCode.location:id,name',
+            'asset.assetCode.item:id,name',
             'assignedOfficer:id,name',
             'classifiedBy:id,name',
             'handlings.handledBy:id,name',
@@ -155,7 +157,9 @@ class TicketRepository
     private function summaryRelations(): array
     {
         return [
-            'asset:id,asset_number,name,brand,location,status',
+            'asset:id,asset_code_id,asset_number,name,brand,location,status',
+            'asset.assetCode.location:id,name',
+            'asset.assetCode.item:id,name',
             'assignedOfficer:id,name',
             'classifiedBy:id,name',
             'reporter:id,name',

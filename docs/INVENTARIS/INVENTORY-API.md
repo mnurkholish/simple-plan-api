@@ -418,13 +418,13 @@ Melakukan soft delete pada aset. Record kode inventaris tetap tersimpan dan tida
 ---
 
 ## 7. Search Assets for Ticket Selection
-Endpoint pencarian aset ringan yang digunakan saat pelapor/teknisi membuat tiket keluhan kerusakan barang.
+Endpoint pencarian aset berdasarkan lokasi ruangan untuk pemilihan barang pada tiket. Unit pelapor tidak menentukan posisi aset.
 
 - **Method**: `GET`
 - **Endpoint**: `/api/v1/assets/search`
 - **Query Parameters**:
-  - `unit` *(optional, integer)*: ID unit/lokasi kerja pelapor.
-  - `search` *(optional, string)*: Keyword nama barang atau kode inventaris.
+  - `location_id` *(required, integer)*: ID lokasi ruangan dari master `asset_locations`.
+  - `search` *(optional, string)*: Keyword nama barang atau nomor inventaris.
 
 ### Contoh Response Sukses (200 OK)
 ```json
@@ -432,9 +432,12 @@ Endpoint pencarian aset ringan yang digunakan saat pelapor/teknisi membuat tiket
   "data": [
     {
       "id": 1,
+      "asset_uid": "01K7KTCXRH1WKCD26R2YQA5P1M",
       "asset_code": {
         "id": 1,
-        "full_code": "5/10/1/12/2026"
+        "full_code": "5/10/1/12/2026",
+        "location": { "id": 10, "code": 10, "name": "Ruang IT" },
+        "item": { "id": 12, "code": 12, "name": "Komputer" }
       },
       "serial_number": "SN-2026-001",
       "status": "Digunakan",

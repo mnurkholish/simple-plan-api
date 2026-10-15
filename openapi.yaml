@@ -668,23 +668,23 @@ paths:
   /assets/search:
     get:
       tags: [Assets]
-      summary: Mencari asset berdasarkan nomor atau nama
+      summary: Mencari asset berdasarkan lokasi ruangan, nomor, atau nama
       operationId: searchAssets
-      description: Mengembalikan asset pada unit yang dipilih dengan asset_number atau name yang mengandung nilai search.
+      description: Mengembalikan aset pada lokasi ruangan yang dipilih. Lokasi aset tidak bergantung pada unit pelapor.
       x-auth-required: true
       x-required-permission: tickets-create
       parameters:
-        - name: unit
+        - name: location_id
           in: query
           required: true
-          description: ID unit asset.
+          description: ID lokasi ruangan pada master asset_locations.
           schema:
             type: integer
             example: 1
         - name: search
           in: query
           required: false
-          description: Nomor atau nama asset yang dicari.
+          description: Nomor inventaris atau nama barang yang dicari.
           schema:
             type: string
             minLength: 1
@@ -702,7 +702,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/AssetSummary"
+                      $ref: "#/components/schemas/InventoryAsset"
         "401":
           $ref: "#/components/responses/TicketUnauthenticated"
         "403":

@@ -33,9 +33,9 @@ test('migration Inventory menghasilkan skema final dari database kosong', functi
         ] as $file) {
             (require base_path('database/migrations/'.$file))->up();
         }
-
         expect(Schema::hasColumn('assets', 'asset_uid'))->toBeTrue()
             ->and(Schema::hasColumn('assets', 'asset_code_id'))->toBeTrue()
+            ->and(Schema::hasColumn('assets', 'unit_id'))->toBeFalse()
             ->and(Schema::hasColumn('assets', 'model_specification'))->toBeTrue()
             ->and(Schema::hasColumn('assets', 'location_detail'))->toBeTrue()
             ->and(Schema::hasColumn('assets', 'deleted_at'))->toBeTrue()
@@ -51,6 +51,7 @@ test('migration Inventory menghasilkan skema final dari database kosong', functi
 
         expect(Schema::hasTable('tickets'))->toBeTrue()
             ->and(Schema::hasColumn('assets', 'asset_uid'))->toBeFalse()
+            ->and(Schema::hasColumn('assets', 'unit_id'))->toBeTrue()
             ->and(Schema::hasColumn('assets', 'deleted_at'))->toBeTrue();
     } finally {
         DB::setDefaultConnection($originalConnection);

@@ -180,7 +180,7 @@ class AssetController extends Controller
 
         return AssetResource::collection(
             $this->assetService->search(
-                $request->integer('unit'),
+                $request->integer('location_id'),
                 $request->string('search')->toString() ?: null,
             )
         );

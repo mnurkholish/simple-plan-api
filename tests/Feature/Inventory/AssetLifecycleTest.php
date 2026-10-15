@@ -7,10 +7,12 @@ use App\Models\AssetHistory;
 use App\Models\AssetItem;
 use App\Models\AssetLocation;
 use App\Models\User;
+use Database\Seeders\MockAssetSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
@@ -59,6 +61,35 @@ test('aset baru mendapat UID tetap dan kode berdasarkan tahun pembelian', functi
     $asset->update(['asset_uid' => '01AAAAAAAAAAAAAAAAAAAAAAAA']);
     expect($asset->fresh()->asset_uid)->toBe($uid);
     expect(AssetCode::count())->toBe(1);
+});
+
+test('pencarian aset untuk tiket memakai lokasi ruangan tanpa unit pengguna', function (): void {
+    Role::findByName('super-admin', 'web')->givePermissionTo(Permission::findOrCreate('tickets-create', 'web'));
+
+    $assetId = $this->postJson('/api/v1/assets', inventoryPayload())->json('data.id');
+    $this->postJson('/api/v1/assets', inventoryPayload([
+        'asset_location_id' => $this->otherRoom->id,
+    ]))->assertCreated();
+
+    $this->getJson('/api/v1/assets/search?location_id='.$this->room->id)
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', $assetId)
+        ->assertJsonPath('data.0.asset_code.location.id', $this->room->id);
+
+    $this->getJson('/api/v1/assets/search?location_id='.$this->room->id.'&search=Komputer')
+        ->assertOk()->assertJsonCount(1, 'data');
+
+    $this->getJson('/api/v1/assets/search?unit=1')
+        ->assertUnprocessable()->assertJsonValidationErrors('location_id');
+});
+
+test('aset contoh dari seeder memiliki kode dan lokasi ruangan', function (): void {
+    $this->seed(MockAssetSeeder::class);
+
+    expect(Asset::count())->toBe(3)
+        ->and(AssetCode::count())->toBe(3)
+        ->and(Asset::query()->whereHas('assetCode.location', fn ($query) => $query->where('name', 'IGD'))->count())->toBe(1);
 });
 
 test('satu update mencatat hanya perubahan dan membedakan mutasi ruangan dari detail', function (): void {

@@ -19,7 +19,7 @@ class SearchAssetsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'unit' => ['required', 'integer', 'exists:units,id'],
+            'location_id' => ['required', 'integer', 'exists:asset_locations,id'],
             'search' => ['nullable', 'string', 'max:255'],
         ];
     }

@@ -4,54 +4,42 @@ namespace Database\Seeders;
 
 use App\Enums\AssetCondition;
 use App\Enums\AssetStatus;
+use App\Models\Asset;
+use App\Models\AssetClassification;
+use App\Models\AssetCode;
+use App\Models\AssetItem;
+use App\Models\AssetLocation;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class MockAssetSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        DB::table('assets')->insert([
-            [
-                'asset_uid' => (string) Str::ulid(),
-                'asset_number' => '3/1/1/1/2020',
-                'name' => 'Meja IGD 1',
-                'brand' => 'Meja',
-                'unit_id' => 1,
-                'location' => 'IGD',
+        $assets = [
+            [3, 'Sarana dan Prasarana', 1, 'IGD', 1, 'Meja', 1, 2020, 'Meja'],
+            [5, 'Alat IT', 2, 'Ruang IT', 31, 'AC 2PK', 1, 2024, 'Samsung'],
+            [3, 'Sarana dan Prasarana', 61, 'Rosalina 3', 10, 'Lampu', 607, 2023, 'Philips'],
+        ];
+
+        foreach ($assets as [$classCode, $className, $locationCode, $locationName, $itemCode, $itemName, $sequence, $year, $brand]) {
+            $classification = AssetClassification::firstOrCreate(['code' => $classCode], ['name' => $className]);
+            $location = AssetLocation::firstOrCreate(['code' => $locationCode], ['name' => $locationName]);
+            $item = AssetItem::firstOrCreate(['code' => $itemCode], ['name' => $itemName]);
+            $fullCode = "{$classCode}/{$locationCode}/{$sequence}/{$itemCode}/{$year}";
+
+            $assetCode = AssetCode::firstOrCreate(['full_code' => $fullCode], [
+                'asset_classification_id' => $classification->id,
+                'asset_location_id' => $location->id,
+                'asset_item_id' => $item->id,
+                'sequence_number' => $sequence,
+            ]);
+
+            Asset::firstOrCreate(['asset_code_id' => $assetCode->id], [
+                'brand' => $brand,
+                'purchase_year' => $year,
                 'status' => AssetStatus::InUse->value,
                 'condition' => AssetCondition::Good->value,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'asset_uid' => (string) Str::ulid(),
-                'asset_number' => '5/1/1/31/2024',
-                'name' => 'AC IGD 2PK 1',
-                'brand' => 'Samsung',
-                'unit_id' => 1,
-                'location' => 'Ruang IT',
-                'status' => AssetStatus::InUse->value,
-                'condition' => AssetCondition::Good->value,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'asset_uid' => (string) Str::ulid(),
-                'asset_number' => '3/61/607/10/2023',
-                'name' => 'Lampu (Rosalina 3) 1',
-                'brand' => 'Philips',
-                'unit_id' => 2,
-                'location' => 'Rosalina 3',
-                'status' => AssetStatus::InUse->value,
-                'condition' => AssetCondition::Good->value,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-        ]);
+            ]);
+        }
     }
 }
