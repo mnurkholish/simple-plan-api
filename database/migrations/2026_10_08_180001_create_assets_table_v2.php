@@ -8,50 +8,53 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::disableForeignKeyConstraints();
-
-        // Drop old table if exists just in case
-        Schema::dropIfExists('assets');
-
-        Schema::create('assets', function (Blueprint $table) {
-            $table->id();
+        Schema::table('assets', function (Blueprint $table): void {
             $table->foreignId('asset_code_id')->nullable()->constrained()->restrictOnDelete();
-            $table->string('asset_number', 50)->nullable()->index();
-            $table->string('name', 100)->nullable();
-            $table->string('brand', 100)->nullable();
-            $table->foreignId('unit_id')->nullable()->references('id')->on('units')->restrictOnDelete();
-            $table->string('location', 150)->nullable();
+            $table->char('asset_uid', 26)->unique();
             $table->string('serial_number')->nullable();
             $table->integer('purchase_year')->nullable();
-            $table->string('status');
+            $table->string('model_specification', 100)->nullable();
+            $table->string('location_detail', 100)->nullable();
             $table->string('condition')->nullable();
             $table->date('warranty_until')->nullable();
             $table->text('notes')->nullable();
-
-            // Photo attributes
             $table->string('photo_object_key', 500)->nullable();
             $table->string('photo_original_name')->nullable();
             $table->string('photo_mime_type', 100)->nullable();
             $table->unsignedBigInteger('photo_size')->nullable();
-
-            // Calibration attributes
             $table->string('calibration_object_key', 500)->nullable();
             $table->string('calibration_original_name')->nullable();
             $table->string('calibration_mime_type', 100)->nullable();
             $table->unsignedBigInteger('calibration_size')->nullable();
-
-            $table->timestamps();
-
             $table->unique('asset_code_id');
         });
 
-        Schema::enableForeignKeyConstraints();
+        Schema::table('assets', function (Blueprint $table): void {
+            $table->string('asset_number', 50)->nullable()->change();
+            $table->string('name', 100)->nullable()->change();
+            $table->foreignId('unit_id')->nullable()->change();
+        });
     }
 
     public function down(): void
     {
-        Schema::disableForeignKeyConstraints();
-        Schema::dropIfExists('assets');
-        Schema::enableForeignKeyConstraints();
+        Schema::table('assets', function (Blueprint $table): void {
+            $table->string('asset_number', 50)->nullable(false)->change();
+            $table->string('name', 100)->nullable(false)->change();
+            $table->foreignId('unit_id')->nullable(false)->change();
+        });
+
+        Schema::table('assets', function (Blueprint $table): void {
+            $table->dropUnique(['asset_code_id']);
+            $table->dropUnique(['asset_uid']);
+            $table->dropForeign(['asset_code_id']);
+            $table->dropColumn([
+                'asset_code_id', 'asset_uid', 'serial_number', 'purchase_year',
+                'model_specification', 'location_detail', 'condition',
+                'warranty_until', 'notes', 'photo_object_key', 'photo_original_name',
+                'photo_mime_type', 'photo_size', 'calibration_object_key',
+                'calibration_original_name', 'calibration_mime_type', 'calibration_size',
+            ]);
+        });
     }
 };

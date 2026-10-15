@@ -12,7 +12,6 @@ return new class extends Migration
             $table->id();
             $table->integer('code')->unique();
             $table->string('name');
-            $table->string('brand')->nullable();
             $table->timestamps();
         });
     }
