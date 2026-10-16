@@ -4487,7 +4487,7 @@
         "/assets/{asset}/qr": {
             "get": {
                 "tags": [
-                    "Inventory - QrCode"
+                    "Inventory - QrCode Label"
                 ],
                 "summary": "Generate Asset QR Code",
                 "description": "Generates an SVG QR code containing the asset detail URL based on the asset's permanent asset_uid.",
@@ -4536,10 +4536,10 @@
         "/assets/{asset}/label": {
             "get": {
                 "tags": [
-                    "Inventory"
+                    "Inventory - QrCode Label"
                 ],
                 "summary": "Get Asset Label",
-                "description": "Returns an HTML asset label containing the inventory number, asset information, and QR code.",
+                "description": "Generates an asset label containing the inventory number, item name, location, condition, and QR code. Supports HTML, PNG, and PDF formats.",
                 "operationId": "getAssetLabel",
                 "parameters": [
                     {
@@ -4551,15 +4551,70 @@
                             "type": "integer",
                             "example": 1
                         }
+                    },
+                    {
+                        "name": "format",
+                        "in": "query",
+                        "description": "Label output format. Defaults to HTML.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "html",
+                            "enum": [
+                                "html",
+                                "png",
+                                "pdf"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "width_mm",
+                        "in": "query",
+                        "description": "Label width in millimeters.",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "format": "float",
+                            "example": 80,
+                            "default": 90,
+                            "maximum": 150,
+                            "minimum": 70
+                        }
+                    },
+                    {
+                        "name": "height_mm",
+                        "in": "query",
+                        "description": "Label height in millimeters.",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "format": "float",
+                            "example": 40,
+                            "default": 50,
+                            "maximum": 100,
+                            "minimum": 40
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Asset label retrieved successfully",
+                        "description": "Asset label generated successfully",
                         "content": {
                             "text/html": {
                                 "schema": {
                                     "type": "string"
+                                }
+                            },
+                            "image/png": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            },
+                            "application/pdf": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
                                 }
                             }
                         }
@@ -4572,6 +4627,93 @@
                     },
                     "404": {
                         "description": "Asset not found"
+                    },
+                    "422": {
+                        "description": "Invalid label format"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/asset-label-exports": {
+            "post": {
+                "tags": [
+                    "Inventory - QrCode Label"
+                ],
+                "summary": "Export selected inventory labels as an A4 PDF",
+                "description": "Generates one PDF synchronously. Labels follow the requested asset order and are arranged on A4 portrait pages with 10 mm margins and 2 mm gaps. Printing each asset requires printLabel authorization.",
+                "operationId": "exportAssetLabels",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "asset_ids",
+                                    "width_mm",
+                                    "height_mm"
+                                ],
+                                "properties": {
+                                    "asset_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "minimum": 1
+                                        },
+                                        "example": [
+                                            1,
+                                            2,
+                                            3,
+                                            4,
+                                            5
+                                        ],
+                                        "minItems": 1,
+                                        "uniqueItems": true
+                                    },
+                                    "width_mm": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 90,
+                                        "maximum": 150,
+                                        "minimum": 70
+                                    },
+                                    "height_mm": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 50,
+                                        "maximum": 100,
+                                        "minimum": 40
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "A4 PDF containing the selected labels",
+                        "content": {
+                            "application/pdf": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Printing at least one selected asset is forbidden"
+                    },
+                    "422": {
+                        "description": "Invalid asset IDs or label dimensions"
                     }
                 },
                 "security": [
@@ -5909,12 +6051,8 @@
             "description": "Inventory - Assets"
         },
         {
-            "name": "Inventory - QrCode",
-            "description": "Inventory - QrCode"
-        },
-        {
-            "name": "Inventory",
-            "description": "Inventory"
+            "name": "Inventory - QrCode Label",
+            "description": "Inventory - QrCode Label"
         }
     ]
 }

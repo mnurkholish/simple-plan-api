@@ -11,6 +11,20 @@ use Illuminate\Database\Eloquent\Collection;
 class AssetRepository
 {
     /**
+     * @param  array<int, int>  $ids
+     * @return Collection<int, Asset>
+     */
+    public function findForLabels(array $ids): Collection
+    {
+        return Asset::query()
+            ->with(['assetCode.classification', 'assetCode.location', 'assetCode.item'])
+            ->whereIn('id', $ids)
+            ->get()
+            ->sortBy(fn (Asset $asset): int => array_search($asset->id, $ids, true))
+            ->values();
+    }
+
+    /**
      * @return Collection<int, Asset>
      */
     public function search(int $locationId, ?string $search): Collection

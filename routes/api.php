@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\AssetClassificationController;
 use App\Http\Controllers\Api\V1\AssetController;
 use App\Http\Controllers\Api\V1\AssetItemController;
 use App\Http\Controllers\Api\V1\AssetLabelController;
+use App\Http\Controllers\Api\V1\AssetLabelExportController;
 use App\Http\Controllers\Api\V1\AssetLocationController;
 use App\Http\Controllers\Api\V1\AssetQrCodeController;
 use App\Http\Controllers\Api\V1\Auth\AuthController;
@@ -84,6 +85,8 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
 
         Route::get('/assets/{asset}/qr', [AssetQrCodeController::class, 'show']);
         Route::get('/assets/{asset}/label', [AssetLabelController::class, 'show']);
+        Route::post('asset-label-exports', [AssetLabelExportController::class, 'store'])
+            ->name('asset-label-exports.store');
 
         Route::get('tickets', [TicketController::class, 'index'])
             ->middleware('permission:tickets-access')

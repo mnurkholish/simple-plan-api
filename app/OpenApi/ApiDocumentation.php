@@ -2151,7 +2151,7 @@ class ApiDocumentation
      * @OA\Get(
      *     path="/assets/{asset}/qr",
      *     operationId="getAssetQrCode",
-     *     tags={"Inventory - QrCode"},
+     *     tags={"Inventory - QrCode Label"},
      *     summary="Generate Asset QR Code",
      *     description="Generates an SVG QR code containing the asset detail URL based on the asset's permanent asset_uid.",
      *     security={{"sanctum":{}}},
@@ -2198,9 +2198,9 @@ class ApiDocumentation
      * @OA\Get(
      *     path="/assets/{asset}/label",
      *     operationId="getAssetLabel",
-     *     tags={"Inventory"},
+     *     tags={"Inventory - QrCode Label"},
      *     summary="Get Asset Label",
-     *     description="Returns an HTML asset label containing the inventory number, asset information, and QR code.",
+     *     description="Generates an asset label containing the inventory number, item name, location, condition, and QR code. Supports HTML, PNG, and PDF formats.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(
@@ -2208,15 +2208,73 @@ class ApiDocumentation
      *         in="path",
      *         required=true,
      *         description="Unique asset ID",
-     *         @OA\Schema(type="integer", example=1)
+     *         @OA\Schema(
+     *             type="integer",
+     *             example=1
+     *         )
      *     ),
+     *
+     *     @OA\Parameter(
+     *         name="format",
+     *         in="query",
+     *         required=false,
+     *         description="Label output format. Defaults to HTML.",
+     *         @OA\Schema(
+     *             type="string",
+     *             enum={"html", "png", "pdf"},
+     *             default="html"
+     *         )
+     *     ),
+     *    @OA\Parameter(
+     *        name="width_mm",
+     *        in="query",
+     *        required=false,
+     *        description="Label width in millimeters.",
+     *        @OA\Schema(
+     *            type="number",
+     *            format="float",
+     *            minimum=70,
+     *            maximum=150,
+     *            default=90,
+     *            example=80
+     *        )
+     *    ),
+     *
+     *    @OA\Parameter(
+     *        name="height_mm",
+     *        in="query",
+     *        required=false,
+     *        description="Label height in millimeters.",
+     *        @OA\Schema(
+     *            type="number",
+     *            format="float",
+     *            minimum=40,
+     *            maximum=100,
+     *            default=50,
+     *            example=40
+     *        )
+     *    ),
      *
      *     @OA\Response(
      *         response=200,
-     *         description="Asset label retrieved successfully",
+     *         description="Asset label generated successfully",
      *         @OA\MediaType(
      *             mediaType="text/html",
      *             @OA\Schema(type="string")
+     *         ),
+     *         @OA\MediaType(
+     *             mediaType="image/png",
+     *             @OA\Schema(
+     *                 type="string",
+     *                 format="binary"
+     *             )
+     *         ),
+     *         @OA\MediaType(
+     *             mediaType="application/pdf",
+     *             @OA\Schema(
+     *                 type="string",
+     *                 format="binary"
+     *             )
      *         )
      *     ),
      *     @OA\Response(
@@ -2230,8 +2288,34 @@ class ApiDocumentation
      *     @OA\Response(
      *         response=404,
      *         description="Asset not found"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Invalid label format"
      *     )
      * )
      */
     public function assetLabelShow() : Void {}
+
+    /**
+     * @OA\Post(
+     *     path="/asset-label-exports",
+     *     operationId="exportAssetLabels",
+     *     tags={"Inventory - QrCode Label"},
+     *     summary="Export selected inventory labels as an A4 PDF",
+     *     description="Generates one PDF synchronously. Labels follow the requested asset order and are arranged on A4 portrait pages with 10 mm margins and 2 mm gaps. Printing each asset requires printLabel authorization.",
+     *     security={{"sanctum":{}}},
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *         required={"asset_ids", "width_mm", "height_mm"},
+     *         @OA\Property(property="asset_ids", type="array", minItems=1, uniqueItems=true, @OA\Items(type="integer", minimum=1), example={1,2,3,4,5}),
+     *         @OA\Property(property="width_mm", type="number", format="float", minimum=70, maximum=150, example=90),
+     *         @OA\Property(property="height_mm", type="number", format="float", minimum=40, maximum=100, example=50)
+     *     )),
+     *     @OA\Response(response=200, description="A4 PDF containing the selected labels", @OA\MediaType(mediaType="application/pdf", @OA\Schema(type="string", format="binary"))),
+     *     @OA\Response(response=401, description="Unauthenticated"),
+     *     @OA\Response(response=403, description="Printing at least one selected asset is forbidden"),
+     *     @OA\Response(response=422, description="Invalid asset IDs or label dimensions")
+     * )
+     */
+    public function assetLabelExportsStore(): void {}
 }

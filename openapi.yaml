@@ -25,6 +25,42 @@ tags:
     description: Pengelolaan dan pencarian user
 
 paths:
+  /asset-label-exports:
+    post:
+      tags: [Assets]
+      summary: Export selected inventory labels as an A4 PDF
+      operationId: exportAssetLabels
+      description: Creates a PDF synchronously with labels ordered by asset_ids. Only assets the caller may print are included. Each A4 page has 10 mm margins and 2 mm gaps between labels.
+      x-auth-required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [asset_ids, width_mm, height_mm]
+              properties:
+                asset_ids:
+                  type: array
+                  minItems: 1
+                  uniqueItems: true
+                  items: { type: integer, minimum: 1 }
+                  example: [1, 2, 3, 4, 5]
+                width_mm: { type: number, minimum: 70, maximum: 150, example: 90 }
+                height_mm: { type: number, minimum: 40, maximum: 100, example: 50 }
+      responses:
+        "200":
+          description: A4 PDF containing all selected labels.
+          headers:
+            Content-Disposition:
+              schema: { type: string, example: 'attachment; filename="asset-labels-a4.pdf"' }
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        "401": { description: Unauthenticated. }
+        "403": { description: Printing at least one selected asset is forbidden. }
+        "422": { description: Invalid asset IDs or label dimensions. }
+
   /assets:
     get:
       tags: [Assets]
