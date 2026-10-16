@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\Asset;
 use App\Repositories\AssetRepository;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use Spatie\Browsershot\Browsershot;
 
 class AssetLabelExportService
@@ -23,13 +25,25 @@ class AssetLabelExportService
         private AssetLabelService $labels,
     ) {}
 
-    /** @param array<int, int> $assetIds */
-    public function generatePdf(array $assetIds, float $widthMm, float $heightMm): string
+    /** @param array<string, mixed> $selection */
+    public function generatePdf(array $selection, float $widthMm, float $heightMm): string
     {
         $columns = (int) floor((self::PAGE_WIDTH_MM - 2 * self::MARGIN_MM + self::GAP_MM) / ($widthMm + self::GAP_MM));
         $rows = (int) floor((self::PAGE_HEIGHT_MM - 2 * self::MARGIN_MM + self::GAP_MM) / ($heightMm + self::GAP_MM));
 
-        $assets = $this->assets->findForLabels($assetIds);
+        Gate::authorize('viewAny', Asset::class);
+
+        $allFiltered = ($selection['selection_mode'] ?? 'selected') === 'all_filtered';
+        $assets = $allFiltered
+            ? $this->assets->filteredQuery($selection['filters'])->whereHas('assetCode')->orderByDesc('assets.id')->get()
+            : $this->assets->findForLabels(array_map('intval', $selection['asset_ids']));
+
+        if ($assets->isEmpty()) {
+            throw ValidationException::withMessages([
+                $allFiltered ? 'filters' : 'asset_ids' => 'No printable assets match this selection.',
+            ]);
+        }
+
         $labelData = [];
 
         foreach ($assets as $asset) {

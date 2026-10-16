@@ -16,7 +16,7 @@ class AssetLabelExportController extends Controller
         $data = $request->validated();
 
         return response($service->generatePdf(
-            array_map('intval', $data['asset_ids']),
+            $data,
             (float) $data['width_mm'],
             (float) $data['height_mm'],
         ), 200, [

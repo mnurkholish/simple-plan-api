@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ListAssetsRequest;
 use App\Http\Requests\SearchAssetsRequest;
 use App\Http\Requests\StoreAssetRequest;
 use App\Http\Requests\UpdateAssetRequest;
 use App\Http\Resources\AssetResource;
 use App\Models\Asset;
+use App\Repositories\AssetRepository;
 use App\Services\AssetCodeService;
 use App\Services\AssetService;
 use Illuminate\Http\JsonResponse;
@@ -24,73 +26,15 @@ class AssetController extends Controller
         protected AssetCodeService $assetCodeService
     ) {}
 
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(ListAssetsRequest $request, AssetRepository $assets): AnonymousResourceCollection
     {
         $this->authorize('viewAny', Asset::class);
 
-        $query = Asset::with(['assetCode.classification', 'assetCode.location', 'assetCode.item']);
-
-        if ($search = $request->string('search')->trim()->value()) {
-            $query->where(function ($q) use ($search) {
-                $q->where('serial_number', 'like', "%{$search}%")
-                    ->orWhere('brand', 'like', "%{$search}%")
-                    ->orWhere('model_specification', 'like', "%{$search}%")
-                    ->orWhere('location_detail', 'like', "%{$search}%")
-                    ->orWhere('notes', 'like', "%{$search}%")
-                    ->orWhereHas('assetCode', function ($qCode) use ($search) {
-                        $qCode->where('full_code', 'like', "%{$search}%")
-                            ->orWhereHas('item', function ($qItem) use ($search) {
-                                $qItem->where('name', 'like', "%{$search}%");
-                            })
-                            ->orWhereHas('location', function ($qLoc) use ($search) {
-                                $qLoc->where('name', 'like', "%{$search}%");
-                            })
-                            ->orWhereHas('classification', function ($qClass) use ($search) {
-                                $qClass->where('name', 'like', "%{$search}%");
-                            });
-                    });
-            });
-        }
-
-        $classificationId = $request->input('asset_classification_id', $request->input('classification_id'));
-        if ($classificationId !== null && $classificationId !== '') {
-            $query->whereHas('assetCode', function ($q) use ($classificationId) {
-                $q->where('asset_classification_id', $classificationId);
-            });
-        }
-
-        $locationId = $request->input('asset_location_id', $request->input('location_id'));
-        if ($locationId !== null && $locationId !== '') {
-            $query->whereHas('assetCode', function ($q) use ($locationId) {
-                $q->where('asset_location_id', $locationId);
-            });
-        }
-
-        $itemId = $request->input('asset_item_id', $request->input('item_id'));
-        if ($itemId !== null && $itemId !== '') {
-            $query->whereHas('assetCode', function ($q) use ($itemId) {
-                $q->where('asset_item_id', $itemId);
-            });
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->input('status'));
-        }
-
-        if ($request->filled('condition')) {
-            $query->where('condition', $request->input('condition'));
-        }
-
-        $year = $request->input('purchase_year', $request->input('year'));
-        if ($year !== null && $year !== '') {
-            $query->where('purchase_year', $year);
-        }
-
         $perPage = min(max($request->integer('per_page', 15), 1), 100);
 
-        $assets = $query->latest('id')->paginate($perPage);
-
-        return AssetResource::collection($assets);
+        return AssetResource::collection(
+            $assets->filteredQuery($request->validated())->orderByDesc('assets.id')->paginate($perPage)
+        );
     }
 
     public function previewCode(Request $request): JsonResponse

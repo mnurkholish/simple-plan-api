@@ -28,26 +28,57 @@ paths:
   /asset-label-exports:
     post:
       tags: [Assets]
-      summary: Export selected inventory labels as an A4 PDF
+      summary: Export inventory labels as an A4 PDF
       operationId: exportAssetLabels
-      description: Creates a PDF synchronously with labels ordered by asset_ids. Only assets the caller may print are included. Each A4 page has 10 mm margins and 2 mm gaps between labels.
+      description: |
+        Creates a PDF synchronously. In selected mode labels follow asset_ids order.
+        In all_filtered mode the same filters as GET /assets are applied without
+        pagination, and labels follow descending asset ID order. Only Inventory
+        assets with an asset code can be printed. Each asset requires printLabel
+        authorization. A4 pages use 10 mm margins and 2 mm gaps. For backward
+        compatibility, omitting selection_mode is equivalent to selected.
       x-auth-required: true
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [asset_ids, width_mm, height_mm]
-              properties:
-                asset_ids:
-                  type: array
-                  minItems: 1
-                  uniqueItems: true
-                  items: { type: integer, minimum: 1 }
-                  example: [1, 2, 3, 4, 5]
-                width_mm: { type: number, minimum: 70, maximum: 150, example: 90 }
-                height_mm: { type: number, minimum: 40, maximum: 100, example: 50 }
+              oneOf:
+                - type: object
+                  required: [asset_ids, width_mm, height_mm]
+                  properties:
+                    selection_mode: { type: string, const: selected, default: selected }
+                    asset_ids:
+                      type: array
+                      minItems: 1
+                      uniqueItems: true
+                      items: { type: integer, minimum: 1 }
+                      example: [1, 2, 3]
+                    width_mm: { type: number, minimum: 70, maximum: 150, example: 90 }
+                    height_mm: { type: number, minimum: 40, maximum: 100, example: 50 }
+                - type: object
+                  required: [selection_mode, filters, width_mm, height_mm]
+                  properties:
+                    selection_mode: { type: string, const: all_filtered }
+                    filters:
+                      type: object
+                      description: Uses the same filters as GET /assets. page and per_page are accepted but ignored.
+                      properties:
+                        search: { type: string }
+                        location_id: { type: integer }
+                        status: { type: string, enum: [Digunakan, Tidak Digunakan, Rusak, Dipinjam] }
+                        classification_id: { type: integer }
+                        moved_last_3_months: { type: boolean, description: 'When true, requires a location change in the last three months.' }
+                        asset_location_id: { type: integer, description: 'Legacy alias for location_id.' }
+                        asset_classification_id: { type: integer, description: 'Legacy alias for classification_id.' }
+                        asset_item_id: { type: integer }
+                        condition: { type: string, enum: [Baik, Rusak Ringan, Rusak Berat] }
+                        purchase_year: { type: integer }
+                        year: { type: integer, description: 'Legacy alias for purchase_year.' }
+                        page: { type: integer, description: 'Ignored for export.' }
+                        per_page: { type: integer, description: 'Ignored for export.' }
+                    width_mm: { type: number, minimum: 70, maximum: 150, example: 90 }
+                    height_mm: { type: number, minimum: 40, maximum: 100, example: 50 }
       responses:
         "200":
           description: A4 PDF containing all selected labels.
@@ -59,35 +90,60 @@ paths:
               schema: { type: string, format: binary }
         "401": { description: Unauthenticated. }
         "403": { description: Printing at least one selected asset is forbidden. }
-        "422": { description: Invalid asset IDs or label dimensions. }
+        "422": { description: "Invalid selection, filters, label dimensions, or no printable assets matched." }
 
   /assets:
     get:
       tags: [Assets]
-      summary: Daftar inventaris
+      summary: List inventory assets
       operationId: listInventoryAssets
       x-auth-required: true
+      description: Filters are optional, combined with AND, and applied before pagination. Results are ordered by descending asset ID. A true moved_last_3_months value requires at least one location change history within the last three months; false does not restrict the list.
       parameters:
         - name: search
           in: query
           schema: { type: string }
         - name: asset_classification_id
           in: query
+          description: Legacy alias for classification_id.
+          schema: { type: integer }
+        - name: classification_id
+          in: query
+          description: Filter by current asset classification.
           schema: { type: integer }
         - name: asset_location_id
           in: query
+          description: Legacy alias for location_id.
+          schema: { type: integer }
+        - name: location_id
+          in: query
+          description: Filter by current asset room, through asset_codes.asset_location_id.
           schema: { type: integer }
         - name: asset_item_id
           in: query
           schema: { type: integer }
+        - name: status
+          in: query
+          schema: { type: string, enum: [Digunakan, Tidak Digunakan, Rusak, Dipinjam] }
+        - name: condition
+          in: query
+          schema: { type: string, enum: [Baik, Rusak Ringan, Rusak Berat] }
         - name: purchase_year
           in: query
           schema: { type: integer }
+        - name: year
+          in: query
+          description: Legacy alias for purchase_year.
+          schema: { type: integer }
+        - name: moved_last_3_months
+          in: query
+          description: When true, include only assets with a location change in the last three months.
+          schema: { type: boolean }
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/PerPage"
       responses:
         "200":
-          description: Daftar aset dengan pagination.
+          description: Paginated assets.
           content:
             application/json:
               schema:
@@ -96,6 +152,9 @@ paths:
                   data:
                     type: array
                     items: { $ref: "#/components/schemas/InventoryAsset" }
+        "401": { description: Unauthenticated. }
+        "403": { description: Inventory access forbidden. }
+        "422": { description: Invalid filter value. }
     post:
       tags: [Assets]
       summary: Registrasi aset fisik

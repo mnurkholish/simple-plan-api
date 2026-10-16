@@ -2038,19 +2038,27 @@ class ApiDocumentation
      *     path="/assets",
      *     tags={"Inventory - Assets"},
      *     summary="List assets",
-     *     description="List assets with live search and multi-filter support",
+     *     description="Filters are optional and combined with AND before pagination. Assets are ordered by descending ID. A true moved_last_3_months value requires a location change in the last three months; false does not restrict results.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(name="search", in="query", required=false, description="Live search by serial number, notes, full code, item name, asset brand, location name, or classification name", @OA\Schema(type="string")),
      *     @OA\Parameter(name="asset_classification_id", in="query", required=false, description="Filter by classification ID", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="classification_id", in="query", required=false, description="Filter by current asset classification; alias of asset_classification_id", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="asset_location_id", in="query", required=false, description="Filter by location ID", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="location_id", in="query", required=false, description="Filter by current asset room through asset_codes.asset_location_id; alias of asset_location_id", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="asset_item_id", in="query", required=false, description="Filter by item ID", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="status", in="query", required=false, description="Filter by asset status", @OA\Schema(type="string", enum={"Digunakan", "Tidak Digunakan", "Rusak", "Dipinjam"})),
      *     @OA\Parameter(name="condition", in="query", required=false, description="Filter by asset condition", @OA\Schema(type="string", enum={"Baik", "Rusak Ringan", "Rusak Berat"})),
      *     @OA\Parameter(name="purchase_year", in="query", required=false, description="Filter by purchase year", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="year", in="query", required=false, description="Alias of purchase_year", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="moved_last_3_months", in="query", required=false, description="When true, require a location change history from the last three months", @OA\Schema(type="boolean")),
      *     @OA\Parameter(name="per_page", in="query", required=false, description="Items per page (max 100)", @OA\Schema(type="integer", default=15)),
+     *     @OA\Parameter(name="page", in="query", required=false, description="Page number", @OA\Schema(type="integer", default=1)),
      *
-     *     @OA\Response(response=200, description="List of assets")
+     *     @OA\Response(response=200, description="Paginated assets"),
+     *     @OA\Response(response=401, description="Unauthenticated"),
+     *     @OA\Response(response=403, description="Inventory access forbidden"),
+     *     @OA\Response(response=422, description="Invalid filter value")
      * )
      */
     public function assetsIndex(): void {}
@@ -2302,19 +2310,43 @@ class ApiDocumentation
      *     path="/asset-label-exports",
      *     operationId="exportAssetLabels",
      *     tags={"Inventory - QrCode Label"},
-     *     summary="Export selected inventory labels as an A4 PDF",
-     *     description="Generates one PDF synchronously. Labels follow the requested asset order and are arranged on A4 portrait pages with 10 mm margins and 2 mm gaps. Printing each asset requires printLabel authorization.",
+     *     summary="Export inventory labels as an A4 PDF",
+     *     description="Generates one PDF synchronously. Selected mode follows asset_ids order; omitting selection_mode keeps legacy selected behavior. All_filtered mode reapplies list filters without pagination and orders labels by descending asset ID. Only coded Inventory assets can be printed. Each asset requires printLabel authorization. A4 pages use 10 mm margins and 2 mm gaps.",
      *     security={{"sanctum":{}}},
      *     @OA\RequestBody(required=true, @OA\JsonContent(
-     *         required={"asset_ids", "width_mm", "height_mm"},
-     *         @OA\Property(property="asset_ids", type="array", minItems=1, uniqueItems=true, @OA\Items(type="integer", minimum=1), example={1,2,3,4,5}),
-     *         @OA\Property(property="width_mm", type="number", format="float", minimum=70, maximum=150, example=90),
-     *         @OA\Property(property="height_mm", type="number", format="float", minimum=40, maximum=100, example=50)
+     *         oneOf={
+     *             @OA\Schema(required={"asset_ids", "width_mm", "height_mm"},
+     *                 @OA\Property(property="selection_mode", type="string", enum={"selected"}, default="selected"),
+     *                 @OA\Property(property="asset_ids", type="array", minItems=1, uniqueItems=true, @OA\Items(type="integer", minimum=1), example={1,2,3}),
+     *                 @OA\Property(property="width_mm", type="number", format="float", minimum=70, maximum=150, example=90),
+     *                 @OA\Property(property="height_mm", type="number", format="float", minimum=40, maximum=100, example=50)
+     *             ),
+     *             @OA\Schema(required={"selection_mode", "filters", "width_mm", "height_mm"},
+     *                 @OA\Property(property="selection_mode", type="string", enum={"all_filtered"}),
+     *                 @OA\Property(property="filters", type="object", description="Same filters as GET /assets; page and per_page are accepted but ignored",
+     *                     @OA\Property(property="search", type="string"),
+     *                     @OA\Property(property="location_id", type="integer"),
+     *                     @OA\Property(property="classification_id", type="integer"),
+     *                     @OA\Property(property="status", type="string", enum={"Digunakan", "Tidak Digunakan", "Rusak", "Dipinjam"}),
+     *                     @OA\Property(property="moved_last_3_months", type="boolean"),
+     *                     @OA\Property(property="asset_location_id", type="integer", description="Alias of location_id"),
+     *                     @OA\Property(property="asset_classification_id", type="integer", description="Alias of classification_id"),
+     *                     @OA\Property(property="asset_item_id", type="integer"),
+     *                     @OA\Property(property="condition", type="string", enum={"Baik", "Rusak Ringan", "Rusak Berat"}),
+     *                     @OA\Property(property="purchase_year", type="integer"),
+     *                     @OA\Property(property="year", type="integer", description="Alias of purchase_year"),
+     *                     @OA\Property(property="page", type="integer", description="Ignored for export"),
+     *                     @OA\Property(property="per_page", type="integer", description="Ignored for export")
+     *                 ),
+     *                 @OA\Property(property="width_mm", type="number", format="float", minimum=70, maximum=150, example=90),
+     *                 @OA\Property(property="height_mm", type="number", format="float", minimum=40, maximum=100, example=50)
+     *             )
+     *         }
      *     )),
      *     @OA\Response(response=200, description="A4 PDF containing the selected labels", @OA\MediaType(mediaType="application/pdf", @OA\Schema(type="string", format="binary"))),
      *     @OA\Response(response=401, description="Unauthenticated"),
      *     @OA\Response(response=403, description="Printing at least one selected asset is forbidden"),
-     *     @OA\Response(response=422, description="Invalid asset IDs or label dimensions")
+     *     @OA\Response(response=422, description="Invalid selection, filters, dimensions, or no printable assets matched")
      * )
      */
     public function assetLabelExportsStore(): void {}

@@ -27,34 +27,28 @@ beforeEach(function (): void {
 
 function labelAssets(int $count): array
 {
-    $ids = [];
-
-    for ($number = 1; $number <= $count; $number++) {
-        $code = AssetCode::create([
-            'asset_classification_id' => AssetClassification::firstOrFail()->id,
-            'asset_location_id' => AssetLocation::firstOrFail()->id,
-            'asset_item_id' => AssetItem::firstOrFail()->id,
-            'sequence_number' => $number,
-            'full_code' => "5/10/{$number}/20/2021",
-        ]);
-
-        $ids[] = Asset::create([
-            'asset_code_id' => $code->id,
-            'asset_number' => (string) $number,
-            'name' => 'Komputer',
-            'model_specification' => "Model {$number}",
-            'condition' => 'Baik',
-            'status' => 'Digunakan',
-        ])->id;
-    }
-
-    return $ids;
+    return Asset::factory()->count($count)->state([
+        'purchase_year' => 2021,
+    ])->create()->pluck('id')->all();
 }
 
 function labelExportPayload(array $ids, float $width = 90, float $height = 50): array
 {
     return ['asset_ids' => $ids, 'width_mm' => $width, 'height_mm' => $height];
 }
+
+test('asset factory creates unique inventory codes and model-generated UIDs', function (): void {
+    $unsaved = Asset::factory()->make();
+    expect($unsaved->exists)->toBeFalse()
+        ->and(AssetCode::count())->toBe(0);
+
+    $assets = Asset::factory()->count(3)->state(['purchase_year' => 2024])->create();
+
+    expect($assets->pluck('asset_uid')->unique()->count())->toBe(3)
+        ->and($assets->pluck('asset_code_id')->unique()->count())->toBe(3)
+        ->and($assets->map(fn (Asset $asset): string => $asset->assetCode->full_code)->all())
+        ->toBe(['5/10/1/20/2024', '5/10/2/20/2024', '5/10/3/20/2024']);
+});
 
 test('A4 export paginates all selected labels without an extra page', function (int $count, int $pages): void {
     $ids = labelAssets($count);
@@ -146,7 +140,7 @@ test('each label has its own QR image and the single label HTML remains availabl
         ->assertOk()
         ->assertHeader('Content-Type', 'text/html; charset=UTF-8')
         ->assertSee($first['inventoryNumber'])
-        ->assertSee('Model 1');
+        ->assertSee($first['asset']->model_specification);
 });
 
 test('single label PNG and PDF exports still work with requested dimensions', function (): void {
