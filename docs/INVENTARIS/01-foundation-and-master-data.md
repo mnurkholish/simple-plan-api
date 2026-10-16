@@ -12,6 +12,7 @@ Fondasi Master Data modul inventaris yang mencakup enum berbahasa Indonesia, dat
   - Mendukung Live Search via `?search=` (mencari kode/nama) dan pagination dinamis via `?per_page=`. Kode master lokasi dan barang tetap integer unik yang disediakan saat pembuatan.
 - **`AssetCodeService`**:
   - Format kode fisik: `{class_code}/{loc_code}/{seq_num}/{item_code}/{year}` (contoh: `5/10/1/12/2026`).
+  - Nomor urut untuk kombinasi klasifikasi, lokasi, dan barang berlanjut meskipun tahun pembelian berbeda.
   - Mengunci baris klasifikasi saat alokasi nomor dalam transaksi dan memeriksa kode aktif serta kode lama dalam `asset_histories` agar nomor yang pernah digunakan tidak terbit ulang.
   - Tahun pada kode diambil dari `assets.purchase_year`.
 
