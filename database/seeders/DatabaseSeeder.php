@@ -24,7 +24,8 @@ class DatabaseSeeder extends Seeder
             SarprasCategorySeeder::class,
             UserSeeder::class,
             UserExcelSeeder::class,
-            MockAssetSeeder::class,
+            InventoryMasterSeeder::class,
+            InventoryAssetSeeder::class,
         ]);
     }
 }
