@@ -1893,6 +1893,7 @@ class ApiDocumentation
      *
      *     @OA\Parameter(name="search", in="query", required=false, description="Live search by name or code", @OA\Schema(type="string")),
      *     @OA\Parameter(name="per_page", in="query", required=false, description="Items per page", @OA\Schema(type="integer", default=15)),
+     *     @OA\Parameter(name="page", in="query", required=false, description="Page number", @OA\Schema(type="integer", default=1)),
      *
      *     @OA\Response(response=200, description="Successful operation")
      * )
@@ -1958,9 +1959,12 @@ class ApiDocumentation
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(name="search", in="query", required=false, description="Live search by name or code", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="location_id", in="query", required=false, description="Only items used by active assets at this location", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="per_page", in="query", required=false, description="Items per page", @OA\Schema(type="integer", default=15)),
+     *     @OA\Parameter(name="page", in="query", required=false, description="Page number", @OA\Schema(type="integer", default=1)),
      *
-     *     @OA\Response(response=200, description="Successful operation")
+     *     @OA\Response(response=200, description="Successful operation"),
+     *     @OA\Response(response=422, description="Invalid location_id")
      * )
      */
     public function assetItemsIndex(): void {}

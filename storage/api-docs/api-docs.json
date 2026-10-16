@@ -3785,6 +3785,16 @@
                             "type": "integer",
                             "default": 15
                         }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
                     }
                 ],
                 "responses": {
@@ -3923,6 +3933,15 @@
                         }
                     },
                     {
+                        "name": "location_id",
+                        "in": "query",
+                        "description": "Only items used by active assets at this location",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
                         "name": "per_page",
                         "in": "query",
                         "description": "Items per page",
@@ -3931,11 +3950,24 @@
                             "type": "integer",
                             "default": 15
                         }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "Successful operation"
+                    },
+                    "422": {
+                        "description": "Invalid location_id"
                     }
                 },
                 "security": [

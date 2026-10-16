@@ -3,21 +3,27 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ListAssetItemsRequest;
 use App\Http\Requests\StoreAssetItemRequest;
 use App\Http\Requests\UpdateAssetItemRequest;
 use App\Models\Asset;
 use App\Models\AssetCode;
 use App\Models\AssetItem;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 class AssetItemController extends Controller
 {
-    public function index(Request $request): JsonResponse
+    public function index(ListAssetItemsRequest $request): JsonResponse
     {
         $this->authorize('viewAny', Asset::class);
         $query = AssetItem::query();
+
+        if (($locationId = $request->validated('location_id')) !== null) {
+            $query->whereHas('assetCodes', fn ($assetCodes) => $assetCodes
+                ->where('asset_location_id', $locationId)
+                ->whereHas('asset'));
+        }
 
         if ($search = $request->string('search')->trim()->value()) {
             $query->where(function ($q) use ($search) {

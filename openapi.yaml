@@ -273,6 +273,37 @@ paths:
         "200": { description: Aset dihapus secara soft delete; kode tetap tersimpan. }
 
   /asset-items:
+    get:
+      tags: [Assets]
+      summary: List inventory item master data
+      operationId: listAssetItems
+      x-auth-required: true
+      description: When location_id is supplied, only item types belonging to an active asset at that location are returned.
+      parameters:
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: location_id
+          in: query
+          description: Filter items to those used by an active asset at this location.
+          schema: { type: integer }
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+      responses:
+        "200":
+          description: Asset item options. Pagination metadata is included when page or per_page is supplied.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/InventoryMaster" }
+        "401": { description: Unauthenticated. }
+        "403": { description: Inventory access forbidden. }
+        "422": { description: Invalid location_id. }
     post:
       tags: [Assets]
       operationId: createAssetItem
@@ -287,6 +318,32 @@ paths:
         "201": { description: Master barang dibuat. }
 
   /asset-locations:
+    get:
+      tags: [Assets]
+      summary: List inventory location master data
+      operationId: listAssetLocations
+      x-auth-required: true
+      description: Returns the asset location master data using the existing search and optional pagination behavior.
+      parameters:
+        - name: search
+          in: query
+          schema: { type: string }
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+      responses:
+        "200":
+          description: Asset location options. Pagination metadata is included when page or per_page is supplied.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/InventoryMaster" }
+        "401": { description: Unauthenticated. }
+        "403": { description: Inventory access forbidden. }
     post:
       tags: [Assets]
       operationId: createAssetLocation
@@ -913,6 +970,16 @@ components:
         default: 15
 
   schemas:
+    InventoryMaster:
+      type: object
+      required: [id, code, name]
+      properties:
+        id: { type: integer }
+        code: { type: integer }
+        name: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
     InventoryMasterInput:
       type: object
       required: [code, name]
