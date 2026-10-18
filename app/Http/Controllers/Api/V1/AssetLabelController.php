@@ -31,7 +31,7 @@ class AssetLabelController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Request $request, Asset $asset, AssetLabelService $service) : Response
+    public function show(Request $request, Asset $asset, AssetLabelService $service): Response
     {
         Gate::authorize('view', $asset);
 
@@ -64,9 +64,8 @@ class AssetLabelController extends Controller
                 200,
                 array_merge($headers, [
                     'Content-Type' => 'image/png',
-                    'Content-Disposition' =>
-                        'attachment; filename="asset-label-'
-                        . $asset->asset_uid . '.png"',
+                    'Content-Disposition' => 'attachment; filename="asset-label-'
+                        .$asset->asset_uid.'.png"',
                 ])
             );
         }
@@ -77,9 +76,8 @@ class AssetLabelController extends Controller
                 200,
                 array_merge($headers, [
                     'Content-Type' => 'application/pdf',
-                    'Content-Disposition' =>
-                        'attachment; filename="asset-label-'
-                        . $asset->asset_uid . '.pdf"',
+                    'Content-Disposition' => 'attachment; filename="asset-label-'
+                        .$asset->asset_uid.'.pdf"',
                 ])
             );
         }

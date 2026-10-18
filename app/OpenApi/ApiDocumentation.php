@@ -2173,6 +2173,7 @@ class ApiDocumentation
      *         in="path",
      *         required=true,
      *         description="Unique asset ID (assets.id)",
+     *
      *         @OA\Schema(
      *             type="integer",
      *             example=1
@@ -2182,14 +2183,17 @@ class ApiDocumentation
      *     @OA\Response(
      *         response=200,
      *         description="Asset QR code generated successfully",
+     *
      *         @OA\MediaType(
      *             mediaType="image/svg+xml",
+     *
      *             @OA\Schema(
      *                 type="string",
      *                 format="binary"
      *             )
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=401,
      *         description="Unauthenticated"
@@ -2204,7 +2208,7 @@ class ApiDocumentation
      *     )
      * )
      */
-    public function assetsQrCodeShow() : void {}
+    public function assetsQrCodeShow(): void {}
 
     /**
      * @OA\Get(
@@ -2220,6 +2224,7 @@ class ApiDocumentation
      *         in="path",
      *         required=true,
      *         description="Unique asset ID",
+     *
      *         @OA\Schema(
      *             type="integer",
      *             example=1
@@ -2231,17 +2236,20 @@ class ApiDocumentation
      *         in="query",
      *         required=false,
      *         description="Label output format. Defaults to HTML.",
+     *
      *         @OA\Schema(
      *             type="string",
      *             enum={"html", "png", "pdf"},
      *             default="html"
      *         )
      *     ),
+     *
      *    @OA\Parameter(
      *        name="width_mm",
      *        in="query",
      *        required=false,
      *        description="Label width in millimeters.",
+     *
      *        @OA\Schema(
      *            type="number",
      *            format="float",
@@ -2257,6 +2265,7 @@ class ApiDocumentation
      *        in="query",
      *        required=false,
      *        description="Label height in millimeters.",
+     *
      *        @OA\Schema(
      *            type="number",
      *            format="float",
@@ -2270,25 +2279,32 @@ class ApiDocumentation
      *     @OA\Response(
      *         response=200,
      *         description="Asset label generated successfully",
+     *
      *         @OA\MediaType(
      *             mediaType="text/html",
+     *
      *             @OA\Schema(type="string")
      *         ),
+     *
      *         @OA\MediaType(
      *             mediaType="image/png",
+     *
      *             @OA\Schema(
      *                 type="string",
      *                 format="binary"
      *             )
      *         ),
+     *
      *         @OA\MediaType(
      *             mediaType="application/pdf",
+     *
      *             @OA\Schema(
      *                 type="string",
      *                 format="binary"
      *             )
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=401,
      *         description="Unauthenticated"
@@ -2307,7 +2323,7 @@ class ApiDocumentation
      *     )
      * )
      */
-    public function assetLabelShow() : Void {}
+    public function assetLabelShow(): void {}
 
     /**
      * @OA\Post(
@@ -2317,15 +2333,20 @@ class ApiDocumentation
      *     summary="Export inventory labels as an A4 PDF",
      *     description="Generates one PDF synchronously. Selected mode follows asset_ids order; omitting selection_mode keeps legacy selected behavior. All_filtered mode reapplies list filters without pagination and orders labels by descending asset ID. Only coded Inventory assets can be printed. Each asset requires printLabel authorization. A4 pages use 10 mm margins and 2 mm gaps.",
      *     security={{"sanctum":{}}},
+     *
      *     @OA\RequestBody(required=true, @OA\JsonContent(
      *         oneOf={
+     *
      *             @OA\Schema(required={"asset_ids", "width_mm", "height_mm"},
+     *
      *                 @OA\Property(property="selection_mode", type="string", enum={"selected"}, default="selected"),
      *                 @OA\Property(property="asset_ids", type="array", minItems=1, uniqueItems=true, @OA\Items(type="integer", minimum=1), example={1,2,3}),
      *                 @OA\Property(property="width_mm", type="number", format="float", minimum=50, maximum=150, example=90),
      *                 @OA\Property(property="height_mm", type="number", format="float", minimum=25, maximum=100, example=50)
      *             ),
+     *
      *             @OA\Schema(required={"selection_mode", "filters", "width_mm", "height_mm"},
+     *
      *                 @OA\Property(property="selection_mode", type="string", enum={"all_filtered"}),
      *                 @OA\Property(property="filters", type="object", description="Same filters as GET /assets; page and per_page are accepted but ignored",
      *                     @OA\Property(property="search", type="string"),
@@ -2347,6 +2368,7 @@ class ApiDocumentation
      *             )
      *         }
      *     )),
+     *
      *     @OA\Response(response=200, description="A4 PDF containing the selected labels", @OA\MediaType(mediaType="application/pdf", @OA\Schema(type="string", format="binary"))),
      *     @OA\Response(response=401, description="Unauthenticated"),
      *     @OA\Response(response=403, description="Printing at least one selected asset is forbidden"),

@@ -10,7 +10,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class AssetQrCodeController extends Controller
 {
-    public function show( Asset $asset, AssetQrCodeService $qrService ): Response 
+    public function show(Asset $asset, AssetQrCodeService $qrService): Response
     {
         Gate::authorize('view', $asset);
 

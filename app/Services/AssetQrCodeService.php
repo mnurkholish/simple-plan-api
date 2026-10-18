@@ -3,8 +3,8 @@
 namespace App\Services;
 
 use App\Models\Asset;
-use Endroid\QrCode\QrCode;
 use Endroid\QrCode\ErrorCorrectionLevel;
+use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\SvgWriter;
 
 class AssetQrCodeService
@@ -16,7 +16,7 @@ class AssetQrCodeService
             '/'
         );
 
-        $url = $baseUrl . '/' . $asset->asset_uid;
+        $url = $baseUrl.'/'.$asset->asset_uid;
 
         $qrCode = new QrCode(
             data: $url,
@@ -25,7 +25,7 @@ class AssetQrCodeService
             errorCorrectionLevel: ErrorCorrectionLevel::Medium
         );
 
-        $writer = new SvgWriter();
+        $writer = new SvgWriter;
 
         return $writer->write($qrCode)->getString();
     }
