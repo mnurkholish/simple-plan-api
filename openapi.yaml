@@ -25,6 +25,41 @@ tags:
     description: Pengelolaan dan pencarian user
 
 paths:
+  /assets/{asset}/label:
+    get:
+      tags: [Assets]
+      summary: Preview or download an inventory asset label
+      operationId: getAssetLabel
+      x-auth-required: true
+      parameters:
+        - name: asset
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: format
+          in: query
+          schema: { type: string, enum: [html, png, pdf], default: html }
+        - name: width_mm
+          in: query
+          schema: { type: number, minimum: 50, maximum: 150, default: 90 }
+        - name: height_mm
+          in: query
+          schema: { type: number, minimum: 25, maximum: 100, default: 50 }
+      responses:
+        "200":
+          description: The inventory label in the requested format.
+          content:
+            text/html:
+              schema: { type: string }
+            image/png:
+              schema: { type: string, format: binary }
+            application/pdf:
+              schema: { type: string, format: binary }
+        "401": { description: Unauthenticated. }
+        "403": { description: Label access or printing is forbidden. }
+        "404": { description: Asset not found. }
+        "422": { description: Invalid format or label dimensions. }
+
   /asset-label-exports:
     post:
       tags: [Assets]
@@ -54,8 +89,8 @@ paths:
                       uniqueItems: true
                       items: { type: integer, minimum: 1 }
                       example: [1, 2, 3]
-                    width_mm: { type: number, minimum: 70, maximum: 150, example: 90 }
-                    height_mm: { type: number, minimum: 40, maximum: 100, example: 50 }
+                    width_mm: { type: number, minimum: 50, maximum: 150, example: 90 }
+                    height_mm: { type: number, minimum: 25, maximum: 100, example: 50 }
                 - type: object
                   required: [selection_mode, filters, width_mm, height_mm]
                   properties:
@@ -77,8 +112,8 @@ paths:
                         year: { type: integer, description: 'Legacy alias for purchase_year.' }
                         page: { type: integer, description: 'Ignored for export.' }
                         per_page: { type: integer, description: 'Ignored for export.' }
-                    width_mm: { type: number, minimum: 70, maximum: 150, example: 90 }
-                    height_mm: { type: number, minimum: 40, maximum: 100, example: 50 }
+                    width_mm: { type: number, minimum: 50, maximum: 150, example: 90 }
+                    height_mm: { type: number, minimum: 25, maximum: 100, example: 50 }
       responses:
         "200":
           description: A4 PDF containing all selected labels.

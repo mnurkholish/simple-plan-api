@@ -8,7 +8,6 @@ use App\Models\Asset;
 use App\Repositories\AssetRepository;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
-use Spatie\Browsershot\Browsershot;
 
 class AssetLabelExportService
 {
@@ -59,7 +58,7 @@ class AssetLabelExportService
             'gapMm' => self::GAP_MM,
         ])->render();
 
-        return Browsershot::html($html)
+        return ConfiguredBrowsershot::html($html)
             ->format('A4')
             ->margins(self::MARGIN_MM, self::MARGIN_MM, self::MARGIN_MM, self::MARGIN_MM)
             ->showBackground()

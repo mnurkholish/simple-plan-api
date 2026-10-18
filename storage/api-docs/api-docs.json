@@ -4665,7 +4665,7 @@
                             "example": 80,
                             "default": 90,
                             "maximum": 150,
-                            "minimum": 70
+                            "minimum": 50
                         }
                     },
                     {
@@ -4679,7 +4679,7 @@
                             "example": 40,
                             "default": 50,
                             "maximum": 100,
-                            "minimum": 40
+                            "minimum": 25
                         }
                     }
                 ],
@@ -4773,14 +4773,14 @@
                                                 "format": "float",
                                                 "example": 90,
                                                 "maximum": 150,
-                                                "minimum": 70
+                                                "minimum": 50
                                             },
                                             "height_mm": {
                                                 "type": "number",
                                                 "format": "float",
                                                 "example": 50,
                                                 "maximum": 100,
-                                                "minimum": 40
+                                                "minimum": 25
                                             }
                                         },
                                         "type": "object"
@@ -4865,14 +4865,14 @@
                                                 "format": "float",
                                                 "example": 90,
                                                 "maximum": 150,
-                                                "minimum": 70
+                                                "minimum": 50
                                             },
                                             "height_mm": {
                                                 "type": "number",
                                                 "format": "float",
                                                 "example": 50,
                                                 "maximum": 100,
-                                                "minimum": 40
+                                                "minimum": 25
                                             }
                                         },
                                         "type": "object"

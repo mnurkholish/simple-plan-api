@@ -15,5 +15,6 @@
             @endforeach
         </div>
     @endforeach
+    @include('inventory.labels.partials.fit')
 </body>
 </html>

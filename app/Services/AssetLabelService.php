@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Asset;
 use BackedEnum;
-use Spatie\Browsershot\Browsershot;
 
 class AssetLabelService
 {
@@ -52,7 +51,7 @@ class AssetLabelService
     {
         $html = $this->renderHtml($asset, $widthMm, $heightMm);
 
-        return Browsershot::html($html)
+        return ConfiguredBrowsershot::html($html)
             ->windowSize(800, 600)
             ->deviceScaleFactor(3)
             ->select('.asset-label')
@@ -63,7 +62,7 @@ class AssetLabelService
     {
         $html = $this->renderHtml($asset, $widthMm, $heightMm);
 
-        return Browsershot::html($html)
+        return ConfiguredBrowsershot::html($html)
             ->paperSize($widthMm, $heightMm, 'mm')
             ->margins(0, 0, 0, 0)
             ->showBackground()

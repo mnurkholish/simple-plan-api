@@ -37,8 +37,8 @@ class ExportAssetLabelsRequest extends FormRequest
             ...ListAssetsRequest::filterRules('filters.'),
             'filters.page' => ['sometimes', 'integer', 'min:1'],
             'filters.per_page' => ['sometimes', 'integer', 'min:1'],
-            'width_mm' => ['required', 'numeric', 'min:70', 'max:150'],
-            'height_mm' => ['required', 'numeric', 'min:40', 'max:100'],
+            'width_mm' => ['required', 'numeric', 'min:50', 'max:150'],
+            'height_mm' => ['required', 'numeric', 'min:25', 'max:100'],
         ];
     }
 }

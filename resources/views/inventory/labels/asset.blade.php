@@ -10,5 +10,6 @@
     <div class="asset-label">
         @include('inventory.labels.partials.content')
     </div>
+    @include('inventory.labels.partials.fit')
 </body>
 </html>

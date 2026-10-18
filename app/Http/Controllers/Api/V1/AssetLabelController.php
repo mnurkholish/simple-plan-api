@@ -41,8 +41,8 @@ class AssetLabelController extends Controller
                 'string',
                 Rule::in(['html', 'png', 'pdf']),
             ],
-            'width_mm' => ['sometimes', 'numeric', 'min:70', 'max:150'],
-            'height_mm' => ['sometimes', 'numeric', 'min:40', 'max:100'],
+            'width_mm' => ['sometimes', 'numeric', 'min:50', 'max:150'],
+            'height_mm' => ['sometimes', 'numeric', 'min:25', 'max:100'],
         ]);
 
         $format = $validated['format'] ?? 'html';

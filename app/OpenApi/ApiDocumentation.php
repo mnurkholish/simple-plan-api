@@ -2245,7 +2245,7 @@ class ApiDocumentation
      *        @OA\Schema(
      *            type="number",
      *            format="float",
-     *            minimum=70,
+     *            minimum=50,
      *            maximum=150,
      *            default=90,
      *            example=80
@@ -2260,7 +2260,7 @@ class ApiDocumentation
      *        @OA\Schema(
      *            type="number",
      *            format="float",
-     *            minimum=40,
+     *            minimum=25,
      *            maximum=100,
      *            default=50,
      *            example=40
@@ -2322,8 +2322,8 @@ class ApiDocumentation
      *             @OA\Schema(required={"asset_ids", "width_mm", "height_mm"},
      *                 @OA\Property(property="selection_mode", type="string", enum={"selected"}, default="selected"),
      *                 @OA\Property(property="asset_ids", type="array", minItems=1, uniqueItems=true, @OA\Items(type="integer", minimum=1), example={1,2,3}),
-     *                 @OA\Property(property="width_mm", type="number", format="float", minimum=70, maximum=150, example=90),
-     *                 @OA\Property(property="height_mm", type="number", format="float", minimum=40, maximum=100, example=50)
+     *                 @OA\Property(property="width_mm", type="number", format="float", minimum=50, maximum=150, example=90),
+     *                 @OA\Property(property="height_mm", type="number", format="float", minimum=25, maximum=100, example=50)
      *             ),
      *             @OA\Schema(required={"selection_mode", "filters", "width_mm", "height_mm"},
      *                 @OA\Property(property="selection_mode", type="string", enum={"all_filtered"}),
@@ -2342,8 +2342,8 @@ class ApiDocumentation
      *                     @OA\Property(property="page", type="integer", description="Ignored for export"),
      *                     @OA\Property(property="per_page", type="integer", description="Ignored for export")
      *                 ),
-     *                 @OA\Property(property="width_mm", type="number", format="float", minimum=70, maximum=150, example=90),
-     *                 @OA\Property(property="height_mm", type="number", format="float", minimum=40, maximum=100, example=50)
+     *                 @OA\Property(property="width_mm", type="number", format="float", minimum=50, maximum=150, example=90),
+     *                 @OA\Property(property="height_mm", type="number", format="float", minimum=25, maximum=100, example=50)
      *             )
      *         }
      *     )),
