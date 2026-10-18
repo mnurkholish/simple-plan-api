@@ -138,7 +138,9 @@ Mengambil daftar jenis barang inventaris.
 - **Endpoint**: `/api/v1/asset-items`
 - **Query Parameters**:
   - `search` *(optional, string)*: Keyword pencarian pada nama atau kode barang.
+  - `location_id` *(optional, integer)*: Hanya menampilkan jenis barang yang memiliki aset aktif pada lokasi tersebut.
   - `per_page` *(optional, integer)*: Jumlah per halaman.
+  - `page` *(optional, integer)*: Nomor halaman.
 
 ### Contoh Response Sukses (200 OK)
 ```json

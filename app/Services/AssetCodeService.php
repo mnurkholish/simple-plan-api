@@ -27,7 +27,6 @@ class AssetCodeService
             ->where('asset_classification_id', $classificationId)
             ->where('asset_location_id', $locationId)
             ->where('asset_item_id', $itemId)
-            ->where('full_code', 'like', $prefix.'%'.$suffix)
             ->max('sequence_number') ?? 0) + 1;
 
         do {

@@ -3785,6 +3785,16 @@
                             "type": "integer",
                             "default": 15
                         }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
                     }
                 ],
                 "responses": {
@@ -3923,6 +3933,15 @@
                         }
                     },
                     {
+                        "name": "location_id",
+                        "in": "query",
+                        "description": "Only items used by active assets at this location",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
                         "name": "per_page",
                         "in": "query",
                         "description": "Items per page",
@@ -3931,11 +3950,24 @@
                             "type": "integer",
                             "default": 15
                         }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "Successful operation"
+                    },
+                    "422": {
+                        "description": "Invalid location_id"
                     }
                 },
                 "security": [
@@ -4111,7 +4143,7 @@
                     "Inventory - Assets"
                 ],
                 "summary": "List assets",
-                "description": "List assets with live search and multi-filter support",
+                "description": "Filters are optional and combined with AND before pagination. Assets are ordered by descending ID. A true moved_last_3_months value requires a location change in the last three months; false does not restrict results.",
                 "operationId": "9d3c28249bbce50e95d422c0b18d1ff8",
                 "parameters": [
                     {
@@ -4133,9 +4165,27 @@
                         }
                     },
                     {
+                        "name": "classification_id",
+                        "in": "query",
+                        "description": "Filter by current asset classification; alias of asset_classification_id",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
                         "name": "asset_location_id",
                         "in": "query",
                         "description": "Filter by location ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "location_id",
+                        "in": "query",
+                        "description": "Filter by current asset room through asset_codes.asset_location_id; alias of asset_location_id",
                         "required": false,
                         "schema": {
                             "type": "integer"
@@ -4189,6 +4239,24 @@
                         }
                     },
                     {
+                        "name": "year",
+                        "in": "query",
+                        "description": "Alias of purchase_year",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "moved_last_3_months",
+                        "in": "query",
+                        "description": "When true, require a location change history from the last three months",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
                         "name": "per_page",
                         "in": "query",
                         "description": "Items per page (max 100)",
@@ -4197,11 +4265,30 @@
                             "type": "integer",
                             "default": 15
                         }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "List of assets"
+                        "description": "Paginated assets"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Inventory access forbidden"
+                    },
+                    "422": {
+                        "description": "Invalid filter value"
                     }
                 },
                 "security": [
@@ -4475,6 +4562,346 @@
                 "responses": {
                     "200": {
                         "description": "Deleted"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/assets/{asset}/qr": {
+            "get": {
+                "tags": [
+                    "Inventory - QrCode Label"
+                ],
+                "summary": "Generate Asset QR Code",
+                "description": "Generates an SVG QR code containing the asset detail URL based on the asset's permanent asset_uid.",
+                "operationId": "getAssetQrCode",
+                "parameters": [
+                    {
+                        "name": "asset",
+                        "in": "path",
+                        "description": "Unique asset ID (assets.id)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Asset QR code generated successfully",
+                        "content": {
+                            "image/svg+xml": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Forbidden. You do not have permission to access this asset."
+                    },
+                    "404": {
+                        "description": "Asset not found"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/assets/{asset}/label": {
+            "get": {
+                "tags": [
+                    "Inventory - QrCode Label"
+                ],
+                "summary": "Get Asset Label",
+                "description": "Generates an asset label containing the inventory number, item name, location, condition, and QR code. Supports HTML, PNG, and PDF formats.",
+                "operationId": "getAssetLabel",
+                "parameters": [
+                    {
+                        "name": "asset",
+                        "in": "path",
+                        "description": "Unique asset ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "format",
+                        "in": "query",
+                        "description": "Label output format. Defaults to HTML.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "html",
+                            "enum": [
+                                "html",
+                                "png",
+                                "pdf"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "width_mm",
+                        "in": "query",
+                        "description": "Label width in millimeters.",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "format": "float",
+                            "example": 80,
+                            "default": 90,
+                            "maximum": 150,
+                            "minimum": 50
+                        }
+                    },
+                    {
+                        "name": "height_mm",
+                        "in": "query",
+                        "description": "Label height in millimeters.",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "format": "float",
+                            "example": 40,
+                            "default": 50,
+                            "maximum": 100,
+                            "minimum": 25
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Asset label generated successfully",
+                        "content": {
+                            "text/html": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            },
+                            "image/png": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            },
+                            "application/pdf": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Asset not found"
+                    },
+                    "422": {
+                        "description": "Invalid label format"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/asset-label-exports": {
+            "post": {
+                "tags": [
+                    "Inventory - QrCode Label"
+                ],
+                "summary": "Export inventory labels as an A4 PDF",
+                "description": "Generates one PDF synchronously. Selected mode follows asset_ids order; omitting selection_mode keeps legacy selected behavior. All_filtered mode reapplies list filters without pagination and orders labels by descending asset ID. Only coded Inventory assets can be printed. Each asset requires printLabel authorization. A4 pages use 10 mm margins and 2 mm gaps.",
+                "operationId": "exportAssetLabels",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "oneOf": [
+                                    {
+                                        "required": [
+                                            "asset_ids",
+                                            "width_mm",
+                                            "height_mm"
+                                        ],
+                                        "properties": {
+                                            "selection_mode": {
+                                                "type": "string",
+                                                "default": "selected",
+                                                "enum": [
+                                                    "selected"
+                                                ]
+                                            },
+                                            "asset_ids": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "integer",
+                                                    "minimum": 1
+                                                },
+                                                "example": [
+                                                    1,
+                                                    2,
+                                                    3
+                                                ],
+                                                "minItems": 1,
+                                                "uniqueItems": true
+                                            },
+                                            "width_mm": {
+                                                "type": "number",
+                                                "format": "float",
+                                                "example": 90,
+                                                "maximum": 150,
+                                                "minimum": 50
+                                            },
+                                            "height_mm": {
+                                                "type": "number",
+                                                "format": "float",
+                                                "example": 50,
+                                                "maximum": 100,
+                                                "minimum": 25
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    {
+                                        "required": [
+                                            "selection_mode",
+                                            "filters",
+                                            "width_mm",
+                                            "height_mm"
+                                        ],
+                                        "properties": {
+                                            "selection_mode": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "all_filtered"
+                                                ]
+                                            },
+                                            "filters": {
+                                                "description": "Same filters as GET /assets; page and per_page are accepted but ignored",
+                                                "properties": {
+                                                    "search": {
+                                                        "type": "string"
+                                                    },
+                                                    "location_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "classification_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "Digunakan",
+                                                            "Tidak Digunakan",
+                                                            "Rusak",
+                                                            "Dipinjam"
+                                                        ]
+                                                    },
+                                                    "moved_last_3_months": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "asset_location_id": {
+                                                        "description": "Alias of location_id",
+                                                        "type": "integer"
+                                                    },
+                                                    "asset_classification_id": {
+                                                        "description": "Alias of classification_id",
+                                                        "type": "integer"
+                                                    },
+                                                    "asset_item_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "condition": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "Baik",
+                                                            "Rusak Ringan",
+                                                            "Rusak Berat"
+                                                        ]
+                                                    },
+                                                    "purchase_year": {
+                                                        "type": "integer"
+                                                    },
+                                                    "year": {
+                                                        "description": "Alias of purchase_year",
+                                                        "type": "integer"
+                                                    },
+                                                    "page": {
+                                                        "description": "Ignored for export",
+                                                        "type": "integer"
+                                                    },
+                                                    "per_page": {
+                                                        "description": "Ignored for export",
+                                                        "type": "integer"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            },
+                                            "width_mm": {
+                                                "type": "number",
+                                                "format": "float",
+                                                "example": 90,
+                                                "maximum": 150,
+                                                "minimum": 50
+                                            },
+                                            "height_mm": {
+                                                "type": "number",
+                                                "format": "float",
+                                                "example": 50,
+                                                "maximum": 100,
+                                                "minimum": 25
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "A4 PDF containing the selected labels",
+                        "content": {
+                            "application/pdf": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Printing at least one selected asset is forbidden"
+                    },
+                    "422": {
+                        "description": "Invalid selection, filters, dimensions, or no printable assets matched"
                     }
                 },
                 "security": [
@@ -5810,6 +6237,10 @@
         {
             "name": "Inventory - Assets",
             "description": "Inventory - Assets"
+        },
+        {
+            "name": "Inventory - QrCode Label",
+            "description": "Inventory - QrCode Label"
         }
     ]
 }
