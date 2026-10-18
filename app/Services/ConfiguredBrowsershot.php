@@ -23,6 +23,10 @@ class ConfiguredBrowsershot extends Browsershot
 
         $this->setCustomTempPath($this->temporaryDirectory);
         $this->setNodeEnv(['PUPPETEER_TMP_DIR' => $this->temporaryDirectory]);
+
+        if (app()->environment('testing')) {
+            $this->noSandbox();
+        }
     }
 
     /** @return array<string, string|false> */
