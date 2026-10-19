@@ -168,11 +168,19 @@ test('pelapor harus memiliki unit untuk membuat tiket', function (): void {
 test('asset opsional dan asset yang valid dapat disambungkan ke tiket', function (): void {
     $unit = Unit::factory()->create();
     $reporter = User::factory()->create(['unit_id' => $unit->id]);
+    $classification = AssetClassification::create(['code' => 5, 'name' => 'Alat IT']);
+    $location = AssetLocation::create(['code' => 10, 'name' => 'Poli Umum']);
+    $item = AssetItem::create(['code' => 20, 'name' => 'Komputer Poli']);
+    $code = AssetCode::create([
+        'asset_classification_id' => $classification->id,
+        'asset_location_id' => $location->id,
+        'asset_item_id' => $item->id,
+        'sequence_number' => 1,
+        'full_code' => 'AST-0001',
+    ]);
     $asset = Asset::create([
-        'asset_number' => 'AST-0001',
-        'name' => 'Komputer Poli',
+        'asset_code_id' => $code->id,
         'brand' => 'Dell',
-        'location' => 'Poli Umum',
         'status' => AssetStatus::InUse->value,
         'condition' => AssetCondition::Good->value,
     ]);
@@ -240,8 +248,6 @@ test('asset yang tidak ditemukan akan ditolak', function (int $assetId): void {
     'asset tidak ditemukan' => 999999,
     'asset dihapus' => function (): int {
         $asset = Asset::create([
-            'asset_number' => 'AST-DELETED',
-            'name' => 'Aset Dihapus',
             'status' => AssetStatus::InUse->value,
             'condition' => AssetCondition::Good->value,
         ]);
