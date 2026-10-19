@@ -15,6 +15,7 @@ class AssetPolicy
             'petugas-tik',
             'petugas-sarpras',
             'manajemen',
+            'user',
         ]);
     }
 

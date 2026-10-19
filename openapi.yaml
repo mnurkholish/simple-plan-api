@@ -25,6 +25,373 @@ tags:
     description: Pengelolaan dan pencarian user
 
 paths:
+  /assets/{asset}/label:
+    get:
+      tags: [Assets]
+      summary: Preview or download an inventory asset label
+      operationId: getAssetLabel
+      x-auth-required: true
+      parameters:
+        - name: asset
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: format
+          in: query
+          schema: { type: string, enum: [html, png, pdf], default: html }
+        - name: width_mm
+          in: query
+          schema: { type: number, minimum: 50, maximum: 150, default: 90 }
+        - name: height_mm
+          in: query
+          schema: { type: number, minimum: 25, maximum: 100, default: 50 }
+      responses:
+        "200":
+          description: The inventory label in the requested format.
+          content:
+            text/html:
+              schema: { type: string }
+            image/png:
+              schema: { type: string, format: binary }
+            application/pdf:
+              schema: { type: string, format: binary }
+        "401": { description: Unauthenticated. }
+        "403": { description: Label access or printing is forbidden. }
+        "404": { description: Asset not found. }
+        "422": { description: Invalid format or label dimensions. }
+
+  /asset-label-exports:
+    post:
+      tags: [Assets]
+      summary: Export inventory labels as an A4 PDF
+      operationId: exportAssetLabels
+      description: |
+        Creates a PDF synchronously. In selected mode labels follow asset_ids order.
+        In all_filtered mode the same filters as GET /assets are applied without
+        pagination, and labels follow descending asset ID order. Only Inventory
+        assets with an asset code can be printed. Each asset requires printLabel
+        authorization. A4 pages use 10 mm margins and 2 mm gaps. For backward
+        compatibility, omitting selection_mode is equivalent to selected.
+      x-auth-required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  required: [asset_ids, width_mm, height_mm]
+                  properties:
+                    selection_mode: { type: string, const: selected, default: selected }
+                    asset_ids:
+                      type: array
+                      minItems: 1
+                      uniqueItems: true
+                      items: { type: integer, minimum: 1 }
+                      example: [1, 2, 3]
+                    width_mm: { type: number, minimum: 50, maximum: 150, example: 90 }
+                    height_mm: { type: number, minimum: 25, maximum: 100, example: 50 }
+                - type: object
+                  required: [selection_mode, filters, width_mm, height_mm]
+                  properties:
+                    selection_mode: { type: string, const: all_filtered }
+                    filters:
+                      type: object
+                      description: Uses the same filters as GET /assets. page and per_page are accepted but ignored.
+                      properties:
+                        search: { type: string }
+                        location_id: { type: integer }
+                        status: { type: string, enum: [Digunakan, Tidak Digunakan, Rusak, Dipinjam] }
+                        classification_id: { type: integer }
+                        moved_last_3_months: { type: boolean, description: 'When true, requires a location change in the last three months.' }
+                        asset_location_id: { type: integer, description: 'Legacy alias for location_id.' }
+                        asset_classification_id: { type: integer, description: 'Legacy alias for classification_id.' }
+                        asset_item_id: { type: integer }
+                        condition: { type: string, enum: [Baik, Rusak Ringan, Rusak Berat] }
+                        purchase_year: { type: integer }
+                        year: { type: integer, description: 'Legacy alias for purchase_year.' }
+                        page: { type: integer, description: 'Ignored for export.' }
+                        per_page: { type: integer, description: 'Ignored for export.' }
+                    width_mm: { type: number, minimum: 50, maximum: 150, example: 90 }
+                    height_mm: { type: number, minimum: 25, maximum: 100, example: 50 }
+      responses:
+        "200":
+          description: A4 PDF containing all selected labels.
+          headers:
+            Content-Disposition:
+              schema: { type: string, example: 'attachment; filename="asset-labels-a4.pdf"' }
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        "401": { description: Unauthenticated. }
+        "403": { description: Printing at least one selected asset is forbidden. }
+        "422": { description: "Invalid selection, filters, label dimensions, or no printable assets matched." }
+
+  /assets:
+    get:
+      tags: [Assets]
+      summary: List inventory assets
+      operationId: listInventoryAssets
+      x-auth-required: true
+      description: Filters are optional, combined with AND, and applied before pagination. Results are ordered by descending asset ID. A true moved_last_3_months value requires at least one location change history within the last three months; false does not restrict the list.
+      parameters:
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: asset_classification_id
+          in: query
+          description: Legacy alias for classification_id.
+          schema: { type: integer }
+        - name: classification_id
+          in: query
+          description: Filter by current asset classification.
+          schema: { type: integer }
+        - name: asset_location_id
+          in: query
+          description: Legacy alias for location_id.
+          schema: { type: integer }
+        - name: location_id
+          in: query
+          description: Filter by current asset room, through asset_codes.asset_location_id.
+          schema: { type: integer }
+        - name: asset_item_id
+          in: query
+          schema: { type: integer }
+        - name: status
+          in: query
+          schema: { type: string, enum: [Digunakan, Tidak Digunakan, Rusak, Dipinjam] }
+        - name: condition
+          in: query
+          schema: { type: string, enum: [Baik, Rusak Ringan, Rusak Berat] }
+        - name: purchase_year
+          in: query
+          schema: { type: integer }
+        - name: year
+          in: query
+          description: Legacy alias for purchase_year.
+          schema: { type: integer }
+        - name: moved_last_3_months
+          in: query
+          description: When true, include only assets with a location change in the last three months.
+          schema: { type: boolean }
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+      responses:
+        "200":
+          description: Paginated assets.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/InventoryAsset" }
+        "401": { description: Unauthenticated. }
+        "403": { description: Inventory access forbidden. }
+        "422": { description: Invalid filter value. }
+    post:
+      tags: [Assets]
+      summary: Registrasi aset fisik
+      operationId: createInventoryAsset
+      x-auth-required: true
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema: { $ref: "#/components/schemas/InventoryAssetInput" }
+          application/json:
+            schema: { $ref: "#/components/schemas/InventoryAssetInput" }
+      responses:
+        "201":
+          description: Aset dan nomor inventaris dibuat.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InventoryAssetResponse" }
+
+  /assets/generate-number:
+    get:
+      tags: [Assets]
+      summary: Pratinjau nomor inventaris berdasarkan tahun pembelian
+      operationId: previewInventoryNumber
+      x-auth-required: true
+      description: Pratinjau tidak mereservasi nomor; nomor final ditetapkan saat aset disimpan.
+      parameters:
+        - name: asset_classification_id
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: asset_location_id
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: asset_item_id
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: year
+          in: query
+          required: true
+          description: Tahun pembelian, 1900–2100.
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Nomor inventaris yang diperkirakan.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      full_code: { type: string }
+
+  /assets/{asset}:
+    parameters:
+      - name: asset
+        in: path
+        required: true
+        schema: { type: integer }
+    get:
+      tags: [Assets]
+      operationId: getInventoryAsset
+      x-auth-required: true
+      responses:
+        "200":
+          description: Detail aset.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InventoryAssetResponse" }
+    put:
+      tags: [Assets]
+      operationId: updateInventoryAsset
+      x-auth-required: true
+      description: Update parsial; asset_uid tetap. Perubahan nomor tersimpan dalam satu riwayat update.
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InventoryAssetInput" }
+          multipart/form-data:
+            schema: { $ref: "#/components/schemas/InventoryAssetInput" }
+      responses:
+        "200":
+          description: Aset diperbarui.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InventoryAssetResponse" }
+    post:
+      tags: [Assets]
+      operationId: updateInventoryAssetMultipart
+      x-auth-required: true
+      description: Pembaruan multipart memakai field _method=PUT.
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/InventoryAssetInput"
+                - type: object
+                  properties:
+                    _method: { type: string, enum: [PUT] }
+      responses:
+        "200":
+          description: Aset diperbarui.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InventoryAssetResponse" }
+    delete:
+      tags: [Assets]
+      operationId: deleteInventoryAsset
+      x-auth-required: true
+      responses:
+        "200": { description: Aset dihapus secara soft delete; kode tetap tersimpan. }
+
+  /asset-items:
+    get:
+      tags: [Assets]
+      summary: List inventory item master data
+      operationId: listAssetItems
+      x-auth-required: true
+      description: When location_id is supplied, only item types belonging to an active asset at that location are returned.
+      parameters:
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: location_id
+          in: query
+          description: Filter items to those used by an active asset at this location.
+          schema: { type: integer }
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+      responses:
+        "200":
+          description: Asset item options. Pagination metadata is included when page or per_page is supplied.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/InventoryMaster" }
+        "401": { description: Unauthenticated. }
+        "403": { description: Inventory access forbidden. }
+        "422": { description: Invalid location_id. }
+    post:
+      tags: [Assets]
+      operationId: createAssetItem
+      x-auth-required: true
+      description: Master nama barang. Merek disimpan pada aset fisik.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InventoryMasterInput" }
+      responses:
+        "201": { description: Master barang dibuat. }
+
+  /asset-locations:
+    get:
+      tags: [Assets]
+      summary: List inventory location master data
+      operationId: listAssetLocations
+      x-auth-required: true
+      description: Returns the asset location master data using the existing search and optional pagination behavior.
+      parameters:
+        - name: search
+          in: query
+          schema: { type: string }
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+      responses:
+        "200":
+          description: Asset location options. Pagination metadata is included when page or per_page is supplied.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/InventoryMaster" }
+        "401": { description: Unauthenticated. }
+        "403": { description: Inventory access forbidden. }
+    post:
+      tags: [Assets]
+      operationId: createAssetLocation
+      x-auth-required: true
+      description: Master lokasi ruangan dengan kode integer unik.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InventoryMasterInput" }
+      responses:
+        "201": { description: Master lokasi dibuat. }
+
   /tickets:
     get:
       tags: [Helpdesk]
@@ -488,23 +855,23 @@ paths:
   /assets/search:
     get:
       tags: [Assets]
-      summary: Mencari asset berdasarkan nomor atau nama
+      summary: Mencari asset berdasarkan lokasi ruangan, nomor, atau nama
       operationId: searchAssets
-      description: Mengembalikan asset pada unit yang dipilih dengan asset_number atau name yang mengandung nilai search.
+      description: Mengembalikan aset pada lokasi ruangan yang dipilih. Lokasi aset tidak bergantung pada unit pelapor.
       x-auth-required: true
       x-required-permission: tickets-create
       parameters:
-        - name: unit
+        - name: location_id
           in: query
           required: true
-          description: ID unit asset.
+          description: ID lokasi ruangan pada master asset_locations.
           schema:
             type: integer
             example: 1
         - name: search
           in: query
           required: false
-          description: Nomor atau nama asset yang dicari.
+          description: Nomor inventaris atau nama barang yang dicari.
           schema:
             type: string
             minLength: 1
@@ -522,7 +889,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/AssetSummary"
+                      $ref: "#/components/schemas/InventoryAsset"
         "401":
           $ref: "#/components/responses/TicketUnauthenticated"
         "403":
@@ -638,6 +1005,76 @@ components:
         default: 15
 
   schemas:
+    InventoryMaster:
+      type: object
+      required: [id, code, name]
+      properties:
+        id: { type: integer }
+        code: { type: integer }
+        name: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    InventoryMasterInput:
+      type: object
+      required: [code, name]
+      properties:
+        code: { type: integer, minimum: 1 }
+        name: { type: string }
+
+    InventoryAssetInput:
+      type: object
+      description: Semua field wajib saat registrasi; seluruhnya opsional saat update parsial. asset_uid dibuat server.
+      properties:
+        asset_classification_id: { type: integer }
+        asset_location_id: { type: integer, description: Lokasi ruangan. }
+        asset_item_id: { type: integer }
+        purchase_year: { type: integer, minimum: 1900, maximum: 2100 }
+        brand: { type: [string, "null"], maxLength: 100 }
+        model_specification: { type: [string, "null"], maxLength: 100 }
+        location_detail: { type: [string, "null"], maxLength: 100 }
+        serial_number: { type: [string, "null"] }
+        status: { type: string, enum: [Digunakan, Tidak Digunakan, Rusak, Dipinjam] }
+        condition: { type: string, enum: [Baik, Rusak Ringan, Rusak Berat] }
+        warranty_until: { type: [string, "null"], format: date }
+        notes: { type: [string, "null"] }
+        photo: { type: string, format: binary }
+        calibration_document: { type: string, format: binary }
+
+    InventoryAsset:
+      type: object
+      required: [id, asset_uid, status, condition]
+      properties:
+        id: { type: integer, description: Primary key internal dan relasi tickets.asset_id. }
+        asset_uid: { type: string, minLength: 26, maxLength: 26, description: ULID permanen untuk identitas QR. }
+        asset_code:
+          type: [object, "null"]
+          properties:
+            id: { type: integer }
+            full_code: { type: string }
+            sequence_number: { type: integer }
+            classification: { type: [object, "null"] }
+            location: { type: [object, "null"] }
+            item: { type: [object, "null"] }
+        brand: { type: [string, "null"] }
+        model_specification: { type: [string, "null"] }
+        location_detail: { type: [string, "null"] }
+        serial_number: { type: [string, "null"] }
+        purchase_year: { type: [integer, "null"] }
+        status: { type: string }
+        condition: { type: string }
+        warranty_until: { type: [string, "null"], format: date }
+        notes: { type: [string, "null"] }
+        photo: { type: [object, "null"] }
+        calibration_document: { type: [object, "null"] }
+
+    InventoryAssetResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: "#/components/schemas/InventoryAsset" }
+        message: { type: string }
+
     UnitSearchResult:
       type: object
       additionalProperties: false

@@ -6,24 +6,17 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class AssetCode extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     protected $fillable = [
         'asset_classification_id',
         'asset_location_id',
         'asset_item_id',
         'sequence_number',
-        'year',
         'full_code',
-        'is_assigned',
-    ];
-
-    protected $casts = [
-        'is_assigned' => 'boolean',
     ];
 
     public function classification(): BelongsTo

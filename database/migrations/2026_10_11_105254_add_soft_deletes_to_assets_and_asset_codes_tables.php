@@ -8,23 +8,11 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('assets', function (Blueprint $table) {
-            $table->softDeletes();
-        });
-
-        Schema::table('asset_codes', function (Blueprint $table) {
-            $table->softDeletes();
-        });
+        Schema::table('asset_codes', fn (Blueprint $table) => $table->softDeletes());
     }
 
     public function down(): void
     {
-        Schema::table('asset_codes', function (Blueprint $table) {
-            $table->dropSoftDeletes();
-        });
-
-        Schema::table('assets', function (Blueprint $table) {
-            $table->dropSoftDeletes();
-        });
+        Schema::table('asset_codes', fn (Blueprint $table) => $table->dropSoftDeletes());
     }
 };

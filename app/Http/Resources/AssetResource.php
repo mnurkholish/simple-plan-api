@@ -11,16 +11,19 @@ class AssetResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'asset_code' => $this->whenLoaded('assetCode', fn () => [
+            'asset_uid' => $this->asset_uid,
+            'asset_code' => $this->whenLoaded('assetCode', fn () => $this->assetCode === null ? null : [
                 'id' => $this->assetCode->id,
                 'full_code' => $this->assetCode->full_code,
                 'sequence_number' => $this->assetCode->sequence_number,
-                'year' => $this->assetCode->year,
                 'classification' => $this->assetCode->relationLoaded('classification') ? $this->assetCode->classification : null,
                 'location' => $this->assetCode->relationLoaded('location') ? $this->assetCode->location : null,
                 'item' => $this->assetCode->relationLoaded('item') ? $this->assetCode->item : null,
             ]),
             'serial_number' => $this->serial_number,
+            'brand' => $this->brand,
+            'model_specification' => $this->model_specification,
+            'location_detail' => $this->location_detail,
             'purchase_year' => $this->purchase_year,
             'status' => $this->status->value,
             'condition' => $this->condition->value,

@@ -10,11 +10,13 @@
     "license": "MIT",
     "require": {
         "php": "^8.4",
+        "endroid/qr-code": "*",
         "laravel/framework": "^13.17",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^3.0",
         "league/flysystem-aws-s3-v3": "^3.25.1",
         "phpoffice/phpspreadsheet": "*",
+        "spatie/browsershot": "*",
         "spatie/laravel-backup": "^10.3",
         "spatie/laravel-permission": "^8.3",
         "spatie/laravel-query-builder": "^7.3"

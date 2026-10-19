@@ -7,18 +7,34 @@ use App\Enums\AssetStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class Asset extends Model
 {
     use HasFactory, SoftDeletes;
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $asset): void {
+            $asset->asset_uid = (string) Str::ulid();
+        });
+
+        static::updating(function (self $asset): void {
+            if ($asset->isDirty('asset_uid')) {
+                $asset->asset_uid = $asset->getOriginal('asset_uid');
+            }
+        });
+    }
 
     protected $fillable = [
         'asset_code_id',
         'asset_number',
         'name',
         'brand',
-        'unit_id',
+        'model_specification',
+        'location_detail',
         'location',
         'serial_number',
         'purchase_year',
@@ -47,8 +63,8 @@ class Asset extends Model
         return $this->belongsTo(AssetCode::class);
     }
 
-    public function unit(): BelongsTo
+    public function histories(): HasMany
     {
-        return $this->belongsTo(Unit::class);
+        return $this->hasMany(AssetHistory::class);
     }
 }

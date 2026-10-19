@@ -27,7 +27,7 @@ Mengambil daftar klasifikasi aset dengan dukungan pencarian dan pagination.
   "data": [
     {
       "id": 1,
-      "code": "MED",
+      "code": 5,
       "name": "Peralatan Medis",
       "created_at": "2026-10-08T10:00:00.000000Z",
       "updated_at": "2026-10-08T10:00:00.000000Z"
@@ -61,13 +61,13 @@ Menambahkan klasifikasi aset baru ke dalam sistem.
 - **Request Body**:
   | Field | Tipe | Wajib | Keterangan |
   |---|---|:---:|---|
-  | `code` | string | Ya | Kode unik klasifikasi (e.g. `MED`, `NONMED`). |
+  | `code` | integer | Ya | Kode unik klasifikasi (min: 1). |
   | `name` | string | Ya | Nama klasifikasi aset. |
 
 ### Contoh Request Body
 ```json
 {
-  "code": "NONMED",
+  "code": 5,
   "name": "Peralatan Non-Medis"
 }
 ```
@@ -77,7 +77,7 @@ Menambahkan klasifikasi aset baru ke dalam sistem.
 {
   "data": {
     "id": 2,
-    "code": "NONMED",
+    "code": 5,
     "name": "Peralatan Non-Medis",
     "created_at": "2026-10-12T01:00:00.000000Z",
     "updated_at": "2026-10-12T01:00:00.000000Z"
@@ -104,7 +104,7 @@ Mengambil daftar lokasi/ruangan penempatan aset.
   "data": [
     {
       "id": 1,
-      "code": "UGD",
+      "code": 10,
       "name": "Unit Gawat Darurat",
       "created_at": "2026-10-08T10:00:00.000000Z",
       "updated_at": "2026-10-08T10:00:00.000000Z"
@@ -126,7 +126,7 @@ Menambahkan lokasi/ruangan baru.
 - **Request Body**:
   | Field | Tipe | Wajib | Keterangan |
   |---|---|:---:|---|
-  | `code` | string | Ya | Kode unik lokasi (e.g. `ICU`, `UGD`, `POLI1`). |
+  | `code` | integer | Ya | Kode unik lokasi ruangan (min: 1). |
   | `name` | string | Ya | Nama lengkap ruangan/lokasi. |
 
 ---
@@ -137,8 +137,10 @@ Mengambil daftar jenis barang inventaris.
 - **Method**: `GET`
 - **Endpoint**: `/api/v1/asset-items`
 - **Query Parameters**:
-  - `search` *(optional, string)*: Keyword pencarian pada nama barang, brand/merek, atau kode barang.
+  - `search` *(optional, string)*: Keyword pencarian pada nama atau kode barang.
+  - `location_id` *(optional, integer)*: Hanya menampilkan jenis barang yang memiliki aset aktif pada lokasi tersebut.
   - `per_page` *(optional, integer)*: Jumlah per halaman.
+  - `page` *(optional, integer)*: Nomor halaman.
 
 ### Contoh Response Sukses (200 OK)
 ```json
@@ -148,7 +150,6 @@ Mengambil daftar jenis barang inventaris.
       "id": 1,
       "code": 12,
       "name": "Kursi Roda Bed Pasien",
-      "brand": "Sella",
       "created_at": "2026-10-08T10:00:00.000000Z",
       "updated_at": "2026-10-08T10:00:00.000000Z"
     }
@@ -163,6 +164,8 @@ Mengambil daftar jenis barang inventaris.
 ## 6. Create Asset Item
 Mendaftarkan jenis barang baru ke dalam master data.
 
+Kode klasifikasi, lokasi ruangan, dan barang harus berupa integer unik (min 1). Setelah dipakai oleh aset, kode master tidak dapat diubah; nama masih dapat diperbarui.
+
 - **Method**: `POST`
 - **Endpoint**: `/api/v1/asset-items`
 - **Headers**: `Content-Type: application/json`
@@ -171,14 +174,12 @@ Mendaftarkan jenis barang baru ke dalam master data.
   |---|---|:---:|---|
   | `code` | integer | Ya | Kode unik angka barang (min: 1). |
   | `name` | string | Ya | Nama jenis barang. |
-  | `brand` | string | Tidak | Merek/brand pabrikan. |
 
 ### Contoh Request Body
 ```json
 {
   "code": 15,
-  "name": "Tensimeter Digital",
-  "brand": "Omron"
+  "name": "Tensimeter Digital"
 }
 ```
 
@@ -197,13 +198,13 @@ Menghitung dan mempratinjau kode aset fisik sebelum form registrasi disubmit ke 
   | `asset_classification_id` | integer | Ya | ID Klasifikasi aset yang valid. |
   | `asset_location_id` | integer | Ya | ID Lokasi aset yang valid. |
   | `asset_item_id` | integer | Ya | ID Item barang yang valid. |
-  | `year` | integer | Ya | Tahun registrasi aset (e.g. `2026`). |
+  | `year` | integer | Ya | Tahun pembelian aset (1900–2100); nama parameter preview dipertahankan. |
 
 ### Contoh Response Sukses (200 OK)
 ```json
 {
   "data": {
-    "full_code": "MED/UGD/1/12/2026"
+    "full_code": "5/10/1/12/2026"
   }
 }
 ```
@@ -236,26 +237,28 @@ Mengambil daftar aset dengan pencarian komprehensif dan penyaringan multi-kriter
       "id": 1,
       "asset_code": {
         "id": 1,
-        "full_code": "MED/UGD/1/12/2026",
+        "full_code": "5/10/1/12/2026",
         "sequence_number": 1,
-        "year": 2026,
         "classification": {
           "id": 1,
-          "code": "MED",
+          "code": 5,
           "name": "Peralatan Medis"
         },
         "location": {
           "id": 1,
-          "code": "UGD",
+          "code": 10,
           "name": "Unit Gawat Darurat"
         },
         "item": {
           "id": 1,
           "code": 12,
-          "name": "Kursi Roda Bed Pasien",
-          "brand": "Sella"
+          "name": "Kursi Roda Bed Pasien"
         }
       },
+      "asset_uid": "01K7A5H3YC0M7WJY3PQ8E6KD2V",
+      "brand": "Sella",
+      "model_specification": "Seri A",
+      "location_detail": "Lantai 1",
       "serial_number": "SN-2026-001",
       "purchase_year": 2026,
       "status": "Digunakan",
@@ -292,13 +295,16 @@ Mengambil detail satu aset lengkap dengan relasi kodenya.
     "id": 1,
     "asset_code": {
       "id": 1,
-      "full_code": "MED/UGD/1/12/2026",
+      "full_code": "5/10/1/12/2026",
       "sequence_number": 1,
-      "year": 2026,
-      "classification": { "id": 1, "code": "MED", "name": "Peralatan Medis" },
-      "location": { "id": 1, "code": "UGD", "name": "Unit Gawat Darurat" },
-      "item": { "id": 1, "code": 12, "name": "Kursi Roda Bed Pasien", "brand": "Sella" }
+      "classification": { "id": 1, "code": 5, "name": "Peralatan Medis" },
+      "location": { "id": 1, "code": 10, "name": "Unit Gawat Darurat" },
+      "item": { "id": 1, "code": 12, "name": "Kursi Roda Bed Pasien" }
     },
+    "asset_uid": "01K7A5H3YC0M7WJY3PQ8E6KD2V",
+    "brand": "Sella",
+    "model_specification": "Seri A",
+    "location_detail": "Lantai 1",
     "serial_number": "SN-2026-001",
     "purchase_year": 2026,
     "status": "Digunakan",
@@ -329,6 +335,9 @@ Mendaftarkan aset baru dan mengunggah berkas foto/dokumen kalibrasi.
   | `asset_item_id` | integer | Ya | ID Master item barang. |
   | `purchase_year` | integer | Ya | Tahun pembelian (1900–2100). |
   | `serial_number` | string | Tidak | Nomor seri pabrik. |
+  | `brand` | string | Tidak | Merek aset fisik, maks 100 karakter. |
+  | `model_specification` | string | Tidak | Model/spesifikasi, maks 100 karakter. |
+  | `location_detail` | string | Tidak | Detail lokasi dalam ruangan, maks 100 karakter. |
   | `status` | string | Ya | `Digunakan`, `Tidak Digunakan`, `Rusak`, atau `Dipinjam`. |
   | `condition` | string | Ya | `Baik`, `Rusak Ringan`, atau `Rusak Berat`. |
   | `warranty_until` | date | Tidak | Tanggal kadaluarsa garansi (`YYYY-MM-DD`). |
@@ -343,9 +352,8 @@ Mendaftarkan aset baru dan mengunggah berkas foto/dokumen kalibrasi.
     "id": 3,
     "asset_code": {
       "id": 3,
-      "full_code": "MED/UGD/2/12/2026",
-      "sequence_number": 2,
-      "year": 2026
+      "full_code": "5/10/2/12/2026",
+      "sequence_number": 2
     },
     "serial_number": "SN-2026-002",
     "purchase_year": 2026,
@@ -359,7 +367,9 @@ Mendaftarkan aset baru dan mengunggah berkas foto/dokumen kalibrasi.
 ---
 
 ## 5. Update Asset (Partial Update & Smart Code Recalculation)
-Memperbarui data aset secara parsial. Jika lokasi, klasifikasi, jenis item, atau tahun pengadaan diubah, sistem secara otomatis menghitung ulang sequence number dan full_code baru.
+Memperbarui data aset secara parsial. Jika lokasi ruangan, klasifikasi, jenis item, atau tahun pembelian diubah, sistem memperbarui record kode yang sama dan mencatat kode lama serta baru dalam satu riwayat update. Perubahan `location_detail` saja tidak mengubah kode.
+
+`asset_uid` dibuat otomatis dan tidak diterima sebagai field update. Pratinjau nomor tidak mereservasi nomor; nomor final ditentukan saat transaksi penyimpanan.
 
 - **Method**: `PUT` atau `POST` (dengan field `_method=PUT` saat menggunakan `multipart/form-data`)
 - **Endpoint**: `/api/v1/assets/{id}`
@@ -380,9 +390,8 @@ status: Digunakan
     "id": 1,
     "asset_code": {
       "id": 1,
-      "full_code": "MED/POLI1/1/12/2026",
-      "sequence_number": 1,
-      "year": 2026
+      "full_code": "5/11/1/12/2026",
+      "sequence_number": 1
     },
     "serial_number": "SN-2026-001",
     "purchase_year": 2026,
@@ -396,7 +405,7 @@ status: Digunakan
 ---
 
 ## 6. Delete Asset (Safe Soft Delete)
-Melakukan soft delete pada aset dan kode inventaris terkait tanpa menghapus berkas fisik di disk ataupun merusak relasi tiket helpdesk.
+Melakukan soft delete pada aset. Record kode inventaris tetap tersimpan dan tidak diterbitkan ulang. Relasi tiket Helpdesk tetap memakai `assets.id`.
 
 - **Method**: `DELETE`
 - **Endpoint**: `/api/v1/assets/{id}`
@@ -411,13 +420,13 @@ Melakukan soft delete pada aset dan kode inventaris terkait tanpa menghapus berk
 ---
 
 ## 7. Search Assets for Ticket Selection
-Endpoint pencarian aset ringan yang digunakan saat pelapor/teknisi membuat tiket keluhan kerusakan barang.
+Endpoint pencarian aset berdasarkan lokasi ruangan untuk pemilihan barang pada tiket. Unit pelapor tidak menentukan posisi aset.
 
 - **Method**: `GET`
 - **Endpoint**: `/api/v1/assets/search`
 - **Query Parameters**:
-  - `unit` *(optional, integer)*: ID unit/lokasi kerja pelapor.
-  - `search` *(optional, string)*: Keyword nama barang atau kode inventaris.
+  - `location_id` *(required, integer)*: ID lokasi ruangan dari master `asset_locations`.
+  - `search` *(optional, string)*: Keyword nama barang atau nomor inventaris.
 
 ### Contoh Response Sukses (200 OK)
 ```json
@@ -425,9 +434,12 @@ Endpoint pencarian aset ringan yang digunakan saat pelapor/teknisi membuat tiket
   "data": [
     {
       "id": 1,
+      "asset_uid": "01K7KTCXRH1WKCD26R2YQA5P1M",
       "asset_code": {
         "id": 1,
-        "full_code": "MED/UGD/1/12/2026"
+        "full_code": "5/10/1/12/2026",
+        "location": { "id": 10, "code": 10, "name": "Ruang IT" },
+        "item": { "id": 12, "code": 12, "name": "Komputer" }
       },
       "serial_number": "SN-2026-001",
       "status": "Digunakan",

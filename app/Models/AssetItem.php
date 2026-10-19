@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AssetItem extends Model
 {
@@ -12,6 +13,10 @@ class AssetItem extends Model
     protected $fillable = [
         'code',
         'name',
-        'brand',
     ];
+
+    public function assetCodes(): HasMany
+    {
+        return $this->hasMany(AssetCode::class, 'asset_item_id');
+    }
 }

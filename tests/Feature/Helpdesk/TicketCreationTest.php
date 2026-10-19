@@ -4,6 +4,10 @@ use App\Enums\AssetCondition;
 use App\Enums\AssetStatus;
 use App\Enums\TicketStatus;
 use App\Models\Asset;
+use App\Models\AssetClassification;
+use App\Models\AssetCode;
+use App\Models\AssetItem;
+use App\Models\AssetLocation;
 use App\Models\Ticket;
 use App\Models\Unit;
 use App\Models\User;
@@ -168,7 +172,6 @@ test('asset opsional dan asset yang valid dapat disambungkan ke tiket', function
         'asset_number' => 'AST-0001',
         'name' => 'Komputer Poli',
         'brand' => 'Dell',
-        'unit_id' => $unit->id,
         'location' => 'Poli Umum',
         'status' => AssetStatus::InUse->value,
         'condition' => AssetCondition::Good->value,
@@ -189,7 +192,38 @@ test('asset opsional dan asset yang valid dapat disambungkan ke tiket', function
     $this->assertDatabaseHas('tickets', [
         'id' => $response->json('data.id'),
         'asset_id' => $asset->id,
+        'unit_id' => $unit->id,
     ]);
+});
+
+test('tiket menampilkan lokasi dari kode inventaris tanpa unit pada aset', function (): void {
+    $classification = AssetClassification::create(['code' => 5, 'name' => 'Alat IT']);
+    $location = AssetLocation::create(['code' => 10, 'name' => 'Ruang IT']);
+    $item = AssetItem::create(['code' => 20, 'name' => 'Komputer']);
+    $code = AssetCode::create([
+        'asset_classification_id' => $classification->id,
+        'asset_location_id' => $location->id,
+        'asset_item_id' => $item->id,
+        'sequence_number' => 1,
+        'full_code' => '5/10/1/20/2021',
+    ]);
+    $asset = Asset::create([
+        'asset_code_id' => $code->id,
+        'purchase_year' => 2021,
+        'status' => AssetStatus::InUse->value,
+        'condition' => AssetCondition::Good->value,
+    ]);
+    $reporter = actingAsTicketCreator();
+
+    $this->postJson('/api/v1/tickets', [
+        'service' => 'tik',
+        'asset_id' => $asset->id,
+        'description' => 'Komputer tidak menyala.',
+    ])->assertCreated()
+        ->assertJsonPath('data.asset.asset_number', '5/10/1/20/2021')
+        ->assertJsonPath('data.asset.name', 'Komputer')
+        ->assertJsonPath('data.asset.location', 'Ruang IT')
+        ->assertJsonPath('data.unit.id', $reporter->unit_id);
 });
 
 test('asset yang tidak ditemukan akan ditolak', function (int $assetId): void {
@@ -205,11 +239,9 @@ test('asset yang tidak ditemukan akan ditolak', function (int $assetId): void {
 })->with([
     'asset tidak ditemukan' => 999999,
     'asset dihapus' => function (): int {
-        $unit = Unit::factory()->create();
         $asset = Asset::create([
             'asset_number' => 'AST-DELETED',
             'name' => 'Aset Dihapus',
-            'unit_id' => $unit->id,
             'status' => AssetStatus::InUse->value,
             'condition' => AssetCondition::Good->value,
         ]);

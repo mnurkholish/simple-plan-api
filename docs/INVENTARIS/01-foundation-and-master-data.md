@@ -9,11 +9,12 @@ Fondasi Master Data modul inventaris yang mencakup enum berbahasa Indonesia, dat
   - `AssetCondition`: `Baik`, `Rusak Ringan`, `Rusak Berat`.
 - **Master Data CRUD**:
   - Pengelolaan data untuk `asset_classifications`, `asset_locations`, dan `asset_items` (tanpa delete endpoint demi integritas relasi).
-  - Mendukung Live Search via `?search=` (mencari kode/nama/brand) dan pagination dinamis via `?per_page=`.
+  - Mendukung Live Search via `?search=` (mencari kode/nama) dan pagination dinamis via `?per_page=`. Kode master lokasi dan barang tetap integer unik yang disediakan saat pembuatan.
 - **`AssetCodeService`**:
-  - Format kode fisik: `{class_code}/{loc_code}/{seq_num}/{item_code}/{year}` (contoh: `MED/UGD/1/12/2026`).
-  - Menggunakan `AssetCode::withTrashed()` agar nomor urut aset yang dihapus tidak pernah dipakai ulang oleh aset baru.
-  - Mendukung parameter `$excludeId` untuk mencegah lonjakan sequence saat update data sendiri.
+  - Format kode fisik: `{class_code}/{loc_code}/{seq_num}/{item_code}/{year}` (contoh: `5/10/1/12/2026`).
+  - Nomor urut untuk kombinasi klasifikasi, lokasi, dan barang berlanjut meskipun tahun pembelian berbeda.
+  - Mengunci baris klasifikasi saat alokasi nomor dalam transaksi dan memeriksa kode aktif serta kode lama dalam `asset_histories` agar nomor yang pernah digunakan tidak terbit ulang.
+  - Tahun pada kode diambil dari `assets.purchase_year`.
 
 ## Authorization
 - **Read & Write**: `super-admin`, `koordinator-sarpras`, `petugas-tik`, `petugas-sarpras`.
