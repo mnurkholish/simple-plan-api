@@ -16,13 +16,6 @@ class TicketEscalationController extends Controller
 {
     public function __construct(private readonly EscalationService $escalationService) {}
 
-    /**
-     * Memproses eskalasi tiket ke pihak ketiga atau unit terkait.
-     *
-     * @param  StoreEscalationRequest  $request  Request body (target, notes)
-     * @param  Ticket  $ticket  Model tiket yang dieskalasi
-     * @return JsonResponse JSON yang berisi pesan sukses dan detail tiket
-     */
     public function store(StoreEscalationRequest $request, Ticket $ticket): JsonResponse
     {
         Gate::authorize('handle', $ticket);

@@ -9,9 +9,6 @@ use Illuminate\Support\Facades\Cache;
 
 class NotificationService
 {
-    /**
-     * @return array{data: array<int, array<string, mixed>>, unread_count: int}
-     */
     public function forUser(User $user): array
     {
         $notifications = $user->unreadNotifications()
@@ -52,9 +49,6 @@ class NotificationService
         $this->notify($user, 'Logout berhasil', 'Sesi Anda berakhir pada '.now()->format('d M Y H:i').'.', 'IconLogout', 'slate');
     }
 
-    /**
-     * @return array<int, array<string, mixed>>
-     */
     public function activitySummary(): array
     {
         $today = now()->format('Y-m-d');
@@ -89,9 +83,6 @@ class NotificationService
         $user->notify(new SystemActivityNotification($title, $subtitle, $icon, $color));
     }
 
-    /**
-     * @return array<string, mixed>
-     */
     private function format(DatabaseNotification $notification): array
     {
         return [

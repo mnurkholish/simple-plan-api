@@ -15,13 +15,6 @@ class TicketVerificationController extends Controller
 {
     public function __construct(private readonly TicketService $ticketService) {}
 
-    /**
-     * Memproses verifikasi pelapor setelah tiket diselesaikan oleh teknisi.
-     *
-     * @param  VerifyTicketRequest  $request  Request body (is_approved, keterangan_kendala)
-     * @param  Ticket  $ticket  Model tiket yang diverifikasi
-     * @return JsonResponse JSON yang berisi pesan hasil verifikasi dan detail tiket
-     */
     public function verify(VerifyTicketRequest $request, Ticket $ticket): JsonResponse
     {
         $validated = $request->validated();

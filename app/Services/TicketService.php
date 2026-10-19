@@ -32,9 +32,6 @@ class TicketService
         private readonly SlaService $sla,
     ) {}
 
-    /**
-     * @param  array{reporter_id?: int|null, service: string, description: string, asset_id?: int|null}  $data
-     */
     public function create(array $data, User $reporter, ?UploadedFile $initialEvidence = null): Ticket
     {
         if (! empty($data['reporter_id'])) {
@@ -101,9 +98,6 @@ class TicketService
         }
     }
 
-    /**
-     * @param  array{service?: string|null, status?: string|null, priority?: string|null, date_from?: string|null, date_to?: string|null, search?: string|null}  $filters
-     */
     public function paginateVisibleTo(User $actor, array $filters, int $perPage): LengthAwarePaginator
     {
         return $this->tickets->paginateVisibleTo($actor, $filters, $perPage);
@@ -119,14 +113,6 @@ class TicketService
         return $this->tickets->loadSummary($ticket);
     }
 
-    /**
-     * @return array{
-     *     service: string,
-     *     quality_categories: array<int, array{id: int, name: string}>,
-     *     it_tags: array<int, array{id: int, name: string}>,
-     *     sarpras_categories: array<int, array{id: int, name: string}>
-     * }
-     */
     public function classificationOptions(TicketServiceEnum $service): array
     {
         return [
@@ -156,9 +142,6 @@ class TicketService
         ];
     }
 
-    /**
-     * @param  array{quality_category_id?: int, it_tag_id?: int, custom_it_tag_text?: string|null, sarpras_category_id?: int}  $data
-     */
     public function classify(Ticket $ticket, array $data, User $classifiedBy): Ticket
     {
         return DB::transaction(function () use ($ticket, $data, $classifiedBy): Ticket {
@@ -208,9 +191,6 @@ class TicketService
         );
     }
 
-    /**
-     * @param  array{assigned_officer_id: int, priority?: string}  $data
-     */
     public function assign(Ticket $ticket, array $data, User $changedBy): Ticket
     {
         return DB::transaction(function () use ($ticket, $data, $changedBy): Ticket {
@@ -248,9 +228,6 @@ class TicketService
         });
     }
 
-    /**
-     * @return Collection<int, User>
-     */
     public function assigneeOptions(Ticket $ticket, ?string $search = null): Collection
     {
         if (! in_array($ticket->status, [
@@ -268,9 +245,6 @@ class TicketService
         );
     }
 
-    /**
-     * @param  array{notes: string, status: string, started_at: string, completed_at: string}  $data
-     */
     public function addHandling(
         Ticket $ticket,
         array $data,
