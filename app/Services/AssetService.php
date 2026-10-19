@@ -28,11 +28,11 @@ class AssetService
         return $this->assetRepository->search($locationId, $search);
     }
 
-    public function create(array $data, ?UploadedFile $photo = null, ?UploadedFile $calibration = null): Asset
+    public function create(array $data, ?UploadedFile $calibration = null): Asset
     {
         $storedKeys = [];
         try {
-            return DB::transaction(function () use ($data, $photo, $calibration, &$storedKeys): Asset {
+            return DB::transaction(function () use ($data, $calibration, &$storedKeys): Asset {
                 $codeData = $this->assetCodeService->generate(
                     (int) $data['asset_classification_id'],
                     (int) $data['asset_location_id'],
@@ -53,7 +53,6 @@ class AssetService
                     'status', 'condition', 'warranty_until', 'notes',
                 ]));
                 $assetData['asset_code_id'] = $assetCode->id;
-                $assetData = array_merge($assetData, $this->storeFile($photo, 'assets/photos', 'photo', $storedKeys));
                 $assetData = array_merge($assetData, $this->storeFile($calibration, 'assets/calibrations', 'calibration', $storedKeys));
 
                 return Asset::create($assetData);
@@ -66,11 +65,11 @@ class AssetService
         }
     }
 
-    public function update(Asset $asset, array $data, ?UploadedFile $photo = null, ?UploadedFile $calibration = null, ?int $actorId = null): Asset
+    public function update(Asset $asset, array $data, ?UploadedFile $calibration = null, ?int $actorId = null): Asset
     {
         $storedKeys = [];
         try {
-            return DB::transaction(function () use ($asset, $data, $photo, $calibration, $actorId, &$storedKeys): Asset {
+            return DB::transaction(function () use ($asset, $data, $calibration, $actorId, &$storedKeys): Asset {
                 $asset = Asset::query()->whereKey($asset->id)->lockForUpdate()->firstOrFail();
                 $assetCode = $asset->asset_code_id === null ? null
                     : AssetCode::query()->whereKey($asset->asset_code_id)->lockForUpdate()->firstOrFail();
@@ -115,13 +114,6 @@ class AssetService
                     'serial_number', 'purchase_year', 'brand', 'model_specification', 'location_detail',
                     'status', 'condition', 'warranty_until', 'notes',
                 ]));
-                if ($photo !== null) {
-                    if ($asset->photo_object_key) {
-                        $oldKey = $asset->photo_object_key;
-                        DB::afterCommit(fn () => Storage::delete($oldKey));
-                    }
-                    $assetData = array_merge($assetData, $this->storeFile($photo, 'assets/photos', 'photo', $storedKeys));
-                }
                 if ($calibration !== null) {
                     if ($asset->calibration_object_key) {
                         $oldKey = $asset->calibration_object_key;

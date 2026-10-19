@@ -30,7 +30,6 @@ class UpdateAssetRequest extends FormRequest
             'condition' => ['sometimes', 'required', Rule::enum(AssetCondition::class)],
             'warranty_until' => ['sometimes', 'nullable', 'date'],
             'notes' => ['sometimes', 'nullable', 'string'],
-            'photo' => ['sometimes', 'nullable', 'file', 'mimes:jpg,png', 'max:5120'],
             'calibration_document' => ['sometimes', 'nullable', 'file', 'mimes:pdf', 'max:5120'],
         ];
     }

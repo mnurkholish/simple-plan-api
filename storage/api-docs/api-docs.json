@@ -3664,9 +3664,6 @@
                         "application/json": {
                             "schema": {
                                 "properties": {
-                                    "code": {
-                                        "type": "integer"
-                                    },
                                     "name": {
                                         "type": "string"
                                     }
@@ -3820,9 +3817,6 @@
                         "application/json": {
                             "schema": {
                                 "properties": {
-                                    "code": {
-                                        "type": "integer"
-                                    },
                                     "name": {
                                         "type": "string"
                                     }
@@ -3988,9 +3982,6 @@
                         "application/json": {
                             "schema": {
                                 "properties": {
-                                    "code": {
-                                        "type": "integer"
-                                    },
                                     "name": {
                                         "type": "string"
                                     }
@@ -4366,11 +4357,6 @@
                                         "type": "string",
                                         "nullable": true
                                     },
-                                    "photo": {
-                                        "type": "string",
-                                        "format": "binary",
-                                        "nullable": true
-                                    },
                                     "calibration_document": {
                                         "type": "string",
                                         "format": "binary",
@@ -4514,11 +4500,6 @@
                                     },
                                     "notes": {
                                         "type": "string",
-                                        "nullable": true
-                                    },
-                                    "photo": {
-                                        "type": "string",
-                                        "format": "binary",
                                         "nullable": true
                                     },
                                     "calibration_document": {

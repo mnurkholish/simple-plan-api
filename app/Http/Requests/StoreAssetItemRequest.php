@@ -14,7 +14,6 @@ class StoreAssetItemRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'code' => ['required', 'integer', 'min:1', 'unique:asset_items,code'],
             'name' => ['required', 'string'],
         ];
     }

@@ -29,11 +29,6 @@ class AssetResource extends JsonResource
             'condition' => $this->condition->value,
             'warranty_until' => $this->warranty_until?->format('Y-m-d'),
             'notes' => $this->notes,
-            'photo' => $this->photo_object_key === null ? null : [
-                'original_name' => $this->photo_original_name,
-                'mime_type' => $this->photo_mime_type,
-                'size' => $this->photo_size,
-            ],
             'calibration_document' => $this->calibration_object_key === null ? null : [
                 'original_name' => $this->calibration_original_name,
                 'mime_type' => $this->calibration_mime_type,

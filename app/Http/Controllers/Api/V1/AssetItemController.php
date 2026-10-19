@@ -7,10 +7,8 @@ use App\Http\Requests\ListAssetItemsRequest;
 use App\Http\Requests\StoreAssetItemRequest;
 use App\Http\Requests\UpdateAssetItemRequest;
 use App\Models\Asset;
-use App\Models\AssetCode;
 use App\Models\AssetItem;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Validation\ValidationException;
 
 class AssetItemController extends Controller
 {
@@ -46,7 +44,7 @@ class AssetItemController extends Controller
     public function store(StoreAssetItemRequest $request): JsonResponse
     {
         $this->authorize('create', Asset::class);
-        $item = AssetItem::create($request->validated());
+        $item = AssetItem::create($request->safe()->only(['name']));
 
         return response()->json([
             'data' => $item,
@@ -68,11 +66,7 @@ class AssetItemController extends Controller
     {
         $this->authorize('create', Asset::class);
         $item = AssetItem::findOrFail($id);
-        if ((int) $item->code !== (int) $request->validated('code')
-            && AssetCode::where('asset_item_id', $item->id)->exists()) {
-            throw ValidationException::withMessages(['code' => 'Kode barang yang telah dipakai aset tidak dapat diubah.']);
-        }
-        $item->update($request->validated());
+        $item->update($request->safe()->only(['name']));
 
         return response()->json([
             'data' => $item,
