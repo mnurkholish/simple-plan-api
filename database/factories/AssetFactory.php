@@ -97,8 +97,8 @@ class AssetFactory extends Factory
             ?? AssetClassification::factory()->create();
         $location ??= AssetLocation::query()->inRandomOrder()->first()
             ?? AssetLocation::factory()->create();
-        $item ??= AssetItem::query()->inRandomOrder()->first()
-            ?? AssetItem::factory()->create();
+        $item ??= AssetItem::query()->where('asset_classification_id', $classification->id)->inRandomOrder()->first()
+            ?? AssetItem::factory()->create(['asset_classification_id' => $classification->id]);
 
         $number = app(AssetCodeService::class)->generate(
             $classification->id,

@@ -1842,7 +1842,6 @@ class ApiDocumentation
      *
      *     @OA\RequestBody(required=true, @OA\JsonContent(
      *
-     *         @OA\Property(property="code", type="integer"),
      *         @OA\Property(property="name", type="string")
      *     )),
      *
@@ -1909,7 +1908,6 @@ class ApiDocumentation
      *
      *     @OA\RequestBody(required=true, @OA\JsonContent(
      *
-     *         @OA\Property(property="code", type="integer"),
      *         @OA\Property(property="name", type="string")
      *     )),
      *
@@ -1977,9 +1975,10 @@ class ApiDocumentation
      *     security={{"sanctum":{}}},
      *
      *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *         required={"asset_classification_id", "name"},
      *
-     *         @OA\Property(property="code", type="integer"),
-     *         @OA\Property(property="name", type="string")
+     *         @OA\Property(property="asset_classification_id", type="integer", example=1),
+     *         @OA\Property(property="name", type="string", example="Tensimeter Digital")
      *     )),
      *
      *     @OA\Response(response=201, description="Created")
@@ -2088,7 +2087,6 @@ class ApiDocumentation
      *         @OA\Property(property="condition", type="string", enum={"Baik", "Rusak Ringan", "Rusak Berat"}),
      *         @OA\Property(property="warranty_until", type="string", format="date", nullable=true),
      *         @OA\Property(property="notes", type="string", nullable=true),
-     *         @OA\Property(property="photo", type="string", format="binary", nullable=true),
      *         @OA\Property(property="calibration_document", type="string", format="binary", nullable=true)
      *     ))),
      *
@@ -2136,7 +2134,6 @@ class ApiDocumentation
      *         @OA\Property(property="condition", type="string", enum={"Baik", "Rusak Ringan", "Rusak Berat"}, nullable=true),
      *         @OA\Property(property="warranty_until", type="string", format="date", nullable=true),
      *         @OA\Property(property="notes", type="string", nullable=true),
-     *         @OA\Property(property="photo", type="string", format="binary", nullable=true),
      *         @OA\Property(property="calibration_document", type="string", format="binary", nullable=true)
      *     ))),
      *

@@ -29,7 +29,6 @@ class StoreAssetRequest extends FormRequest
             'condition' => ['required', Rule::enum(AssetCondition::class)],
             'warranty_until' => ['nullable', 'date'],
             'notes' => ['nullable', 'string'],
-            'photo' => ['nullable', 'file', 'mimes:jpg,png', 'max:5120'],
             'calibration_document' => ['nullable', 'file', 'mimes:pdf', 'max:5120'],
         ];
     }

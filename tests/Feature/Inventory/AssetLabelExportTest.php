@@ -19,7 +19,7 @@ test('authorized user can export an asset label as a rendered PDF', function ():
 
     $classification = AssetClassification::factory()->create(['name' => 'Alat IT']);
     $location = AssetLocation::factory()->create();
-    $item = AssetItem::factory()->create();
+    $item = AssetItem::factory()->create(['asset_classification_id' => $classification->id]);
     $asset = Asset::factory()->forInventory($classification, $location, $item)->create();
 
     $response = $this->postJson('/api/v1/asset-label-exports', [

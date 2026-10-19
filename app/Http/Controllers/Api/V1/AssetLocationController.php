@@ -6,11 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreAssetLocationRequest;
 use App\Http\Requests\UpdateAssetLocationRequest;
 use App\Models\Asset;
-use App\Models\AssetCode;
 use App\Models\AssetLocation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 
 class AssetLocationController extends Controller
 {
@@ -40,7 +38,7 @@ class AssetLocationController extends Controller
     public function store(StoreAssetLocationRequest $request): JsonResponse
     {
         $this->authorize('create', Asset::class);
-        $location = AssetLocation::create($request->validated());
+        $location = AssetLocation::create($request->safe()->only(['name']));
 
         return response()->json([
             'data' => $location,
@@ -62,11 +60,7 @@ class AssetLocationController extends Controller
     {
         $this->authorize('create', Asset::class);
         $location = AssetLocation::findOrFail($id);
-        if ((int) $location->code !== (int) $request->validated('code')
-            && AssetCode::where('asset_location_id', $location->id)->exists()) {
-            throw ValidationException::withMessages(['code' => 'Kode lokasi yang telah dipakai aset tidak dapat diubah.']);
-        }
-        $location->update($request->validated());
+        $location->update($request->safe()->only(['name']));
 
         return response()->json([
             'data' => $location,

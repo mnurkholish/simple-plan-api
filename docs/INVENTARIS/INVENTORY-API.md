@@ -61,13 +61,11 @@ Menambahkan klasifikasi aset baru ke dalam sistem.
 - **Request Body**:
   | Field | Tipe | Wajib | Keterangan |
   |---|---|:---:|---|
-  | `code` | integer | Ya | Kode unik klasifikasi (min: 1). |
   | `name` | string | Ya | Nama klasifikasi aset. |
 
 ### Contoh Request Body
 ```json
 {
-  "code": 5,
   "name": "Peralatan Non-Medis"
 }
 ```
@@ -77,7 +75,7 @@ Menambahkan klasifikasi aset baru ke dalam sistem.
 {
   "data": {
     "id": 2,
-    "code": 5,
+    "code": 6,
     "name": "Peralatan Non-Medis",
     "created_at": "2026-10-12T01:00:00.000000Z",
     "updated_at": "2026-10-12T01:00:00.000000Z"
@@ -126,7 +124,6 @@ Menambahkan lokasi/ruangan baru.
 - **Request Body**:
   | Field | Tipe | Wajib | Keterangan |
   |---|---|:---:|---|
-  | `code` | integer | Ya | Kode unik lokasi ruangan (min: 1). |
   | `name` | string | Ya | Nama lengkap ruangan/lokasi. |
 
 ---
@@ -164,7 +161,7 @@ Mengambil daftar jenis barang inventaris.
 ## 6. Create Asset Item
 Mendaftarkan jenis barang baru ke dalam master data.
 
-Kode klasifikasi, lokasi ruangan, dan barang harus berupa integer unik (min 1). Setelah dipakai oleh aset, kode master tidak dapat diubah; nama masih dapat diperbarui.
+Kode barang otomatis di-generate oleh backend berupa integer urut tanpa padding 0 (1, 2, 3, dst) yang di-scope unik per klasifikasi aset. Method update tidak mengizinkan perubahan kode maupun klasifikasi aset master data; nama masih dapat diperbarui.
 
 - **Method**: `POST`
 - **Endpoint**: `/api/v1/asset-items`
@@ -172,13 +169,13 @@ Kode klasifikasi, lokasi ruangan, dan barang harus berupa integer unik (min 1). 
 - **Request Body**:
   | Field | Tipe | Wajib | Keterangan |
   |---|---|:---:|---|
-  | `code` | integer | Ya | Kode unik angka barang (min: 1). |
-  | `name` | string | Ya | Nama jenis barang. |
+  | `asset_classification_id` | integer | Ya | ID Klasifikasi aset induk. |
+  | `name` | string | Ya | Nama jenis barang (unik per klasifikasi). |
 
 ### Contoh Request Body
 ```json
 {
-  "code": 15,
+  "asset_classification_id": 1,
   "name": "Tensimeter Digital"
 }
 ```
@@ -311,7 +308,6 @@ Mengambil detail satu aset lengkap dengan relasi kodenya.
     "condition": "Baik",
     "warranty_until": "2028-12-31",
     "notes": "Kondisi baru",
-    "photo": { ... },
     "calibration_document": { ... },
     "created_at": "2026-10-08T12:00:00.000000Z",
     "updated_at": "2026-10-08T12:00:00.000000Z"
@@ -342,7 +338,6 @@ Mendaftarkan aset baru dan mengunggah berkas foto/dokumen kalibrasi.
   | `condition` | string | Ya | `Baik`, `Rusak Ringan`, atau `Rusak Berat`. |
   | `warranty_until` | date | Tidak | Tanggal kadaluarsa garansi (`YYYY-MM-DD`). |
   | `notes` | string | Tidak | Catatan operasional aset. |
-  | `photo` | file | Tidak | Berkas gambar (JPG/PNG, max 5 MB). |
   | `calibration_document` | file | Tidak | Dokumen PDF sertifikat kalibrasi (PDF, max 5 MB). |
 
 ### Contoh Response Sukses (201 Created)

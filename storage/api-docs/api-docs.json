@@ -3664,9 +3664,6 @@
                         "application/json": {
                             "schema": {
                                 "properties": {
-                                    "code": {
-                                        "type": "integer"
-                                    },
                                     "name": {
                                         "type": "string"
                                     }
@@ -3820,9 +3817,6 @@
                         "application/json": {
                             "schema": {
                                 "properties": {
-                                    "code": {
-                                        "type": "integer"
-                                    },
                                     "name": {
                                         "type": "string"
                                     }
@@ -3987,12 +3981,18 @@
                     "content": {
                         "application/json": {
                             "schema": {
+                                "required": [
+                                    "asset_classification_id",
+                                    "name"
+                                ],
                                 "properties": {
-                                    "code": {
-                                        "type": "integer"
+                                    "asset_classification_id": {
+                                        "type": "integer",
+                                        "example": 1
                                     },
                                     "name": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "example": "Tensimeter Digital"
                                     }
                                 },
                                 "type": "object"
@@ -4366,11 +4366,6 @@
                                         "type": "string",
                                         "nullable": true
                                     },
-                                    "photo": {
-                                        "type": "string",
-                                        "format": "binary",
-                                        "nullable": true
-                                    },
                                     "calibration_document": {
                                         "type": "string",
                                         "format": "binary",
@@ -4514,11 +4509,6 @@
                                     },
                                     "notes": {
                                         "type": "string",
-                                        "nullable": true
-                                    },
-                                    "photo": {
-                                        "type": "string",
-                                        "format": "binary",
                                         "nullable": true
                                     },
                                     "calibration_document": {

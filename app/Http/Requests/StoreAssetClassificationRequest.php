@@ -14,7 +14,6 @@ class StoreAssetClassificationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'code' => ['required', 'integer', 'min:1', 'unique:asset_classifications,code'],
             'name' => ['required', 'string'],
         ];
     }
