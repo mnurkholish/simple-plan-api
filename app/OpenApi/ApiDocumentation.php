@@ -1975,8 +1975,10 @@ class ApiDocumentation
      *     security={{"sanctum":{}}},
      *
      *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *         required={"asset_classification_id", "name"},
      *
-     *         @OA\Property(property="name", type="string")
+     *         @OA\Property(property="asset_classification_id", type="integer", example=1),
+     *         @OA\Property(property="name", type="string", example="Tensimeter Digital")
      *     )),
      *
      *     @OA\Response(response=201, description="Created")

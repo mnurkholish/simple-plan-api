@@ -44,7 +44,7 @@ class AssetItemController extends Controller
     public function store(StoreAssetItemRequest $request): JsonResponse
     {
         $this->authorize('create', Asset::class);
-        $item = AssetItem::create($request->safe()->only(['name']));
+        $item = AssetItem::create($request->safe()->only(['asset_classification_id', 'name']));
 
         return response()->json([
             'data' => $item,

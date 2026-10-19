@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreAssetItemRequest extends FormRequest
 {
@@ -14,7 +15,15 @@ class StoreAssetItemRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string'],
+            'asset_classification_id' => ['required', 'integer', 'exists:asset_classifications,id'],
+            'name' => [
+                'required',
+                'string',
+                Rule::unique('asset_items')->where(fn ($query) => $query->where(
+                    'asset_classification_id',
+                    $this->input('asset_classification_id')
+                )),
+            ],
         ];
     }
 }

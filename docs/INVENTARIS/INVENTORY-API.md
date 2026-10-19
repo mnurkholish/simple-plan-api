@@ -161,7 +161,7 @@ Mengambil daftar jenis barang inventaris.
 ## 6. Create Asset Item
 Mendaftarkan jenis barang baru ke dalam master data.
 
-Kode klasifikasi, lokasi ruangan, dan barang otomatis di-generate oleh backend berupa integer urut tanpa padding 0 (1, 2, 3, dst). Method update tidak mengizinkan perubahan kode master data; nama masih dapat diperbarui.
+Kode barang otomatis di-generate oleh backend berupa integer urut tanpa padding 0 (1, 2, 3, dst) yang di-scope unik per klasifikasi aset. Method update tidak mengizinkan perubahan kode maupun klasifikasi aset master data; nama masih dapat diperbarui.
 
 - **Method**: `POST`
 - **Endpoint**: `/api/v1/asset-items`
@@ -169,11 +169,13 @@ Kode klasifikasi, lokasi ruangan, dan barang otomatis di-generate oleh backend b
 - **Request Body**:
   | Field | Tipe | Wajib | Keterangan |
   |---|---|:---:|---|
-  | `name` | string | Ya | Nama jenis barang. |
+  | `asset_classification_id` | integer | Ya | ID Klasifikasi aset induk. |
+  | `name` | string | Ya | Nama jenis barang (unik per klasifikasi). |
 
 ### Contoh Request Body
 ```json
 {
+  "asset_classification_id": 1,
   "name": "Tensimeter Digital"
 }
 ```

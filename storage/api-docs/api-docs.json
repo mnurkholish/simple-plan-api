@@ -3981,9 +3981,18 @@
                     "content": {
                         "application/json": {
                             "schema": {
+                                "required": [
+                                    "asset_classification_id",
+                                    "name"
+                                ],
                                 "properties": {
+                                    "asset_classification_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
                                     "name": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "example": "Tensimeter Digital"
                                     }
                                 },
                                 "type": "object"

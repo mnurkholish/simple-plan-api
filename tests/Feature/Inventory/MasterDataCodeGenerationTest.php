@@ -26,11 +26,15 @@ test('master data models auto-generate pure sequential integer codes', function 
     expect($loc1->code)->toBe(1)
         ->and($loc2->code)->toBe(2);
 
-    $item1 = AssetItem::create(['name' => 'Barang 1']);
-    $item2 = AssetItem::create(['name' => 'Barang 2']);
+    $item1 = AssetItem::create(['asset_classification_id' => $class1->id, 'name' => 'Barang 1']);
+    $item2 = AssetItem::create(['asset_classification_id' => $class1->id, 'name' => 'Barang 2']);
 
     expect($item1->code)->toBe(1)
         ->and($item2->code)->toBe(2);
+
+    // Code scoping check: AssetItem under class2 starts code from 1 even with same name as class1
+    $itemClass2 = AssetItem::create(['asset_classification_id' => $class2->id, 'name' => 'Barang 1']);
+    expect($itemClass2->code)->toBe(1);
 });
 
 test('store master data via API auto-generates code and update ignores code payload', function (): void {
@@ -74,10 +78,12 @@ test('store master data via API auto-generates code and update ignores code payl
 
     // 3. Item
     $responseItem = $this->postJson('/api/v1/asset-items', [
+        'asset_classification_id' => $classId,
         'name' => 'Stetoskop',
     ])->assertCreated()
         ->assertJsonPath('data.code', 1)
-        ->assertJsonPath('data.name', 'Stetoskop');
+        ->assertJsonPath('data.name', 'Stetoskop')
+        ->assertJsonPath('data.asset_classification_id', $classId);
 
     $itemId = $responseItem->json('data.id');
 
@@ -105,4 +111,33 @@ test('asset resource does not expose photo attributes', function (): void {
     $response->assertOk()
         ->assertJsonMissingPath('data.photo')
         ->assertJsonMissingPath('data.photo_object_key');
+});
+
+test('asset item name validation is scoped by asset classification', function (): void {
+    Role::findOrCreate('super-admin', 'web');
+    $user = User::factory()->create();
+    $user->assignRole('super-admin');
+    Sanctum::actingAs($user);
+
+    $class1 = AssetClassification::create(['name' => 'IT']);
+    $class2 = AssetClassification::create(['name' => 'Sarpras']);
+
+    // Create item in class1
+    $this->postJson('/api/v1/asset-items', [
+        'asset_classification_id' => $class1->id,
+        'name' => 'Kabel',
+    ])->assertCreated();
+
+    // Duplicate in class1 should fail
+    $this->postJson('/api/v1/asset-items', [
+        'asset_classification_id' => $class1->id,
+        'name' => 'Kabel',
+    ])->assertUnprocessable()
+        ->assertJsonValidationErrors('name');
+
+    // Same name in class2 should succeed
+    $this->postJson('/api/v1/asset-items', [
+        'asset_classification_id' => $class2->id,
+        'name' => 'Kabel',
+    ])->assertCreated();
 });

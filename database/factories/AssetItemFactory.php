@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\AssetClassification;
 use App\Models\AssetItem;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -13,6 +14,7 @@ class AssetItemFactory extends Factory
     public function definition(): array
     {
         return [
+            'asset_classification_id' => AssetClassification::factory(),
             'name' => ucwords(fake()->unique()->words(2, true)),
         ];
     }

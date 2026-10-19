@@ -17,8 +17,8 @@ test('asset repository search can find assets by code and item name', function (
     $location1 = AssetLocation::factory()->create(['name' => 'Ruang Server']);
     $location2 = AssetLocation::factory()->create(['name' => 'Ruang IGD']);
 
-    $item1 = AssetItem::factory()->create(['name' => 'Laptop ThinkPad']);
-    $item2 = AssetItem::factory()->create(['name' => 'Printer Canon']);
+    $item1 = AssetItem::factory()->create(['asset_classification_id' => $classification->id, 'name' => 'Laptop ThinkPad']);
+    $item2 = AssetItem::factory()->create(['asset_classification_id' => $classification->id, 'name' => 'Printer Canon']);
 
     $code1 = AssetCode::create([
         'asset_classification_id' => $classification->id,
