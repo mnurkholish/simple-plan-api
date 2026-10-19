@@ -10,20 +10,17 @@ use Illuminate\Support\Facades\Cache;
 class NotificationService
 {
     /**
-     * @return array{data: array<int, array<string, mixed>>, unread_count: int}
+     * @return array<string, mixed>
      */
-    public function forUser(User $user): array
+    public function forUser(User $user, int $perPage = 15): array
     {
-        $notifications = $user->unreadNotifications()
+        $notifications = $user->notifications()
             ->latest()
-            ->limit(20)
-            ->get()
-            ->map(fn (DatabaseNotification $notification): array => $this->format($notification))
-            ->values()
-            ->all();
+            ->paginate($perPage)
+            ->through(fn (DatabaseNotification $notification): array => $this->format($notification));
 
         return [
-            'data' => $notifications,
+            ...$notifications->toArray(),
             'unread_count' => $user->unreadNotifications()->count(),
         ];
     }
@@ -64,17 +61,11 @@ class NotificationService
                 'id' => 'activity-login-today',
                 'title' => 'Login hari ini',
                 'subtitle' => Cache::get('login_today_'.$today, 0).' sesi login tercatat.',
-                'icon' => 'IconLogin',
-                'color' => 'emerald',
-                'time' => 'Hari ini',
             ],
             [
                 'id' => 'activity-logout-today',
                 'title' => 'Logout hari ini',
                 'subtitle' => Cache::get('logout_today_'.$today, 0).' sesi logout tercatat.',
-                'icon' => 'IconLogout',
-                'color' => 'slate',
-                'time' => 'Hari ini',
             ],
         ];
     }
@@ -98,10 +89,7 @@ class NotificationService
             'id' => $notification->id,
             'title' => $notification->data['title'] ?? 'Notifikasi',
             'subtitle' => $notification->data['subtitle'] ?? '',
-            'icon' => $notification->data['icon'] ?? 'IconInfoCircle',
-            'color' => $notification->data['color'] ?? 'slate',
-            'time' => $notification->created_at?->diffForHumans(),
-            'read_at' => $notification->read_at,
+            'is_read' => $notification->read_at !== null,
             'created_at' => $notification->created_at,
         ];
     }

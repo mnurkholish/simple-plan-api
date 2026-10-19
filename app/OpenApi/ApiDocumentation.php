@@ -123,10 +123,7 @@ use OpenApi\Annotations as OA;
  *     @OA\Property(property="id", type="string", format="uuid"),
  *     @OA\Property(property="title", type="string", example="Login berhasil"),
  *     @OA\Property(property="subtitle", type="string"),
- *     @OA\Property(property="icon", type="string", example="IconLogin"),
- *     @OA\Property(property="color", type="string", example="emerald"),
- *     @OA\Property(property="time", type="string", nullable=true),
- *     @OA\Property(property="read_at", type="string", nullable=true, format="date-time"),
+ *     @OA\Property(property="is_read", type="boolean"),
  *     @OA\Property(property="created_at", type="string", nullable=true, format="date-time")
  * )
  *
@@ -1470,14 +1467,24 @@ class ApiDocumentation
      * @OA\Get(
      *     path="/notifications",
      *     tags={"Notifications"},
-     *     summary="List unread notifications and activity summary",
+     *     summary="List notifications and activity summary",
      *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="page", in="query", @OA\Schema(type="integer", minimum=1, default=1)),
+     *     @OA\Parameter(name="per_page", in="query", @OA\Schema(type="integer", minimum=1, maximum=100, default=15)),
      *
      *     @OA\Response(response=200, description="Notifications", @OA\JsonContent(
      *
      *         @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/Notification")),
-     *         @OA\Property(property="activity", type="array", @OA\Items(ref="#/components/schemas/Notification")),
-     *         @OA\Property(property="unread_count", type="integer")
+     *         @OA\Property(property="activity", type="array", @OA\Items(type="object",
+     *             @OA\Property(property="id", type="string"),
+     *             @OA\Property(property="title", type="string"),
+     *             @OA\Property(property="subtitle", type="string")
+     *         )),
+     *         @OA\Property(property="unread_count", type="integer"),
+     *         @OA\Property(property="current_page", type="integer"),
+     *         @OA\Property(property="last_page", type="integer"),
+     *         @OA\Property(property="per_page", type="integer"),
+     *         @OA\Property(property="total", type="integer")
      *     ))
      * )
      */
