@@ -322,6 +322,7 @@ Mendaftarkan aset baru dan mengunggah berkas foto/dokumen kalibrasi.
 
 - **Method**: `POST`
 - **Endpoint**: `/api/v1/assets`
+- **Role yang diizinkan**: `super-admin`, `koordinator-sarpras`
 - **Headers**: `Content-Type: multipart/form-data`
 - **Form Data Fields**:
   | Field | Tipe | Wajib | Keterangan |
