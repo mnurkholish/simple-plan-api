@@ -4336,6 +4336,11 @@
                                         "nullable": true,
                                         "maxLength": 100
                                     },
+                                    "detail_item": {
+                                        "type": "string",
+                                        "example": "Lab",
+                                        "nullable": true
+                                    },
                                     "location_detail": {
                                         "type": "string",
                                         "nullable": true,
@@ -4380,7 +4385,23 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Created"
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Asset"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Asset created successfully."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -4409,7 +4430,19 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Asset details"
+                        "description": "Asset details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Asset"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -4479,6 +4512,11 @@
                                         "nullable": true,
                                         "maxLength": 100
                                     },
+                                    "detail_item": {
+                                        "type": "string",
+                                        "example": "Lab",
+                                        "nullable": true
+                                    },
                                     "location_detail": {
                                         "type": "string",
                                         "nullable": true,
@@ -4525,7 +4563,23 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Updated"
+                        "description": "Updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Asset"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Asset updated successfully."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -5275,6 +5329,11 @@
                         "type": "string",
                         "example": "Komputer Poli"
                     },
+                    "detail_item": {
+                        "type": "string",
+                        "example": "Lab",
+                        "nullable": true
+                    },
                     "brand": {
                         "type": "string",
                         "example": "Dell",
@@ -5288,6 +5347,150 @@
                     "status": {
                         "type": "string",
                         "example": "active"
+                    }
+                },
+                "type": "object"
+            },
+            "Asset": {
+                "required": [
+                    "id",
+                    "asset_uid",
+                    "status",
+                    "condition"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "asset_uid": {
+                        "type": "string",
+                        "example": "01K7A5H3YC0M7WJY3PQ8E6KD2V"
+                    },
+                    "asset_code": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "detail_item": {
+                        "type": "string",
+                        "example": "Lab",
+                        "nullable": true
+                    },
+                    "serial_number": {
+                        "type": "string",
+                        "example": "SN-2026-001",
+                        "nullable": true
+                    },
+                    "brand": {
+                        "type": "string",
+                        "example": "Dell",
+                        "nullable": true
+                    },
+                    "model_specification": {
+                        "type": "string",
+                        "example": "OptiPlex 7090",
+                        "nullable": true
+                    },
+                    "location_detail": {
+                        "type": "string",
+                        "example": "Lantai 1",
+                        "nullable": true
+                    },
+                    "purchase_year": {
+                        "type": "integer",
+                        "example": 2026,
+                        "nullable": true
+                    },
+                    "status": {
+                        "type": "string",
+                        "example": "Digunakan"
+                    },
+                    "condition": {
+                        "type": "string",
+                        "example": "Baik"
+                    },
+                    "warranty_until": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2028-12-31",
+                        "nullable": true
+                    },
+                    "notes": {
+                        "type": "string",
+                        "example": "Kondisi baik.",
+                        "nullable": true
+                    },
+                    "calibration_document": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "histories": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AssetHistory"
+                        },
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "AssetHistory": {
+                "required": [
+                    "id",
+                    "event_type",
+                    "is_location_change",
+                    "created_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "event_type": {
+                        "type": "string",
+                        "example": "updated"
+                    },
+                    "old_values": {
+                        "type": "object",
+                        "example": {
+                            "location_name": "Gudang Farmasi",
+                            "asset_location_id": 1,
+                            "full_code": "1/1/1/1/2026"
+                        },
+                        "nullable": true
+                    },
+                    "new_values": {
+                        "type": "object",
+                        "example": {
+                            "location_name": "Ruang ICU",
+                            "asset_location_id": 2,
+                            "full_code": "1/2/1/1/2026"
+                        },
+                        "nullable": true
+                    },
+                    "is_location_change": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "changed_by_name": {
+                        "type": "string",
+                        "example": "Super Admin",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-10-20T10:00:00.000000Z"
                     }
                 },
                 "type": "object"

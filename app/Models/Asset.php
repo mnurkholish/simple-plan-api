@@ -30,6 +30,7 @@ class Asset extends Model
 
     protected $fillable = [
         'asset_code_id',
+        'detail_item',
         'brand',
         'model_specification',
         'location_detail',
@@ -58,6 +59,6 @@ class Asset extends Model
 
     public function histories(): HasMany
     {
-        return $this->hasMany(AssetHistory::class);
+        return $this->hasMany(AssetHistory::class)->latest('id');
     }
 }

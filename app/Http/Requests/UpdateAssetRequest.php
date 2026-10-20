@@ -24,6 +24,7 @@ class UpdateAssetRequest extends FormRequest
             'serial_number' => ['sometimes', 'nullable', 'string'],
             'brand' => ['sometimes', 'nullable', 'string', 'max:100'],
             'model_specification' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'detail_item' => ['sometimes', 'nullable', 'string', 'max:255'],
             'location_detail' => ['sometimes', 'nullable', 'string', 'max:100'],
             'purchase_year' => ['sometimes', 'required', 'integer', 'min:1900', 'max:2100'],
             'status' => ['sometimes', 'required', Rule::enum(AssetStatus::class)],

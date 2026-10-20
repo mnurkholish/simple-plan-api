@@ -20,6 +20,7 @@ class AssetResource extends JsonResource
                 'location' => $this->assetCode->relationLoaded('location') ? $this->assetCode->location : null,
                 'item' => $this->assetCode->relationLoaded('item') ? $this->assetCode->item : null,
             ]),
+            'detail_item' => $this->detail_item,
             'serial_number' => $this->serial_number,
             'brand' => $this->brand,
             'model_specification' => $this->model_specification,
@@ -36,6 +37,7 @@ class AssetResource extends JsonResource
             ],
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
+            'histories' => AssetHistoryResource::collection($this->whenLoaded('histories')),
         ];
     }
 }

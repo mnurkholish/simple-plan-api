@@ -21,6 +21,7 @@ class AssetRepository
                 $query->where('serial_number', 'like', "%{$search}%")
                     ->orWhere('brand', 'like', "%{$search}%")
                     ->orWhere('model_specification', 'like', "%{$search}%")
+                    ->orWhere('detail_item', 'like', "%{$search}%")
                     ->orWhere('location_detail', 'like', "%{$search}%")
                     ->orWhere('notes', 'like', "%{$search}%")
                     ->orWhereHas('assetCode', function (Builder $code) use ($search): void {

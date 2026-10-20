@@ -1032,6 +1032,7 @@ components:
         purchase_year: { type: integer, minimum: 1900, maximum: 2100 }
         brand: { type: [string, "null"], maxLength: 100 }
         model_specification: { type: [string, "null"], maxLength: 100 }
+        detail_item: { type: [string, "null"], maxLength: 255 }
         location_detail: { type: [string, "null"], maxLength: 100 }
         serial_number: { type: [string, "null"] }
         status: { type: string, enum: [Digunakan, Tidak Digunakan, Rusak, Dipinjam] }
@@ -1058,6 +1059,7 @@ components:
             item: { type: [object, "null"] }
         brand: { type: [string, "null"] }
         model_specification: { type: [string, "null"] }
+        detail_item: { type: [string, "null"] }
         location_detail: { type: [string, "null"] }
         serial_number: { type: [string, "null"] }
         purchase_year: { type: [integer, "null"] }
@@ -1067,6 +1069,32 @@ components:
         notes: { type: [string, "null"] }
         photo: { type: [object, "null"] }
         calibration_document: { type: [object, "null"] }
+        histories:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssetHistory"
+
+    AssetHistory:
+      type: object
+      required: [id, event_type, is_location_change, created_at]
+      properties:
+        id: { type: integer, example: 1 }
+        event_type: { type: string, example: updated }
+        old_values:
+          type: [object, "null"]
+          example:
+            location_name: "Gudang Farmasi"
+            asset_location_id: 1
+            full_code: "1/1/1/1/2026"
+        new_values:
+          type: [object, "null"]
+          example:
+            location_name: "Ruang ICU"
+            asset_location_id: 2
+            full_code: "1/2/1/1/2026"
+        is_location_change: { type: boolean, example: true }
+        changed_by_name: { type: [string, "null"], example: "Super Admin" }
+        created_at: { type: string, format: date-time, example: "2026-10-20T10:00:00.000000Z" }
 
     InventoryAssetResponse:
       type: object

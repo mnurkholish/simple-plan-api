@@ -6,7 +6,7 @@ namespace App\Services;
 
 use App\Models\Asset;
 use App\Models\AssetCode;
-use App\Models\AssetHistory;
+use App\Models\AssetLocation;
 use App\Repositories\AssetRepository;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
@@ -49,7 +49,7 @@ class AssetService
                 ]);
 
                 $assetData = array_intersect_key($data, array_flip([
-                    'serial_number', 'purchase_year', 'brand', 'model_specification', 'location_detail',
+                    'serial_number', 'purchase_year', 'brand', 'model_specification', 'detail_item', 'location_detail',
                     'status', 'condition', 'warranty_until', 'notes',
                 ]));
                 $assetData['asset_code_id'] = $assetCode->id;
@@ -84,6 +84,16 @@ class AssetService
                     $newYear = (int) ($data['purchase_year'] ?? $asset->purchase_year);
                     $isLocationChange = $newLocId !== (int) $assetCode->asset_location_id;
 
+                    if ($isLocationChange) {
+                        $oldLocationName = $assetCode->location?->name ?? AssetLocation::find($assetCode->asset_location_id)?->name;
+                        $newLocationName = AssetLocation::find($newLocId)?->name;
+
+                        if ($oldLocationName !== null && $newLocationName !== null && $oldLocationName !== $newLocationName) {
+                            $oldValues['location_name'] = $oldLocationName;
+                            $newValues['location_name'] = $newLocationName;
+                        }
+                    }
+
                     if ($newClassId !== (int) $assetCode->asset_classification_id
                         || $isLocationChange
                         || $newItemId !== (int) $assetCode->asset_item_id
@@ -111,7 +121,7 @@ class AssetService
                 }
 
                 $assetData = array_intersect_key($data, array_flip([
-                    'serial_number', 'purchase_year', 'brand', 'model_specification', 'location_detail',
+                    'serial_number', 'purchase_year', 'brand', 'model_specification', 'detail_item', 'location_detail',
                     'status', 'condition', 'warranty_until', 'notes',
                 ]));
                 if ($calibration !== null) {
@@ -129,13 +139,12 @@ class AssetService
                 }
                 if ($oldValues !== []) {
                     $asset->save();
-                    AssetHistory::create([
-                        'asset_id' => $asset->id,
+                    $asset->histories()->create([
                         'event_type' => 'updated',
                         'old_values' => $oldValues,
                         'new_values' => $newValues,
                         'is_location_change' => $isLocationChange,
-                        'changed_by' => $actorId,
+                        'changed_by' => $actorId ?? auth()->id(),
                         'created_at' => now(),
                     ]);
                 }

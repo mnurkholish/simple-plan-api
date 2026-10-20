@@ -253,6 +253,7 @@ Mengambil daftar aset dengan pencarian komprehensif dan penyaringan multi-kriter
         }
       },
       "asset_uid": "01K7A5H3YC0M7WJY3PQ8E6KD2V",
+      "detail_item": "Bed Pasien",
       "brand": "Sella",
       "model_specification": "Seri A",
       "location_detail": "Lantai 1",
@@ -299,6 +300,7 @@ Mengambil detail satu aset lengkap dengan relasi kodenya.
       "item": { "id": 1, "code": 12, "name": "Kursi Roda Bed Pasien" }
     },
     "asset_uid": "01K7A5H3YC0M7WJY3PQ8E6KD2V",
+    "detail_item": "Bed Pasien",
     "brand": "Sella",
     "model_specification": "Seri A",
     "location_detail": "Lantai 1",
@@ -310,7 +312,26 @@ Mengambil detail satu aset lengkap dengan relasi kodenya.
     "notes": "Kondisi baru",
     "calibration_document": { ... },
     "created_at": "2026-10-08T12:00:00.000000Z",
-    "updated_at": "2026-10-08T12:00:00.000000Z"
+    "updated_at": "2026-10-08T12:00:00.000000Z",
+    "histories": [
+      {
+        "id": 1,
+        "event_type": "updated",
+        "old_values": {
+          "location_name": "Unit Gawat Darurat",
+          "asset_location_id": 1,
+          "full_code": "5/10/1/12/2026"
+        },
+        "new_values": {
+          "location_name": "Poli 1",
+          "asset_location_id": 2,
+          "full_code": "5/11/1/12/2026"
+        },
+        "is_location_change": true,
+        "changed_by_name": "Super Admin",
+        "created_at": "2026-10-15T08:30:00.000000Z"
+      }
+    ]
   }
 }
 ```
@@ -334,6 +355,7 @@ Mendaftarkan aset baru dan mengunggah berkas foto/dokumen kalibrasi.
   | `serial_number` | string | Tidak | Nomor seri pabrik. |
   | `brand` | string | Tidak | Merek aset fisik, maks 100 karakter. |
   | `model_specification` | string | Tidak | Model/spesifikasi, maks 100 karakter. |
+  | `detail_item` | string | Tidak | Keterangan detail barang (mis. "Makan", "Lab"), maks 255 karakter. |
   | `location_detail` | string | Tidak | Detail lokasi dalam ruangan, maks 100 karakter. |
   | `status` | string | Ya | `Digunakan`, `Tidak Digunakan`, `Rusak`, atau `Dipinjam`. |
   | `condition` | string | Ya | `Baik`, `Rusak Ringan`, atau `Rusak Berat`. |
@@ -351,6 +373,7 @@ Mendaftarkan aset baru dan mengunggah berkas foto/dokumen kalibrasi.
       "full_code": "5/10/2/12/2026",
       "sequence_number": 2
     },
+    "detail_item": "Bed Pasien",
     "serial_number": "SN-2026-002",
     "purchase_year": 2026,
     "status": "Digunakan",
@@ -389,6 +412,7 @@ status: Digunakan
       "full_code": "5/11/1/12/2026",
       "sequence_number": 1
     },
+    "detail_item": "Bed Pasien",
     "serial_number": "SN-2026-001",
     "purchase_year": 2026,
     "status": "Digunakan",

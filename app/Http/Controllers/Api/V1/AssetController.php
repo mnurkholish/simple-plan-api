@@ -81,7 +81,12 @@ class AssetController extends Controller
     public function show(Asset $asset): AssetResource
     {
         $this->authorize('view', $asset);
-        $asset->load(['assetCode.classification', 'assetCode.location', 'assetCode.item']);
+        $asset->load([
+            'assetCode.classification',
+            'assetCode.location',
+            'assetCode.item',
+            'histories' => fn ($query) => $query->latest('id')->with(['changedBy', 'changer']),
+        ]);
 
         return new AssetResource($asset);
     }

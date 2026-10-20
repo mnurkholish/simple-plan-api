@@ -67,3 +67,23 @@ test('asset repository search can find assets by code and item name', function (
     $resultsAll = $repository->search($location1->id, null);
     expect($resultsAll)->toHaveCount(2);
 });
+
+test('asset repository filteredQuery can find assets by detail_item', function (): void {
+    $repository = app(AssetRepository::class);
+
+    $classification = AssetClassification::factory()->create();
+    $location = AssetLocation::factory()->create();
+    $item = AssetItem::factory()->create(['asset_classification_id' => $classification->id]);
+
+    $asset1 = Asset::factory()->forInventory($classification, $location, $item)->create([
+        'detail_item' => 'Meja Makan',
+    ]);
+    $asset2 = Asset::factory()->forInventory($classification, $location, $item)->create([
+        'detail_item' => 'Meja Lab',
+    ]);
+
+    $results = $repository->filteredQuery(['search' => 'Makan'])->get();
+
+    expect($results)->toHaveCount(1)
+        ->and($results->first()->id)->toBe($asset1->id);
+});
