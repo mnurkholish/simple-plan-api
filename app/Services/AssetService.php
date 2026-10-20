@@ -6,7 +6,6 @@ namespace App\Services;
 
 use App\Models\Asset;
 use App\Models\AssetCode;
-use App\Models\AssetHistory;
 use App\Models\AssetLocation;
 use App\Repositories\AssetRepository;
 use Illuminate\Database\Eloquent\Collection;
