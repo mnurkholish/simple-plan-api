@@ -312,7 +312,24 @@ Mengambil detail satu aset lengkap dengan relasi kodenya.
     "notes": "Kondisi baru",
     "calibration_document": { ... },
     "created_at": "2026-10-08T12:00:00.000000Z",
-    "updated_at": "2026-10-08T12:00:00.000000Z"
+    "updated_at": "2026-10-08T12:00:00.000000Z",
+    "histories": [
+      {
+        "id": 1,
+        "event_type": "updated",
+        "old_values": {
+          "location_id": 1,
+          "full_code": "5/10/1/12/2026"
+        },
+        "new_values": {
+          "location_id": 2,
+          "full_code": "5/11/1/12/2026"
+        },
+        "is_location_change": true,
+        "changed_by_name": "Super Admin",
+        "created_at": "2026-10-15T08:30:00.000000Z"
+      }
+    ]
   }
 }
 ```

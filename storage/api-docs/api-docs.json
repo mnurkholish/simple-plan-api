@@ -5433,6 +5433,54 @@
                         "type": "string",
                         "format": "date-time",
                         "nullable": true
+                    },
+                    "histories": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AssetHistory"
+                        },
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "AssetHistory": {
+                "required": [
+                    "id",
+                    "event_type",
+                    "is_location_change",
+                    "created_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "event_type": {
+                        "type": "string",
+                        "example": "updated"
+                    },
+                    "old_values": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "new_values": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "is_location_change": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "changed_by_name": {
+                        "type": "string",
+                        "example": "Super Admin",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-10-20T10:00:00.000000Z"
                     }
                 },
                 "type": "object"

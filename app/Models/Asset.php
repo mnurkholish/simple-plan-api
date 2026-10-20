@@ -59,6 +59,6 @@ class Asset extends Model
 
     public function histories(): HasMany
     {
-        return $this->hasMany(AssetHistory::class);
+        return $this->hasMany(AssetHistory::class)->latest('id');
     }
 }

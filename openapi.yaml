@@ -1069,6 +1069,22 @@ components:
         notes: { type: [string, "null"] }
         photo: { type: [object, "null"] }
         calibration_document: { type: [object, "null"] }
+        histories:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssetHistory"
+
+    AssetHistory:
+      type: object
+      required: [id, event_type, is_location_change, created_at]
+      properties:
+        id: { type: integer }
+        event_type: { type: string }
+        old_values: { type: [object, "null"] }
+        new_values: { type: [object, "null"] }
+        is_location_change: { type: boolean }
+        changed_by_name: { type: [string, "null"] }
+        created_at: { type: string, format: date-time }
 
     InventoryAssetResponse:
       type: object

@@ -219,7 +219,22 @@ use OpenApi\Annotations as OA;
  *     @OA\Property(property="notes", type="string", nullable=true, example="Kondisi baik."),
  *     @OA\Property(property="calibration_document", type="object", nullable=true),
  *     @OA\Property(property="created_at", type="string", format="date-time", nullable=true),
- *     @OA\Property(property="updated_at", type="string", format="date-time", nullable=true)
+ *     @OA\Property(property="updated_at", type="string", format="date-time", nullable=true),
+ *     @OA\Property(property="histories", type="array", @OA\Items(ref="#/components/schemas/AssetHistory"), nullable=true)
+ * )
+ *
+ * @OA\Schema(
+ *     schema="AssetHistory",
+ *     type="object",
+ *     required={"id","event_type","is_location_change","created_at"},
+ *
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="event_type", type="string", example="updated"),
+ *     @OA\Property(property="old_values", type="object", nullable=true),
+ *     @OA\Property(property="new_values", type="object", nullable=true),
+ *     @OA\Property(property="is_location_change", type="boolean", example=true),
+ *     @OA\Property(property="changed_by_name", type="string", nullable=true, example="Super Admin"),
+ *     @OA\Property(property="created_at", type="string", format="date-time", example="2026-10-20T10:00:00.000000Z")
  * )
  *
  * @OA\Schema(
