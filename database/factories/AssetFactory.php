@@ -36,6 +36,7 @@ class AssetFactory extends Factory
                 'Lenovo', 'LG', 'Panasonic', 'Philips', 'Samsung', 'Sharp', 'Siemens',
             ]),
             'model_specification' => fake()->bothify('Model-??-####'),
+            'detail_item' => $this->faker->optional()->word(),
             'location_detail' => fake()->randomElement([
                 'Dekat pintu masuk', 'Lantai 1', 'Lantai 2', 'Meja petugas',
                 'Ruang penyimpanan', 'Sisi kanan ruangan', 'Sisi kiri ruangan',

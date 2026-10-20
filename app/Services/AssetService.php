@@ -49,7 +49,7 @@ class AssetService
                 ]);
 
                 $assetData = array_intersect_key($data, array_flip([
-                    'serial_number', 'purchase_year', 'brand', 'model_specification', 'location_detail',
+                    'serial_number', 'purchase_year', 'brand', 'model_specification', 'detail_item', 'location_detail',
                     'status', 'condition', 'warranty_until', 'notes',
                 ]));
                 $assetData['asset_code_id'] = $assetCode->id;
@@ -111,7 +111,7 @@ class AssetService
                 }
 
                 $assetData = array_intersect_key($data, array_flip([
-                    'serial_number', 'purchase_year', 'brand', 'model_specification', 'location_detail',
+                    'serial_number', 'purchase_year', 'brand', 'model_specification', 'detail_item', 'location_detail',
                     'status', 'condition', 'warranty_until', 'notes',
                 ]));
                 if ($calibration !== null) {

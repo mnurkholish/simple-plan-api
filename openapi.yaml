@@ -1032,6 +1032,7 @@ components:
         purchase_year: { type: integer, minimum: 1900, maximum: 2100 }
         brand: { type: [string, "null"], maxLength: 100 }
         model_specification: { type: [string, "null"], maxLength: 100 }
+        detail_item: { type: [string, "null"], maxLength: 255 }
         location_detail: { type: [string, "null"], maxLength: 100 }
         serial_number: { type: [string, "null"] }
         status: { type: string, enum: [Digunakan, Tidak Digunakan, Rusak, Dipinjam] }
@@ -1058,6 +1059,7 @@ components:
             item: { type: [object, "null"] }
         brand: { type: [string, "null"] }
         model_specification: { type: [string, "null"] }
+        detail_item: { type: [string, "null"] }
         location_detail: { type: [string, "null"] }
         serial_number: { type: [string, "null"] }
         purchase_year: { type: [integer, "null"] }

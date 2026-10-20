@@ -193,9 +193,33 @@ use OpenApi\Annotations as OA;
  *     @OA\Property(property="id", type="integer", example=1),
  *     @OA\Property(property="asset_number", type="string", example="AST-0001"),
  *     @OA\Property(property="name", type="string", example="Komputer Poli"),
+ *     @OA\Property(property="detail_item", type="string", nullable=true, example="Lab"),
  *     @OA\Property(property="brand", type="string", nullable=true, example="Dell"),
  *     @OA\Property(property="location", type="string", nullable=true, example="Poli Umum"),
  *     @OA\Property(property="status", type="string", example="active")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="Asset",
+ *     type="object",
+ *     required={"id","asset_uid","status","condition"},
+ *
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="asset_uid", type="string", example="01K7A5H3YC0M7WJY3PQ8E6KD2V"),
+ *     @OA\Property(property="asset_code", type="object", nullable=true),
+ *     @OA\Property(property="detail_item", type="string", nullable=true, example="Lab"),
+ *     @OA\Property(property="serial_number", type="string", nullable=true, example="SN-2026-001"),
+ *     @OA\Property(property="brand", type="string", nullable=true, example="Dell"),
+ *     @OA\Property(property="model_specification", type="string", nullable=true, example="OptiPlex 7090"),
+ *     @OA\Property(property="location_detail", type="string", nullable=true, example="Lantai 1"),
+ *     @OA\Property(property="purchase_year", type="integer", nullable=true, example=2026),
+ *     @OA\Property(property="status", type="string", example="Digunakan"),
+ *     @OA\Property(property="condition", type="string", example="Baik"),
+ *     @OA\Property(property="warranty_until", type="string", format="date", nullable=true, example="2028-12-31"),
+ *     @OA\Property(property="notes", type="string", nullable=true, example="Kondisi baik."),
+ *     @OA\Property(property="calibration_document", type="object", nullable=true),
+ *     @OA\Property(property="created_at", type="string", format="date-time", nullable=true),
+ *     @OA\Property(property="updated_at", type="string", format="date-time", nullable=true)
  * )
  *
  * @OA\Schema(
@@ -2083,6 +2107,7 @@ class ApiDocumentation
      *         @OA\Property(property="serial_number", type="string", nullable=true),
      *         @OA\Property(property="brand", type="string", nullable=true, maxLength=100),
      *         @OA\Property(property="model_specification", type="string", nullable=true, maxLength=100),
+     *         @OA\Property(property="detail_item", type="string", nullable=true, example="Lab"),
      *         @OA\Property(property="location_detail", type="string", nullable=true, maxLength=100),
      *         @OA\Property(property="status", type="string", enum={"Digunakan", "Tidak Digunakan", "Rusak", "Dipinjam"}),
      *         @OA\Property(property="condition", type="string", enum={"Baik", "Rusak Ringan", "Rusak Berat"}),
@@ -2091,7 +2116,16 @@ class ApiDocumentation
      *         @OA\Property(property="calibration_document", type="string", format="binary", nullable=true)
      *     ))),
      *
-     *     @OA\Response(response=201, description="Created")
+     *     @OA\Response(
+     *         response=201,
+     *         description="Created",
+     *
+     *         @OA\JsonContent(
+     *
+     *             @OA\Property(property="data", ref="#/components/schemas/Asset"),
+     *             @OA\Property(property="message", type="string", example="Asset created successfully.")
+     *         )
+     *     )
      * )
      */
     public function assetsStore(): void {}
@@ -2105,7 +2139,15 @@ class ApiDocumentation
      *
      *     @OA\Parameter(name="asset", in="path", required=true, @OA\Schema(type="integer")),
      *
-     *     @OA\Response(response=200, description="Asset details")
+     *     @OA\Response(
+     *         response=200,
+     *         description="Asset details",
+     *
+     *         @OA\JsonContent(
+     *
+     *             @OA\Property(property="data", ref="#/components/schemas/Asset")
+     *         )
+     *     )
      * )
      */
     public function assetsShow(): void {}
@@ -2130,6 +2172,7 @@ class ApiDocumentation
      *         @OA\Property(property="serial_number", type="string", nullable=true),
      *         @OA\Property(property="brand", type="string", nullable=true, maxLength=100),
      *         @OA\Property(property="model_specification", type="string", nullable=true, maxLength=100),
+     *         @OA\Property(property="detail_item", type="string", nullable=true, example="Lab"),
      *         @OA\Property(property="location_detail", type="string", nullable=true, maxLength=100),
      *         @OA\Property(property="status", type="string", enum={"Digunakan", "Tidak Digunakan", "Rusak", "Dipinjam"}, nullable=true),
      *         @OA\Property(property="condition", type="string", enum={"Baik", "Rusak Ringan", "Rusak Berat"}, nullable=true),
@@ -2138,7 +2181,16 @@ class ApiDocumentation
      *         @OA\Property(property="calibration_document", type="string", format="binary", nullable=true)
      *     ))),
      *
-     *     @OA\Response(response=200, description="Updated")
+     *     @OA\Response(
+     *         response=200,
+     *         description="Updated",
+     *
+     *         @OA\JsonContent(
+     *
+     *             @OA\Property(property="data", ref="#/components/schemas/Asset"),
+     *             @OA\Property(property="message", type="string", example="Asset updated successfully.")
+     *         )
+     *     )
      * )
      */
     public function assetsUpdate(): void {}

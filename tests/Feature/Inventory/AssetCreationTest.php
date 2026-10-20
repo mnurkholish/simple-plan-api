@@ -2,6 +2,7 @@
 
 use App\Enums\AssetCondition;
 use App\Enums\AssetStatus;
+use App\Models\Asset;
 use App\Models\AssetClassification;
 use App\Models\AssetItem;
 use App\Models\AssetLocation;
@@ -22,6 +23,7 @@ function validAssetPayload(AssetClassification $classification, AssetLocation $l
         'serial_number' => 'SN-TEST-001',
         'brand' => 'Lenovo',
         'model_specification' => 'ThinkPad T14',
+        'detail_item' => 'Meja Lab',
         'location_detail' => 'Lantai 2 Meja 3',
         'status' => AssetStatus::InUse->value,
         'condition' => AssetCondition::Good->value,
@@ -45,11 +47,13 @@ test('super-admin and koordinator-sarpras can create asset', function (string $r
 
     $response->assertCreated()
         ->assertJsonPath('message', 'Asset created successfully.')
-        ->assertJsonPath('data.serial_number', 'SN-TEST-001');
+        ->assertJsonPath('data.serial_number', 'SN-TEST-001')
+        ->assertJsonPath('data.detail_item', 'Meja Lab');
 
     $this->assertDatabaseHas('assets', [
         'serial_number' => 'SN-TEST-001',
         'purchase_year' => 2026,
+        'detail_item' => 'Meja Lab',
     ]);
 })->with([
     'super admin' => 'super-admin',
@@ -100,4 +104,49 @@ test('regular user or management cannot create asset', function (string $role): 
 
 test('guest cannot create asset', function (): void {
     $this->postJson('/api/v1/assets', [])->assertUnauthorized();
+});
+
+test('super-admin can update asset detail_item', function (): void {
+    Role::findOrCreate('super-admin', 'web');
+    $user = User::factory()->create();
+    $user->assignRole('super-admin');
+    Sanctum::actingAs($user);
+
+    $classification = AssetClassification::factory()->create();
+    $location = AssetLocation::factory()->create();
+    $item = AssetItem::factory()->create(['asset_classification_id' => $classification->id]);
+
+    $asset = Asset::factory()->forInventory($classification, $location, $item)->create([
+        'detail_item' => 'Meja Makan',
+    ]);
+
+    $response = $this->putJson("/api/v1/assets/{$asset->id}", [
+        'detail_item' => 'Meja Rapat',
+    ]);
+
+    $response->assertOk()
+        ->assertJsonPath('data.detail_item', 'Meja Rapat');
+
+    $this->assertDatabaseHas('assets', [
+        'id' => $asset->id,
+        'detail_item' => 'Meja Rapat',
+    ]);
+});
+
+test('detail_item validation rejects string longer than 255 characters', function (): void {
+    Role::findOrCreate('super-admin', 'web');
+    $user = User::factory()->create();
+    $user->assignRole('super-admin');
+    Sanctum::actingAs($user);
+
+    $classification = AssetClassification::factory()->create();
+    $location = AssetLocation::factory()->create();
+    $item = AssetItem::factory()->create(['asset_classification_id' => $classification->id]);
+
+    $payload = validAssetPayload($classification, $location, $item);
+    $payload['detail_item'] = str_repeat('a', 256);
+
+    $this->postJson('/api/v1/assets', $payload)
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('detail_item');
 });

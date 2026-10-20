@@ -24,6 +24,7 @@ class StoreAssetRequest extends FormRequest
             'serial_number' => ['nullable', 'string'],
             'brand' => ['nullable', 'string', 'max:100'],
             'model_specification' => ['nullable', 'string', 'max:100'],
+            'detail_item' => ['nullable', 'string', 'max:255'],
             'location_detail' => ['nullable', 'string', 'max:100'],
             'status' => ['required', Rule::enum(AssetStatus::class)],
             'condition' => ['required', Rule::enum(AssetCondition::class)],
