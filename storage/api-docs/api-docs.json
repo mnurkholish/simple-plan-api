@@ -4302,6 +4302,7 @@
                     "Inventory - Assets"
                 ],
                 "summary": "Create asset",
+                "description": "Hanya dapat diakses oleh Super Admin dan Koordinator Sarpras.",
                 "operationId": "a30dd78a051d5d9b6912fe49d8bb4ed1",
                 "requestBody": {
                     "required": true,

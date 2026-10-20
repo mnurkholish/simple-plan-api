@@ -2071,6 +2071,7 @@ class ApiDocumentation
      *     path="/assets",
      *     tags={"Inventory - Assets"},
      *     summary="Create asset",
+     *     description="Hanya dapat diakses oleh Super Admin dan Koordinator Sarpras.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\RequestBody(required=true, @OA\MediaType(mediaType="multipart/form-data", @OA\Schema(
