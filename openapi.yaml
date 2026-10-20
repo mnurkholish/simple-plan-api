@@ -1078,13 +1078,23 @@ components:
       type: object
       required: [id, event_type, is_location_change, created_at]
       properties:
-        id: { type: integer }
-        event_type: { type: string }
-        old_values: { type: [object, "null"] }
-        new_values: { type: [object, "null"] }
-        is_location_change: { type: boolean }
-        changed_by_name: { type: [string, "null"] }
-        created_at: { type: string, format: date-time }
+        id: { type: integer, example: 1 }
+        event_type: { type: string, example: updated }
+        old_values:
+          type: [object, "null"]
+          example:
+            location_name: "Gudang Farmasi"
+            asset_location_id: 1
+            full_code: "1/1/1/1/2026"
+        new_values:
+          type: [object, "null"]
+          example:
+            location_name: "Ruang ICU"
+            asset_location_id: 2
+            full_code: "1/2/1/1/2026"
+        is_location_change: { type: boolean, example: true }
+        changed_by_name: { type: [string, "null"], example: "Super Admin" }
+        created_at: { type: string, format: date-time, example: "2026-10-20T10:00:00.000000Z" }
 
     InventoryAssetResponse:
       type: object

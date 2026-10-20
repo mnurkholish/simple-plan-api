@@ -37,8 +37,8 @@ test('asset detail endpoint returns histories ordered by latest', function (): v
     $newerHistory = AssetHistory::create([
         'asset_id' => $asset->id,
         'event_type' => 'updated',
-        'old_values' => ['location_id' => 1],
-        'new_values' => ['location_id' => 2],
+        'old_values' => ['asset_location_id' => 1, 'location_name' => 'Gudang Lama'],
+        'new_values' => ['asset_location_id' => 2, 'location_name' => 'Gudang Baru'],
         'is_location_change' => true,
         'changed_by' => $user->id,
         'created_at' => now(),
@@ -68,6 +68,8 @@ test('asset detail endpoint returns histories ordered by latest', function (): v
         ->assertJsonPath('data.histories.0.id', $newerHistory->id)
         ->assertJsonPath('data.histories.0.is_location_change', true)
         ->assertJsonPath('data.histories.0.changed_by_name', 'Dr. Budi')
+        ->assertJsonPath('data.histories.0.old_values.location_name', 'Gudang Lama')
+        ->assertJsonPath('data.histories.0.new_values.location_name', 'Gudang Baru')
         ->assertJsonPath('data.histories.1.id', $olderHistory->id)
         ->assertJsonPath('data.histories.1.is_location_change', false);
 });
@@ -79,8 +81,8 @@ test('asset history correctly records location change when asset is updated', fu
     Sanctum::actingAs($user);
 
     $classification = AssetClassification::factory()->create();
-    $location1 = AssetLocation::factory()->create();
-    $location2 = AssetLocation::factory()->create();
+    $location1 = AssetLocation::factory()->create(['name' => 'Gudang Farmasi']);
+    $location2 = AssetLocation::factory()->create(['name' => 'Ruang ICU']);
     $item = AssetItem::factory()->create(['asset_classification_id' => $classification->id]);
 
     $asset = Asset::factory()->forInventory($classification, $location1, $item)->create();
@@ -95,6 +97,9 @@ test('asset history correctly records location change when asset is updated', fu
         ->assertJsonCount(1, 'data.histories')
         ->assertJsonPath('data.histories.0.is_location_change', true)
         ->assertJsonPath('data.histories.0.changed_by_name', 'Admin Sarpras')
+        ->assertJsonPath('data.histories.0.old_values.location_name', 'Gudang Farmasi')
+        ->assertJsonPath('data.histories.0.new_values.location_name', 'Ruang ICU')
+        ->assertJsonPath('data.histories.0.old_values.asset_location_id', $location1->id)
         ->assertJsonPath('data.histories.0.new_values.asset_location_id', $location2->id);
 });
 

@@ -230,8 +230,18 @@ use OpenApi\Annotations as OA;
  *
  *     @OA\Property(property="id", type="integer", example=1),
  *     @OA\Property(property="event_type", type="string", example="updated"),
- *     @OA\Property(property="old_values", type="object", nullable=true),
- *     @OA\Property(property="new_values", type="object", nullable=true),
+ *     @OA\Property(
+ *         property="old_values",
+ *         type="object",
+ *         nullable=true,
+ *         example={"location_name": "Gudang Farmasi", "asset_location_id": 1, "full_code": "1/1/1/1/2026"}
+ *     ),
+ *     @OA\Property(
+ *         property="new_values",
+ *         type="object",
+ *         nullable=true,
+ *         example={"location_name": "Ruang ICU", "asset_location_id": 2, "full_code": "1/2/1/1/2026"}
+ *     ),
  *     @OA\Property(property="is_location_change", type="boolean", example=true),
  *     @OA\Property(property="changed_by_name", type="string", nullable=true, example="Super Admin"),
  *     @OA\Property(property="created_at", type="string", format="date-time", example="2026-10-20T10:00:00.000000Z")

@@ -5462,10 +5462,20 @@
                     },
                     "old_values": {
                         "type": "object",
+                        "example": {
+                            "location_name": "Gudang Farmasi",
+                            "asset_location_id": 1,
+                            "full_code": "1/1/1/1/2026"
+                        },
                         "nullable": true
                     },
                     "new_values": {
                         "type": "object",
+                        "example": {
+                            "location_name": "Ruang ICU",
+                            "asset_location_id": 2,
+                            "full_code": "1/2/1/1/2026"
+                        },
                         "nullable": true
                     },
                     "is_location_change": {

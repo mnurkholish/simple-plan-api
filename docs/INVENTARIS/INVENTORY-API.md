@@ -318,11 +318,13 @@ Mengambil detail satu aset lengkap dengan relasi kodenya.
         "id": 1,
         "event_type": "updated",
         "old_values": {
-          "location_id": 1,
+          "location_name": "Unit Gawat Darurat",
+          "asset_location_id": 1,
           "full_code": "5/10/1/12/2026"
         },
         "new_values": {
-          "location_id": 2,
+          "location_name": "Poli 1",
+          "asset_location_id": 2,
           "full_code": "5/11/1/12/2026"
         },
         "is_location_change": true,
