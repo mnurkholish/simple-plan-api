@@ -56,9 +56,16 @@ paths:
                         id: { type: string, format: uuid }
                         title: { type: string }
                         subtitle: { type: string }
+                        target:
+                          type: [object, 'null']
+                          description: Navigation metadata. Null for notifications without a detail destination.
+                          properties:
+                            feature: { type: string, example: helpdesk }
+                            service: { type: string, enum: [tik, sarpras], description: Helpdesk service; other features may use different metadata. }
+                            resource_id: { type: integer, example: 123 }
                         ticket_id: { type: [integer, 'null'], description: Related ticket ID when this is a ticket notification. }
                         nomor_tiket: { type: [string, 'null'], description: Related ticket number when this is a ticket notification. }
-                        url: { type: [string, 'null'], description: Relative ticket detail path when this is a ticket notification. }
+                        url: { type: [string, 'null'], description: Frontend ticket detail path (/helpdesk/tik/{id} or /helpdesk/sarpras/{id}) for ticket notifications. }
                         is_read: { type: boolean }
                         created_at: { type: [string, 'null'], format: date-time }
                   unread_count: { type: integer }

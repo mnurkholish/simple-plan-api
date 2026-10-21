@@ -16,7 +16,7 @@ use App\Http\Resources\AssigneeOptionResource;
 use App\Http\Resources\TicketDetailResource;
 use App\Http\Resources\TicketResource;
 use App\Models\Ticket;
-use App\Services\NotificationService;
+use App\Services\TicketNotificationService;
 use App\Services\TicketService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -26,7 +26,7 @@ class TicketController extends Controller
 {
     public function __construct(
         private readonly TicketService $service,
-        private readonly NotificationService $notifications,
+        private readonly TicketNotificationService $notifications,
     ) {}
 
     public function index(ListTicketRequest $request): AnonymousResourceCollection

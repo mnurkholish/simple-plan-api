@@ -5220,6 +5220,29 @@
                     "subtitle": {
                         "type": "string"
                     },
+                    "target": {
+                        "description": "Navigation metadata; null for notifications without a detail destination. Helpdesk targets include feature=helpdesk, service=tik or sarpras, and resource_id.",
+                        "properties": {
+                            "feature": {
+                                "type": "string",
+                                "example": "helpdesk"
+                            },
+                            "service": {
+                                "type": "string",
+                                "example": "tik",
+                                "enum": [
+                                    "tik",
+                                    "sarpras"
+                                ]
+                            },
+                            "resource_id": {
+                                "type": "integer",
+                                "example": 123
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
                     "ticket_id": {
                         "description": "Related ticket ID for ticket notifications",
                         "type": "integer",
@@ -5231,9 +5254,9 @@
                         "nullable": true
                     },
                     "url": {
-                        "description": "Relative ticket detail path for ticket notifications",
+                        "description": "Frontend ticket detail path: /helpdesk/tik/{id} or /helpdesk/sarpras/{id}",
                         "type": "string",
-                        "example": "/tickets/123",
+                        "example": "/helpdesk/tik/123",
                         "nullable": true
                     },
                     "is_read": {

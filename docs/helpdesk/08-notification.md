@@ -21,7 +21,12 @@ Frontend (via WebSocket/Database) akan menerima payload dengan struktur sebagai 
   "message": "Pelapor telah memverifikasi penyelesaian tiket TIK-2026-000123. Tiket kini berstatus Ditutup.",
   "title": "Penyelesaian Tiket Diverifikasi",
   "subtitle": "Pelapor telah memverifikasi penyelesaian tiket TIK-2026-000123. Tiket kini berstatus Ditutup.",
-  "url": "/tickets/123",
+  "url": "/helpdesk/tik/123",
+  "target": {
+    "feature": "helpdesk",
+    "service": "tik",
+    "resource_id": 123
+  },
   "icon": "IconTicket",
   "color": "blue"
 }
@@ -34,7 +39,9 @@ Frontend (via WebSocket/Database) akan menerima payload dengan struktur sebagai 
 Mengikuti masing-masing flow tiket. Daftar notifikasi hanya menampilkan notifikasi milik user yang terautentikasi.
 
 ## Routes
-`GET /api/v1/notifications` menampilkan `id`, `title`, `subtitle`, `ticket_id`, `nomor_tiket`, `url`, `is_read`, dan `created_at` per notifikasi. Field tiket dan URL bernilai `null` untuk notifikasi non-tiket.
+`GET /api/v1/notifications` menampilkan `id`, `title`, `subtitle`, `target`, `ticket_id`, `nomor_tiket`, `url`, `is_read`, dan `created_at` per notifikasi. `target` bernilai `null` untuk notifikasi tanpa tujuan detail. Field tiket dan URL bernilai `null` untuk notifikasi non-tiket.
+
+Frontend dapat langsung memakai `url` untuk membuka detail tiket: `/helpdesk/tik/{id}` atau `/helpdesk/sarpras/{id}`. `target.feature`, `target.service`, dan `target.resource_id` tetap tersedia sebagai metadata navigasi yang terstruktur. Fitur lain dapat mengisi `target` sesuai metadata navigasinya sendiri tanpa menambah endpoint notifikasi.
 
 `PATCH /api/v1/notifications/{id}/read` dan `PATCH /api/v1/notifications/read-all` menggunakan endpoint yang sudah ada.
 

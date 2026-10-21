@@ -7,7 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\VerifyTicketRequest;
 use App\Http\Resources\TicketResource;
 use App\Models\Ticket;
-use App\Services\NotificationService;
+use App\Services\TicketNotificationService;
 use App\Services\TicketService;
 use Illuminate\Http\JsonResponse;
 
@@ -15,7 +15,7 @@ class TicketVerificationController extends Controller
 {
     public function __construct(
         private readonly TicketService $ticketService,
-        private readonly NotificationService $notifications,
+        private readonly TicketNotificationService $notifications,
     ) {}
 
     public function verify(VerifyTicketRequest $request, Ticket $ticket): JsonResponse

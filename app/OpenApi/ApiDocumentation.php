@@ -123,9 +123,14 @@ use OpenApi\Annotations as OA;
  *     @OA\Property(property="id", type="string", format="uuid"),
  *     @OA\Property(property="title", type="string", example="Login berhasil"),
  *     @OA\Property(property="subtitle", type="string"),
+ *     @OA\Property(property="target", type="object", nullable=true, description="Navigation metadata; null for notifications without a detail destination. Helpdesk targets include feature=helpdesk, service=tik or sarpras, and resource_id.",
+ *         @OA\Property(property="feature", type="string", example="helpdesk"),
+ *         @OA\Property(property="service", type="string", enum={"tik","sarpras"}, example="tik"),
+ *         @OA\Property(property="resource_id", type="integer", example=123)
+ *     ),
  *     @OA\Property(property="ticket_id", type="integer", nullable=true, description="Related ticket ID for ticket notifications"),
  *     @OA\Property(property="nomor_tiket", type="string", nullable=true, description="Related ticket number for ticket notifications"),
- *     @OA\Property(property="url", type="string", nullable=true, description="Relative ticket detail path for ticket notifications", example="/tickets/123"),
+ *     @OA\Property(property="url", type="string", nullable=true, description="Frontend ticket detail path: /helpdesk/tik/{id} or /helpdesk/sarpras/{id}", example="/helpdesk/tik/123"),
  *     @OA\Property(property="is_read", type="boolean"),
  *     @OA\Property(property="created_at", type="string", nullable=true, format="date-time")
  * )
