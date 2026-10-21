@@ -13,7 +13,8 @@ class TicketStatusUpdatedNotification extends Notification
 
     public function __construct(
         public readonly Ticket $ticket,
-        public readonly string $message
+        public readonly string $message,
+        public readonly string $title = 'Update Status Tiket',
     ) {}
 
     public function via(object $notifiable): array
@@ -29,9 +30,10 @@ class TicketStatusUpdatedNotification extends Notification
             'nomor_tiket' => $this->ticket->ticket_number,
             'status' => $this->ticket->status->value,
             'message' => $this->message,
+            'url' => '/tickets/'.$this->ticket->getKey(),
 
             // Field tambahan agar kompatibel dengan format bawaan frontend/NotificationService
-            'title' => 'Update Status Tiket',
+            'title' => $this->title,
             'subtitle' => $this->message,
             'icon' => 'IconTicket',
             'color' => 'blue',

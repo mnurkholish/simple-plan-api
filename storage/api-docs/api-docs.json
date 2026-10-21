@@ -2445,8 +2445,29 @@
                 "tags": [
                     "Notifications"
                 ],
-                "summary": "List unread notifications and activity summary",
+                "summary": "List notifications and activity summary",
                 "operationId": "b9fc06d756a342643eb5b80259453e01",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Notifications",
@@ -2463,10 +2484,33 @@
                                         "activity": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/components/schemas/Notification"
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "string"
+                                                    },
+                                                    "title": {
+                                                        "type": "string"
+                                                    },
+                                                    "subtitle": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "type": "object"
                                             }
                                         },
                                         "unread_count": {
+                                            "type": "integer"
+                                        },
+                                        "current_page": {
+                                            "type": "integer"
+                                        },
+                                        "last_page": {
+                                            "type": "integer"
+                                        },
+                                        "per_page": {
+                                            "type": "integer"
+                                        },
+                                        "total": {
                                             "type": "integer"
                                         }
                                     },
@@ -5176,22 +5220,24 @@
                     "subtitle": {
                         "type": "string"
                     },
-                    "icon": {
-                        "type": "string",
-                        "example": "IconLogin"
+                    "ticket_id": {
+                        "description": "Related ticket ID for ticket notifications",
+                        "type": "integer",
+                        "nullable": true
                     },
-                    "color": {
-                        "type": "string",
-                        "example": "emerald"
-                    },
-                    "time": {
+                    "nomor_tiket": {
+                        "description": "Related ticket number for ticket notifications",
                         "type": "string",
                         "nullable": true
                     },
-                    "read_at": {
+                    "url": {
+                        "description": "Relative ticket detail path for ticket notifications",
                         "type": "string",
-                        "format": "date-time",
+                        "example": "/tickets/123",
                         "nullable": true
+                    },
+                    "is_read": {
+                        "type": "boolean"
                     },
                     "created_at": {
                         "type": "string",

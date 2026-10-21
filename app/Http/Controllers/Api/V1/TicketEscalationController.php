@@ -6,15 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreEscalationRequest;
 use App\Http\Resources\TicketResource;
 use App\Models\Ticket;
-use App\Models\User;
-use App\Notifications\TicketStatusUpdatedNotification;
 use App\Services\EscalationService;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
 
 class TicketEscalationController extends Controller
 {
-    public function __construct(private readonly EscalationService $escalationService) {}
+    public function __construct(
+        private readonly EscalationService $escalationService,
+        private readonly NotificationService $notifications,
+    ) {}
 
     public function store(StoreEscalationRequest $request, Ticket $ticket): JsonResponse
     {
@@ -28,11 +30,7 @@ class TicketEscalationController extends Controller
             $request->user()->id
         );
 
-        $notifiableUsers = User::role(['super-admin', 'management'])->get();
-        $message = 'Tiket #'.$ticket->ticket_number.' telah dieskalasi ke '.$validated['target'];
-        foreach ($notifiableUsers as $user) {
-            $user->notify(new TicketStatusUpdatedNotification($ticket, $message));
-        }
+        $this->notifications->ticketEscalated($ticket, $request->user());
 
         return response()->json([
             'message' => 'Tiket berhasil dieskalasikan',

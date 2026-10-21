@@ -5,8 +5,11 @@ Sistem notifikasi database dan siaran real-time (broadcast).
 
 ## Implemented
 - Pembuatan class `TicketStatusUpdatedNotification`.
-- Injeksi notifikasi pada saat eskalasi tiket (dikirim ke target manajemen/terkait).
-- Injeksi notifikasi saat verifikasi tiket (dikirim ke teknisi terkait hasil persetujuan/penolakan).
+- Pembuatan tiket TIK memberi tahu Super Admin; tiket Sarpras memberi tahu Super Admin dan Koordinator Sarpras.
+- Penolakan tiket memberi tahu pelapor; assignment memberi tahu petugas yang ditugaskan. Reassignment ke petugas yang sama tidak membuat notifikasi baru.
+- Eskalasi TIK memberi tahu Super Admin; eskalasi Sarpras memberi tahu Koordinator Sarpras.
+- Tiket terselesaikan memberi tahu pelapor; hasil verifikasi pelapor memberi tahu petugas yang ditugaskan.
+- Semua notifikasi tiket dikirim setelah perubahan tiket berhasil disimpan.
 
 **Struktur Payload JSON:**
 Frontend (via WebSocket/Database) akan menerima payload dengan struktur sebagai berikut:
@@ -15,9 +18,10 @@ Frontend (via WebSocket/Database) akan menerima payload dengan struktur sebagai 
   "ticket_id": 123,
   "nomor_tiket": "TIK-2026-000123",
   "status": "ditutup",
-  "message": "Penyelesaian tiket #TIK-2026-000123 telah disetujui (Ditutup).",
-  "title": "Update Status Tiket",
-  "subtitle": "Penyelesaian tiket #TIK-2026-000123 telah disetujui (Ditutup).",
+  "message": "Pelapor telah memverifikasi penyelesaian tiket TIK-2026-000123. Tiket kini berstatus Ditutup.",
+  "title": "Penyelesaian Tiket Diverifikasi",
+  "subtitle": "Pelapor telah memverifikasi penyelesaian tiket TIK-2026-000123. Tiket kini berstatus Ditutup.",
+  "url": "/tickets/123",
   "icon": "IconTicket",
   "color": "blue"
 }
@@ -27,10 +31,12 @@ Frontend (via WebSocket/Database) akan menerima payload dengan struktur sebagai 
 -
 
 ## Authorization
-Mengikuti masing-masing flow (eskalasi dan verifikasi).
+Mengikuti masing-masing flow tiket. Daftar notifikasi hanya menampilkan notifikasi milik user yang terautentikasi.
 
 ## Routes
-Menggunakan endpoint bawaan dari `NotificationController`.
+`GET /api/v1/notifications` menampilkan `id`, `title`, `subtitle`, `ticket_id`, `nomor_tiket`, `url`, `is_read`, dan `created_at` per notifikasi. Field tiket dan URL bernilai `null` untuk notifikasi non-tiket.
+
+`PATCH /api/v1/notifications/{id}/read` dan `PATCH /api/v1/notifications/read-all` menggunakan endpoint yang sudah ada.
 
 ## Notes
 - Informasi di atas sangat penting agar Frontend tahu `key` apa saja yang dapat dirender ke dalam komponen pop-up/lonceng notifikasi (terutama `title`, `subtitle`, `icon`, dan `color`).

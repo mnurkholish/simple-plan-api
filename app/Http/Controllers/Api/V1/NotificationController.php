@@ -13,7 +13,12 @@ class NotificationController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $notifications = $this->service->forUser($request->user());
+        $request->validate([
+            'page' => ['sometimes', 'integer', 'min:1'],
+            'per_page' => ['sometimes', 'integer', 'between:1,100'],
+        ]);
+
+        $notifications = $this->service->forUser($request->user(), $request->integer('per_page', 15));
 
         return response()->json([
             ...$notifications,
