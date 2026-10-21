@@ -13,10 +13,12 @@ class InventoryMasterSeeder extends Seeder
     {
         $this->seedMasters(AssetClassification::class, [
             1 => 'Tanah',
-            2 => 'Gedung dan Bangunan',
-            3 => 'Sarana dan Prasarana',
+            2 => 'Bangunan',
+            3 => 'Alat Sarpras',
             4 => 'Alat Medis',
-            5 => 'Alat IT',
+            5 => 'Alat Elektronik',
+            6 => 'Alat IT',
+            7 => 'Kendaraan',
         ]);
 
         $this->seedMasters(AssetLocation::class, [
