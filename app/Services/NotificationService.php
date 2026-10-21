@@ -7,6 +7,8 @@ use App\Models\Ticket;
 use App\Models\User;
 use App\Notifications\SystemActivityNotification;
 use App\Notifications\TicketStatusUpdatedNotification;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\Cache;
 
@@ -61,7 +63,7 @@ class NotificationService
         $title = $ticket->service === TicketService::Tik ? 'Tiket TIK Baru Masuk' : 'Tiket Sarpras Baru Masuk';
         $message = "Tiket {$ticket->ticket_number} dari {$ticket->reporter->name} ({$ticket->unit->unit_name}) telah masuk. Klik untuk melihat detail dan mengklasifikasikan tiket.";
 
-        foreach (User::role($roles)->get()->unique('id') as $user) {
+        foreach ($this->usersWithRoles($roles) as $user) {
             $this->notifyTicket($user, $ticket, $title, $message);
         }
     }
@@ -84,9 +86,16 @@ class NotificationService
         $title = $isTik ? 'Tiket TIK Dieskalasi' : 'Tiket Sarpras Dieskalasi';
         $message = "Tiket {$ticket->ticket_number} dieskalasi oleh {$officer->name}. Klik untuk melihat detail tiket.";
 
-        foreach (User::role($isTik ? 'super-admin' : 'koordinator-sarpras')->get()->unique('id') as $user) {
+        foreach ($this->usersWithRoles($isTik ? ['super-admin'] : ['koordinator-sarpras']) as $user) {
             $this->notifyTicket($user, $ticket, $title, $message);
         }
+    }
+
+    private function usersWithRoles(array $roles): Collection
+    {
+        return User::query()
+            ->whereHas('roles', fn (Builder $query): Builder => $query->whereIn('name', $roles))
+            ->get();
     }
 
     public function ticketResolved(Ticket $ticket): void
