@@ -21,6 +21,7 @@ class AssetRepository
                 $query->where('serial_number', 'like', "%{$search}%")
                     ->orWhere('brand', 'like', "%{$search}%")
                     ->orWhere('model_specification', 'like', "%{$search}%")
+                    ->orWhere('detail_item', 'like', "%{$search}%")
                     ->orWhere('location_detail', 'like', "%{$search}%")
                     ->orWhere('notes', 'like', "%{$search}%")
                     ->orWhereHas('assetCode', function (Builder $code) use ($search): void {
@@ -94,11 +95,8 @@ class AssetRepository
                 filled($search),
                 fn (Builder $query): Builder => $query->where(function (Builder $query) use ($search): void {
                     $query
-                        ->whereLike('asset_number', "%{$search}%")
-                        ->orWhereLike('name', "%{$search}%")
-                        ->orWhereHas('assetCode', fn (Builder $code): Builder => $code
-                            ->whereLike('full_code', "%{$search}%")
-                            ->orWhereHas('item', fn (Builder $item): Builder => $item->whereLike('name', "%{$search}%")));
+                        ->whereHas('assetCode', fn (Builder $code): Builder => $code->where('full_code', 'like', "%{$search}%"))
+                        ->orWhereHas('assetCode.item', fn (Builder $item): Builder => $item->where('name', 'like', "%{$search}%"));
                 }),
             )
             ->orderBy('id')

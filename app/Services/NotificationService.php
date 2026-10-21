@@ -144,9 +144,6 @@ class NotificationService
         $user->notify(new SystemActivityNotification($title, $subtitle, $icon, $color));
     }
 
-    /**
-     * @return array<string, mixed>
-     */
     private function format(DatabaseNotification $notification): array
     {
         return [

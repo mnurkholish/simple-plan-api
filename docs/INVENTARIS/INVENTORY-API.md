@@ -61,13 +61,11 @@ Menambahkan klasifikasi aset baru ke dalam sistem.
 - **Request Body**:
   | Field | Tipe | Wajib | Keterangan |
   |---|---|:---:|---|
-  | `code` | integer | Ya | Kode unik klasifikasi (min: 1). |
   | `name` | string | Ya | Nama klasifikasi aset. |
 
 ### Contoh Request Body
 ```json
 {
-  "code": 5,
   "name": "Peralatan Non-Medis"
 }
 ```
@@ -77,7 +75,7 @@ Menambahkan klasifikasi aset baru ke dalam sistem.
 {
   "data": {
     "id": 2,
-    "code": 5,
+    "code": 6,
     "name": "Peralatan Non-Medis",
     "created_at": "2026-10-12T01:00:00.000000Z",
     "updated_at": "2026-10-12T01:00:00.000000Z"
@@ -126,7 +124,6 @@ Menambahkan lokasi/ruangan baru.
 - **Request Body**:
   | Field | Tipe | Wajib | Keterangan |
   |---|---|:---:|---|
-  | `code` | integer | Ya | Kode unik lokasi ruangan (min: 1). |
   | `name` | string | Ya | Nama lengkap ruangan/lokasi. |
 
 ---
@@ -164,7 +161,7 @@ Mengambil daftar jenis barang inventaris.
 ## 6. Create Asset Item
 Mendaftarkan jenis barang baru ke dalam master data.
 
-Kode klasifikasi, lokasi ruangan, dan barang harus berupa integer unik (min 1). Setelah dipakai oleh aset, kode master tidak dapat diubah; nama masih dapat diperbarui.
+Kode barang otomatis di-generate oleh backend berupa integer urut tanpa padding 0 (1, 2, 3, dst) yang di-scope unik per klasifikasi aset. Method update tidak mengizinkan perubahan kode maupun klasifikasi aset master data; nama masih dapat diperbarui.
 
 - **Method**: `POST`
 - **Endpoint**: `/api/v1/asset-items`
@@ -172,13 +169,13 @@ Kode klasifikasi, lokasi ruangan, dan barang harus berupa integer unik (min 1). 
 - **Request Body**:
   | Field | Tipe | Wajib | Keterangan |
   |---|---|:---:|---|
-  | `code` | integer | Ya | Kode unik angka barang (min: 1). |
-  | `name` | string | Ya | Nama jenis barang. |
+  | `asset_classification_id` | integer | Ya | ID Klasifikasi aset induk. |
+  | `name` | string | Ya | Nama jenis barang (unik per klasifikasi). |
 
 ### Contoh Request Body
 ```json
 {
-  "code": 15,
+  "asset_classification_id": 1,
   "name": "Tensimeter Digital"
 }
 ```
@@ -256,6 +253,7 @@ Mengambil daftar aset dengan pencarian komprehensif dan penyaringan multi-kriter
         }
       },
       "asset_uid": "01K7A5H3YC0M7WJY3PQ8E6KD2V",
+      "detail_item": "Bed Pasien",
       "brand": "Sella",
       "model_specification": "Seri A",
       "location_detail": "Lantai 1",
@@ -302,6 +300,7 @@ Mengambil detail satu aset lengkap dengan relasi kodenya.
       "item": { "id": 1, "code": 12, "name": "Kursi Roda Bed Pasien" }
     },
     "asset_uid": "01K7A5H3YC0M7WJY3PQ8E6KD2V",
+    "detail_item": "Bed Pasien",
     "brand": "Sella",
     "model_specification": "Seri A",
     "location_detail": "Lantai 1",
@@ -311,10 +310,28 @@ Mengambil detail satu aset lengkap dengan relasi kodenya.
     "condition": "Baik",
     "warranty_until": "2028-12-31",
     "notes": "Kondisi baru",
-    "photo": { ... },
     "calibration_document": { ... },
     "created_at": "2026-10-08T12:00:00.000000Z",
-    "updated_at": "2026-10-08T12:00:00.000000Z"
+    "updated_at": "2026-10-08T12:00:00.000000Z",
+    "histories": [
+      {
+        "id": 1,
+        "event_type": "updated",
+        "old_values": {
+          "location_name": "Unit Gawat Darurat",
+          "asset_location_id": 1,
+          "full_code": "5/10/1/12/2026"
+        },
+        "new_values": {
+          "location_name": "Poli 1",
+          "asset_location_id": 2,
+          "full_code": "5/11/1/12/2026"
+        },
+        "is_location_change": true,
+        "changed_by_name": "Super Admin",
+        "created_at": "2026-10-15T08:30:00.000000Z"
+      }
+    ]
   }
 }
 ```
@@ -326,6 +343,7 @@ Mendaftarkan aset baru dan mengunggah berkas foto/dokumen kalibrasi.
 
 - **Method**: `POST`
 - **Endpoint**: `/api/v1/assets`
+- **Role yang diizinkan**: `super-admin`, `koordinator-sarpras`
 - **Headers**: `Content-Type: multipart/form-data`
 - **Form Data Fields**:
   | Field | Tipe | Wajib | Keterangan |
@@ -337,12 +355,12 @@ Mendaftarkan aset baru dan mengunggah berkas foto/dokumen kalibrasi.
   | `serial_number` | string | Tidak | Nomor seri pabrik. |
   | `brand` | string | Tidak | Merek aset fisik, maks 100 karakter. |
   | `model_specification` | string | Tidak | Model/spesifikasi, maks 100 karakter. |
+  | `detail_item` | string | Tidak | Keterangan detail barang (mis. "Makan", "Lab"), maks 255 karakter. |
   | `location_detail` | string | Tidak | Detail lokasi dalam ruangan, maks 100 karakter. |
   | `status` | string | Ya | `Digunakan`, `Tidak Digunakan`, `Rusak`, atau `Dipinjam`. |
   | `condition` | string | Ya | `Baik`, `Rusak Ringan`, atau `Rusak Berat`. |
   | `warranty_until` | date | Tidak | Tanggal kadaluarsa garansi (`YYYY-MM-DD`). |
   | `notes` | string | Tidak | Catatan operasional aset. |
-  | `photo` | file | Tidak | Berkas gambar (JPG/PNG, max 5 MB). |
   | `calibration_document` | file | Tidak | Dokumen PDF sertifikat kalibrasi (PDF, max 5 MB). |
 
 ### Contoh Response Sukses (201 Created)
@@ -355,6 +373,7 @@ Mendaftarkan aset baru dan mengunggah berkas foto/dokumen kalibrasi.
       "full_code": "5/10/2/12/2026",
       "sequence_number": 2
     },
+    "detail_item": "Bed Pasien",
     "serial_number": "SN-2026-002",
     "purchase_year": 2026,
     "status": "Digunakan",
@@ -393,6 +412,7 @@ status: Digunakan
       "full_code": "5/11/1/12/2026",
       "sequence_number": 1
     },
+    "detail_item": "Bed Pasien",
     "serial_number": "SN-2026-001",
     "purchase_year": 2026,
     "status": "Digunakan",

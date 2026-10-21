@@ -53,10 +53,10 @@ class TicketResource extends JsonResource
                 'asset',
                 fn (): ?array => $this->asset === null ? null : [
                     'id' => $this->asset->id,
-                    'asset_number' => $this->asset->assetCode?->full_code ?? $this->asset->asset_number,
-                    'name' => $this->asset->assetCode?->item?->name ?? $this->asset->name,
+                    'asset_number' => $this->asset->assetCode?->full_code,
+                    'name' => $this->asset->assetCode?->item?->name,
                     'brand' => $this->asset->brand,
-                    'location' => $this->asset->assetCode?->location?->name ?? $this->asset->location,
+                    'location' => $this->asset->assetCode?->location?->name,
                     'status' => $this->asset->status,
                 ],
             ),

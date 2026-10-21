@@ -6,7 +6,7 @@ namespace App\Services;
 
 use App\Models\Asset;
 use App\Models\AssetCode;
-use App\Models\AssetHistory;
+use App\Models\AssetLocation;
 use App\Repositories\AssetRepository;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
@@ -28,11 +28,11 @@ class AssetService
         return $this->assetRepository->search($locationId, $search);
     }
 
-    public function create(array $data, ?UploadedFile $photo = null, ?UploadedFile $calibration = null): Asset
+    public function create(array $data, ?UploadedFile $calibration = null): Asset
     {
         $storedKeys = [];
         try {
-            return DB::transaction(function () use ($data, $photo, $calibration, &$storedKeys): Asset {
+            return DB::transaction(function () use ($data, $calibration, &$storedKeys): Asset {
                 $codeData = $this->assetCodeService->generate(
                     (int) $data['asset_classification_id'],
                     (int) $data['asset_location_id'],
@@ -49,11 +49,10 @@ class AssetService
                 ]);
 
                 $assetData = array_intersect_key($data, array_flip([
-                    'serial_number', 'purchase_year', 'brand', 'model_specification', 'location_detail',
+                    'serial_number', 'purchase_year', 'brand', 'model_specification', 'detail_item', 'location_detail',
                     'status', 'condition', 'warranty_until', 'notes',
                 ]));
                 $assetData['asset_code_id'] = $assetCode->id;
-                $assetData = array_merge($assetData, $this->storeFile($photo, 'assets/photos', 'photo', $storedKeys));
                 $assetData = array_merge($assetData, $this->storeFile($calibration, 'assets/calibrations', 'calibration', $storedKeys));
 
                 return Asset::create($assetData);
@@ -66,11 +65,11 @@ class AssetService
         }
     }
 
-    public function update(Asset $asset, array $data, ?UploadedFile $photo = null, ?UploadedFile $calibration = null, ?int $actorId = null): Asset
+    public function update(Asset $asset, array $data, ?UploadedFile $calibration = null, ?int $actorId = null): Asset
     {
         $storedKeys = [];
         try {
-            return DB::transaction(function () use ($asset, $data, $photo, $calibration, $actorId, &$storedKeys): Asset {
+            return DB::transaction(function () use ($asset, $data, $calibration, $actorId, &$storedKeys): Asset {
                 $asset = Asset::query()->whereKey($asset->id)->lockForUpdate()->firstOrFail();
                 $assetCode = $asset->asset_code_id === null ? null
                     : AssetCode::query()->whereKey($asset->asset_code_id)->lockForUpdate()->firstOrFail();
@@ -84,6 +83,16 @@ class AssetService
                     $newItemId = (int) ($data['asset_item_id'] ?? $assetCode->asset_item_id);
                     $newYear = (int) ($data['purchase_year'] ?? $asset->purchase_year);
                     $isLocationChange = $newLocId !== (int) $assetCode->asset_location_id;
+
+                    if ($isLocationChange) {
+                        $oldLocationName = $assetCode->location?->name ?? AssetLocation::find($assetCode->asset_location_id)?->name;
+                        $newLocationName = AssetLocation::find($newLocId)?->name;
+
+                        if ($oldLocationName !== null && $newLocationName !== null && $oldLocationName !== $newLocationName) {
+                            $oldValues['location_name'] = $oldLocationName;
+                            $newValues['location_name'] = $newLocationName;
+                        }
+                    }
 
                     if ($newClassId !== (int) $assetCode->asset_classification_id
                         || $isLocationChange
@@ -112,16 +121,9 @@ class AssetService
                 }
 
                 $assetData = array_intersect_key($data, array_flip([
-                    'serial_number', 'purchase_year', 'brand', 'model_specification', 'location_detail',
+                    'serial_number', 'purchase_year', 'brand', 'model_specification', 'detail_item', 'location_detail',
                     'status', 'condition', 'warranty_until', 'notes',
                 ]));
-                if ($photo !== null) {
-                    if ($asset->photo_object_key) {
-                        $oldKey = $asset->photo_object_key;
-                        DB::afterCommit(fn () => Storage::delete($oldKey));
-                    }
-                    $assetData = array_merge($assetData, $this->storeFile($photo, 'assets/photos', 'photo', $storedKeys));
-                }
                 if ($calibration !== null) {
                     if ($asset->calibration_object_key) {
                         $oldKey = $asset->calibration_object_key;
@@ -137,13 +139,12 @@ class AssetService
                 }
                 if ($oldValues !== []) {
                     $asset->save();
-                    AssetHistory::create([
-                        'asset_id' => $asset->id,
+                    $asset->histories()->create([
                         'event_type' => 'updated',
                         'old_values' => $oldValues,
                         'new_values' => $newValues,
                         'is_location_change' => $isLocationChange,
-                        'changed_by' => $actorId,
+                        'changed_by' => $actorId ?? auth()->id(),
                         'created_at' => now(),
                     ]);
                 }

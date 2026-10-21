@@ -168,11 +168,23 @@ test('pelapor harus memiliki unit untuk membuat tiket', function (): void {
 test('asset opsional dan asset yang valid dapat disambungkan ke tiket', function (): void {
     $unit = Unit::factory()->create();
     $reporter = User::factory()->create(['unit_id' => $unit->id]);
-    $asset = Asset::create([
-        'asset_number' => 'AST-0001',
+    $classification = AssetClassification::create(['code' => 5, 'name' => 'Alat IT']);
+    $location = AssetLocation::create(['code' => 10, 'name' => 'Poli Umum']);
+    $item = AssetItem::create([
+        'asset_classification_id' => $classification->id,
+        'code' => 20,
         'name' => 'Komputer Poli',
+    ]);
+    $code = AssetCode::create([
+        'asset_classification_id' => $classification->id,
+        'asset_location_id' => $location->id,
+        'asset_item_id' => $item->id,
+        'sequence_number' => 1,
+        'full_code' => 'AST-0001',
+    ]);
+    $asset = Asset::create([
+        'asset_code_id' => $code->id,
         'brand' => 'Dell',
-        'location' => 'Poli Umum',
         'status' => AssetStatus::InUse->value,
         'condition' => AssetCondition::Good->value,
     ]);
@@ -199,7 +211,11 @@ test('asset opsional dan asset yang valid dapat disambungkan ke tiket', function
 test('tiket menampilkan lokasi dari kode inventaris tanpa unit pada aset', function (): void {
     $classification = AssetClassification::create(['code' => 5, 'name' => 'Alat IT']);
     $location = AssetLocation::create(['code' => 10, 'name' => 'Ruang IT']);
-    $item = AssetItem::create(['code' => 20, 'name' => 'Komputer']);
+    $item = AssetItem::create([
+        'asset_classification_id' => $classification->id,
+        'code' => 20,
+        'name' => 'Komputer',
+    ]);
     $code = AssetCode::create([
         'asset_classification_id' => $classification->id,
         'asset_location_id' => $location->id,
@@ -240,8 +256,6 @@ test('asset yang tidak ditemukan akan ditolak', function (int $assetId): void {
     'asset tidak ditemukan' => 999999,
     'asset dihapus' => function (): int {
         $asset = Asset::create([
-            'asset_number' => 'AST-DELETED',
-            'name' => 'Aset Dihapus',
             'status' => AssetStatus::InUse->value,
             'condition' => AssetCondition::Good->value,
         ]);

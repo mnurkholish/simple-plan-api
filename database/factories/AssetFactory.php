@@ -36,6 +36,7 @@ class AssetFactory extends Factory
                 'Lenovo', 'LG', 'Panasonic', 'Philips', 'Samsung', 'Sharp', 'Siemens',
             ]),
             'model_specification' => fake()->bothify('Model-??-####'),
+            'detail_item' => $this->faker->optional()->word(),
             'location_detail' => fake()->randomElement([
                 'Dekat pintu masuk', 'Lantai 1', 'Lantai 2', 'Meja petugas',
                 'Ruang penyimpanan', 'Sisi kanan ruangan', 'Sisi kiri ruangan',
@@ -97,8 +98,8 @@ class AssetFactory extends Factory
             ?? AssetClassification::factory()->create();
         $location ??= AssetLocation::query()->inRandomOrder()->first()
             ?? AssetLocation::factory()->create();
-        $item ??= AssetItem::query()->inRandomOrder()->first()
-            ?? AssetItem::factory()->create();
+        $item ??= AssetItem::query()->where('asset_classification_id', $classification->id)->inRandomOrder()->first()
+            ?? AssetItem::factory()->create(['asset_classification_id' => $classification->id]);
 
         $number = app(AssetCodeService::class)->generate(
             $classification->id,

@@ -20,6 +20,7 @@ class AssetResource extends JsonResource
                 'location' => $this->assetCode->relationLoaded('location') ? $this->assetCode->location : null,
                 'item' => $this->assetCode->relationLoaded('item') ? $this->assetCode->item : null,
             ]),
+            'detail_item' => $this->detail_item,
             'serial_number' => $this->serial_number,
             'brand' => $this->brand,
             'model_specification' => $this->model_specification,
@@ -29,11 +30,6 @@ class AssetResource extends JsonResource
             'condition' => $this->condition->value,
             'warranty_until' => $this->warranty_until?->format('Y-m-d'),
             'notes' => $this->notes,
-            'photo' => $this->photo_object_key === null ? null : [
-                'original_name' => $this->photo_original_name,
-                'mime_type' => $this->photo_mime_type,
-                'size' => $this->photo_size,
-            ],
             'calibration_document' => $this->calibration_object_key === null ? null : [
                 'original_name' => $this->calibration_original_name,
                 'mime_type' => $this->calibration_mime_type,
@@ -41,6 +37,7 @@ class AssetResource extends JsonResource
             ],
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
+            'histories' => AssetHistoryResource::collection($this->whenLoaded('histories')),
         ];
     }
 }

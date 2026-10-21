@@ -7,11 +7,6 @@ use Carbon\Carbon;
 
 class SlaService
 {
-    /**
-     * Menghitung deadline berdasarkan waktu SLA pertama dimulai dan priority tiket.
-     *
-     * @return Carbon Waktu deadline SLA
-     */
     public function calculateDeadline(Carbon $slaStartedAt, TicketPriority $priority): Carbon
     {
         $deadline = $slaStartedAt->copy();
@@ -24,17 +19,6 @@ class SlaService
         };
     }
 
-    /**
-     * Menentukan status SLA secara dinamis.
-     *
-     * Catatan: Parameter $slaStartedAt digunakan untuk menghitung total durasi SLA
-     * agar bisa mendapatkan nilai 25% nya.
-     *
-     * @param  Carbon  $slaStartedAt  Waktu SLA pertama dimulai
-     * @param  Carbon  $deadline  Waktu deadline tiket
-     * @param  Carbon|null  $completedAt  Waktu tiket selesai (opsional)
-     * @return string Status SLA ('Melewati Batas', 'Mendekati Batas', 'Tepat Waktu')
-     */
     public function determineSlaStatus(Carbon $slaStartedAt, Carbon $deadline, ?Carbon $completedAt = null): string
     {
         if ($completedAt !== null) {

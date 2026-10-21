@@ -68,7 +68,6 @@ class AssetController extends Controller
 
         $asset = $this->assetService->create(
             $request->validated(),
-            $request->file('photo'),
             $request->file('calibration_document')
         );
         $asset->load(['assetCode.classification', 'assetCode.location', 'assetCode.item']);
@@ -82,7 +81,12 @@ class AssetController extends Controller
     public function show(Asset $asset): AssetResource
     {
         $this->authorize('view', $asset);
-        $asset->load(['assetCode.classification', 'assetCode.location', 'assetCode.item']);
+        $asset->load([
+            'assetCode.classification',
+            'assetCode.location',
+            'assetCode.item',
+            'histories' => fn ($query) => $query->latest('id')->with(['changedBy', 'changer']),
+        ]);
 
         return new AssetResource($asset);
     }
@@ -94,7 +98,6 @@ class AssetController extends Controller
         $asset = $this->assetService->update(
             $asset,
             $request->validated(),
-            $request->file('photo'),
             $request->file('calibration_document'),
             $request->user()?->id
         );

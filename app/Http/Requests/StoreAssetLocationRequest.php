@@ -14,7 +14,6 @@ class StoreAssetLocationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'code' => ['required', 'integer', 'min:1', 'unique:asset_locations,code'],
             'name' => ['required', 'string'],
         ];
     }

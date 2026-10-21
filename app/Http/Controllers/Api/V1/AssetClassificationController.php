@@ -7,10 +7,8 @@ use App\Http\Requests\StoreAssetClassificationRequest;
 use App\Http\Requests\UpdateAssetClassificationRequest;
 use App\Models\Asset;
 use App\Models\AssetClassification;
-use App\Models\AssetCode;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 
 class AssetClassificationController extends Controller
 {
@@ -40,7 +38,7 @@ class AssetClassificationController extends Controller
     public function store(StoreAssetClassificationRequest $request): JsonResponse
     {
         $this->authorize('create', Asset::class);
-        $classification = AssetClassification::create($request->validated());
+        $classification = AssetClassification::create($request->safe()->only(['name']));
 
         return response()->json([
             'data' => $classification,
@@ -62,11 +60,7 @@ class AssetClassificationController extends Controller
     {
         $this->authorize('create', Asset::class);
         $classification = AssetClassification::findOrFail($id);
-        if ((int) $classification->code !== (int) $request->validated('code')
-            && AssetCode::where('asset_classification_id', $classification->id)->exists()) {
-            throw ValidationException::withMessages(['code' => 'Kode klasifikasi yang telah dipakai aset tidak dapat diubah.']);
-        }
-        $classification->update($request->validated());
+        $classification->update($request->safe()->only(['name']));
 
         return response()->json([
             'data' => $classification,

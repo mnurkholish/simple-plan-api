@@ -30,22 +30,16 @@ class Asset extends Model
 
     protected $fillable = [
         'asset_code_id',
-        'asset_number',
-        'name',
+        'detail_item',
         'brand',
         'model_specification',
         'location_detail',
-        'location',
         'serial_number',
         'purchase_year',
         'status',
         'condition',
         'warranty_until',
         'notes',
-        'photo_object_key',
-        'photo_original_name',
-        'photo_mime_type',
-        'photo_size',
         'calibration_object_key',
         'calibration_original_name',
         'calibration_mime_type',
@@ -65,6 +59,6 @@ class Asset extends Model
 
     public function histories(): HasMany
     {
-        return $this->hasMany(AssetHistory::class);
+        return $this->hasMany(AssetHistory::class)->latest('id');
     }
 }

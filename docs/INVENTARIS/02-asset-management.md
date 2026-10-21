@@ -13,7 +13,8 @@ Pengelolaan siklus hidup aset fisik rumah sakit mulai dari registrasi berkas, pe
 - **Label inventaris**: `GET /api/v1/assets/{asset}/label` menyediakan preview HTML serta ekspor PNG/PDF. `POST /api/v1/asset-label-exports` membuat PDF A4 sinkron dalam mode `selected` (urutan `asset_ids`) atau `all_filtered` (seluruh hasil filter tanpa pagination, urutan ID menurun). Request lama tanpa `selection_mode` tetap menggunakan `selected`. Hanya aset berkode inventaris dapat diberi label; setiap aset memerlukan izin `printLabel`. Ukuran label 70–150 × 40–100 mm, margin 10 mm, dan jarak 2 mm.
 
 ## Authorization
-- **Full Access (CRUD & Soft Delete)**: `super-admin`, `koordinator-sarpras`, `petugas-tik`, `petugas-sarpras`.
+- **Create Asset**: `super-admin`, `koordinator-sarpras`.
+- **Read, Update, & Soft Delete**: `super-admin`, `koordinator-sarpras`, `petugas-tik`, `petugas-sarpras`.
 - **Read-Only**: `manajemen`.
 
 ## Routes

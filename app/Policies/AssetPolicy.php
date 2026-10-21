@@ -29,8 +29,6 @@ class AssetPolicy
         return $user->hasAnyRole([
             'super-admin',
             'koordinator-sarpras',
-            'petugas-tik',
-            'petugas-sarpras',
         ]);
     }
 
