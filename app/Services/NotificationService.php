@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
-use App\Models\User;
-use App\Models\Ticket;
 use App\Enums\TicketService;
+use App\Models\Ticket;
+use App\Models\User;
 use App\Notifications\SystemActivityNotification;
 use App\Notifications\TicketStatusUpdatedNotification;
 use Illuminate\Notifications\DatabaseNotification;

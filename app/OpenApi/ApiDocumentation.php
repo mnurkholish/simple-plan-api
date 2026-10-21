@@ -1472,6 +1472,7 @@ class ApiDocumentation
      *     tags={"Notifications"},
      *     summary="List notifications and activity summary",
      *     security={{"sanctum":{}}},
+     *
      *     @OA\Parameter(name="page", in="query", @OA\Schema(type="integer", minimum=1, default=1)),
      *     @OA\Parameter(name="per_page", in="query", @OA\Schema(type="integer", minimum=1, maximum=100, default=15)),
      *
