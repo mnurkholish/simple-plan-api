@@ -5175,6 +5175,22 @@
                     "subtitle": {
                         "type": "string"
                     },
+                    "ticket_id": {
+                        "description": "Related ticket ID for ticket notifications",
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "nomor_tiket": {
+                        "description": "Related ticket number for ticket notifications",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "url": {
+                        "description": "Relative ticket detail path for ticket notifications",
+                        "type": "string",
+                        "example": "/tickets/123",
+                        "nullable": true
+                    },
                     "is_read": {
                         "type": "boolean"
                     },

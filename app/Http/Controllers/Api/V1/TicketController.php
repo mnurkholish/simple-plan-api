@@ -17,13 +17,17 @@ use App\Http\Resources\TicketDetailResource;
 use App\Http\Resources\TicketResource;
 use App\Models\Ticket;
 use App\Services\TicketService;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
 
 class TicketController extends Controller
 {
-    public function __construct(private readonly TicketService $service) {}
+    public function __construct(
+        private readonly TicketService $service,
+        private readonly NotificationService $notifications,
+    ) {}
 
     public function index(ListTicketRequest $request): AnonymousResourceCollection
     {
@@ -54,6 +58,8 @@ class TicketController extends Controller
             $request->user(),
             $request->file('initial_evidence'),
         );
+
+        $this->notifications->ticketCreated($ticket);
 
         return (new TicketResource($ticket))
             ->additional(['message' => 'Tiket berhasil dibuat.'])
@@ -94,6 +100,8 @@ class TicketController extends Controller
             $request->user(),
         );
 
+        $this->notifications->ticketRejected($ticket);
+
         return (new TicketResource($this->service->loadSummary($ticket)))
             ->additional(['message' => 'Tiket berhasil ditolak.']);
     }
@@ -104,11 +112,16 @@ class TicketController extends Controller
 
         $validated = $request->validated();
         $isReassignment = $ticket->status === TicketStatus::Diproses;
+        $previousAssigneeId = $ticket->assigned_officer_id;
         $ticket = $this->service->assign(
             $ticket,
             $validated,
             $request->user(),
         );
+
+        if (! $isReassignment || (int) $ticket->assigned_officer_id !== (int) $previousAssigneeId) {
+            $this->notifications->ticketAssigned($ticket);
+        }
 
         return (new TicketResource($this->service->loadSummary($ticket)))
             ->additional(['message' => $isReassignment

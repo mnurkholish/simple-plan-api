@@ -56,6 +56,9 @@ paths:
                         id: { type: string, format: uuid }
                         title: { type: string }
                         subtitle: { type: string }
+                        ticket_id: { type: [integer, 'null'], description: Related ticket ID when this is a ticket notification. }
+                        nomor_tiket: { type: [string, 'null'], description: Related ticket number when this is a ticket notification. }
+                        url: { type: [string, 'null'], description: Relative ticket detail path when this is a ticket notification. }
                         is_read: { type: boolean }
                         created_at: { type: [string, 'null'], format: date-time }
                   unread_count: { type: integer }
