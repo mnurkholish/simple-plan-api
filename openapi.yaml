@@ -369,7 +369,7 @@ paths:
         - name: uid
           in: path
           required: true
-          description: Permanent asset UID encoded in the QR destination URL.
+          description: Permanent asset UID encoded directly in the QR code.
           schema: { type: string, minLength: 26, maxLength: 26 }
       responses:
         "200":

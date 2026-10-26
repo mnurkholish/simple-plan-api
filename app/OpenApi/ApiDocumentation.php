@@ -2258,7 +2258,7 @@ class ApiDocumentation
      *     operationId="getAssetQrCode",
      *     tags={"Inventory - QrCode Label"},
      *     summary="Generate Asset QR Code",
-     *     description="Generates an SVG QR code containing the asset detail URL based on the asset's permanent asset_uid.",
+     *     description="Generates an SVG QR code containing only the asset's permanent asset_uid.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(
