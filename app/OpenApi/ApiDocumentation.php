@@ -1883,6 +1883,8 @@ class ApiDocumentation
      *     @OA\Response(response=404, description="Ticket not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError"))
      * )
      */
+    public function ticketShow(): void {}
+
     /**
      * @OA\Get(
      *     path="/asset-classifications",
