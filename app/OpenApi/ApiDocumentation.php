@@ -2305,6 +2305,32 @@ class ApiDocumentation
 
     /**
      * @OA\Get(
+     *     path="/assets/uid/{uid}",
+     *     operationId="getAssetByUid",
+     *     tags={"Inventory - QrCode Label"},
+     *     summary="Get Asset by UID After QR Scan",
+     *     description="Finds an asset by its permanent UID. Name, brand, and location combine their master value and asset detail with a space. Code is null for an uncoded asset.",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="uid", in="path", required=true, description="Permanent asset UID", @OA\Schema(type="string", minLength=26, maxLength=26)),
+     *     @OA\Response(response=200, description="Asset found", @OA\JsonContent(
+     *         @OA\Property(property="data", type="object",
+     *             @OA\Property(property="id", type="integer"),
+     *             @OA\Property(property="uid", type="string"),
+     *             @OA\Property(property="code", type="string", nullable=true),
+     *             @OA\Property(property="name", type="string"),
+     *             @OA\Property(property="brand", type="string"),
+     *             @OA\Property(property="location", type="string")
+     *         )
+     *     )),
+     *     @OA\Response(response=401, description="Unauthenticated"),
+     *     @OA\Response(response=403, description="Asset access forbidden"),
+     *     @OA\Response(response=404, description="Asset UID not found")
+     * )
+     */
+    public function assetsShowByUid(): void {}
+
+    /**
+     * @OA\Get(
      *     path="/assets/{asset}/label",
      *     operationId="getAssetLabel",
      *     tags={"Inventory - QrCode Label"},

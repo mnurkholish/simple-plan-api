@@ -10,6 +10,14 @@ use Illuminate\Database\Eloquent\Collection;
 
 class AssetRepository
 {
+    public function findByUidOrFail(string $uid): Asset
+    {
+        return Asset::query()
+            ->with(['assetCode.item', 'assetCode.location'])
+            ->where('asset_uid', $uid)
+            ->firstOrFail();
+    }
+
     /** @param array<string, mixed> $filters */
     public function filteredQuery(array $filters): Builder
     {

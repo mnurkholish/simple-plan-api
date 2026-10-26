@@ -4777,6 +4777,81 @@
                 ]
             }
         },
+        "/assets/uid/{uid}": {
+            "get": {
+                "tags": [
+                    "Inventory - QrCode Label"
+                ],
+                "summary": "Get Asset by UID After QR Scan",
+                "description": "Finds an asset by its permanent UID. Name, brand, and location combine their master value and asset detail with a space. Code is null for an uncoded asset.",
+                "operationId": "getAssetByUid",
+                "parameters": [
+                    {
+                        "name": "uid",
+                        "in": "path",
+                        "description": "Permanent asset UID",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 26,
+                            "minLength": 26
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Asset found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer"
+                                                },
+                                                "uid": {
+                                                    "type": "string"
+                                                },
+                                                "code": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "brand": {
+                                                    "type": "string"
+                                                },
+                                                "location": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Asset access forbidden"
+                    },
+                    "404": {
+                        "description": "Asset UID not found"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/assets/{asset}/label": {
             "get": {
                 "tags": [
