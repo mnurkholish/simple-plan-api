@@ -2309,17 +2309,20 @@ class ApiDocumentation
      *     operationId="getAssetByUid",
      *     tags={"Inventory - QrCode Label"},
      *     summary="Get Asset by UID After QR Scan",
-     *     description="Finds an asset by its permanent UID. Name, brand, and location combine their master value and asset detail with a space. Code is null for an uncoded asset.",
+     *     description="Finds an asset by its permanent UID. Classification is TIK for Alat IT and SARPRAS otherwise. Detail location comes from assets.location_detail.",
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(name="uid", in="path", required=true, description="Permanent asset UID", @OA\Schema(type="string", minLength=26, maxLength=26)),
      *     @OA\Response(response=200, description="Asset found", @OA\JsonContent(
      *         @OA\Property(property="data", type="object",
      *             @OA\Property(property="id", type="integer"),
      *             @OA\Property(property="uid", type="string"),
-     *             @OA\Property(property="code", type="string", nullable=true),
-     *             @OA\Property(property="name", type="string"),
-     *             @OA\Property(property="brand", type="string"),
-     *             @OA\Property(property="location", type="string")
+     *             @OA\Property(property="classification", type="string", enum={"TIK", "SARPRAS"}),
+     *             @OA\Property(property="asset_code", type="string", nullable=true),
+     *             @OA\Property(property="location", type="string", nullable=true),
+     *             @OA\Property(property="detail_location", type="string", nullable=true),
+     *             @OA\Property(property="name", type="string", nullable=true),
+     *             @OA\Property(property="detail_name", type="string", nullable=true),
+     *             @OA\Property(property="status", type="string")
      *         )
      *     )),
      *     @OA\Response(response=401, description="Unauthenticated"),

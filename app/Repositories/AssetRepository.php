@@ -13,7 +13,7 @@ class AssetRepository
     public function findByUidOrFail(string $uid): Asset
     {
         return Asset::query()
-            ->with(['assetCode.item', 'assetCode.location'])
+            ->with(['assetCode.classification', 'assetCode.item', 'assetCode.location'])
             ->where('asset_uid', $uid)
             ->firstOrFail();
     }

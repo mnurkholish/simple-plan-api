@@ -4734,7 +4734,7 @@
                     "Inventory - QrCode Label"
                 ],
                 "summary": "Generate Asset QR Code",
-                "description": "Generates an SVG QR code containing the asset detail URL based on the asset's permanent asset_uid.",
+                "description": "Generates an SVG QR code containing only the asset's permanent asset_uid.",
                 "operationId": "getAssetQrCode",
                 "parameters": [
                     {
@@ -4783,7 +4783,7 @@
                     "Inventory - QrCode Label"
                 ],
                 "summary": "Get Asset by UID After QR Scan",
-                "description": "Finds an asset by its permanent UID. Name, brand, and location combine their master value and asset detail with a space. Code is null for an uncoded asset.",
+                "description": "Finds an asset by its permanent UID. Classification is TIK for Alat IT and SARPRAS otherwise. Detail location comes from assets.location_detail.",
                 "operationId": "getAssetByUid",
                 "parameters": [
                     {
@@ -4813,17 +4813,34 @@
                                                 "uid": {
                                                     "type": "string"
                                                 },
-                                                "code": {
+                                                "classification": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "TIK",
+                                                        "SARPRAS"
+                                                    ]
+                                                },
+                                                "asset_code": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                },
+                                                "location": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                },
+                                                "detail_location": {
                                                     "type": "string",
                                                     "nullable": true
                                                 },
                                                 "name": {
-                                                    "type": "string"
+                                                    "type": "string",
+                                                    "nullable": true
                                                 },
-                                                "brand": {
-                                                    "type": "string"
+                                                "detail_name": {
+                                                    "type": "string",
+                                                    "nullable": true
                                                 },
-                                                "location": {
+                                                "status": {
                                                     "type": "string"
                                                 }
                                             },

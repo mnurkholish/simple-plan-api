@@ -382,14 +382,17 @@ paths:
                 properties:
                   data:
                     type: object
-                    required: [id, uid, code, name, brand, location]
+                    required: [id, uid, classification, asset_code, location, detail_location, name, detail_name, status]
                     properties:
                       id: { type: integer }
                       uid: { type: string }
-                      code: { type: [string, 'null'], description: Current asset_codes.full_code; null for an uncoded asset. }
-                      name: { type: string, description: Asset item name and detail_item joined with a space. }
-                      brand: { type: string, description: Brand and model_specification joined with a space. }
-                      location: { type: string, description: Asset location name and location_detail joined with a space. }
+                      classification: { type: string, enum: [TIK, SARPRAS], description: TIK when asset_classifications.name is Alat IT; SARPRAS otherwise. }
+                      asset_code: { type: [string, 'null'], description: Current asset_codes.full_code; null for an uncoded asset. }
+                      location: { type: [string, 'null'], description: asset_locations.name. }
+                      detail_location: { type: [string, 'null'], description: assets.location_detail. }
+                      name: { type: [string, 'null'], description: asset_items.name. }
+                      detail_name: { type: [string, 'null'], description: assets.detail_item. }
+                      status: { type: string, description: assets.status. }
         "401": { description: Unauthenticated. }
         "403": { description: Asset access forbidden. }
         "404": { description: Asset UID not found. }

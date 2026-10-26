@@ -14,10 +14,13 @@ class AssetScanResource extends JsonResource
         return [
             'id' => $this->id,
             'uid' => $this->asset_uid,
-            'code' => $code?->full_code,
-            'name' => trim(implode(' ', array_filter([$code?->item?->name, $this->detail_item], fn ($value) => filled($value)))),
-            'brand' => trim(implode(' ', array_filter([$this->brand, $this->model_specification], fn ($value) => filled($value)))),
-            'location' => trim(implode(' ', array_filter([$code?->location?->name, $this->location_detail], fn ($value) => filled($value)))),
+            'classification' => $code?->classification?->name === 'Alat IT' ? 'TIK' : 'SARPRAS',
+            'asset_code' => $code?->full_code,
+            'location' => $code?->location?->name,
+            'detail_location' => $this->location_detail,
+            'name' => $code?->item?->name,
+            'detail_name' => $this->detail_item,
+            'status' => $this->status->value,
         ];
     }
 }
