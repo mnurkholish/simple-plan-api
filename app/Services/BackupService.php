@@ -2,13 +2,14 @@
 
 namespace App\Services;
 
+use App\Jobs\RunBackup;
+use App\Models\BackupHistory;
 use Carbon\Carbon;
 use Illuminate\Contracts\Filesystem\Filesystem;
-use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
-use RuntimeException;
-use ZipArchive;
+use Throwable;
 
 class BackupService
 {
@@ -49,24 +50,30 @@ class BackupService
     /**
      * @return array{message: string, output: string}
      */
-    public function create(): array
+    public function create(?int $performedById = null, string $type = 'manual'): array
     {
-        if (config('database.default') === 'sqlite') {
-            return $this->createSqliteBackup();
-        }
-
-        $exitCode = Artisan::call('backup:run', [
-            '--only-db' => true,
-            '--disable-notifications' => true,
+        $history = BackupHistory::create([
+            'type' => $type,
+            'performed_by_id' => $performedById,
         ]);
 
-        if ($exitCode !== 0) {
-            throw new RuntimeException(trim(Artisan::output()) ?: 'Backup command gagal dijalankan.');
+        try {
+            Bus::dispatch((new RunBackup($history->id))
+                ->onConnection('backup')
+                ->onQueue('backups'));
+        } catch (Throwable $exception) {
+            $history->update([
+                'status' => 'failed',
+                'finished_at' => now(),
+                'failure_message' => 'Gagal mengantrekan proses backup.',
+            ]);
+
+            throw $exception;
         }
 
         return [
-            'message' => 'Backup database berhasil dibuat.',
-            'output' => trim(Artisan::output()),
+            'message' => 'Backup berhasil dimasukkan ke antrean.',
+            'output' => '',
         ];
     }
 
@@ -168,50 +175,6 @@ class BackupService
         }
 
         return $path;
-    }
-
-    /**
-     * @return array{message: string, output: string}
-     */
-    private function createSqliteBackup(): array
-    {
-        if (! class_exists(ZipArchive::class)) {
-            throw new RuntimeException('Extension PHP zip belum aktif.');
-        }
-
-        $databasePath = (string) config('database.connections.sqlite.database');
-
-        if ($databasePath === ':memory:' || ! is_file($databasePath)) {
-            throw new RuntimeException('File database SQLite tidak ditemukan.');
-        }
-
-        $temporaryDirectory = storage_path('app/backup-temp');
-
-        if (! is_dir($temporaryDirectory)) {
-            mkdir($temporaryDirectory, 0755, true);
-        }
-
-        $filename = config('backup.backup.destination.filename_prefix', '')
-            .now()->format('Y-m-d-H-i-s')
-            .'.zip';
-        $temporaryPath = $temporaryDirectory.DIRECTORY_SEPARATOR.$filename;
-        $zip = new ZipArchive;
-
-        if ($zip->open($temporaryPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-            throw new RuntimeException('File zip backup gagal dibuat.');
-        }
-
-        $zip->addFile($databasePath, basename($databasePath));
-        $zip->close();
-
-        $backupPath = $this->backupName().'/'.$filename;
-        $this->disk()->put($backupPath, (string) file_get_contents($temporaryPath));
-        unlink($temporaryPath);
-
-        return [
-            'message' => 'Backup database berhasil dibuat.',
-            'output' => 'SQLite database file archived to '.$backupPath.'.',
-        ];
     }
 
     private function formatSize(int $bytes): string
