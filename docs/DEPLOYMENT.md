@@ -247,6 +247,8 @@ BACKUP_AWS_BUCKET=simple-plan-backups
 # BACKUP_TEMPORARY_DIRECTORY=/path/to/private/backup-temp
 # Opsional: simpan password di environment jika arsip perlu dienkripsi.
 # BACKUP_ARCHIVE_PASSWORD=
+# BACKUP_JOB_TIMEOUT=3600
+# BACKUP_QUEUE_RETRY_AFTER=3660
 ```
 
 Disk `backup` memakai `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`,
@@ -257,9 +259,24 @@ backup harus dibuat sebelum proses dijalankan. Direktori temporary harus
 private, dapat ditulis oleh PHP, dan cukup besar untuk dump database, file
 aplikasi sementara, serta ZIP. Direktori ini bukan tujuan akhir arsip.
 
-Spatie disiapkan untuk menaruh dump database dalam ZIP dan menyimpan ZIP ke
-disk `backup`. Pengumpulan file aplikasi dari MinIO, pengisian tabel histori,
-dan eksekusi jadwal belum diimplementasikan.
+Job backup memakai Spatie untuk membuat satu ZIP yang berisi dump MySQL,
+`backup-metadata.json`, dan seluruh objek bucket aplikasi di bawah path
+`minio/{object_key}`. File MinIO dipindahkan dengan stream ke direktori
+temporary sebelum ZIP dibuat. Hasil proses dicatat di `backup_histories`.
+
+Jalankan worker queue khusus backup, misalnya:
+
+```bash
+php artisan queue:work backup --queue=backups --timeout=3600 --tries=1
+```
+
+`BACKUP_QUEUE_RETRY_AFTER` harus lebih besar daripada `BACKUP_JOB_TIMEOUT` dan
+timeout worker. Nilai defaultnya masing-masing 3660 dan 3600 detik. Pada Sail,
+jalankan worker sebagai proses/container terpisah dari web server. Jadwal backup
+otomatis belum diimplementasikan; penjadwalan database-only lama dinonaktifkan
+agar tidak melewati queue dan histori.
+Gunakan cache bersama seperti `CACHE_STORE=database` atau Redis agar lock backup
+berlaku untuk semua worker.
 
 Sebelum deployment berisiko, backup data relevan:
 

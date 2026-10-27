@@ -22,13 +22,13 @@ class BackupController extends Controller
         ]);
     }
 
-    public function store(): JsonResponse
+    public function store(Request $request): JsonResponse
     {
         try {
-            $result = $this->service->create();
-        } catch (Throwable $exception) {
+            $result = $this->service->create($request->user()->getAuthIdentifier());
+        } catch (Throwable) {
             return response()->json([
-                'message' => 'Gagal membuat backup: '.$exception->getMessage(),
+                'message' => 'Gagal menjadwalkan backup.',
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 

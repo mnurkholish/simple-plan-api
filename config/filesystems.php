@@ -75,6 +75,13 @@ return [
             'report' => false,
         ],
 
+        'backup_temp' => [
+            'driver' => 'local',
+            'root' => env('BACKUP_TEMPORARY_DIRECTORY', storage_path('app/backup-temp')),
+            'throw' => true,
+            'report' => false,
+        ],
+
     ],
 
     /*

@@ -25,8 +25,7 @@ return [
                 /*
                  * The list of directories and files that will be included in the backup.
                  */
-                // Application files live on MinIO; a later backup process will
-                // add them to the manifest. Never archive the project root here.
+                // MinIO files are streamed into the manifest by BackupArchiveStagingService.
                 'include' => [],
 
                 /*
@@ -287,6 +286,8 @@ return [
      * Set to null to use the default log channel.
      */
     'log_channel' => null,
+
+    'job_timeout' => (int) env('BACKUP_JOB_TIMEOUT', 3600),
 
     /*
      * Here you can specify which backups should be monitored.
