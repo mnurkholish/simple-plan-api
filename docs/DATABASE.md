@@ -187,6 +187,23 @@ Jangan menyimpan:
 
 ---
 
+## Pengaturan dan histori Backup
+
+`backup_settings` menyimpan pengaturan backup otomatis. `is_active` bernilai
+false secara default; `frequency` berisi daily, weekly, atau monthly.
+`backup_time` mengikuti timezone aplikasi. `day_of_week` memakai angka 1 untuk
+Senin sampai 7 untuk Minggu; `day_of_month` memakai angka 1 sampai 31.
+Kombinasi field yang sesuai frekuensi akan divalidasi saat API/service dibuat.
+
+`backup_histories` mencatat proses manual atau otomatis melalui `type`, dengan
+`status` pending, processing, success, atau failed. `performed_by_id` boleh
+kosong untuk proses otomatis dan menjadi null jika user dihapus. Lokasi ZIP
+disimpan sebagai `disk` dan `object_key`; `file_name` dan `file_size` hanya
+metadata. `started_at`, `finished_at`, dan `failure_message` mencatat hasil
+proses. Proses gagal atau belum selesai boleh tidak memiliki metadata file.
+
+---
+
 ## 9. Audit and History
 
 Workflow yang membutuhkan histori dapat menggunakan struktur data terpisah jika
