@@ -3657,6 +3657,74 @@
                 ]
             }
         },
+        "/tickets/{ticket}": {
+            "get": {
+                "tags": [
+                    "Helpdesk"
+                ],
+                "summary": "Show a Helpdesk ticket",
+                "description": "Requires the tickets-access permission.",
+                "operationId": "showTicket",
+                "parameters": [
+                    {
+                        "name": "ticket",
+                        "in": "path",
+                        "description": "Internal ticket ID.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ticket detail",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing tickets-access permission",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Ticket not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/asset-classifications": {
             "get": {
                 "tags": [
@@ -4666,7 +4734,7 @@
                     "Inventory - QrCode Label"
                 ],
                 "summary": "Generate Asset QR Code",
-                "description": "Generates an SVG QR code containing the asset detail URL based on the asset's permanent asset_uid.",
+                "description": "Generates an SVG QR code containing only the asset's permanent asset_uid.",
                 "operationId": "getAssetQrCode",
                 "parameters": [
                     {
@@ -4700,6 +4768,98 @@
                     },
                     "404": {
                         "description": "Asset not found"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/assets/uid/{uid}": {
+            "get": {
+                "tags": [
+                    "Inventory - QrCode Label"
+                ],
+                "summary": "Get Asset by UID After QR Scan",
+                "description": "Finds an asset by its permanent UID. Classification is TIK for Alat IT and SARPRAS otherwise. Detail location comes from assets.location_detail.",
+                "operationId": "getAssetByUid",
+                "parameters": [
+                    {
+                        "name": "uid",
+                        "in": "path",
+                        "description": "Permanent asset UID",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 26,
+                            "minLength": 26
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Asset found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer"
+                                                },
+                                                "uid": {
+                                                    "type": "string"
+                                                },
+                                                "classification": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "TIK",
+                                                        "SARPRAS"
+                                                    ]
+                                                },
+                                                "asset_code": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                },
+                                                "location": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                },
+                                                "detail_location": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                },
+                                                "detail_name": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                },
+                                                "status": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Asset access forbidden"
+                    },
+                    "404": {
+                        "description": "Asset UID not found"
                     }
                 },
                 "security": [

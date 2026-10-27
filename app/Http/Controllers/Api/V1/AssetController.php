@@ -10,6 +10,7 @@ use App\Http\Requests\SearchAssetsRequest;
 use App\Http\Requests\StoreAssetRequest;
 use App\Http\Requests\UpdateAssetRequest;
 use App\Http\Resources\AssetResource;
+use App\Http\Resources\AssetScanResource;
 use App\Models\Asset;
 use App\Repositories\AssetRepository;
 use App\Services\AssetCodeService;
@@ -89,6 +90,14 @@ class AssetController extends Controller
         ]);
 
         return new AssetResource($asset);
+    }
+
+    public function showByUid(string $uid, AssetRepository $assets): AssetScanResource
+    {
+        $asset = $assets->findByUidOrFail($uid);
+        $this->authorize('view', $asset);
+
+        return new AssetScanResource($asset);
     }
 
     public function update(UpdateAssetRequest $request, Asset $asset): JsonResponse

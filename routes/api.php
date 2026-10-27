@@ -76,6 +76,8 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::get('assets/search', [AssetController::class, 'search'])
             ->middleware('permission:tickets-create')
             ->name('assets.search');
+        Route::get('assets/uid/{uid}', [AssetController::class, 'showByUid'])
+            ->name('assets.show-by-uid');
         Route::apiResource('assets', AssetController::class);
         Route::post('assets/{asset}', [AssetController::class, 'update'])->name('assets.update.post');
 

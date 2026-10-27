@@ -1883,6 +1883,8 @@ class ApiDocumentation
      *     @OA\Response(response=404, description="Ticket not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError"))
      * )
      */
+    public function ticketShow(): void {}
+
     /**
      * @OA\Get(
      *     path="/asset-classifications",
@@ -2256,7 +2258,7 @@ class ApiDocumentation
      *     operationId="getAssetQrCode",
      *     tags={"Inventory - QrCode Label"},
      *     summary="Generate Asset QR Code",
-     *     description="Generates an SVG QR code containing the asset detail URL based on the asset's permanent asset_uid.",
+     *     description="Generates an SVG QR code containing only the asset's permanent asset_uid.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(
@@ -2300,6 +2302,35 @@ class ApiDocumentation
      * )
      */
     public function assetsQrCodeShow(): void {}
+
+    /**
+     * @OA\Get(
+     *     path="/assets/uid/{uid}",
+     *     operationId="getAssetByUid",
+     *     tags={"Inventory - QrCode Label"},
+     *     summary="Get Asset by UID After QR Scan",
+     *     description="Finds an asset by its permanent UID. Classification is TIK for Alat IT and SARPRAS otherwise. Detail location comes from assets.location_detail.",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="uid", in="path", required=true, description="Permanent asset UID", @OA\Schema(type="string", minLength=26, maxLength=26)),
+     *     @OA\Response(response=200, description="Asset found", @OA\JsonContent(
+     *         @OA\Property(property="data", type="object",
+     *             @OA\Property(property="id", type="integer"),
+     *             @OA\Property(property="uid", type="string"),
+     *             @OA\Property(property="classification", type="string", enum={"TIK", "SARPRAS"}),
+     *             @OA\Property(property="asset_code", type="string", nullable=true),
+     *             @OA\Property(property="location", type="string", nullable=true),
+     *             @OA\Property(property="detail_location", type="string", nullable=true),
+     *             @OA\Property(property="name", type="string", nullable=true),
+     *             @OA\Property(property="detail_name", type="string", nullable=true),
+     *             @OA\Property(property="status", type="string")
+     *         )
+     *     )),
+     *     @OA\Response(response=401, description="Unauthenticated"),
+     *     @OA\Response(response=403, description="Asset access forbidden"),
+     *     @OA\Response(response=404, description="Asset UID not found")
+     * )
+     */
+    public function assetsShowByUid(): void {}
 
     /**
      * @OA\Get(

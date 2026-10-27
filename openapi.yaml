@@ -359,6 +359,44 @@ paths:
       responses:
         "200": { description: Aset dihapus secara soft delete; kode tetap tersimpan. }
 
+  /assets/uid/{uid}:
+    get:
+      tags: [Inventory - QrCode Label]
+      summary: Get asset by UID after QR scan
+      operationId: getAssetByUid
+      x-auth-required: true
+      parameters:
+        - name: uid
+          in: path
+          required: true
+          description: Permanent asset UID encoded directly in the QR code.
+          schema: { type: string, minLength: 26, maxLength: 26 }
+      responses:
+        "200":
+          description: Asset found.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [id, uid, classification, asset_code, location, detail_location, name, detail_name, status]
+                    properties:
+                      id: { type: integer }
+                      uid: { type: string }
+                      classification: { type: string, enum: [TIK, SARPRAS], description: TIK when asset_classifications.name is Alat IT; SARPRAS otherwise. }
+                      asset_code: { type: [string, 'null'], description: Current asset_codes.full_code; null for an uncoded asset. }
+                      location: { type: [string, 'null'], description: asset_locations.name. }
+                      detail_location: { type: [string, 'null'], description: assets.location_detail. }
+                      name: { type: [string, 'null'], description: asset_items.name. }
+                      detail_name: { type: [string, 'null'], description: assets.detail_item. }
+                      status: { type: string, description: assets.status. }
+        "401": { description: Unauthenticated. }
+        "403": { description: Asset access forbidden. }
+        "404": { description: Asset UID not found. }
+
   /asset-items:
     get:
       tags: [Assets]
