@@ -2112,11 +2112,17 @@
                 "tags": [
                     "Backups"
                 ],
-                "summary": "Create database backup",
+                "summary": "Queue a manual MySQL and MinIO backup",
                 "operationId": "6b095efdf43ebf83ce47cfd5d6a0a40e",
                 "responses": {
-                    "200": {
-                        "description": "Backup created"
+                    "202": {
+                        "description": "Backup queued; response includes history ID and pending status"
+                    },
+                    "403": {
+                        "description": "backups-create permission required"
+                    },
+                    "409": {
+                        "description": "Another backup is pending or processing"
                     }
                 },
                 "security": [
@@ -2159,6 +2165,41 @@
                                 }
                             }
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/backups/{id}": {
+            "get": {
+                "tags": [
+                    "Backups"
+                ],
+                "summary": "Get backup status and details",
+                "operationId": "1c18f6f4eec3e6290366a093c1812aa6",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Backup history"
+                    },
+                    "403": {
+                        "description": "backups-access permission required"
+                    },
+                    "404": {
+                        "description": "Backup history not found"
                     }
                 },
                 "security": [
@@ -6631,7 +6672,7 @@
         },
         {
             "name": "Backups",
-            "description": "Database backup management"
+            "description": "MySQL and MinIO backup management"
         },
         {
             "name": "Example Live",

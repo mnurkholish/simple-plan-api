@@ -23,8 +23,66 @@ tags:
     description: Pencarian unit
   - name: Users
     description: Pengelolaan dan pencarian user
+  - name: Backups
+    description: Backup MySQL dan file aplikasi di MinIO
 
 paths:
+  /backups:
+    post:
+      tags: [Backups]
+      summary: Mengantrekan backup manual
+      operationId: createManualBackup
+      description: |
+        Membutuhkan permission backups-create. Backup dijalankan oleh queue. Permintaan ditolak jika
+        sudah ada backup berstatus pending atau processing.
+      x-auth-required: true
+      x-required-permission: backups-create
+      responses:
+        "202":
+          description: Backup berhasil dimasukkan ke antrean.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message, data]
+                properties:
+                  message: { type: string }
+                  data: { $ref: "#/components/schemas/BackupHistory" }
+        "401": { description: Belum terautentikasi. }
+        "403": { description: Tidak memiliki permission backups-create. }
+        "409":
+          description: Masih ada backup yang menunggu atau berjalan.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BackupError" }
+        "500": { description: Gagal memasukkan backup ke antrean. }
+
+  /backups/{id}:
+    get:
+      tags: [Backups]
+      summary: Melihat detail dan status backup
+      operationId: getBackup
+      x-auth-required: true
+      x-required-permission: backups-access
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+      responses:
+        "200":
+          description: Detail proses backup.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/BackupHistory" }
+        "401": { description: Belum terautentikasi. }
+        "403": { description: Tidak memiliki permission backups-access. }
+        "404": { description: Histori backup tidak ditemukan. }
+
   /notifications:
     get:
       tags: [Notifications]
@@ -65,7 +123,7 @@ paths:
                             resource_id: { type: integer, example: 123 }
                         ticket_id: { type: [integer, 'null'], description: Related ticket ID when this is a ticket notification. }
                         nomor_tiket: { type: [string, 'null'], description: Related ticket number when this is a ticket notification. }
-                        url: { type: [string, 'null'], description: Frontend ticket detail path (/helpdesk/tik/{id} or /helpdesk/sarpras/{id}) for ticket notifications. }
+                        url: { type: [string, 'null'], description: "Frontend ticket detail path (/helpdesk/tik/{id} or /helpdesk/sarpras/{id}) for ticket notifications." }
                         is_read: { type: boolean }
                         created_at: { type: [string, 'null'], format: date-time }
                   unread_count: { type: integer }
@@ -1095,6 +1153,31 @@ components:
         default: 15
 
   schemas:
+    BackupHistory:
+      type: object
+      required: [id, type, status, performed_by, file_name, file_size, started_at, finished_at, failure_message, created_at]
+      properties:
+        id: { type: integer }
+        type: { type: string, enum: [manual, automatic] }
+        status: { type: string, enum: [pending, processing, success, failed] }
+        performed_by:
+          type: [object, 'null']
+          properties:
+            id: { type: integer }
+            name: { type: string }
+        file_name: { type: [string, 'null'] }
+        file_size: { type: [integer, 'null'], description: Ukuran ZIP dalam byte. }
+        started_at: { type: [string, 'null'], format: date-time }
+        finished_at: { type: [string, 'null'], format: date-time }
+        failure_message: { type: [string, 'null'] }
+        created_at: { type: string, format: date-time }
+
+    BackupError:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string }
+
     InventoryMaster:
       type: object
       required: [id, code, name]

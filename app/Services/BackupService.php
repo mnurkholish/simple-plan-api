@@ -5,8 +5,10 @@ namespace App\Services;
 use App\Jobs\RunBackup;
 use App\Models\BackupHistory;
 use Carbon\Carbon;
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Throwable;
@@ -47,34 +49,50 @@ class BackupService
             ->all();
     }
 
-    /**
-     * @return array{message: string, output: string}
-     */
-    public function create(?int $performedById = null, string $type = 'manual'): array
+    public function create(int $performedById): ?BackupHistory
     {
-        $history = BackupHistory::create([
-            'type' => $type,
-            'performed_by_id' => $performedById,
-        ]);
-
         try {
-            Bus::dispatch((new RunBackup($history->id))
-                ->onConnection('backup')
-                ->onQueue('backups'));
-        } catch (Throwable $exception) {
-            $history->update([
-                'status' => 'failed',
-                'finished_at' => now(),
-                'failure_message' => 'Gagal mengantrekan proses backup.',
-            ]);
+            return Cache::lock('backup:enqueue', 120)->block(5, function () use ($performedById): ?BackupHistory {
+                if (BackupHistory::whereIn('status', ['pending', 'processing'])->exists()) {
+                    return null;
+                }
 
-            throw $exception;
+                $runningLock = Cache::lock('backup:run', 10);
+                if (! $runningLock->get()) {
+                    return null;
+                }
+                $runningLock->release();
+
+                $history = BackupHistory::create([
+                    'type' => 'manual',
+                    'performed_by_id' => $performedById,
+                    'status' => 'pending',
+                ]);
+
+                try {
+                    Bus::dispatch((new RunBackup($history->id))
+                        ->onConnection('backup')
+                        ->onQueue('backups'));
+                } catch (Throwable $exception) {
+                    $history->update([
+                        'status' => 'failed',
+                        'finished_at' => now(),
+                        'failure_message' => 'Gagal mengantrekan proses backup.',
+                    ]);
+
+                    throw $exception;
+                }
+
+                return $history;
+            });
+        } catch (LockTimeoutException) {
+            return null;
         }
+    }
 
-        return [
-            'message' => 'Backup berhasil dimasukkan ke antrean.',
-            'output' => '',
-        ];
+    public function history(int $id): BackupHistory
+    {
+        return BackupHistory::with('performedBy:id,name')->findOrFail($id);
     }
 
     /**
