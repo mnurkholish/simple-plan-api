@@ -158,6 +158,10 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::delete('backups', [BackupController::class, 'destroy'])
             ->middleware('permission:backups-delete')
             ->name('backups.destroy');
+        Route::get('backups/{id}', [BackupController::class, 'show'])
+            ->middleware('permission:backups-access')
+            ->whereNumber('id')
+            ->name('backups.show');
 
         Route::get('users/options', [UserController::class, 'options'])
             ->middleware('permission:users-create|users-update')

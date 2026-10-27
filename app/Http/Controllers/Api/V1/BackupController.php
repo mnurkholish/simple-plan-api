@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\BackupHistoryResource;
 use App\Services\BackupService;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -25,18 +27,32 @@ class BackupController extends Controller
     public function store(Request $request): JsonResponse
     {
         try {
-            $result = $this->service->create($request->user()->getAuthIdentifier());
+            $history = $this->service->create((int) $request->user()->getAuthIdentifier());
         } catch (Throwable) {
             return response()->json([
-                'message' => 'Gagal menjadwalkan backup.',
+                'message' => 'Gagal memasukkan backup ke antrean.',
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
+        if ($history === null) {
+            return response()->json([
+                'message' => 'Masih ada proses backup yang menunggu atau berjalan.',
+            ], Response::HTTP_CONFLICT);
+        }
+
         return response()->json([
-            'message' => $result['message'],
-            'output' => $result['output'],
-            'data' => $this->service->index(),
-        ], Response::HTTP_CREATED);
+            'message' => 'Backup berhasil dimasukkan ke antrean.',
+            'data' => new BackupHistoryResource($history->load('performedBy:id,name')),
+        ], Response::HTTP_ACCEPTED);
+    }
+
+    public function show(int $id): BackupHistoryResource|JsonResponse
+    {
+        try {
+            return new BackupHistoryResource($this->service->history($id));
+        } catch (ModelNotFoundException) {
+            return response()->json(['message' => 'Resource not found.'], Response::HTTP_NOT_FOUND);
+        }
     }
 
     public function saveSchedule(Request $request): JsonResponse

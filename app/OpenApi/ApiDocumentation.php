@@ -30,7 +30,7 @@ use OpenApi\Annotations as OA;
  * @OA\Tag(name="Users", description="User management")
  * @OA\Tag(name="Roles", description="Role and permission management")
  * @OA\Tag(name="Units", description="Unit management")
- * @OA\Tag(name="Backups", description="Database backup management")
+ * @OA\Tag(name="Backups", description="MySQL and MinIO backup management")
  * @OA\Tag(name="Example Live", description="Market proxy and background task demo")
  * @OA\Tag(name="Impersonation", description="Sanctum token impersonation")
  * @OA\Tag(name="Notifications", description="Notification and activity summary")
@@ -1375,13 +1375,30 @@ class ApiDocumentation
      * @OA\Post(
      *     path="/backups",
      *     tags={"Backups"},
-     *     summary="Create database backup",
+     *     summary="Queue a manual MySQL and MinIO backup",
      *     security={{"sanctum":{}}},
      *
-     *     @OA\Response(response=200, description="Backup created")
+     *     @OA\Response(response=202, description="Backup queued; response includes history ID and pending status"),
+     *     @OA\Response(response=403, description="backups-create permission required"),
+     *     @OA\Response(response=409, description="Another backup is pending or processing")
      * )
      */
     public function backupsStore(): void {}
+
+    /**
+     * @OA\Get(
+     *     path="/backups/{id}",
+     *     tags={"Backups"},
+     *     summary="Get backup status and details",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Backup history"),
+     *     @OA\Response(response=403, description="backups-access permission required"),
+     *     @OA\Response(response=404, description="Backup history not found")
+     * )
+     */
+    public function backupsShow(): void {}
 
     /**
      * @OA\Post(
