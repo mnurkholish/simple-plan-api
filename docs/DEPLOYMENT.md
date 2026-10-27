@@ -238,6 +238,29 @@ dapat dipantau dan tidak menyimpan secret atau credential.
 
 ## 13. Backup
 
+Siapkan bucket MinIO private kedua untuk arsip backup, terpisah dari bucket
+file aplikasi (`AWS_BUCKET`):
+
+```env
+BACKUP_AWS_BUCKET=simple-plan-backups
+# Opsional: default storage/app/backup-temp pada host aplikasi.
+# BACKUP_TEMPORARY_DIRECTORY=/path/to/private/backup-temp
+# Opsional: simpan password di environment jika arsip perlu dienkripsi.
+# BACKUP_ARCHIVE_PASSWORD=
+```
+
+Disk `backup` memakai `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`,
+`AWS_DEFAULT_REGION`, `AWS_ENDPOINT`, dan `AWS_USE_PATH_STYLE_ENDPOINT` yang
+sudah ada. Berikan credential tersebut akses ke kedua bucket. Tetap gunakan
+`FILESYSTEM_DISK=s3` untuk upload aplikasi; disk `backup` terpisah. Bucket
+backup harus dibuat sebelum proses dijalankan. Direktori temporary harus
+private, dapat ditulis oleh PHP, dan cukup besar untuk dump database, file
+aplikasi sementara, serta ZIP. Direktori ini bukan tujuan akhir arsip.
+
+Spatie disiapkan untuk menaruh dump database dalam ZIP dan menyimpan ZIP ke
+disk `backup`. Pengumpulan file aplikasi dari MinIO, pengisian tabel histori,
+dan eksekusi jadwal belum diimplementasikan.
+
 Sebelum deployment berisiko, backup data relevan:
 
 - MySQL;

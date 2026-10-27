@@ -25,10 +25,9 @@ return [
                 /*
                  * The list of directories and files that will be included in the backup.
                  */
-                'include' => [
-                    base_path(),
-                    // storage_path(),  // Include if you use zero downtime deployments and don't follow symlinks
-                ],
+                // Application files live on MinIO; a later backup process will
+                // add them to the manifest. Never archive the project root here.
+                'include' => [],
 
                 /*
                  * These directories and files will be excluded from the backup.
@@ -164,7 +163,7 @@ return [
              * The disk names on which the backups will be stored.
              */
             'disks' => [
-                'local',
+                'backup',
             ],
 
             /*
@@ -176,7 +175,7 @@ return [
         /*
          * The directory where the temporary files will be stored.
          */
-        'temporary_directory' => storage_path('app/backup-temp'),
+        'temporary_directory' => env('BACKUP_TEMPORARY_DIRECTORY', storage_path('app/backup-temp')),
 
         /*
          * The password to be used for archive encryption.
@@ -198,7 +197,7 @@ return [
          * After creating the zip, verify it can be opened and contains files.
          * Recommended for critical backups but adds a small overhead.
          */
-        'verify_backup' => false,
+        'verify_backup' => true,
 
         /*
          * The number of attempts, in case the backup command encounters an exception
@@ -297,7 +296,7 @@ return [
     'monitor_backups' => [
         [
             'name' => env('APP_NAME', 'laravel-backup'),
-            'disks' => ['local'],
+            'disks' => ['backup'],
             'health_checks' => [
                 MaximumAgeInDays::class => 1,
                 MaximumStorageInMegabytes::class => 5000,
