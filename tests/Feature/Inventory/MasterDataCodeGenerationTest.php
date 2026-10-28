@@ -141,3 +141,42 @@ test('asset item name validation is scoped by asset classification', function ()
         'name' => 'Kabel',
     ])->assertCreated();
 });
+
+test('endpoint generate-number memvalidasi parameter dan mempratinjau kode aset fisik tanpa leading zero', function (): void {
+    Role::findOrCreate('super-admin', 'web');
+    $user = User::factory()->create();
+    $user->assignRole('super-admin');
+
+    // 1. Guest ditolak 401
+    $this->getJson('/api/v1/assets/generate-number')
+        ->assertUnauthorized();
+
+    Sanctum::actingAs($user);
+
+    // 2. Validasi input wajib (422)
+    $this->getJson('/api/v1/assets/generate-number')
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors([
+            'asset_classification_id',
+            'asset_location_id',
+            'asset_item_id',
+            'year',
+        ]);
+
+    // 3. Request valid
+    $classification = AssetClassification::create(['name' => 'Peralatan Medis']); // code = 1
+    $location = AssetLocation::create(['name' => 'Ruang Operasi']); // code = 1
+    $item = AssetItem::create([
+        'asset_classification_id' => $classification->id,
+        'name' => 'Meja Operasi',
+    ]); // code = 1
+
+    $response = $this->getJson("/api/v1/assets/generate-number?asset_classification_id={$classification->id}&asset_location_id={$location->id}&asset_item_id={$item->id}&year=2026");
+
+    $response->assertOk()
+        ->assertJsonPath('data.full_code', '1/1/1/1/2026');
+
+    expect($response->json('data.full_code'))->toBe("{$classification->code}/{$location->code}/1/{$item->code}/2026")
+        ->not->toContain('/01/')
+        ->not->toContain('/001/');
+});
