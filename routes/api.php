@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Auth\ExtendedAuthController;
 use App\Http\Controllers\Api\V1\Auth\SsoController;
 use App\Http\Controllers\Api\V1\BackupController;
+use App\Http\Controllers\Api\V1\BackupSettingController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\ExampleLiveController;
 use App\Http\Controllers\Api\V1\ImpersonationController;
@@ -149,15 +150,24 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::post('backups', [BackupController::class, 'store'])
             ->middleware('permission:backups-create')
             ->name('backups.store');
-        Route::post('backups/schedule', [BackupController::class, 'saveSchedule'])
+        Route::get('backup-settings', [BackupSettingController::class, 'show'])
             ->middleware('permission:backups-schedule')
-            ->name('backups.schedule');
-        Route::get('backups/download', [BackupController::class, 'download'])
-            ->middleware('permission:backups-download')
-            ->name('backups.download');
-        Route::delete('backups', [BackupController::class, 'destroy'])
+            ->name('backup-settings.show');
+        Route::put('backup-settings', [BackupSettingController::class, 'update'])
+            ->middleware('permission:backups-schedule')
+            ->name('backup-settings.update');
+        Route::get('backups/{id}', [BackupController::class, 'show'])
+            ->middleware('permission:backups-access')
+            ->whereNumber('id')
+            ->name('backups.show');
+        Route::delete('backups/{id}', [BackupController::class, 'destroy'])
             ->middleware('permission:backups-delete')
+            ->whereNumber('id')
             ->name('backups.destroy');
+        Route::get('backups/{id}/download', [BackupController::class, 'download'])
+            ->middleware('permission:backups-download')
+            ->whereNumber('id')
+            ->name('backups.download-history');
 
         Route::get('users/options', [UserController::class, 'options'])
             ->middleware('permission:users-create|users-update')

@@ -2,225 +2,123 @@
 
 namespace App\Services;
 
-use Carbon\Carbon;
-use Illuminate\Contracts\Filesystem\Filesystem;
-use Illuminate\Support\Facades\Artisan;
+use App\Jobs\RunBackup;
+use App\Models\BackupHistory;
+use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Cache\LockTimeoutException;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\ValidationException;
 use RuntimeException;
-use ZipArchive;
+use Throwable;
 
 class BackupService
 {
-    /**
-     * @return array{backups: array<int, array<string, mixed>>, schedule_config: array{frequency: string, time: string}}
-     */
-    public function index(): array
+    /** @param array<string, mixed> $filters */
+    public function histories(array $filters, int $perPage): LengthAwarePaginator
     {
-        return [
-            'backups' => $this->backups(),
-            'schedule_config' => $this->scheduleConfig(),
-        ];
+        $from = isset($filters['date_from'])
+            ? CarbonImmutable::parse($filters['date_from'], 'Asia/Jakarta')->startOfDay()->utc()
+            : null;
+        $to = isset($filters['date_to'])
+            ? CarbonImmutable::parse($filters['date_to'], 'Asia/Jakarta')->addDay()->startOfDay()->utc()
+            : null;
+
+        return BackupHistory::query()
+            ->with('performedBy:id,name')
+            ->when(isset($filters['type']), fn ($query) => $query->where('type', $filters['type']))
+            ->when(isset($filters['status']), fn ($query) => $query->where('status', $filters['status']))
+            ->when($from, fn ($query) => $query->where('created_at', '>=', $from))
+            ->when($to, fn ($query) => $query->where('created_at', '<', $to))
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->paginate($perPage);
     }
 
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    public function backups(): array
+    public function downloadableHistory(int $id): BackupHistory
     {
-        $disk = $this->disk();
-        $backupName = $this->backupName();
+        $history = BackupHistory::findOrFail($id);
 
-        return collect($disk->files($backupName))
-            ->filter(fn (string $file): bool => pathinfo($file, PATHINFO_EXTENSION) === 'zip')
-            ->map(fn (string $file): array => [
-                'name' => basename($file),
-                'path' => $file,
-                'size' => $this->formatSize($disk->size($file)),
-                'size_bytes' => $disk->size($file),
-                'date' => Carbon::createFromTimestamp($disk->lastModified($file))->format('Y-m-d H:i:s'),
-                'created_at' => Carbon::createFromTimestamp($disk->lastModified($file))->toISOString(),
-            ])
-            ->sortByDesc('created_at')
-            ->values()
-            ->all();
+        abort_unless($history->status === 'success', 409, 'Backup belum berhasil.');
+        abort_unless($history->disk === 'backup' && filled($history->object_key), 404, 'File backup tidak ditemukan.');
+        abort_unless(Storage::disk('backup')->exists($history->object_key), 404, 'File backup tidak ditemukan.');
+
+        return $history;
     }
 
-    /**
-     * @return array{message: string, output: string}
-     */
-    public function create(): array
+    public function deleteArchive(int $id): void
     {
-        if (config('database.default') === 'sqlite') {
-            return $this->createSqliteBackup();
+        $history = BackupHistory::findOrFail($id);
+
+        abort_unless($history->status === 'success', 409, 'Backup belum berhasil.');
+
+        if (! filled($history->object_key)) {
+            return;
         }
 
-        $exitCode = Artisan::call('backup:run', [
-            '--only-db' => true,
-            '--disable-notifications' => true,
-        ]);
+        abort_unless($history->disk === 'backup', 404, 'File backup tidak ditemukan.');
 
-        if ($exitCode !== 0) {
-            throw new RuntimeException(trim(Artisan::output()) ?: 'Backup command gagal dijalankan.');
+        if (! Storage::disk('backup')->delete($history->object_key)) {
+            throw new RuntimeException('Gagal menghapus arsip backup dari storage.');
         }
 
-        return [
-            'message' => 'Backup database berhasil dibuat.',
-            'output' => trim(Artisan::output()),
-        ];
+        $history->update(['disk' => null, 'object_key' => null]);
     }
 
-    /**
-     * @param  array{frequency: string, time: string}  $data
-     * @return array{frequency: string, time: string}
-     */
-    public function saveSchedule(array $data): array
+    public function create(int $performedById): ?BackupHistory
     {
-        $config = [
-            'frequency' => $data['frequency'],
-            'time' => $data['time'],
-        ];
+        return $this->enqueue('manual', $performedById);
+    }
 
-        $scheduleFile = $this->scheduleFile();
-        $directory = dirname($scheduleFile);
+    public function createAutomatic(): ?BackupHistory
+    {
+        return $this->enqueue('automatic', null);
+    }
 
-        if (! is_dir($directory)) {
-            mkdir($directory, 0755, true);
+    private function enqueue(string $type, ?int $performedById): ?BackupHistory
+    {
+        try {
+            return Cache::lock('backup:enqueue', 120)->block(5, function () use ($type, $performedById): ?BackupHistory {
+                if (BackupHistory::whereIn('status', ['pending', 'processing'])->exists()) {
+                    return null;
+                }
+
+                $runningLock = Cache::lock('backup:run', 10);
+                if (! $runningLock->get()) {
+                    return null;
+                }
+                $runningLock->release();
+
+                $history = BackupHistory::create([
+                    'type' => $type,
+                    'performed_by_id' => $performedById,
+                    'status' => 'pending',
+                ]);
+
+                try {
+                    Bus::dispatch((new RunBackup($history->id))
+                        ->onConnection('backup')
+                        ->onQueue('backups'));
+                } catch (Throwable $exception) {
+                    $history->update([
+                        'status' => 'failed',
+                        'finished_at' => now(),
+                        'failure_message' => 'Gagal mengantrekan proses backup.',
+                    ]);
+
+                    throw $exception;
+                }
+
+                return $history;
+            });
+        } catch (LockTimeoutException) {
+            return null;
         }
-
-        file_put_contents($scheduleFile, json_encode($config, JSON_PRETTY_PRINT));
-
-        return $config;
     }
 
-    /**
-     * @return array{frequency: string, time: string}
-     */
-    public function scheduleConfig(): array
+    public function history(int $id): BackupHistory
     {
-        $default = ['frequency' => 'none', 'time' => '00:00'];
-        $scheduleFile = $this->scheduleFile();
-
-        if (! file_exists($scheduleFile)) {
-            return $default;
-        }
-
-        $config = json_decode((string) file_get_contents($scheduleFile), true);
-
-        return is_array($config)
-            ? array_merge($default, array_intersect_key($config, $default))
-            : $default;
-    }
-
-    public function downloadPath(string $path): string
-    {
-        $path = $this->validateBackupPath($path);
-
-        if (! $this->disk()->exists($path)) {
-            throw ValidationException::withMessages([
-                'path' => ['File backup tidak ditemukan.'],
-            ]);
-        }
-
-        return $path;
-    }
-
-    public function delete(string $path): void
-    {
-        $path = $this->downloadPath($path);
-
-        $this->disk()->delete($path);
-    }
-
-    public function diskName(): string
-    {
-        return config('backup.backup.destination.disks.0', 'local');
-    }
-
-    private function backupName(): string
-    {
-        return trim((string) config('backup.backup.name', 'laravel-backup'), '/');
-    }
-
-    private function disk(): Filesystem
-    {
-        return Storage::disk($this->diskName());
-    }
-
-    private function scheduleFile(): string
-    {
-        return config('backup.schedule_file', storage_path('app/backup_schedule.json'));
-    }
-
-    private function validateBackupPath(string $path): string
-    {
-        $path = ltrim(str_replace('\\', '/', $path), '/');
-        $backupName = $this->backupName();
-
-        if (
-            str_contains($path, '..')
-            || ! str_starts_with($path, $backupName.'/')
-            || pathinfo($path, PATHINFO_EXTENSION) !== 'zip'
-        ) {
-            throw ValidationException::withMessages([
-                'path' => ['Path backup tidak valid.'],
-            ]);
-        }
-
-        return $path;
-    }
-
-    /**
-     * @return array{message: string, output: string}
-     */
-    private function createSqliteBackup(): array
-    {
-        if (! class_exists(ZipArchive::class)) {
-            throw new RuntimeException('Extension PHP zip belum aktif.');
-        }
-
-        $databasePath = (string) config('database.connections.sqlite.database');
-
-        if ($databasePath === ':memory:' || ! is_file($databasePath)) {
-            throw new RuntimeException('File database SQLite tidak ditemukan.');
-        }
-
-        $temporaryDirectory = storage_path('app/backup-temp');
-
-        if (! is_dir($temporaryDirectory)) {
-            mkdir($temporaryDirectory, 0755, true);
-        }
-
-        $filename = config('backup.backup.destination.filename_prefix', '')
-            .now()->format('Y-m-d-H-i-s')
-            .'.zip';
-        $temporaryPath = $temporaryDirectory.DIRECTORY_SEPARATOR.$filename;
-        $zip = new ZipArchive;
-
-        if ($zip->open($temporaryPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-            throw new RuntimeException('File zip backup gagal dibuat.');
-        }
-
-        $zip->addFile($databasePath, basename($databasePath));
-        $zip->close();
-
-        $backupPath = $this->backupName().'/'.$filename;
-        $this->disk()->put($backupPath, (string) file_get_contents($temporaryPath));
-        unlink($temporaryPath);
-
-        return [
-            'message' => 'Backup database berhasil dibuat.',
-            'output' => 'SQLite database file archived to '.$backupPath.'.',
-        ];
-    }
-
-    private function formatSize(int $bytes): string
-    {
-        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
-        $bytes = max($bytes, 0);
-        $pow = $bytes > 0 ? floor(log($bytes) / log(1024)) : 0;
-        $pow = min($pow, count($units) - 1);
-
-        return round($bytes / (1024 ** $pow), 2).' '.$units[$pow];
+        return BackupHistory::with('performedBy:id,name')->findOrFail($id);
     }
 }
