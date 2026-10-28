@@ -2095,11 +2095,76 @@
                 "tags": [
                     "Backups"
                 ],
-                "summary": "List backups and schedule config",
+                "summary": "List paginated backup history, including failed backups",
                 "operationId": "81039a5411dc4c6af25205ff47eaa313",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "manual",
+                                "automatic"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "pending",
+                                "processing",
+                                "success",
+                                "failed"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "date_from",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "date_to",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "Backup index"
+                        "description": "Paginated backup history"
+                    },
+                    "403": {
+                        "description": "backups-access permission required"
+                    },
+                    "422": {
+                        "description": "Invalid filters"
                     }
                 },
                 "security": [
@@ -2253,29 +2318,38 @@
                 ]
             }
         },
-        "/backups/download": {
+        "/backups/{id}/download": {
             "get": {
                 "tags": [
                     "Backups"
                 ],
-                "summary": "Download backup file",
-                "operationId": "33c2f4ed9bbe626b3fc70d4bd6b0caff",
+                "summary": "Stream a successful backup ZIP for Super Admin",
+                "operationId": "a0829c4e6603c02cbdfe8e38d3e6dabc",
                 "parameters": [
                     {
-                        "name": "path",
-                        "in": "query",
+                        "name": "id",
+                        "in": "path",
                         "required": true,
                         "schema": {
-                            "type": "string"
+                            "type": "integer"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Backup file",
+                        "description": "Private backup ZIP",
                         "content": {
                             "application/zip": {}
                         }
+                    },
+                    "403": {
+                        "description": "Super Admin and backups-download permission required"
+                    },
+                    "404": {
+                        "description": "Backup history or file not found"
+                    },
+                    "409": {
+                        "description": "Backup is not successful"
                     }
                 },
                 "security": [

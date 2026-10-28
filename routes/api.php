@@ -152,9 +152,6 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::post('backups/schedule', [BackupController::class, 'saveSchedule'])
             ->middleware('permission:backups-schedule')
             ->name('backups.schedule');
-        Route::get('backups/download', [BackupController::class, 'download'])
-            ->middleware('permission:backups-download')
-            ->name('backups.download');
         Route::delete('backups', [BackupController::class, 'destroy'])
             ->middleware('permission:backups-delete')
             ->name('backups.destroy');
@@ -162,6 +159,10 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             ->middleware('permission:backups-access')
             ->whereNumber('id')
             ->name('backups.show');
+        Route::get('backups/{id}/download', [BackupController::class, 'download'])
+            ->middleware('permission:backups-download')
+            ->whereNumber('id')
+            ->name('backups.download-history');
 
         Route::get('users/options', [UserController::class, 'options'])
             ->middleware('permission:users-create|users-update')

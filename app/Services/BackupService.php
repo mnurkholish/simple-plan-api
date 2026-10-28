@@ -7,6 +7,7 @@ use App\Models\BackupHistory;
 use Carbon\Carbon;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Contracts\Filesystem\Filesystem;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
@@ -15,6 +16,31 @@ use Throwable;
 
 class BackupService
 {
+    /** @param array<string, mixed> $filters */
+    public function histories(array $filters, int $perPage): LengthAwarePaginator
+    {
+        return BackupHistory::query()
+            ->with('performedBy:id,name')
+            ->when(isset($filters['type']), fn ($query) => $query->where('type', $filters['type']))
+            ->when(isset($filters['status']), fn ($query) => $query->where('status', $filters['status']))
+            ->when(isset($filters['date_from']), fn ($query) => $query->whereDate('created_at', '>=', $filters['date_from']))
+            ->when(isset($filters['date_to']), fn ($query) => $query->whereDate('created_at', '<=', $filters['date_to']))
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->paginate($perPage);
+    }
+
+    public function downloadableHistory(int $id): BackupHistory
+    {
+        $history = BackupHistory::findOrFail($id);
+
+        abort_unless($history->status === 'success', 409, 'Backup belum berhasil.');
+        abort_unless($history->disk === 'backup' && filled($history->object_key), 404, 'File backup tidak ditemukan.');
+        abort_unless(Storage::disk('backup')->exists($history->object_key), 404, 'File backup tidak ditemukan.');
+
+        return $history;
+    }
+
     /**
      * @return array{backups: array<int, array<string, mixed>>, schedule_config: array{frequency: string, time: string}}
      */

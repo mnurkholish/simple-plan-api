@@ -1363,10 +1363,18 @@ class ApiDocumentation
      * @OA\Get(
      *     path="/backups",
      *     tags={"Backups"},
-     *     summary="List backups and schedule config",
+     *     summary="List paginated backup history, including failed backups",
      *     security={{"sanctum":{}}},
      *
-     *     @OA\Response(response=200, description="Backup index")
+     *     @OA\Parameter(name="page", in="query", @OA\Schema(type="integer", minimum=1)),
+     *     @OA\Parameter(name="per_page", in="query", @OA\Schema(type="integer", minimum=1, maximum=100)),
+     *     @OA\Parameter(name="type", in="query", @OA\Schema(type="string", enum={"manual","automatic"})),
+     *     @OA\Parameter(name="status", in="query", @OA\Schema(type="string", enum={"pending","processing","success","failed"})),
+     *     @OA\Parameter(name="date_from", in="query", @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="date_to", in="query", @OA\Schema(type="string", format="date")),
+     *     @OA\Response(response=200, description="Paginated backup history"),
+     *     @OA\Response(response=403, description="backups-access permission required"),
+     *     @OA\Response(response=422, description="Invalid filters")
      * )
      */
     public function backupsIndex(): void {}
@@ -1416,17 +1424,19 @@ class ApiDocumentation
 
     /**
      * @OA\Get(
-     *     path="/backups/download",
+     *     path="/backups/{id}/download",
      *     tags={"Backups"},
-     *     summary="Download backup file",
+     *     summary="Stream a successful backup ZIP for Super Admin",
      *     security={{"sanctum":{}}},
      *
-     *     @OA\Parameter(name="path", in="query", required=true, @OA\Schema(type="string")),
-     *
-     *     @OA\Response(response=200, description="Backup file", @OA\MediaType(mediaType="application/zip"))
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Private backup ZIP", @OA\MediaType(mediaType="application/zip")),
+     *     @OA\Response(response=403, description="Super Admin and backups-download permission required"),
+     *     @OA\Response(response=404, description="Backup history or file not found"),
+     *     @OA\Response(response=409, description="Backup is not successful")
      * )
      */
-    public function backupsDownload(): void {}
+    public function backupsDownloadHistory(): void {}
 
     /**
      * @OA\Delete(

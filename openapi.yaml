@@ -28,6 +28,51 @@ tags:
 
 paths:
   /backups:
+    get:
+      tags: [Backups]
+      summary: Menampilkan histori backup
+      operationId: listBackups
+      description: Histori manual dan otomatis, termasuk proses yang gagal, dari yang terbaru.
+      x-auth-required: true
+      x-required-permission: backups-access
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: per_page
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 15 }
+        - name: type
+          in: query
+          schema: { type: string, enum: [manual, automatic] }
+        - name: status
+          in: query
+          schema: { type: string, enum: [pending, processing, success, failed] }
+        - name: date_from
+          in: query
+          description: Batas awal tanggal pembuatan histori (inklusif).
+          schema: { type: string, format: date }
+        - name: date_to
+          in: query
+          description: Batas akhir tanggal pembuatan histori (inklusif).
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: Histori backup terurut dari yang terbaru dengan metadata pagination Laravel.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, links, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/BackupHistory" }
+                  links: { type: object }
+                  meta: { type: object }
+        "401": { description: Belum terautentikasi. }
+        "403": { description: Tidak memiliki permission backups-access. }
+        "422": { description: Filter atau pagination tidak valid. }
     post:
       tags: [Backups]
       summary: Mengantrekan backup manual
@@ -82,6 +127,31 @@ paths:
         "401": { description: Belum terautentikasi. }
         "403": { description: Tidak memiliki permission backups-access. }
         "404": { description: Histori backup tidak ditemukan. }
+
+  /backups/{id}/download:
+    get:
+      tags: [Backups]
+      summary: Mengunduh arsip backup
+      operationId: downloadBackup
+      description: File ZIP di-stream dari bucket backup private hanya untuk histori sukses.
+      x-auth-required: true
+      x-required-permission: backups-download
+      x-required-role: super-admin
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+      responses:
+        "200":
+          description: Arsip backup ZIP.
+          content:
+            application/zip:
+              schema: { type: string, format: binary }
+        "401": { description: Belum terautentikasi. }
+        "403": { description: Bukan Super Admin atau tidak memiliki permission backups-download. }
+        "404": { description: Histori atau file backup tidak ditemukan. }
+        "409": { description: Status backup belum berhasil. }
 
   /notifications:
     get:
@@ -1162,8 +1232,9 @@ components:
         status: { type: string, enum: [pending, processing, success, failed] }
         performed_by:
           type: [object, 'null']
+          description: Backup otomatis menggunakan nama Sistem dengan id null.
           properties:
-            id: { type: integer }
+            id: { type: [integer, 'null'] }
             name: { type: string }
         file_name: { type: [string, 'null'] }
         file_size: { type: [integer, 'null'], description: Ukuran ZIP dalam byte. }

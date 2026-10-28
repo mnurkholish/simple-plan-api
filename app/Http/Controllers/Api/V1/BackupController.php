@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ListBackupsRequest;
 use App\Http\Resources\BackupHistoryResource;
+use App\Models\BackupHistory;
 use App\Services\BackupService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -17,11 +20,11 @@ class BackupController extends Controller
 {
     public function __construct(private readonly BackupService $service) {}
 
-    public function index(): JsonResponse
+    public function index(ListBackupsRequest $request): AnonymousResourceCollection
     {
-        return response()->json([
-            'data' => $this->service->index(),
-        ]);
+        return BackupHistoryResource::collection(
+            $this->service->histories($request->validated(), $request->integer('per_page', 15))
+        );
     }
 
     public function store(Request $request): JsonResponse
@@ -68,15 +71,20 @@ class BackupController extends Controller
         ]);
     }
 
-    public function download(Request $request): StreamedResponse
+    public function download(Request $request, int $id): StreamedResponse
     {
-        $data = $request->validate([
-            'path' => ['required', 'string'],
-        ]);
+        abort_unless($request->user()->hasRole('super-admin'), Response::HTTP_FORBIDDEN);
 
-        $path = $this->service->downloadPath($data['path']);
+        return $this->streamBackup($this->service->downloadableHistory($id));
+    }
 
-        return Storage::disk($this->service->diskName())->download($path, basename($path));
+    private function streamBackup(BackupHistory $history): StreamedResponse
+    {
+        return Storage::disk('backup')->download(
+            $history->object_key,
+            $history->file_name,
+            ['Content-Type' => 'application/zip']
+        );
     }
 
     public function destroy(Request $request): JsonResponse
