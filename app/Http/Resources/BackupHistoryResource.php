@@ -14,10 +14,12 @@ class BackupHistoryResource extends JsonResource
             'id' => $this->id,
             'type' => $this->type,
             'status' => $this->status,
-            'performed_by' => $this->whenLoaded('performedBy', fn (): ?array => $this->performedBy === null ? null : [
-                'id' => $this->performedBy->id,
-                'name' => $this->performedBy->name,
-            ]),
+            'performed_by' => $this->type === 'automatic'
+                ? ['id' => null, 'name' => 'Sistem']
+                : $this->whenLoaded('performedBy', fn (): ?array => $this->performedBy === null ? null : [
+                    'id' => $this->performedBy->id,
+                    'name' => $this->performedBy->name,
+                ]),
             'file_name' => $this->file_name,
             'file_size' => $this->file_size,
             'started_at' => $this->started_at,

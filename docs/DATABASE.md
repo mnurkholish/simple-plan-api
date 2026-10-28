@@ -191,9 +191,10 @@ Jangan menyimpan:
 
 `backup_settings` menyimpan pengaturan backup otomatis. `is_active` bernilai
 false secara default; `frequency` berisi daily, weekly, atau monthly.
-`backup_time` mengikuti timezone aplikasi. `day_of_week` memakai angka 1 untuk
-Senin sampai 7 untuk Minggu; `day_of_month` memakai angka 1 sampai 31.
-Kombinasi field yang sesuai frekuensi akan divalidasi saat API/service dibuat.
+Baris pengaturan memakai ID 1. `backup_time` menggunakan zona Asia/Jakarta.
+`day_of_week` memakai angka 1 untuk Senin sampai 7 untuk Minggu;
+`day_of_month` dibatasi 1 sampai 28. Field hari/tanggal hanya disimpan untuk
+frekuensi yang sesuai. Scheduler membaca baris ini setiap menit.
 
 `backup_histories` mencatat proses manual atau otomatis melalui `type`, dengan
 `status` pending, processing, success, atau failed. `performed_by_id` boleh
