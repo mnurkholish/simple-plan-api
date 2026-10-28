@@ -26,7 +26,8 @@ return [
                  * The list of directories and files that will be included in the backup.
                  */
                 // MinIO files are streamed into the manifest by BackupArchiveStagingService.
-                'include' => [],
+                // Avatar uploads and other public-disk files remain on local storage.
+                'include' => [storage_path('app/public')],
 
                 /*
                  * These directories and files will be excluded from the backup.
@@ -54,7 +55,7 @@ return [
                  * Set to `null` to include complete absolute path
                  * Example: base_path()
                  */
-                'relative_path' => null,
+                'relative_path' => base_path(),
             ],
 
             /*

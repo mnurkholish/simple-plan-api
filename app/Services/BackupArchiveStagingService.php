@@ -38,6 +38,15 @@ class BackupArchiveStagingService
         $source = Storage::disk('s3');
         $temporary = Storage::disk('backup_temp');
         $manifestDirectory = dirname($event->manifest->path());
+        $dumpDirectory = $manifestDirectory.DIRECTORY_SEPARATOR.'db-dumps'.DIRECTORY_SEPARATOR;
+        $localFileCount = 0;
+
+        foreach ($event->manifest->files() as $file) {
+            if (is_file($file) && ! str_starts_with($file, $dumpDirectory)) {
+                $localFileCount++;
+            }
+        }
+
         $fileCount = 0;
 
         try {
@@ -47,7 +56,7 @@ class BackupArchiveStagingService
                 }
 
                 $key = $entry->path();
-                if ($key === '' || strpbrk($key, "\\\r\n") !== false || preg_match('~(^|/)\.{1,2}(/|$)~', $key)) {
+                if ($key === '' || $key !== rtrim($key) || strpbrk($key, "\\\r\n") !== false || preg_match('~(^|/)\.{1,2}(/|$)~', $key)) {
                     throw new RuntimeException('Path file MinIO tidak valid untuk backup.');
                 }
 
@@ -84,7 +93,9 @@ class BackupArchiveStagingService
             'created_at' => now()->toIso8601String(),
             'database_connections' => config('backup.backup.source.databases'),
             'source_disk' => 's3',
-            'file_count' => $fileCount,
+            'file_count' => $localFileCount + $fileCount,
+            'minio_file_count' => $fileCount,
+            'local_file_count' => $localFileCount,
         ], JSON_THROW_ON_ERROR);
 
         try {

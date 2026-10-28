@@ -202,6 +202,8 @@ kosong untuk proses otomatis dan menjadi null jika user dihapus. Lokasi ZIP
 disimpan sebagai `disk` dan `object_key`; `file_name` dan `file_size` hanya
 metadata. `started_at`, `finished_at`, dan `failure_message` mencatat hasil
 proses. Proses gagal atau belum selesai boleh tidak memiliki metadata file.
+Setelah ZIP dihapus, `disk` dan `object_key` dikosongkan. Histori tetap berstatus
+success dan `file_name` serta `file_size` tetap menyimpan metadata proses semula.
 
 ---
 

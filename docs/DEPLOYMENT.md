@@ -72,9 +72,9 @@ APP_ENV=production
 APP_DEBUG=false
 APP_URL=https://simple-plan.internal
 
-DB_CONNECTION=pgsql
+DB_CONNECTION=mysql
 DB_HOST=
-DB_PORT=5432
+DB_PORT=3306
 DB_DATABASE=simple_plan
 DB_USERNAME=
 DB_PASSWORD=
@@ -269,15 +269,27 @@ BACKUP_AWS_BUCKET=simple-plan-backups
 Disk `backup` memakai `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`,
 `AWS_DEFAULT_REGION`, `AWS_ENDPOINT`, dan `AWS_USE_PATH_STYLE_ENDPOINT` yang
 sudah ada. Berikan credential tersebut akses ke kedua bucket. Tetap gunakan
-`FILESYSTEM_DISK=s3` untuk upload aplikasi; disk `backup` terpisah. Bucket
-backup harus dibuat sebelum proses dijalankan. Direktori temporary harus
+`FILESYSTEM_DISK=s3` untuk upload aplikasi; disk `backup` terpisah dan menulis
+objek dengan visibility private. Bucket backup harus dibuat dengan kebijakan
+akses private sebelum proses dijalankan. Direktori temporary harus
 private, dapat ditulis oleh PHP, dan cukup besar untuk dump database, file
 aplikasi sementara, serta ZIP. Direktori ini bukan tujuan akhir arsip.
+Job menolak konfigurasi dengan disk default selain `s3` agar upload aplikasi
+yang tersimpan pada disk default tidak diam-diam terlewat.
 
 Job backup memakai Spatie untuk membuat satu ZIP yang berisi dump MySQL,
-`backup-metadata.json`, dan seluruh objek bucket aplikasi di bawah path
-`minio/{object_key}`. File MinIO dipindahkan dengan stream ke direktori
-temporary sebelum ZIP dibuat. Hasil proses dicatat di `backup_histories`.
+`backup-metadata.json`, seluruh objek bucket aplikasi di bawah path
+`minio/{object_key}`, serta file lokal disk `public` di bawah
+`storage/app/public/` (termasuk avatar). `backup-metadata.json` mencatat jumlah
+file lokal dan objek MinIO; `file_count` adalah jumlah keduanya. File MinIO
+dipindahkan dengan stream ke direktori temporary sebelum ZIP dibuat. Hasil
+proses dicatat di `backup_histories`.
+
+Dump MySQL memakai `--single-transaction` untuk snapshot tabel InnoDB.
+MySQL dan MinIO tidak memiliki snapshot atomik bersama; untuk arsip yang harus
+merepresentasikan satu titik waktu lintas keduanya, hentikan sementara operasi
+tulis aplikasi selama backup berjalan atau gunakan prosedur snapshot storage
+yang terkoordinasi di infrastruktur.
 
 Jalankan worker queue khusus backup, misalnya:
 
