@@ -5159,6 +5159,438 @@
                     }
                 ]
             }
+        },
+        "/asset-maintenances": {
+            "get": {
+                "tags": [
+                    "Asset Maintenance"
+                ],
+                "summary": "List jadwal maintenance aset",
+                "description": "Tampilkan list jadwal maintenance. Support pencarian dan filter rentang tanggal, status, dan keaktifan.",
+                "operationId": "listAssetMaintenances",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Cari berdasarkan nomor inventaris (full_code), nama barang (assetItem.name), nama petugas, atau jenis pemeliharaan",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "date_from",
+                        "in": "query",
+                        "description": "Batas awal tanggal jadwal pemeliharaan (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "date_to",
+                        "in": "query",
+                        "description": "Batas akhir tanggal jadwal pemeliharaan (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Status pemeliharaan",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "terjadwal",
+                                "selesai",
+                                "terlambat"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "is_active",
+                        "in": "query",
+                        "description": "Filter keaktifan jadwal",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Daftar jadwal pemeliharaan berhasil diambil"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Asset Maintenance"
+                ],
+                "summary": "Buat jadwal pemeliharaan aset baru",
+                "description": "Superadmin mengatur aset TIK & menugaskan Petugas TIK. Koordinator Sarpras mengatur aset Sarpras & menugaskan Petugas Sarpras.",
+                "operationId": "createAssetMaintenance",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "asset_code_id",
+                                    "assigned_officer_id",
+                                    "maintenance_type",
+                                    "period",
+                                    "next_scheduled_date"
+                                ],
+                                "properties": {
+                                    "asset_code_id": {
+                                        "description": "ID kode aset fisik",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "assigned_officer_id": {
+                                        "description": "ID petugas yang ditugaskan (Petugas TIK / Petugas Sarpras)",
+                                        "type": "integer",
+                                        "example": 3
+                                    },
+                                    "maintenance_type": {
+                                        "description": "Jenis pemeliharaan",
+                                        "type": "string",
+                                        "example": "Pembersihan dan Pengecekan Rutin"
+                                    },
+                                    "period": {
+                                        "description": "Periode berulang pemeliharaan",
+                                        "type": "string",
+                                        "example": "monthly",
+                                        "enum": [
+                                            "weekly",
+                                            "monthly",
+                                            "quarterly",
+                                            "semiannually",
+                                            "yearly"
+                                        ]
+                                    },
+                                    "next_scheduled_date": {
+                                        "description": "Tanggal jadwal pemeliharaan pertama (minimal hari ini)",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-11-01"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Jadwal pemeliharaan aset berhasil dibuat"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "422": {
+                        "description": "Validation Error"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/asset-maintenances/{id}": {
+            "get": {
+                "tags": [
+                    "Asset Maintenance"
+                ],
+                "summary": "Detail jadwal pemeliharaan aset",
+                "description": "Tampilkan detail jadwal pemeliharaan berserta relasinya (aset, petugas, pembuat, dan riwayat log).",
+                "operationId": "showAssetMaintenance",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID jadwal pemeliharaan",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detail jadwal pemeliharaan aset"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "404": {
+                        "description": "Jadwal pemeliharaan tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Asset Maintenance"
+                ],
+                "summary": "Perbarui jadwal pemeliharaan aset",
+                "description": "Update field yang diizinkan (maintenance_type, period, next_scheduled_date, assigned_officer_id, is_active). Memeriksa kesesuaian role petugas baru terhadap klasifikasi aset.",
+                "operationId": "updateAssetMaintenance",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID jadwal pemeliharaan",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "maintenance_type": {
+                                        "description": "Jenis pemeliharaan",
+                                        "type": "string",
+                                        "example": "Pengecekan Komponen dan Kalibrasi"
+                                    },
+                                    "period": {
+                                        "description": "Periode pemeliharaan",
+                                        "type": "string",
+                                        "example": "quarterly",
+                                        "enum": [
+                                            "weekly",
+                                            "monthly",
+                                            "quarterly",
+                                            "semiannually",
+                                            "yearly"
+                                        ]
+                                    },
+                                    "next_scheduled_date": {
+                                        "description": "Tanggal jadwal pemeliharaan berikutnya",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-12-01"
+                                    },
+                                    "assigned_officer_id": {
+                                        "description": "ID petugas baru yang ditugaskan",
+                                        "type": "integer",
+                                        "example": 4
+                                    },
+                                    "is_active": {
+                                        "description": "Status keaktifan jadwal pemeliharaan",
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Jadwal pemeliharaan aset berhasil diperbarui"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Jadwal pemeliharaan tidak ditemukan"
+                    },
+                    "422": {
+                        "description": "Validation Error"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Asset Maintenance"
+                ],
+                "summary": "Hapus jadwal pemeliharaan aset",
+                "description": "Soft delete jadwal pemeliharaan aset.",
+                "operationId": "deleteAssetMaintenance",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID jadwal pemeliharaan",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Jadwal pemeliharaan aset berhasil dihapus"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Jadwal pemeliharaan tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/asset-maintenances/{id}/logs": {
+            "post": {
+                "tags": [
+                    "Asset Maintenance"
+                ],
+                "summary": "Kirim log eksekusi pemeliharaan aset",
+                "description": "Kirim log eksekusi pemeliharaan oleh petugas yang ditugaskan. Mendukung upload foto bukti pekerjaan. Jadwal berikutnya otomatis dihitung ulang dari jadwal lama.",
+                "operationId": "submitAssetMaintenanceLog",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID jadwal pemeliharaan",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "work_description",
+                                    "maintenance_result",
+                                    "post_maintenance_condition",
+                                    "started_at",
+                                    "completed_at"
+                                ],
+                                "properties": {
+                                    "work_description": {
+                                        "type": "string",
+                                        "example": "Pembersihan komponen debu dan penggantian thermal paste"
+                                    },
+                                    "maintenance_result": {
+                                        "type": "string",
+                                        "example": "Suhu normal kembali dan perangkat berfungsi stabil"
+                                    },
+                                    "post_maintenance_condition": {
+                                        "type": "string",
+                                        "example": "Baik",
+                                        "enum": [
+                                            "Baik",
+                                            "Rusak Ringan",
+                                            "Rusak Berat"
+                                        ]
+                                    },
+                                    "started_at": {
+                                        "description": "Format: Y-m-d H:i:s",
+                                        "type": "string",
+                                        "example": "2026-10-28 09:00:00"
+                                    },
+                                    "completed_at": {
+                                        "description": "Format: Y-m-d H:i:s (after_or_equal:started_at)",
+                                        "type": "string",
+                                        "example": "2026-10-28 10:30:00"
+                                    },
+                                    "photo": {
+                                        "description": "Foto bukti pemeliharaan (JPG/PNG, max 5MB)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Log pemeliharaan berhasil dicatat dan jadwal berikutnya telah diperbarui"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Hanya petugas yang ditugaskan yang dapat mengisi log pemeliharaan"
+                    },
+                    "404": {
+                        "description": "Jadwal pemeliharaan tidak ditemukan"
+                    },
+                    "422": {
+                        "description": "Validation Error"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -6648,6 +7080,10 @@
         {
             "name": "Assets",
             "description": "Asset lookup"
+        },
+        {
+            "name": "Asset Maintenance",
+            "description": "API untuk penjadwalan dan eksekusi pemeliharaan aset"
         },
         {
             "name": "Helpdesk",

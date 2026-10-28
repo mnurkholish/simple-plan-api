@@ -34,6 +34,11 @@ class AssetCode extends Model
         return $this->belongsTo(AssetItem::class, 'asset_item_id');
     }
 
+    public function assetItem(): BelongsTo
+    {
+        return $this->item();
+    }
+
     public function asset(): HasOne
     {
         return $this->hasOne(Asset::class);

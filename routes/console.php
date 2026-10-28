@@ -25,3 +25,6 @@ if (file_exists($scheduleFile)) {
         };
     }
 }
+
+Schedule::command('maintenance:check-status')->daily();
+

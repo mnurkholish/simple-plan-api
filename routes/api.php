@@ -7,6 +7,8 @@ use App\Http\Controllers\Api\V1\AssetLabelController;
 use App\Http\Controllers\Api\V1\AssetLabelExportController;
 use App\Http\Controllers\Api\V1\AssetLocationController;
 use App\Http\Controllers\Api\V1\AssetQrCodeController;
+use App\Http\Controllers\Api\V1\AssetMaintenanceController;
+use App\Http\Controllers\Api\V1\AssetMaintenanceLogController;
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Auth\ExtendedAuthController;
 use App\Http\Controllers\Api\V1\Auth\SsoController;
@@ -89,6 +91,11 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::get('/assets/{asset}/label', [AssetLabelController::class, 'show']);
         Route::post('asset-label-exports', [AssetLabelExportController::class, 'store'])
             ->name('asset-label-exports.store');
+
+        // Jadwal Maintenance (Induk)
+        Route::apiResource('asset-maintenances', AssetMaintenanceController::class);
+        // Eksekusi Log Maintenance (Nested)
+        Route::post('asset-maintenances/{maintenance}/logs', [AssetMaintenanceLogController::class, 'store']);
 
         Route::get('tickets', [TicketController::class, 'index'])
             ->middleware('permission:tickets-access')
