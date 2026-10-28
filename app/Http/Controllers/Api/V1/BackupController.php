@@ -58,19 +58,6 @@ class BackupController extends Controller
         }
     }
 
-    public function saveSchedule(Request $request): JsonResponse
-    {
-        $data = $request->validate([
-            'frequency' => ['required', 'in:none,daily,weekly,monthly'],
-            'time' => ['required', 'date_format:H:i'],
-        ]);
-
-        return response()->json([
-            'message' => 'Jadwal backup otomatis berhasil diperbarui.',
-            'data' => $this->service->saveSchedule($data),
-        ]);
-    }
-
     public function download(Request $request, int $id): StreamedResponse
     {
         abort_unless($request->user()->hasRole('super-admin'), Response::HTTP_FORBIDDEN);

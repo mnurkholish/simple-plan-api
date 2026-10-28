@@ -1409,18 +1409,33 @@ class ApiDocumentation
     public function backupsShow(): void {}
 
     /**
-     * @OA\Post(
-     *     path="/backups/schedule",
+     * @OA\Get(
+     *     path="/backup-settings",
      *     tags={"Backups"},
-     *     summary="Save backup schedule",
+     *     summary="Get automatic backup settings (Super Admin)",
      *     security={{"sanctum":{}}},
      *
-     *     @OA\RequestBody(required=true, @OA\JsonContent(@OA\Property(property="frequency", type="string", enum={"none","daily","weekly","monthly"}), @OA\Property(property="time", type="string", example="00:00"))),
-     *
-     *     @OA\Response(response=200, description="Schedule saved")
+     *     @OA\Response(response=200, description="Backup settings"),
+     *     @OA\Response(response=403, description="Super Admin and backups-schedule permission required")
      * )
      */
-    public function backupsSchedule(): void {}
+    public function backupSettingsShow(): void {}
+
+    /**
+     * @OA\Put(
+     *     path="/backup-settings",
+     *     tags={"Backups"},
+     *     summary="Update automatic backup settings (Super Admin)",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\RequestBody(required=true, @OA\JsonContent(required={"is_active","frequency","backup_time"}, @OA\Property(property="is_active", type="boolean"), @OA\Property(property="frequency", type="string", enum={"daily","weekly","monthly"}), @OA\Property(property="backup_time", type="string", example="02:00"), @OA\Property(property="day_of_week", type="integer", minimum=1, maximum=7), @OA\Property(property="day_of_month", type="integer", minimum=1, maximum=28))),
+     *
+     *     @OA\Response(response=200, description="Backup settings updated"),
+     *     @OA\Response(response=403, description="Super Admin and backups-schedule permission required"),
+     *     @OA\Response(response=422, description="Invalid settings")
+     * )
+     */
+    public function backupSettingsUpdate(): void {}
 
     /**
      * @OA\Get(

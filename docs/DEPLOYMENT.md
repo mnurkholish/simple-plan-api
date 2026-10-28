@@ -204,7 +204,22 @@ Jika project menggunakan Laravel Scheduler, konfigurasi cron sesuai server:
 Jika project menggunakan Queue, jalankan worker dengan process manager yang
 sesuai server.
 
-Queue dan scheduler hanya dikonfigurasi jika fitur production menggunakannya.
+Backup otomatis memakai scheduler setiap menit; jalankan cron di atas secara
+permanen pada host deployment. Pada Docker/Sail, jalankan proses terpisah dengan
+`php artisan schedule:work` di container aplikasi. Hanya satu scheduler diperlukan
+per deployment.
+
+Jika Sail sudah dikonfigurasi, jalankan kedua proses ini pada terminal atau
+container terpisah:
+
+```bash
+./vendor/bin/sail artisan schedule:work
+./vendor/bin/sail artisan queue:work backup --queue=backups --timeout=3600 --tries=1
+```
+
+Di production, kelola scheduler dan worker dengan process manager agar keduanya
+otomatis hidup kembali setelah container restart. Gunakan salah satu mekanisme
+scheduler, `schedule:work` atau cron `schedule:run` setiap menit.
 
 ---
 
@@ -272,11 +287,13 @@ php artisan queue:work backup --queue=backups --timeout=3600 --tries=1
 
 `BACKUP_QUEUE_RETRY_AFTER` harus lebih besar daripada `BACKUP_JOB_TIMEOUT` dan
 timeout worker. Nilai defaultnya masing-masing 3660 dan 3600 detik. Pada Sail,
-jalankan worker sebagai proses/container terpisah dari web server. Jadwal backup
-otomatis belum diimplementasikan; penjadwalan database-only lama dinonaktifkan
-agar tidak melewati queue dan histori.
-Gunakan cache bersama seperti `CACHE_STORE=database` atau Redis agar lock backup
-berlaku untuk semua worker.
+jalankan worker sebagai proses/container terpisah dari web server. Scheduler
+membaca `backup_settings` setiap menit dalam zona Asia/Jakarta; perubahan melalui
+`PUT /api/v1/backup-settings` berlaku pada menit berikutnya tanpa deploy ulang.
+Frekuensi mingguan menggunakan hari 1=Senin sampai 7=Minggu; tanggal bulanan
+dibatasi 1–28. Backup otomatis memakai antrean dan histori yang sama dengan backup
+manual. Gunakan cache bersama seperti `CACHE_STORE=database` atau Redis agar
+penanda jadwal dan lock backup berlaku untuk semua scheduler dan worker.
 
 Sebelum deployment berisiko, backup data relevan:
 

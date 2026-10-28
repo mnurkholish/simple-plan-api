@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Auth\ExtendedAuthController;
 use App\Http\Controllers\Api\V1\Auth\SsoController;
 use App\Http\Controllers\Api\V1\BackupController;
+use App\Http\Controllers\Api\V1\BackupSettingController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\ExampleLiveController;
 use App\Http\Controllers\Api\V1\ImpersonationController;
@@ -149,9 +150,12 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::post('backups', [BackupController::class, 'store'])
             ->middleware('permission:backups-create')
             ->name('backups.store');
-        Route::post('backups/schedule', [BackupController::class, 'saveSchedule'])
+        Route::get('backup-settings', [BackupSettingController::class, 'show'])
             ->middleware('permission:backups-schedule')
-            ->name('backups.schedule');
+            ->name('backup-settings.show');
+        Route::put('backup-settings', [BackupSettingController::class, 'update'])
+            ->middleware('permission:backups-schedule')
+            ->name('backup-settings.update');
         Route::delete('backups', [BackupController::class, 'destroy'])
             ->middleware('permission:backups-delete')
             ->name('backups.destroy');

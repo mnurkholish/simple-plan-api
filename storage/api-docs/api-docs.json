@@ -2274,31 +2274,68 @@
                 ]
             }
         },
-        "/backups/schedule": {
-            "post": {
+        "/backup-settings": {
+            "get": {
                 "tags": [
                     "Backups"
                 ],
-                "summary": "Save backup schedule",
-                "operationId": "de3592a3c7c705f9e147841404419081",
+                "summary": "Get automatic backup settings (Super Admin)",
+                "operationId": "52944085562eeb33e1dd8990add17cd5",
+                "responses": {
+                    "200": {
+                        "description": "Backup settings"
+                    },
+                    "403": {
+                        "description": "Super Admin and backups-schedule permission required"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Backups"
+                ],
+                "summary": "Update automatic backup settings (Super Admin)",
+                "operationId": "9ecd2e51796e80217a15bc3a5d8ee74b",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
+                                "required": [
+                                    "is_active",
+                                    "frequency",
+                                    "backup_time"
+                                ],
                                 "properties": {
+                                    "is_active": {
+                                        "type": "boolean"
+                                    },
                                     "frequency": {
                                         "type": "string",
                                         "enum": [
-                                            "none",
                                             "daily",
                                             "weekly",
                                             "monthly"
                                         ]
                                     },
-                                    "time": {
+                                    "backup_time": {
                                         "type": "string",
-                                        "example": "00:00"
+                                        "example": "02:00"
+                                    },
+                                    "day_of_week": {
+                                        "type": "integer",
+                                        "maximum": 7,
+                                        "minimum": 1
+                                    },
+                                    "day_of_month": {
+                                        "type": "integer",
+                                        "maximum": 28,
+                                        "minimum": 1
                                     }
                                 },
                                 "type": "object"
@@ -2308,7 +2345,13 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Schedule saved"
+                        "description": "Backup settings updated"
+                    },
+                    "403": {
+                        "description": "Super Admin and backups-schedule permission required"
+                    },
+                    "422": {
+                        "description": "Invalid settings"
                     }
                 },
                 "security": [

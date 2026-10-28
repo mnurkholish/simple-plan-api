@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Jobs\RunBackup;
 use App\Models\BackupHistory;
+use App\Models\BackupSetting;
 use Carbon\Carbon;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Contracts\Filesystem\Filesystem;
@@ -46,9 +47,14 @@ class BackupService
      */
     public function index(): array
     {
+        $setting = BackupSetting::find(1);
+
         return [
             'backups' => $this->backups(),
-            'schedule_config' => $this->scheduleConfig(),
+            'schedule_config' => [
+                'frequency' => $setting?->frequency ?? 'none',
+                'time' => $setting?->backup_time ? substr($setting->backup_time, 0, 5) : '00:00',
+            ],
         ];
     }
 
@@ -77,8 +83,18 @@ class BackupService
 
     public function create(int $performedById): ?BackupHistory
     {
+        return $this->enqueue('manual', $performedById);
+    }
+
+    public function createAutomatic(): ?BackupHistory
+    {
+        return $this->enqueue('automatic', null);
+    }
+
+    private function enqueue(string $type, ?int $performedById): ?BackupHistory
+    {
         try {
-            return Cache::lock('backup:enqueue', 120)->block(5, function () use ($performedById): ?BackupHistory {
+            return Cache::lock('backup:enqueue', 120)->block(5, function () use ($type, $performedById): ?BackupHistory {
                 if (BackupHistory::whereIn('status', ['pending', 'processing'])->exists()) {
                     return null;
                 }
@@ -90,7 +106,7 @@ class BackupService
                 $runningLock->release();
 
                 $history = BackupHistory::create([
-                    'type' => 'manual',
+                    'type' => $type,
                     'performed_by_id' => $performedById,
                     'status' => 'pending',
                 ]);
@@ -119,48 +135,6 @@ class BackupService
     public function history(int $id): BackupHistory
     {
         return BackupHistory::with('performedBy:id,name')->findOrFail($id);
-    }
-
-    /**
-     * @param  array{frequency: string, time: string}  $data
-     * @return array{frequency: string, time: string}
-     */
-    public function saveSchedule(array $data): array
-    {
-        $config = [
-            'frequency' => $data['frequency'],
-            'time' => $data['time'],
-        ];
-
-        $scheduleFile = $this->scheduleFile();
-        $directory = dirname($scheduleFile);
-
-        if (! is_dir($directory)) {
-            mkdir($directory, 0755, true);
-        }
-
-        file_put_contents($scheduleFile, json_encode($config, JSON_PRETTY_PRINT));
-
-        return $config;
-    }
-
-    /**
-     * @return array{frequency: string, time: string}
-     */
-    public function scheduleConfig(): array
-    {
-        $default = ['frequency' => 'none', 'time' => '00:00'];
-        $scheduleFile = $this->scheduleFile();
-
-        if (! file_exists($scheduleFile)) {
-            return $default;
-        }
-
-        $config = json_decode((string) file_get_contents($scheduleFile), true);
-
-        return is_array($config)
-            ? array_merge($default, array_intersect_key($config, $default))
-            : $default;
     }
 
     public function downloadPath(string $path): string
@@ -196,11 +170,6 @@ class BackupService
     private function disk(): Filesystem
     {
         return Storage::disk($this->diskName());
-    }
-
-    private function scheduleFile(): string
-    {
-        return config('backup.schedule_file', storage_path('app/backup_schedule.json'));
     }
 
     private function validateBackupPath(string $path): string
