@@ -156,13 +156,14 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::put('backup-settings', [BackupSettingController::class, 'update'])
             ->middleware('permission:backups-schedule')
             ->name('backup-settings.update');
-        Route::delete('backups', [BackupController::class, 'destroy'])
-            ->middleware('permission:backups-delete')
-            ->name('backups.destroy');
         Route::get('backups/{id}', [BackupController::class, 'show'])
             ->middleware('permission:backups-access')
             ->whereNumber('id')
             ->name('backups.show');
+        Route::delete('backups/{id}', [BackupController::class, 'destroy'])
+            ->middleware('permission:backups-delete')
+            ->whereNumber('id')
+            ->name('backups.destroy');
         Route::get('backups/{id}/download', [BackupController::class, 'download'])
             ->middleware('permission:backups-download')
             ->whereNumber('id')

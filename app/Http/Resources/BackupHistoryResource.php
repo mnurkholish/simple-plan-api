@@ -22,6 +22,7 @@ class BackupHistoryResource extends JsonResource
                 ]),
             'file_name' => $this->file_name,
             'file_size' => $this->file_size,
+            'file_available' => $this->status === 'success' && $this->disk === 'backup' && filled($this->object_key),
             'started_at' => $this->started_at,
             'finished_at' => $this->finished_at,
             'failure_message' => $this->failure_message,

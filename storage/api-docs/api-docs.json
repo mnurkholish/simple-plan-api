@@ -2195,48 +2195,6 @@
                         "sanctum": []
                     }
                 ]
-            },
-            "delete": {
-                "tags": [
-                    "Backups"
-                ],
-                "summary": "Delete backup file",
-                "operationId": "7aab2964659e6ec8f82e4dddfbbc3e63",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "path"
-                                ],
-                                "properties": {
-                                    "path": {
-                                        "type": "string"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Backup deleted",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/MessageResponse"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
             }
         },
         "/backups/{id}": {
@@ -2265,6 +2223,45 @@
                     },
                     "404": {
                         "description": "Backup history not found"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Backups"
+                ],
+                "summary": "Delete a successful backup ZIP while retaining its history (Super Admin)",
+                "operationId": "eee52cce09e3c0092699dbd0401214e6",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Backup ZIP deleted or already unavailable"
+                    },
+                    "403": {
+                        "description": "Super Admin and backups-delete permission required"
+                    },
+                    "404": {
+                        "description": "Backup history not found"
+                    },
+                    "409": {
+                        "description": "Backup is not successful"
+                    },
+                    "500": {
+                        "description": "Storage deletion failed"
                     }
                 },
                 "security": [

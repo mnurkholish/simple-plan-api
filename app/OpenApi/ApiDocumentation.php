@@ -1372,6 +1372,7 @@ class ApiDocumentation
      *     @OA\Parameter(name="status", in="query", @OA\Schema(type="string", enum={"pending","processing","success","failed"})),
      *     @OA\Parameter(name="date_from", in="query", @OA\Schema(type="string", format="date")),
      *     @OA\Parameter(name="date_to", in="query", @OA\Schema(type="string", format="date")),
+     *
      *     @OA\Response(response=200, description="Paginated backup history"),
      *     @OA\Response(response=403, description="backups-access permission required"),
      *     @OA\Response(response=422, description="Invalid filters")
@@ -1401,12 +1402,31 @@ class ApiDocumentation
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *
      *     @OA\Response(response=200, description="Backup history"),
      *     @OA\Response(response=403, description="backups-access permission required"),
      *     @OA\Response(response=404, description="Backup history not found")
      * )
      */
     public function backupsShow(): void {}
+
+    /**
+     * @OA\Delete(
+     *     path="/backups/{id}",
+     *     tags={"Backups"},
+     *     summary="Delete a successful backup ZIP while retaining its history (Super Admin)",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *
+     *     @OA\Response(response=204, description="Backup ZIP deleted or already unavailable"),
+     *     @OA\Response(response=403, description="Super Admin and backups-delete permission required"),
+     *     @OA\Response(response=404, description="Backup history not found"),
+     *     @OA\Response(response=409, description="Backup is not successful"),
+     *     @OA\Response(response=500, description="Storage deletion failed")
+     * )
+     */
+    public function backupsDestroy(): void {}
 
     /**
      * @OA\Get(
@@ -1445,6 +1465,7 @@ class ApiDocumentation
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *
      *     @OA\Response(response=200, description="Private backup ZIP", @OA\MediaType(mediaType="application/zip")),
      *     @OA\Response(response=403, description="Super Admin and backups-download permission required"),
      *     @OA\Response(response=404, description="Backup history or file not found"),
@@ -1452,20 +1473,6 @@ class ApiDocumentation
      * )
      */
     public function backupsDownloadHistory(): void {}
-
-    /**
-     * @OA\Delete(
-     *     path="/backups",
-     *     tags={"Backups"},
-     *     summary="Delete backup file",
-     *     security={{"sanctum":{}}},
-     *
-     *     @OA\RequestBody(required=true, @OA\JsonContent(required={"path"}, @OA\Property(property="path", type="string"))),
-     *
-     *     @OA\Response(response=200, description="Backup deleted", @OA\JsonContent(ref="#/components/schemas/MessageResponse"))
-     * )
-     */
-    public function backupsDestroy(): void {}
 
     /**
      * @OA\Get(
@@ -2353,8 +2360,11 @@ class ApiDocumentation
      *     summary="Get Asset by UID After QR Scan",
      *     description="Finds an asset by its permanent UID. Classification is TIK for Alat IT and SARPRAS otherwise. Detail location comes from assets.location_detail.",
      *     security={{"sanctum":{}}},
+     *
      *     @OA\Parameter(name="uid", in="path", required=true, description="Permanent asset UID", @OA\Schema(type="string", minLength=26, maxLength=26)),
+     *
      *     @OA\Response(response=200, description="Asset found", @OA\JsonContent(
+     *
      *         @OA\Property(property="data", type="object",
      *             @OA\Property(property="id", type="integer"),
      *             @OA\Property(property="uid", type="string"),
@@ -2367,6 +2377,7 @@ class ApiDocumentation
      *             @OA\Property(property="status", type="string")
      *         )
      *     )),
+     *
      *     @OA\Response(response=401, description="Unauthenticated"),
      *     @OA\Response(response=403, description="Asset access forbidden"),
      *     @OA\Response(response=404, description="Asset UID not found")

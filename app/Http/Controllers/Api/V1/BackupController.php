@@ -14,6 +14,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Throwable;
 
 class BackupController extends Controller
@@ -65,6 +66,25 @@ class BackupController extends Controller
         return $this->streamBackup($this->service->downloadableHistory($id));
     }
 
+    public function destroy(Request $request, int $id): Response|JsonResponse
+    {
+        abort_unless($request->user()->hasRole('super-admin'), Response::HTTP_FORBIDDEN);
+
+        try {
+            $this->service->deleteArchive($id);
+        } catch (ModelNotFoundException) {
+            return response()->json(['message' => 'Resource not found.'], Response::HTTP_NOT_FOUND);
+        } catch (HttpExceptionInterface $exception) {
+            throw $exception;
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return response()->json(['message' => 'Gagal menghapus file backup.'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+
+        return response()->noContent();
+    }
+
     private function streamBackup(BackupHistory $history): StreamedResponse
     {
         return Storage::disk('backup')->download(
@@ -72,19 +92,5 @@ class BackupController extends Controller
             $history->file_name,
             ['Content-Type' => 'application/zip']
         );
-    }
-
-    public function destroy(Request $request): JsonResponse
-    {
-        $data = $request->validate([
-            'path' => ['required', 'string'],
-        ]);
-
-        $this->service->delete($data['path']);
-
-        return response()->json([
-            'message' => 'File backup berhasil dihapus.',
-            'data' => $this->service->index(),
-        ]);
     }
 }

@@ -4,15 +4,13 @@ namespace App\Services;
 
 use App\Jobs\RunBackup;
 use App\Models\BackupHistory;
-use App\Models\BackupSetting;
-use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Cache\LockTimeoutException;
-use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\ValidationException;
+use RuntimeException;
 use Throwable;
 
 class BackupService
@@ -20,12 +18,19 @@ class BackupService
     /** @param array<string, mixed> $filters */
     public function histories(array $filters, int $perPage): LengthAwarePaginator
     {
+        $from = isset($filters['date_from'])
+            ? CarbonImmutable::parse($filters['date_from'], 'Asia/Jakarta')->startOfDay()->utc()
+            : null;
+        $to = isset($filters['date_to'])
+            ? CarbonImmutable::parse($filters['date_to'], 'Asia/Jakarta')->addDay()->startOfDay()->utc()
+            : null;
+
         return BackupHistory::query()
             ->with('performedBy:id,name')
             ->when(isset($filters['type']), fn ($query) => $query->where('type', $filters['type']))
             ->when(isset($filters['status']), fn ($query) => $query->where('status', $filters['status']))
-            ->when(isset($filters['date_from']), fn ($query) => $query->whereDate('created_at', '>=', $filters['date_from']))
-            ->when(isset($filters['date_to']), fn ($query) => $query->whereDate('created_at', '<=', $filters['date_to']))
+            ->when($from, fn ($query) => $query->where('created_at', '>=', $from))
+            ->when($to, fn ($query) => $query->where('created_at', '<', $to))
             ->orderByDesc('created_at')
             ->orderByDesc('id')
             ->paginate($perPage);
@@ -42,43 +47,23 @@ class BackupService
         return $history;
     }
 
-    /**
-     * @return array{backups: array<int, array<string, mixed>>, schedule_config: array{frequency: string, time: string}}
-     */
-    public function index(): array
+    public function deleteArchive(int $id): void
     {
-        $setting = BackupSetting::find(1);
+        $history = BackupHistory::findOrFail($id);
 
-        return [
-            'backups' => $this->backups(),
-            'schedule_config' => [
-                'frequency' => $setting?->frequency ?? 'none',
-                'time' => $setting?->backup_time ? substr($setting->backup_time, 0, 5) : '00:00',
-            ],
-        ];
-    }
+        abort_unless($history->status === 'success', 409, 'Backup belum berhasil.');
 
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    public function backups(): array
-    {
-        $disk = $this->disk();
-        $backupName = $this->backupName();
+        if (! filled($history->object_key)) {
+            return;
+        }
 
-        return collect($disk->files($backupName))
-            ->filter(fn (string $file): bool => pathinfo($file, PATHINFO_EXTENSION) === 'zip')
-            ->map(fn (string $file): array => [
-                'name' => basename($file),
-                'path' => $file,
-                'size' => $this->formatSize($disk->size($file)),
-                'size_bytes' => $disk->size($file),
-                'date' => Carbon::createFromTimestamp($disk->lastModified($file))->format('Y-m-d H:i:s'),
-                'created_at' => Carbon::createFromTimestamp($disk->lastModified($file))->toISOString(),
-            ])
-            ->sortByDesc('created_at')
-            ->values()
-            ->all();
+        abort_unless($history->disk === 'backup', 404, 'File backup tidak ditemukan.');
+
+        if (! Storage::disk('backup')->delete($history->object_key)) {
+            throw new RuntimeException('Gagal menghapus arsip backup dari storage.');
+        }
+
+        $history->update(['disk' => null, 'object_key' => null]);
     }
 
     public function create(int $performedById): ?BackupHistory
@@ -135,68 +120,5 @@ class BackupService
     public function history(int $id): BackupHistory
     {
         return BackupHistory::with('performedBy:id,name')->findOrFail($id);
-    }
-
-    public function downloadPath(string $path): string
-    {
-        $path = $this->validateBackupPath($path);
-
-        if (! $this->disk()->exists($path)) {
-            throw ValidationException::withMessages([
-                'path' => ['File backup tidak ditemukan.'],
-            ]);
-        }
-
-        return $path;
-    }
-
-    public function delete(string $path): void
-    {
-        $path = $this->downloadPath($path);
-
-        $this->disk()->delete($path);
-    }
-
-    public function diskName(): string
-    {
-        return config('backup.backup.destination.disks.0', 'local');
-    }
-
-    private function backupName(): string
-    {
-        return trim((string) config('backup.backup.name', 'laravel-backup'), '/');
-    }
-
-    private function disk(): Filesystem
-    {
-        return Storage::disk($this->diskName());
-    }
-
-    private function validateBackupPath(string $path): string
-    {
-        $path = ltrim(str_replace('\\', '/', $path), '/');
-        $backupName = $this->backupName();
-
-        if (
-            str_contains($path, '..')
-            || ! str_starts_with($path, $backupName.'/')
-            || pathinfo($path, PATHINFO_EXTENSION) !== 'zip'
-        ) {
-            throw ValidationException::withMessages([
-                'path' => ['Path backup tidak valid.'],
-            ]);
-        }
-
-        return $path;
-    }
-
-    private function formatSize(int $bytes): string
-    {
-        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
-        $bytes = max($bytes, 0);
-        $pow = $bytes > 0 ? floor(log($bytes) / log(1024)) : 0;
-        $pow = min($pow, count($units) - 1);
-
-        return round($bytes / (1024 ** $pow), 2).' '.$units[$pow];
     }
 }

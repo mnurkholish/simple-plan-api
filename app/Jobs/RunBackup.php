@@ -119,6 +119,10 @@ class RunBackup implements ShouldQueue
 
     private function assertConfiguration(): void
     {
+        if (config('filesystems.default') !== 's3') {
+            throw new RuntimeException('Backup memerlukan FILESYSTEM_DISK=s3 untuk mencakup file aplikasi.');
+        }
+
         $sourceBucket = config('filesystems.disks.s3.bucket');
         $backupBucket = config('filesystems.disks.backup.bucket');
 

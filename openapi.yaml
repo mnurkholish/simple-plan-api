@@ -101,11 +101,11 @@ paths:
           schema: { type: string, enum: [pending, processing, success, failed] }
         - name: date_from
           in: query
-          description: Batas awal tanggal pembuatan histori (inklusif).
+          description: Batas awal hari pembuatan histori di Asia/Jakarta (inklusif).
           schema: { type: string, format: date }
         - name: date_to
           in: query
-          description: Batas akhir tanggal pembuatan histori (inklusif).
+          description: Batas akhir hari pembuatan histori di Asia/Jakarta (inklusif).
           schema: { type: string, format: date }
       responses:
         "200":
@@ -178,6 +178,27 @@ paths:
         "401": { description: Belum terautentikasi. }
         "403": { description: Tidak memiliki permission backups-access. }
         "404": { description: Histori backup tidak ditemukan. }
+
+    delete:
+      tags: [Backups]
+      summary: Menghapus file arsip backup
+      operationId: deleteBackup
+      description: Hanya menghapus ZIP dari bucket backup private. Histori, nama file, dan ukuran tetap tersimpan. Penghapusan ulang mengembalikan 204.
+      x-auth-required: true
+      x-required-permission: backups-delete
+      x-required-role: super-admin
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+      responses:
+        "204": { description: File backup dihapus atau sudah tidak tersedia. }
+        "401": { description: Belum terautentikasi. }
+        "403": { description: Bukan Super Admin atau tidak memiliki permission backups-delete. }
+        "404": { description: Histori backup tidak ditemukan. }
+        "409": { description: Status backup belum berhasil. }
+        "500": { description: Gagal menghapus file backup dari storage. }
 
   /backups/{id}/download:
     get:
@@ -1296,7 +1317,7 @@ components:
 
     BackupHistory:
       type: object
-      required: [id, type, status, performed_by, file_name, file_size, started_at, finished_at, failure_message, created_at]
+      required: [id, type, status, performed_by, file_name, file_size, file_available, started_at, finished_at, failure_message, created_at]
       properties:
         id: { type: integer }
         type: { type: string, enum: [manual, automatic] }
@@ -1309,6 +1330,7 @@ components:
             name: { type: string }
         file_name: { type: [string, 'null'] }
         file_size: { type: [integer, 'null'], description: Ukuran ZIP dalam byte. }
+        file_available: { type: boolean, description: Berdasarkan metadata lokasi arsip; keberadaan file di storage diverifikasi saat download. }
         started_at: { type: [string, 'null'], format: date-time }
         finished_at: { type: [string, 'null'], format: date-time }
         failure_message: { type: [string, 'null'] }
