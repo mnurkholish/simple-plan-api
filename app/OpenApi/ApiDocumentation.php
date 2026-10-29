@@ -35,7 +35,7 @@ use OpenApi\Annotations as OA;
  * @OA\Tag(name="Impersonation", description="Sanctum token impersonation")
  * @OA\Tag(name="Notifications", description="Notification and activity summary")
  * @OA\Tag(name="Assets", description="Asset lookup")
- * @OA\Tag(name="Asset Maintenance", description="API untuk penjadwalan dan eksekusi pemeliharaan aset")
+ * @OA\Tag(name="Asset Maintenance", description="API for asset maintenance scheduling and execution")
  * @OA\Tag(name="Helpdesk", description="Helpdesk TIK and Sarpras tickets")
  *
  * @OA\Schema(
@@ -2505,19 +2505,19 @@ class ApiDocumentation
      *     path="/asset-maintenances",
      *     operationId="listAssetMaintenances",
      *     tags={"Asset Maintenance"},
-     *     summary="List jadwal maintenance aset",
-     *     description="Tampilkan list jadwal maintenance. Support pencarian dan filter rentang tanggal, status, dan keaktifan.",
+     *     summary="Retrieve a list of asset maintenance schedules.",
+     *     description="Retrieve a paginated list of asset maintenance schedules. Supports search and filtering by date range, status, and active state.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(name="page", in="query", required=false, @OA\Schema(type="integer", minimum=1, default=1)),
      *     @OA\Parameter(name="per_page", in="query", required=false, @OA\Schema(type="integer", minimum=1, maximum=100, default=15)),
-     *     @OA\Parameter(name="search", in="query", required=false, description="Cari berdasarkan nomor inventaris (full_code), nama barang (assetItem.name), nama petugas, atau jenis pemeliharaan", @OA\Schema(type="string")),
-     *     @OA\Parameter(name="date_from", in="query", required=false, description="Batas awal tanggal jadwal pemeliharaan (YYYY-MM-DD)", @OA\Schema(type="string", format="date")),
-     *     @OA\Parameter(name="date_to", in="query", required=false, description="Batas akhir tanggal jadwal pemeliharaan (YYYY-MM-DD)", @OA\Schema(type="string", format="date")),
-     *     @OA\Parameter(name="status", in="query", required=false, description="Status pemeliharaan", @OA\Schema(type="string", enum={"terjadwal", "selesai", "terlambat"})),
-     *     @OA\Parameter(name="is_active", in="query", required=false, description="Filter keaktifan jadwal", @OA\Schema(type="boolean")),
+     *     @OA\Parameter(name="search", in="query", required=false, description="Search by inventory code (full_code), item name (assetItem.name), officer name, or maintenance type", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="date_from", in="query", required=false, description="Start date limit for maintenance schedule (YYYY-MM-DD)", @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="date_to", in="query", required=false, description="End date limit for maintenance schedule (YYYY-MM-DD)", @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="status", in="query", required=false, description="Maintenance status", @OA\Schema(type="string", enum={"terjadwal", "selesai", "terlambat"})),
+     *     @OA\Parameter(name="is_active", in="query", required=false, description="Filter schedule active status", @OA\Schema(type="boolean")),
      *
-     *     @OA\Response(response=200, description="Daftar jadwal pemeliharaan berhasil diambil"),
+     *     @OA\Response(response=200, description="Asset maintenance schedules retrieved successfully"),
      *     @OA\Response(response=401, description="Unauthenticated")
      * )
      */
@@ -2528,21 +2528,21 @@ class ApiDocumentation
      *     path="/asset-maintenances",
      *     operationId="createAssetMaintenance",
      *     tags={"Asset Maintenance"},
-     *     summary="Buat jadwal pemeliharaan aset baru",
-     *     description="Superadmin mengatur aset TIK & menugaskan Petugas TIK. Koordinator Sarpras mengatur aset Sarpras & menugaskan Petugas Sarpras.",
+     *     summary="Create a new asset maintenance schedule.",
+     *     description="Superadmin manages IT assets & assigns IT Officers. Sarpras Coordinator manages Sarpras assets & assigns Sarpras Officers.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\RequestBody(required=true, @OA\JsonContent(
      *         required={"asset_code_id", "assigned_officer_id", "maintenance_type", "period", "next_scheduled_date"},
      *
-     *         @OA\Property(property="asset_code_id", type="integer", example=1, description="ID kode aset fisik"),
-     *         @OA\Property(property="assigned_officer_id", type="integer", example=3, description="ID petugas yang ditugaskan (Petugas TIK / Petugas Sarpras)"),
-     *         @OA\Property(property="maintenance_type", type="string", example="Pembersihan dan Pengecekan Rutin", description="Jenis pemeliharaan"),
-     *         @OA\Property(property="period", type="string", enum={"weekly", "monthly", "quarterly", "semiannually", "yearly"}, example="monthly", description="Periode berulang pemeliharaan"),
-     *         @OA\Property(property="next_scheduled_date", type="string", format="date", example="2026-11-01", description="Tanggal jadwal pemeliharaan pertama (minimal hari ini)")
+     *         @OA\Property(property="asset_code_id", type="integer", example=1, description="Physical asset code ID"),
+     *         @OA\Property(property="assigned_officer_id", type="integer", example=3, description="Assigned officer ID (IT Officer / Sarpras Officer)"),
+     *         @OA\Property(property="maintenance_type", type="string", example="Routine Cleaning and Inspection", description="Maintenance type"),
+     *         @OA\Property(property="period", type="string", enum={"weekly", "monthly", "quarterly", "semiannually", "yearly"}, example="monthly", description="Recurring maintenance period"),
+     *         @OA\Property(property="next_scheduled_date", type="string", format="date", example="2026-11-01", description="First scheduled maintenance date (minimum today)")
      *     )),
      *
-     *     @OA\Response(response=201, description="Jadwal pemeliharaan aset berhasil dibuat"),
+     *     @OA\Response(response=201, description="Asset maintenance schedule created successfully"),
      *     @OA\Response(response=401, description="Unauthenticated"),
      *     @OA\Response(response=403, description="Forbidden"),
      *     @OA\Response(response=422, description="Validation Error")
@@ -2555,15 +2555,15 @@ class ApiDocumentation
      *     path="/asset-maintenances/{id}",
      *     operationId="showAssetMaintenance",
      *     tags={"Asset Maintenance"},
-     *     summary="Detail jadwal pemeliharaan aset",
-     *     description="Tampilkan detail jadwal pemeliharaan berserta relasinya (aset, petugas, pembuat, dan riwayat log).",
+     *     summary="Retrieve details of a specific asset maintenance schedule.",
+     *     description="Retrieve details of a maintenance schedule along with relations (asset, officer, creator, and execution logs).",
      *     security={{"sanctum":{}}},
      *
-     *     @OA\Parameter(name="id", in="path", required=true, description="ID jadwal pemeliharaan", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="id", in="path", required=true, description="Maintenance schedule ID", @OA\Schema(type="integer")),
      *
-     *     @OA\Response(response=200, description="Detail jadwal pemeliharaan aset"),
+     *     @OA\Response(response=200, description="Asset maintenance schedule details"),
      *     @OA\Response(response=401, description="Unauthenticated"),
-     *     @OA\Response(response=404, description="Jadwal pemeliharaan tidak ditemukan")
+     *     @OA\Response(response=404, description="Maintenance schedule not found")
      * )
      */
     public function assetMaintenancesShow(): void {}
@@ -2573,58 +2573,39 @@ class ApiDocumentation
      *     path="/asset-maintenances/{id}",
      *     operationId="updateAssetMaintenance",
      *     tags={"Asset Maintenance"},
-     *     summary="Perbarui jadwal pemeliharaan aset",
-     *     description="Update field yang diizinkan (maintenance_type, period, next_scheduled_date, assigned_officer_id, is_active). Memeriksa kesesuaian role petugas baru terhadap klasifikasi aset.",
+     *     summary="Update an existing asset maintenance schedule.",
+     *     description="Update allowed fields (maintenance_type, period, next_scheduled_date, assigned_officer_id, is_active). Validates that the new assigned officer matches the asset classification.",
      *     security={{"sanctum":{}}},
      *
-     *     @OA\Parameter(name="id", in="path", required=true, description="ID jadwal pemeliharaan", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="id", in="path", required=true, description="Maintenance schedule ID", @OA\Schema(type="integer")),
      *
      *     @OA\RequestBody(required=true, @OA\JsonContent(
-     *         @OA\Property(property="maintenance_type", type="string", example="Pengecekan Komponen dan Kalibrasi", description="Jenis pemeliharaan"),
-     *         @OA\Property(property="period", type="string", enum={"weekly", "monthly", "quarterly", "semiannually", "yearly"}, example="quarterly", description="Periode pemeliharaan"),
-     *         @OA\Property(property="next_scheduled_date", type="string", format="date", example="2026-12-01", description="Tanggal jadwal pemeliharaan berikutnya"),
-     *         @OA\Property(property="assigned_officer_id", type="integer", example=4, description="ID petugas baru yang ditugaskan"),
-     *         @OA\Property(property="is_active", type="boolean", example=true, description="Status keaktifan jadwal pemeliharaan")
+     *         @OA\Property(property="maintenance_type", type="string", example="Component Check and Calibration", description="Maintenance type"),
+     *         @OA\Property(property="period", type="string", enum={"weekly", "monthly", "quarterly", "semiannually", "yearly"}, example="quarterly", description="Maintenance period"),
+     *         @OA\Property(property="next_scheduled_date", type="string", format="date", example="2026-12-01", description="Next scheduled maintenance date"),
+     *         @OA\Property(property="assigned_officer_id", type="integer", example=4, description="New assigned officer ID"),
+     *         @OA\Property(property="is_active", type="boolean", example=true, description="Active status of the maintenance schedule")
      *     )),
      *
-     *     @OA\Response(response=200, description="Jadwal pemeliharaan aset berhasil diperbarui"),
+     *     @OA\Response(response=200, description="Asset maintenance schedule updated successfully"),
      *     @OA\Response(response=401, description="Unauthenticated"),
      *     @OA\Response(response=403, description="Forbidden"),
-     *     @OA\Response(response=404, description="Jadwal pemeliharaan tidak ditemukan"),
+     *     @OA\Response(response=404, description="Maintenance schedule not found"),
      *     @OA\Response(response=422, description="Validation Error")
      * )
      */
     public function assetMaintenancesUpdate(): void {}
 
     /**
-     * @OA\Delete(
-     *     path="/asset-maintenances/{id}",
-     *     operationId="deleteAssetMaintenance",
-     *     tags={"Asset Maintenance"},
-     *     summary="Hapus jadwal pemeliharaan aset",
-     *     description="Soft delete jadwal pemeliharaan aset.",
-     *     security={{"sanctum":{}}},
-     *
-     *     @OA\Parameter(name="id", in="path", required=true, description="ID jadwal pemeliharaan", @OA\Schema(type="integer")),
-     *
-     *     @OA\Response(response=200, description="Jadwal pemeliharaan aset berhasil dihapus"),
-     *     @OA\Response(response=401, description="Unauthenticated"),
-     *     @OA\Response(response=403, description="Forbidden"),
-     *     @OA\Response(response=404, description="Jadwal pemeliharaan tidak ditemukan")
-     * )
-     */
-    public function assetMaintenancesDestroy(): void {}
-
-    /**
      * @OA\Post(
      *     path="/asset-maintenances/{id}/logs",
      *     operationId="submitAssetMaintenanceLog",
      *     tags={"Asset Maintenance"},
-     *     summary="Kirim log eksekusi pemeliharaan aset",
-     *     description="Kirim log eksekusi pemeliharaan oleh petugas yang ditugaskan. Mendukung upload foto bukti pekerjaan. Jadwal berikutnya otomatis dihitung ulang dari jadwal lama.",
+     *     summary="Submit an execution log for an asset maintenance schedule.",
+     *     description="Submit maintenance execution log by the assigned officer. Supports proof photo upload. Next scheduled date is automatically recalculated from the previous schedule date.",
      *     security={{"sanctum":{}}},
      *
-     *     @OA\Parameter(name="id", in="path", required=true, description="ID jadwal pemeliharaan", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="id", in="path", required=true, description="Maintenance schedule ID", @OA\Schema(type="integer")),
      *
      *     @OA\RequestBody(required=true, @OA\MediaType(mediaType="multipart/form-data", @OA\Schema(
      *         required={"work_description", "maintenance_result", "post_maintenance_condition", "started_at", "completed_at"},
@@ -2634,13 +2615,13 @@ class ApiDocumentation
      *         @OA\Property(property="post_maintenance_condition", type="string", enum={"Baik", "Rusak Ringan", "Rusak Berat"}, example="Baik"),
      *         @OA\Property(property="started_at", type="string", example="2026-10-28 09:00:00", description="Format: Y-m-d H:i:s"),
      *         @OA\Property(property="completed_at", type="string", example="2026-10-28 10:30:00", description="Format: Y-m-d H:i:s (after_or_equal:started_at)"),
-     *         @OA\Property(property="photo", type="string", format="binary", description="Foto bukti pemeliharaan (JPG/PNG, max 5MB)")
+     *         @OA\Property(property="photo", type="string", format="binary", description="Maintenance proof photo (JPG/PNG, max 5MB)")
      *     ))),
      *
-     *     @OA\Response(response=201, description="Log pemeliharaan berhasil dicatat dan jadwal berikutnya telah diperbarui"),
+     *     @OA\Response(response=201, description="Maintenance log recorded successfully and next schedule has been updated"),
      *     @OA\Response(response=401, description="Unauthenticated"),
-     *     @OA\Response(response=403, description="Hanya petugas yang ditugaskan yang dapat mengisi log pemeliharaan"),
-     *     @OA\Response(response=404, description="Jadwal pemeliharaan tidak ditemukan"),
+     *     @OA\Response(response=403, description="Only the assigned officer can submit a maintenance log"),
+     *     @OA\Response(response=404, description="Maintenance schedule not found"),
      *     @OA\Response(response=422, description="Validation Error")
      * )
      */

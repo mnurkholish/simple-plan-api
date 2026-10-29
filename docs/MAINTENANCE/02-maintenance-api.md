@@ -279,7 +279,7 @@ Memperbarui konfigurasi jadwal pemeliharaan. Seluruh field bersifat opsional (pa
   | `period` | string | Tidak | Periode: `weekly`, `monthly`, `quarterly`, `semiannually`, `yearly`. |
   | `next_scheduled_date` | string (date) | Tidak | Tanggal jadwal berikutnya (`YYYY-MM-DD`). |
   | `assigned_officer_id` | integer | Tidak | ID user petugas baru yang ditugaskan. |
-  | `is_active` | boolean | Tidak | Status keaktifan jadwal (`true` / `false`). |
+  | `is_active` | boolean | Tidak | Status keaktifan jadwal (`true` / `false`). Gunakan nilai `false` untuk menonaktifkan jadwal (pengganti operasi delete). |
 
 ### Contoh Request Body
 ```json
@@ -312,22 +312,7 @@ Memperbarui konfigurasi jadwal pemeliharaan. Seluruh field bersifat opsional (pa
 
 ---
 
-## 5. Delete Asset Maintenance Schedule (Hapus Jadwal)
-Menghapus jadwal pemeliharaan aset secara permanen/soft delete dari database.
-
-- **Method**: `DELETE`
-- **Endpoint**: `/api/v1/inventory/asset-maintenances/{id}`
-
-### Contoh Response Sukses (200 OK)
-```json
-{
-  "message": "Jadwal pemeliharaan aset berhasil dihapus."
-}
-```
-
----
-
-## 6. Submit Maintenance Execution Log (Kirim Log Eksekusi Fisik)
+## 5. Submit Maintenance Execution Log (Kirim Log Eksekusi Fisik)
 Petugas yang ditugaskan mengirimkan bukti dan catatan hasil pemeliharaan yang telah diselesaikan di lapangan.
 
 > [!IMPORTANT]

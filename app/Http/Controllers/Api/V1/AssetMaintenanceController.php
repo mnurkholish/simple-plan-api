@@ -121,16 +121,6 @@ class AssetMaintenanceController extends Controller
         ]);
     }
 
-    public function destroy(mixed $assetMaintenance): JsonResponse
-    {
-        $maintenance = $this->resolveMaintenance($assetMaintenance);
-        $maintenance->delete();
-
-        return response()->json([
-            'message' => 'Jadwal pemeliharaan aset berhasil dihapus.',
-        ]);
-    }
-
     protected function resolveMaintenance(mixed $assetMaintenance): AssetMaintenance
     {
         if ($assetMaintenance instanceof AssetMaintenance) {

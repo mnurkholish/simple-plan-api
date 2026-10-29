@@ -18,6 +18,6 @@ Pengelolaan jadwal pemeliharaan aset berulang (recurring) dan pencatatan log eks
 ## Routes
 ```text
 GET|POST         /api/v1/inventory/asset-maintenances
-GET|PUT|DELETE   /api/v1/inventory/asset-maintenances/{maintenance}
+GET|PUT          /api/v1/inventory/asset-maintenances/{maintenance}
 POST             /api/v1/inventory/asset-maintenances/{maintenance}/logs
 ```

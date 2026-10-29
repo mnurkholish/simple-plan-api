@@ -5165,8 +5165,8 @@
                 "tags": [
                     "Asset Maintenance"
                 ],
-                "summary": "List jadwal maintenance aset",
-                "description": "Tampilkan list jadwal maintenance. Support pencarian dan filter rentang tanggal, status, dan keaktifan.",
+                "summary": "Retrieve a list of asset maintenance schedules.",
+                "description": "Retrieve a paginated list of asset maintenance schedules. Supports search and filtering by date range, status, and active state.",
                 "operationId": "listAssetMaintenances",
                 "parameters": [
                     {
@@ -5193,7 +5193,7 @@
                     {
                         "name": "search",
                         "in": "query",
-                        "description": "Cari berdasarkan nomor inventaris (full_code), nama barang (assetItem.name), nama petugas, atau jenis pemeliharaan",
+                        "description": "Search by inventory code (full_code), item name (assetItem.name), officer name, or maintenance type",
                         "required": false,
                         "schema": {
                             "type": "string"
@@ -5202,7 +5202,7 @@
                     {
                         "name": "date_from",
                         "in": "query",
-                        "description": "Batas awal tanggal jadwal pemeliharaan (YYYY-MM-DD)",
+                        "description": "Start date limit for maintenance schedule (YYYY-MM-DD)",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -5212,7 +5212,7 @@
                     {
                         "name": "date_to",
                         "in": "query",
-                        "description": "Batas akhir tanggal jadwal pemeliharaan (YYYY-MM-DD)",
+                        "description": "End date limit for maintenance schedule (YYYY-MM-DD)",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -5222,7 +5222,7 @@
                     {
                         "name": "status",
                         "in": "query",
-                        "description": "Status pemeliharaan",
+                        "description": "Maintenance status",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -5236,7 +5236,7 @@
                     {
                         "name": "is_active",
                         "in": "query",
-                        "description": "Filter keaktifan jadwal",
+                        "description": "Filter schedule active status",
                         "required": false,
                         "schema": {
                             "type": "boolean"
@@ -5245,7 +5245,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Daftar jadwal pemeliharaan berhasil diambil"
+                        "description": "Asset maintenance schedules retrieved successfully"
                     },
                     "401": {
                         "description": "Unauthenticated"
@@ -5261,8 +5261,8 @@
                 "tags": [
                     "Asset Maintenance"
                 ],
-                "summary": "Buat jadwal pemeliharaan aset baru",
-                "description": "Superadmin mengatur aset TIK & menugaskan Petugas TIK. Koordinator Sarpras mengatur aset Sarpras & menugaskan Petugas Sarpras.",
+                "summary": "Create a new asset maintenance schedule.",
+                "description": "Superadmin manages IT assets & assigns IT Officers. Sarpras Coordinator manages Sarpras assets & assigns Sarpras Officers.",
                 "operationId": "createAssetMaintenance",
                 "requestBody": {
                     "required": true,
@@ -5278,22 +5278,22 @@
                                 ],
                                 "properties": {
                                     "asset_code_id": {
-                                        "description": "ID kode aset fisik",
+                                        "description": "Physical asset code ID",
                                         "type": "integer",
                                         "example": 1
                                     },
                                     "assigned_officer_id": {
-                                        "description": "ID petugas yang ditugaskan (Petugas TIK / Petugas Sarpras)",
+                                        "description": "Assigned officer ID (IT Officer / Sarpras Officer)",
                                         "type": "integer",
                                         "example": 3
                                     },
                                     "maintenance_type": {
-                                        "description": "Jenis pemeliharaan",
+                                        "description": "Maintenance type",
                                         "type": "string",
-                                        "example": "Pembersihan dan Pengecekan Rutin"
+                                        "example": "Routine Cleaning and Inspection"
                                     },
                                     "period": {
-                                        "description": "Periode berulang pemeliharaan",
+                                        "description": "Recurring maintenance period",
                                         "type": "string",
                                         "example": "monthly",
                                         "enum": [
@@ -5305,7 +5305,7 @@
                                         ]
                                     },
                                     "next_scheduled_date": {
-                                        "description": "Tanggal jadwal pemeliharaan pertama (minimal hari ini)",
+                                        "description": "First scheduled maintenance date (minimum today)",
                                         "type": "string",
                                         "format": "date",
                                         "example": "2026-11-01"
@@ -5318,7 +5318,7 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Jadwal pemeliharaan aset berhasil dibuat"
+                        "description": "Asset maintenance schedule created successfully"
                     },
                     "401": {
                         "description": "Unauthenticated"
@@ -5342,14 +5342,14 @@
                 "tags": [
                     "Asset Maintenance"
                 ],
-                "summary": "Detail jadwal pemeliharaan aset",
-                "description": "Tampilkan detail jadwal pemeliharaan berserta relasinya (aset, petugas, pembuat, dan riwayat log).",
+                "summary": "Retrieve details of a specific asset maintenance schedule.",
+                "description": "Retrieve details of a maintenance schedule along with relations (asset, officer, creator, and execution logs).",
                 "operationId": "showAssetMaintenance",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "ID jadwal pemeliharaan",
+                        "description": "Maintenance schedule ID",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -5358,13 +5358,13 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Detail jadwal pemeliharaan aset"
+                        "description": "Asset maintenance schedule details"
                     },
                     "401": {
                         "description": "Unauthenticated"
                     },
                     "404": {
-                        "description": "Jadwal pemeliharaan tidak ditemukan"
+                        "description": "Maintenance schedule not found"
                     }
                 },
                 "security": [
@@ -5377,14 +5377,14 @@
                 "tags": [
                     "Asset Maintenance"
                 ],
-                "summary": "Perbarui jadwal pemeliharaan aset",
-                "description": "Update field yang diizinkan (maintenance_type, period, next_scheduled_date, assigned_officer_id, is_active). Memeriksa kesesuaian role petugas baru terhadap klasifikasi aset.",
+                "summary": "Update an existing asset maintenance schedule.",
+                "description": "Update allowed fields (maintenance_type, period, next_scheduled_date, assigned_officer_id, is_active). Validates that the new assigned officer matches the asset classification.",
                 "operationId": "updateAssetMaintenance",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "ID jadwal pemeliharaan",
+                        "description": "Maintenance schedule ID",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -5398,12 +5398,12 @@
                             "schema": {
                                 "properties": {
                                     "maintenance_type": {
-                                        "description": "Jenis pemeliharaan",
+                                        "description": "Maintenance type",
                                         "type": "string",
-                                        "example": "Pengecekan Komponen dan Kalibrasi"
+                                        "example": "Component Check and Calibration"
                                     },
                                     "period": {
-                                        "description": "Periode pemeliharaan",
+                                        "description": "Maintenance period",
                                         "type": "string",
                                         "example": "quarterly",
                                         "enum": [
@@ -5415,18 +5415,18 @@
                                         ]
                                     },
                                     "next_scheduled_date": {
-                                        "description": "Tanggal jadwal pemeliharaan berikutnya",
+                                        "description": "Next scheduled maintenance date",
                                         "type": "string",
                                         "format": "date",
                                         "example": "2026-12-01"
                                     },
                                     "assigned_officer_id": {
-                                        "description": "ID petugas baru yang ditugaskan",
+                                        "description": "New assigned officer ID",
                                         "type": "integer",
                                         "example": 4
                                     },
                                     "is_active": {
-                                        "description": "Status keaktifan jadwal pemeliharaan",
+                                        "description": "Active status of the maintenance schedule",
                                         "type": "boolean",
                                         "example": true
                                     }
@@ -5438,7 +5438,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Jadwal pemeliharaan aset berhasil diperbarui"
+                        "description": "Asset maintenance schedule updated successfully"
                     },
                     "401": {
                         "description": "Unauthenticated"
@@ -5447,48 +5447,10 @@
                         "description": "Forbidden"
                     },
                     "404": {
-                        "description": "Jadwal pemeliharaan tidak ditemukan"
+                        "description": "Maintenance schedule not found"
                     },
                     "422": {
                         "description": "Validation Error"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            },
-            "delete": {
-                "tags": [
-                    "Asset Maintenance"
-                ],
-                "summary": "Hapus jadwal pemeliharaan aset",
-                "description": "Soft delete jadwal pemeliharaan aset.",
-                "operationId": "deleteAssetMaintenance",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "ID jadwal pemeliharaan",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Jadwal pemeliharaan aset berhasil dihapus"
-                    },
-                    "401": {
-                        "description": "Unauthenticated"
-                    },
-                    "403": {
-                        "description": "Forbidden"
-                    },
-                    "404": {
-                        "description": "Jadwal pemeliharaan tidak ditemukan"
                     }
                 },
                 "security": [
@@ -5503,14 +5465,14 @@
                 "tags": [
                     "Asset Maintenance"
                 ],
-                "summary": "Kirim log eksekusi pemeliharaan aset",
-                "description": "Kirim log eksekusi pemeliharaan oleh petugas yang ditugaskan. Mendukung upload foto bukti pekerjaan. Jadwal berikutnya otomatis dihitung ulang dari jadwal lama.",
+                "summary": "Submit an execution log for an asset maintenance schedule.",
+                "description": "Submit maintenance execution log by the assigned officer. Supports proof photo upload. Next scheduled date is automatically recalculated from the previous schedule date.",
                 "operationId": "submitAssetMaintenanceLog",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "ID jadwal pemeliharaan",
+                        "description": "Maintenance schedule ID",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -5558,7 +5520,7 @@
                                         "example": "2026-10-28 10:30:00"
                                     },
                                     "photo": {
-                                        "description": "Foto bukti pemeliharaan (JPG/PNG, max 5MB)",
+                                        "description": "Maintenance proof photo (JPG/PNG, max 5MB)",
                                         "type": "string",
                                         "format": "binary"
                                     }
@@ -5570,16 +5532,16 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Log pemeliharaan berhasil dicatat dan jadwal berikutnya telah diperbarui"
+                        "description": "Maintenance log recorded successfully and next schedule has been updated"
                     },
                     "401": {
                         "description": "Unauthenticated"
                     },
                     "403": {
-                        "description": "Hanya petugas yang ditugaskan yang dapat mengisi log pemeliharaan"
+                        "description": "Only the assigned officer can submit a maintenance log"
                     },
                     "404": {
-                        "description": "Jadwal pemeliharaan tidak ditemukan"
+                        "description": "Maintenance schedule not found"
                     },
                     "422": {
                         "description": "Validation Error"
@@ -7083,7 +7045,7 @@
         },
         {
             "name": "Asset Maintenance",
-            "description": "API untuk penjadwalan dan eksekusi pemeliharaan aset"
+            "description": "API for asset maintenance scheduling and execution"
         },
         {
             "name": "Helpdesk",

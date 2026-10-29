@@ -308,3 +308,50 @@ test('Command maintenance:check-status mengirim reminder pada Hari H, H-1, dan H
         fn ($n) => $n->reminderType === 'h-3'
     );
 });
+
+test('Endpoint Update berhasil menonaktifkan jadwal maintenance via PUT', function (): void {
+    Sanctum::actingAs($this->superAdmin);
+
+    $schedule = AssetMaintenance::create([
+        'asset_code_id' => $this->codeTik->id,
+        'assigned_officer_id' => $this->petugasTik->id,
+        'creator_id' => $this->superAdmin->id,
+        'maintenance_type' => 'Pembersihan Server',
+        'period' => MaintenancePeriod::Monthly,
+        'next_scheduled_date' => now()->addDays(10)->format('Y-m-d'),
+        'status' => MaintenanceStatus::Terjadwal,
+        'is_active' => true,
+    ]);
+
+    $response = $this->putJson("/api/v1/asset-maintenances/{$schedule->id}", [
+        'is_active' => false,
+    ]);
+
+    $response->assertOk()
+        ->assertJsonPath('data.id', $schedule->id)
+        ->assertJsonPath('data.is_active', false);
+
+    $this->assertDatabaseHas('asset_maintenances', [
+        'id' => $schedule->id,
+        'is_active' => false,
+    ]);
+});
+
+test('Endpoint DELETE untuk jadwal maintenance sudah tidak tersedia', function (): void {
+    Sanctum::actingAs($this->superAdmin);
+
+    $schedule = AssetMaintenance::create([
+        'asset_code_id' => $this->codeTik->id,
+        'assigned_officer_id' => $this->petugasTik->id,
+        'creator_id' => $this->superAdmin->id,
+        'maintenance_type' => 'Pembersihan Server',
+        'period' => MaintenancePeriod::Monthly,
+        'next_scheduled_date' => now()->addDays(10)->format('Y-m-d'),
+        'status' => MaintenanceStatus::Terjadwal,
+        'is_active' => true,
+    ]);
+
+    $response = $this->deleteJson("/api/v1/asset-maintenances/{$schedule->id}");
+
+    $response->assertStatus(405);
+});

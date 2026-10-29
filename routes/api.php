@@ -93,7 +93,7 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             ->name('asset-label-exports.store');
 
         // Jadwal Maintenance (Induk)
-        Route::apiResource('asset-maintenances', AssetMaintenanceController::class);
+        Route::apiResource('asset-maintenances', AssetMaintenanceController::class)->except(['destroy']);
         // Eksekusi Log Maintenance (Nested)
         Route::post('asset-maintenances/{maintenance}/logs', [AssetMaintenanceLogController::class, 'store']);
 
