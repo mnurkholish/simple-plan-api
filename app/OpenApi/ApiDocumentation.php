@@ -30,7 +30,7 @@ use OpenApi\Annotations as OA;
  * @OA\Tag(name="Users", description="User management")
  * @OA\Tag(name="Roles", description="Role and permission management")
  * @OA\Tag(name="Units", description="Unit management")
- * @OA\Tag(name="Backups", description="Database backup management")
+ * @OA\Tag(name="Backups", description="MySQL and MinIO backup management")
  * @OA\Tag(name="Example Live", description="Market proxy and background task demo")
  * @OA\Tag(name="Impersonation", description="Sanctum token impersonation")
  * @OA\Tag(name="Notifications", description="Notification and activity summary")
@@ -1364,10 +1364,19 @@ class ApiDocumentation
      * @OA\Get(
      *     path="/backups",
      *     tags={"Backups"},
-     *     summary="List backups and schedule config",
+     *     summary="List paginated backup history, including failed backups",
      *     security={{"sanctum":{}}},
      *
-     *     @OA\Response(response=200, description="Backup index")
+     *     @OA\Parameter(name="page", in="query", @OA\Schema(type="integer", minimum=1)),
+     *     @OA\Parameter(name="per_page", in="query", @OA\Schema(type="integer", minimum=1, maximum=100)),
+     *     @OA\Parameter(name="type", in="query", @OA\Schema(type="string", enum={"manual","automatic"})),
+     *     @OA\Parameter(name="status", in="query", @OA\Schema(type="string", enum={"pending","processing","success","failed"})),
+     *     @OA\Parameter(name="date_from", in="query", @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="date_to", in="query", @OA\Schema(type="string", format="date")),
+     *
+     *     @OA\Response(response=200, description="Paginated backup history"),
+     *     @OA\Response(response=403, description="backups-access permission required"),
+     *     @OA\Response(response=422, description="Invalid filters")
      * )
      */
     public function backupsIndex(): void {}
@@ -1376,55 +1385,95 @@ class ApiDocumentation
      * @OA\Post(
      *     path="/backups",
      *     tags={"Backups"},
-     *     summary="Create database backup",
+     *     summary="Queue a manual MySQL and MinIO backup",
      *     security={{"sanctum":{}}},
      *
-     *     @OA\Response(response=200, description="Backup created")
+     *     @OA\Response(response=202, description="Backup queued; response includes history ID and pending status"),
+     *     @OA\Response(response=403, description="backups-create permission required"),
+     *     @OA\Response(response=409, description="Another backup is pending or processing")
      * )
      */
     public function backupsStore(): void {}
 
     /**
-     * @OA\Post(
-     *     path="/backups/schedule",
-     *     tags={"Backups"},
-     *     summary="Save backup schedule",
-     *     security={{"sanctum":{}}},
-     *
-     *     @OA\RequestBody(required=true, @OA\JsonContent(@OA\Property(property="frequency", type="string", enum={"none","daily","weekly","monthly"}), @OA\Property(property="time", type="string", example="00:00"))),
-     *
-     *     @OA\Response(response=200, description="Schedule saved")
-     * )
-     */
-    public function backupsSchedule(): void {}
-
-    /**
      * @OA\Get(
-     *     path="/backups/download",
+     *     path="/backups/{id}",
      *     tags={"Backups"},
-     *     summary="Download backup file",
+     *     summary="Get backup status and details",
      *     security={{"sanctum":{}}},
      *
-     *     @OA\Parameter(name="path", in="query", required=true, @OA\Schema(type="string")),
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
      *
-     *     @OA\Response(response=200, description="Backup file", @OA\MediaType(mediaType="application/zip"))
+     *     @OA\Response(response=200, description="Backup history"),
+     *     @OA\Response(response=403, description="backups-access permission required"),
+     *     @OA\Response(response=404, description="Backup history not found")
      * )
      */
-    public function backupsDownload(): void {}
+    public function backupsShow(): void {}
 
     /**
      * @OA\Delete(
-     *     path="/backups",
+     *     path="/backups/{id}",
      *     tags={"Backups"},
-     *     summary="Delete backup file",
+     *     summary="Delete a successful backup ZIP while retaining its history (Super Admin)",
      *     security={{"sanctum":{}}},
      *
-     *     @OA\RequestBody(required=true, @OA\JsonContent(required={"path"}, @OA\Property(property="path", type="string"))),
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
      *
-     *     @OA\Response(response=200, description="Backup deleted", @OA\JsonContent(ref="#/components/schemas/MessageResponse"))
+     *     @OA\Response(response=204, description="Backup ZIP deleted or already unavailable"),
+     *     @OA\Response(response=403, description="Super Admin and backups-delete permission required"),
+     *     @OA\Response(response=404, description="Backup history not found"),
+     *     @OA\Response(response=409, description="Backup is not successful"),
+     *     @OA\Response(response=500, description="Storage deletion failed")
      * )
      */
     public function backupsDestroy(): void {}
+
+    /**
+     * @OA\Get(
+     *     path="/backup-settings",
+     *     tags={"Backups"},
+     *     summary="Get automatic backup settings (Super Admin)",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Response(response=200, description="Backup settings"),
+     *     @OA\Response(response=403, description="Super Admin and backups-schedule permission required")
+     * )
+     */
+    public function backupSettingsShow(): void {}
+
+    /**
+     * @OA\Put(
+     *     path="/backup-settings",
+     *     tags={"Backups"},
+     *     summary="Update automatic backup settings (Super Admin)",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\RequestBody(required=true, @OA\JsonContent(required={"is_active","frequency","backup_time"}, @OA\Property(property="is_active", type="boolean"), @OA\Property(property="frequency", type="string", enum={"daily","weekly","monthly"}), @OA\Property(property="backup_time", type="string", example="02:00"), @OA\Property(property="day_of_week", type="integer", minimum=1, maximum=7), @OA\Property(property="day_of_month", type="integer", minimum=1, maximum=28))),
+     *
+     *     @OA\Response(response=200, description="Backup settings updated"),
+     *     @OA\Response(response=403, description="Super Admin and backups-schedule permission required"),
+     *     @OA\Response(response=422, description="Invalid settings")
+     * )
+     */
+    public function backupSettingsUpdate(): void {}
+
+    /**
+     * @OA\Get(
+     *     path="/backups/{id}/download",
+     *     tags={"Backups"},
+     *     summary="Stream a successful backup ZIP for Super Admin",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *
+     *     @OA\Response(response=200, description="Private backup ZIP", @OA\MediaType(mediaType="application/zip")),
+     *     @OA\Response(response=403, description="Super Admin and backups-download permission required"),
+     *     @OA\Response(response=404, description="Backup history or file not found"),
+     *     @OA\Response(response=409, description="Backup is not successful")
+     * )
+     */
+    public function backupsDownloadHistory(): void {}
 
     /**
      * @OA\Get(

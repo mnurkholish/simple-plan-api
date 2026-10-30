@@ -39,12 +39,12 @@ Berdasarkan konfigurasi project dan keputusan teknis saat ini:
     php artisan key:generate
     ```
 
-3. Konfigurasikan PostgreSQL di `.env`.
+3. Konfigurasikan MySQL di `.env` (fitur Backup memerlukan MySQL).
 
     ```env
-    DB_CONNECTION=pgsql
+    DB_CONNECTION=mysql
     DB_HOST=127.0.0.1
-    DB_PORT=5432
+    DB_PORT=3306
     DB_DATABASE=simple_plan
     DB_USERNAME=
     DB_PASSWORD=

@@ -72,9 +72,9 @@ APP_ENV=production
 APP_DEBUG=false
 APP_URL=https://simple-plan.internal
 
-DB_CONNECTION=pgsql
+DB_CONNECTION=mysql
 DB_HOST=
-DB_PORT=5432
+DB_PORT=3306
 DB_DATABASE=simple_plan
 DB_USERNAME=
 DB_PASSWORD=
@@ -204,7 +204,22 @@ Jika project menggunakan Laravel Scheduler, konfigurasi cron sesuai server:
 Jika project menggunakan Queue, jalankan worker dengan process manager yang
 sesuai server.
 
-Queue dan scheduler hanya dikonfigurasi jika fitur production menggunakannya.
+Backup otomatis memakai scheduler setiap menit; jalankan cron di atas secara
+permanen pada host deployment. Pada Docker/Sail, jalankan proses terpisah dengan
+`php artisan schedule:work` di container aplikasi. Hanya satu scheduler diperlukan
+per deployment.
+
+Jika Sail sudah dikonfigurasi, jalankan kedua proses ini pada terminal atau
+container terpisah:
+
+```bash
+./vendor/bin/sail artisan schedule:work
+./vendor/bin/sail artisan queue:work backup --queue=backups --timeout=3600 --tries=1
+```
+
+Di production, kelola scheduler dan worker dengan process manager agar keduanya
+otomatis hidup kembali setelah container restart. Gunakan salah satu mekanisme
+scheduler, `schedule:work` atau cron `schedule:run` setiap menit.
 
 ---
 
@@ -237,6 +252,60 @@ dapat dipantau dan tidak menyimpan secret atau credential.
 ---
 
 ## 13. Backup
+
+Siapkan bucket MinIO private kedua untuk arsip backup, terpisah dari bucket
+file aplikasi (`AWS_BUCKET`):
+
+```env
+BACKUP_AWS_BUCKET=simple-plan-backups
+# Opsional: default storage/app/backup-temp pada host aplikasi.
+# BACKUP_TEMPORARY_DIRECTORY=/path/to/private/backup-temp
+# Opsional: simpan password di environment jika arsip perlu dienkripsi.
+# BACKUP_ARCHIVE_PASSWORD=
+# BACKUP_JOB_TIMEOUT=3600
+# BACKUP_QUEUE_RETRY_AFTER=3660
+```
+
+Disk `backup` memakai `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`,
+`AWS_DEFAULT_REGION`, `AWS_ENDPOINT`, dan `AWS_USE_PATH_STYLE_ENDPOINT` yang
+sudah ada. Berikan credential tersebut akses ke kedua bucket. Tetap gunakan
+`FILESYSTEM_DISK=s3` untuk upload aplikasi; disk `backup` terpisah dan menulis
+objek dengan visibility private. Bucket backup harus dibuat dengan kebijakan
+akses private sebelum proses dijalankan. Direktori temporary harus
+private, dapat ditulis oleh PHP, dan cukup besar untuk dump database, file
+aplikasi sementara, serta ZIP. Direktori ini bukan tujuan akhir arsip.
+Job menolak konfigurasi dengan disk default selain `s3` agar upload aplikasi
+yang tersimpan pada disk default tidak diam-diam terlewat.
+
+Job backup memakai Spatie untuk membuat satu ZIP yang berisi dump MySQL,
+`backup-metadata.json`, seluruh objek bucket aplikasi di bawah path
+`minio/{object_key}`, serta file lokal disk `public` di bawah
+`storage/app/public/` (termasuk avatar). `backup-metadata.json` mencatat jumlah
+file lokal dan objek MinIO; `file_count` adalah jumlah keduanya. File MinIO
+dipindahkan dengan stream ke direktori temporary sebelum ZIP dibuat. Hasil
+proses dicatat di `backup_histories`.
+
+Dump MySQL memakai `--single-transaction` untuk snapshot tabel InnoDB.
+MySQL dan MinIO tidak memiliki snapshot atomik bersama; untuk arsip yang harus
+merepresentasikan satu titik waktu lintas keduanya, hentikan sementara operasi
+tulis aplikasi selama backup berjalan atau gunakan prosedur snapshot storage
+yang terkoordinasi di infrastruktur.
+
+Jalankan worker queue khusus backup, misalnya:
+
+```bash
+php artisan queue:work backup --queue=backups --timeout=3600 --tries=1
+```
+
+`BACKUP_QUEUE_RETRY_AFTER` harus lebih besar daripada `BACKUP_JOB_TIMEOUT` dan
+timeout worker. Nilai defaultnya masing-masing 3660 dan 3600 detik. Pada Sail,
+jalankan worker sebagai proses/container terpisah dari web server. Scheduler
+membaca `backup_settings` setiap menit dalam zona Asia/Jakarta; perubahan melalui
+`PUT /api/v1/backup-settings` berlaku pada menit berikutnya tanpa deploy ulang.
+Frekuensi mingguan menggunakan hari 1=Senin sampai 7=Minggu; tanggal bulanan
+dibatasi 1–28. Backup otomatis memakai antrean dan histori yang sama dengan backup
+manual. Gunakan cache bersama seperti `CACHE_STORE=database` atau Redis agar
+penanda jadwal dan lock backup berlaku untuk semua scheduler dan worker.
 
 Sebelum deployment berisiko, backup data relevan:
 
