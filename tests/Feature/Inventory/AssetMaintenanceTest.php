@@ -355,3 +355,56 @@ test('Endpoint DELETE untuk jadwal maintenance sudah tidak tersedia', function (
 
     $response->assertStatus(405);
 });
+
+test('Pembuatan jadwal untuk Hari H langsung mengirimkan notifikasi pengingat instan ke petugas', function (): void {
+    Notification::fake();
+    Sanctum::actingAs($this->superAdmin);
+
+    $today = now()->format('Y-m-d');
+
+    $response = $this->postJson('/api/v1/asset-maintenances', [
+        'asset_code_id' => $this->codeTik->id,
+        'assigned_officer_id' => $this->petugasTik->id,
+        'maintenance_type' => 'Pengecekan Darurat Server',
+        'period' => MaintenancePeriod::Monthly->value,
+        'next_scheduled_date' => $today,
+    ]);
+
+    $response->assertCreated();
+
+    Notification::assertSentTo(
+        $this->petugasTik,
+        AssetMaintenanceReminderNotification::class,
+        function (AssetMaintenanceReminderNotification $notification): bool {
+            return $notification->reminderType === 'hari-h';
+        }
+    );
+});
+
+test('Pembaruan jadwal ke Hari H langsung mengirimkan notifikasi pengingat instan ke petugas', function (): void {
+    Notification::fake();
+    Sanctum::actingAs($this->superAdmin);
+
+    $schedule = AssetMaintenance::create([
+        'asset_code_id' => $this->codeTik->id,
+        'assigned_officer_id' => $this->petugasTik->id,
+        'creator_id' => $this->superAdmin->id,
+        'maintenance_type' => 'Pembersihan Server',
+        'period' => MaintenancePeriod::Monthly,
+        'next_scheduled_date' => now()->addDays(5)->format('Y-m-d'),
+        'status' => MaintenanceStatus::Terjadwal,
+        'is_active' => true,
+    ]);
+
+    $response = $this->putJson("/api/v1/asset-maintenances/{$schedule->id}", [
+        'next_scheduled_date' => now()->format('Y-m-d'),
+    ]);
+
+    $response->assertOk();
+
+    Notification::assertSentTo(
+        $this->petugasTik,
+        AssetMaintenanceReminderNotification::class,
+        fn ($n) => $n->reminderType === 'hari-h'
+    );
+});

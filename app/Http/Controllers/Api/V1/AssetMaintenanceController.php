@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreAssetMaintenanceRequest;
 use App\Http\Requests\UpdateAssetMaintenanceRequest;
 use App\Models\AssetMaintenance;
+use App\Notifications\AssetMaintenanceReminderNotification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -78,6 +79,8 @@ class AssetMaintenanceController extends Controller
             'creator',
         ]);
 
+        $this->notifyOfficerIfScheduledToday($maintenance);
+
         return response()->json([
             'data' => $maintenance,
             'message' => 'Jadwal pemeliharaan aset berhasil dibuat.',
@@ -107,7 +110,7 @@ class AssetMaintenanceController extends Controller
         $maintenance = $this->resolveMaintenance($assetMaintenance);
 
         $maintenance->update($request->validated());
-        $maintenance->loadMissing([
+        $maintenance->load([
             'assetCode.assetItem',
             'assetCode.classification',
             'assetCode.location',
@@ -115,10 +118,29 @@ class AssetMaintenanceController extends Controller
             'creator',
         ]);
 
+        $this->notifyOfficerIfScheduledToday($maintenance);
+
         return response()->json([
             'data' => $maintenance,
             'message' => 'Jadwal pemeliharaan aset berhasil diperbarui.',
         ]);
+    }
+
+    protected function notifyOfficerIfScheduledToday(AssetMaintenance $maintenance): void
+    {
+        $isTerjadwal = ($maintenance->status === MaintenanceStatus::Terjadwal)
+            || (($maintenance->status?->value ?? $maintenance->status) === MaintenanceStatus::Terjadwal->value);
+
+        if (
+            $maintenance->is_active &&
+            $isTerjadwal &&
+            $maintenance->next_scheduled_date?->isToday() &&
+            $maintenance->assignedOfficer
+        ) {
+            $maintenance->assignedOfficer->notify(
+                new AssetMaintenanceReminderNotification($maintenance, 'hari-h')
+            );
+        }
     }
 
     protected function resolveMaintenance(mixed $assetMaintenance): AssetMaintenance
