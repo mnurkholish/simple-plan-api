@@ -1,7 +1,5 @@
 <?php
 
-use App\Enums\AssetCondition;
-use App\Enums\AssetStatus;
 use App\Enums\MaintenancePeriod;
 use App\Enums\MaintenanceStatus;
 use App\Models\Asset;
@@ -204,7 +202,7 @@ test('Endpoint Index berhasil memfilter jadwal berdasarkan status dan search', f
         ->and($resStatus->json('data.0.id'))->toBe($schedule1->id);
 
     // 2. Filter search by nomor inventaris (full_code)
-    $resSearchCode = $this->getJson('/api/v1/asset-maintenances?search=' . $this->codeTik->full_code);
+    $resSearchCode = $this->getJson('/api/v1/asset-maintenances?search='.$this->codeTik->full_code);
     $resSearchCode->assertOk();
     expect($resSearchCode->json('data'))->toHaveCount(1)
         ->and($resSearchCode->json('data.0.id'))->toBe($schedule1->id);
@@ -216,7 +214,7 @@ test('Endpoint Index berhasil memfilter jadwal berdasarkan status dan search', f
         ->and($resSearchItem->json('data.0.id'))->toBe($schedule2->id);
 
     // 4. Filter search by nama petugas
-    $resSearchOfficer = $this->getJson('/api/v1/asset-maintenances?search=' . $this->petugasTik->name);
+    $resSearchOfficer = $this->getJson('/api/v1/asset-maintenances?search='.$this->petugasTik->name);
     $resSearchOfficer->assertOk();
     expect($resSearchOfficer->json('data'))->toHaveCount(1)
         ->and($resSearchOfficer->json('data.0.id'))->toBe($schedule1->id);

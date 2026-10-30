@@ -2312,8 +2312,11 @@ class ApiDocumentation
      *     summary="Get Asset by UID After QR Scan",
      *     description="Finds an asset by its permanent UID. Classification is TIK for Alat IT and SARPRAS otherwise. Detail location comes from assets.location_detail.",
      *     security={{"sanctum":{}}},
+     *
      *     @OA\Parameter(name="uid", in="path", required=true, description="Permanent asset UID", @OA\Schema(type="string", minLength=26, maxLength=26)),
+     *
      *     @OA\Response(response=200, description="Asset found", @OA\JsonContent(
+     *
      *         @OA\Property(property="data", type="object",
      *             @OA\Property(property="id", type="integer"),
      *             @OA\Property(property="uid", type="string"),
@@ -2326,6 +2329,7 @@ class ApiDocumentation
      *             @OA\Property(property="status", type="string")
      *         )
      *     )),
+     *
      *     @OA\Response(response=401, description="Unauthenticated"),
      *     @OA\Response(response=403, description="Asset access forbidden"),
      *     @OA\Response(response=404, description="Asset UID not found")
@@ -2580,6 +2584,7 @@ class ApiDocumentation
      *     @OA\Parameter(name="id", in="path", required=true, description="Maintenance schedule ID", @OA\Schema(type="integer")),
      *
      *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *
      *         @OA\Property(property="maintenance_type", type="string", example="Component Check and Calibration", description="Maintenance type"),
      *         @OA\Property(property="period", type="string", enum={"weekly", "monthly", "quarterly", "semiannually", "yearly"}, example="quarterly", description="Maintenance period"),
      *         @OA\Property(property="next_scheduled_date", type="string", format="date", example="2026-12-01", description="Next scheduled maintenance date"),
