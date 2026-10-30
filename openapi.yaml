@@ -23,8 +23,208 @@ tags:
     description: Pencarian unit
   - name: Users
     description: Pengelolaan dan pencarian user
+  - name: Backups
+    description: Backup MySQL dan file aplikasi di MinIO
 
 paths:
+  /backup-settings:
+    get:
+      tags: [Backups]
+      summary: Mengambil pengaturan backup otomatis
+      operationId: getBackupSettings
+      x-auth-required: true
+      x-required-role: super-admin
+      x-required-permission: backups-schedule
+      responses:
+        "200":
+          description: Pengaturan aktif atau nilai awal jika belum pernah disimpan.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/BackupSetting" }
+        "401": { description: Belum terautentikasi. }
+        "403": { description: Bukan Super Admin atau tidak memiliki permission backups-schedule. }
+    put:
+      tags: [Backups]
+      summary: Memperbarui pengaturan backup otomatis
+      operationId: updateBackupSettings
+      description: |
+        Jam memakai zona Asia/Jakarta. day_of_week 1=Senin sampai 7=Minggu.
+        Frekuensi mingguan wajib menyertakan day_of_week; bulanan wajib menyertakan
+        day_of_month 1–28. Field hari/tanggal yang tidak sesuai frekuensi dilarang.
+      x-auth-required: true
+      x-required-role: super-admin
+      x-required-permission: backups-schedule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BackupSettingUpdate"
+      responses:
+        "200":
+          description: Pengaturan berhasil disimpan.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/BackupSetting" }
+        "401": { description: Belum terautentikasi. }
+        "403": { description: Bukan Super Admin atau tidak memiliki permission backups-schedule. }
+        "422": { description: Pengaturan tidak valid. }
+
+  /backups:
+    get:
+      tags: [Backups]
+      summary: Menampilkan histori backup
+      operationId: listBackups
+      description: Histori manual dan otomatis, termasuk proses yang gagal, dari yang terbaru.
+      x-auth-required: true
+      x-required-permission: backups-access
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: per_page
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 15 }
+        - name: type
+          in: query
+          schema: { type: string, enum: [manual, automatic] }
+        - name: status
+          in: query
+          schema: { type: string, enum: [pending, processing, success, failed] }
+        - name: date_from
+          in: query
+          description: Batas awal hari pembuatan histori di Asia/Jakarta (inklusif).
+          schema: { type: string, format: date }
+        - name: date_to
+          in: query
+          description: Batas akhir hari pembuatan histori di Asia/Jakarta (inklusif).
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: Histori backup terurut dari yang terbaru dengan metadata pagination Laravel.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, links, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/BackupHistory" }
+                  links: { type: object }
+                  meta: { type: object }
+        "401": { description: Belum terautentikasi. }
+        "403": { description: Tidak memiliki permission backups-access. }
+        "422": { description: Filter atau pagination tidak valid. }
+    post:
+      tags: [Backups]
+      summary: Mengantrekan backup manual
+      operationId: createManualBackup
+      description: |
+        Membutuhkan permission backups-create. Backup dijalankan oleh queue. Permintaan ditolak jika
+        sudah ada backup berstatus pending atau processing.
+      x-auth-required: true
+      x-required-permission: backups-create
+      responses:
+        "202":
+          description: Backup berhasil dimasukkan ke antrean.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message, data]
+                properties:
+                  message: { type: string }
+                  data: { $ref: "#/components/schemas/BackupHistory" }
+        "401": { description: Belum terautentikasi. }
+        "403": { description: Tidak memiliki permission backups-create. }
+        "409":
+          description: Masih ada backup yang menunggu atau berjalan.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BackupError" }
+        "500": { description: Gagal memasukkan backup ke antrean. }
+
+  /backups/{id}:
+    get:
+      tags: [Backups]
+      summary: Melihat detail dan status backup
+      operationId: getBackup
+      x-auth-required: true
+      x-required-permission: backups-access
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+      responses:
+        "200":
+          description: Detail proses backup.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/BackupHistory" }
+        "401": { description: Belum terautentikasi. }
+        "403": { description: Tidak memiliki permission backups-access. }
+        "404": { description: Histori backup tidak ditemukan. }
+
+    delete:
+      tags: [Backups]
+      summary: Menghapus file arsip backup
+      operationId: deleteBackup
+      description: Hanya menghapus ZIP dari bucket backup private. Histori, nama file, dan ukuran tetap tersimpan. Penghapusan ulang mengembalikan 204.
+      x-auth-required: true
+      x-required-permission: backups-delete
+      x-required-role: super-admin
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+      responses:
+        "204": { description: File backup dihapus atau sudah tidak tersedia. }
+        "401": { description: Belum terautentikasi. }
+        "403": { description: Bukan Super Admin atau tidak memiliki permission backups-delete. }
+        "404": { description: Histori backup tidak ditemukan. }
+        "409": { description: Status backup belum berhasil. }
+        "500": { description: Gagal menghapus file backup dari storage. }
+
+  /backups/{id}/download:
+    get:
+      tags: [Backups]
+      summary: Mengunduh arsip backup
+      operationId: downloadBackup
+      description: File ZIP di-stream dari bucket backup private hanya untuk histori sukses.
+      x-auth-required: true
+      x-required-permission: backups-download
+      x-required-role: super-admin
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+      responses:
+        "200":
+          description: Arsip backup ZIP.
+          content:
+            application/zip:
+              schema: { type: string, format: binary }
+        "401": { description: Belum terautentikasi. }
+        "403": { description: Bukan Super Admin atau tidak memiliki permission backups-download. }
+        "404": { description: Histori atau file backup tidak ditemukan. }
+        "409": { description: Status backup belum berhasil. }
+
   /notifications:
     get:
       tags: [Notifications]
@@ -65,7 +265,7 @@ paths:
                             resource_id: { type: integer, example: 123 }
                         ticket_id: { type: [integer, 'null'], description: Related ticket ID when this is a ticket notification. }
                         nomor_tiket: { type: [string, 'null'], description: Related ticket number when this is a ticket notification. }
-                        url: { type: [string, 'null'], description: Frontend ticket detail path (/helpdesk/tik/{id} or /helpdesk/sarpras/{id}) for ticket notifications. }
+                        url: { type: [string, 'null'], description: "Frontend ticket detail path (/helpdesk/tik/{id} or /helpdesk/sarpras/{id}) for ticket notifications." }
                         is_read: { type: boolean }
                         created_at: { type: [string, 'null'], format: date-time }
                   unread_count: { type: integer }
@@ -1095,6 +1295,53 @@ components:
         default: 15
 
   schemas:
+    BackupSetting:
+      type: object
+      required: [is_active, frequency, backup_time, day_of_week, day_of_month]
+      properties:
+        is_active: { type: boolean }
+        frequency: { type: [string, 'null'], enum: [daily, weekly, monthly, null] }
+        backup_time: { type: [string, 'null'], example: '02:00' }
+        day_of_week: { type: [integer, 'null'], minimum: 1, maximum: 7, description: 1=Senin sampai 7=Minggu. }
+        day_of_month: { type: [integer, 'null'], minimum: 1, maximum: 28 }
+
+    BackupSettingUpdate:
+      type: object
+      required: [is_active, frequency, backup_time]
+      properties:
+        is_active: { type: boolean }
+        frequency: { type: string, enum: [daily, weekly, monthly] }
+        backup_time: { type: string, pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$', example: '02:00' }
+        day_of_week: { type: integer, minimum: 1, maximum: 7 }
+        day_of_month: { type: integer, minimum: 1, maximum: 28 }
+
+    BackupHistory:
+      type: object
+      required: [id, type, status, performed_by, file_name, file_size, file_available, started_at, finished_at, failure_message, created_at]
+      properties:
+        id: { type: integer }
+        type: { type: string, enum: [manual, automatic] }
+        status: { type: string, enum: [pending, processing, success, failed] }
+        performed_by:
+          type: [object, 'null']
+          description: Backup otomatis menggunakan nama Sistem dengan id null.
+          properties:
+            id: { type: [integer, 'null'] }
+            name: { type: string }
+        file_name: { type: [string, 'null'] }
+        file_size: { type: [integer, 'null'], description: Ukuran ZIP dalam byte. }
+        file_available: { type: boolean, description: Berdasarkan metadata lokasi arsip; keberadaan file di storage diverifikasi saat download. }
+        started_at: { type: [string, 'null'], format: date-time }
+        finished_at: { type: [string, 'null'], format: date-time }
+        failure_message: { type: [string, 'null'] }
+        created_at: { type: string, format: date-time }
+
+    BackupError:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string }
+
     InventoryMaster:
       type: object
       required: [id, code, name]
