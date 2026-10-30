@@ -408,3 +408,65 @@ test('Pembaruan jadwal ke Hari H langsung mengirimkan notifikasi pengingat insta
         fn ($n) => $n->reminderType === 'hari-h'
     );
 });
+
+test('Petugas GAGAL membuat atau memperbarui jadwal pemeliharaan (403 Forbidden)', function (): void {
+    Sanctum::actingAs($this->petugasTik);
+
+    // Coba membuat jadwal
+    $resStore = $this->postJson('/api/v1/asset-maintenances', [
+        'asset_code_id' => $this->codeTik->id,
+        'assigned_officer_id' => $this->petugasTik->id,
+        'maintenance_type' => 'Pengecekan Mandiri',
+        'period' => MaintenancePeriod::Monthly->value,
+        'next_scheduled_date' => now()->addDays(5)->format('Y-m-d'),
+    ]);
+    $resStore->assertForbidden();
+
+    $schedule = AssetMaintenance::create([
+        'asset_code_id' => $this->codeTik->id,
+        'assigned_officer_id' => $this->petugasTik->id,
+        'creator_id' => $this->superAdmin->id,
+        'maintenance_type' => 'Pembersihan Server',
+        'period' => MaintenancePeriod::Monthly,
+        'next_scheduled_date' => now()->addDays(5)->format('Y-m-d'),
+        'status' => MaintenanceStatus::Terjadwal,
+        'is_active' => true,
+    ]);
+
+    // Coba memperbarui jadwal
+    $resUpdate = $this->putJson("/api/v1/asset-maintenances/{$schedule->id}", [
+        'maintenance_type' => 'Pembaruan Tidak Sah',
+    ]);
+    $resUpdate->assertForbidden();
+});
+
+test('Petugas dan Manajemen BERHASIL melihat list dan detail jadwal pemeliharaan', function (): void {
+    $schedule = AssetMaintenance::create([
+        'asset_code_id' => $this->codeTik->id,
+        'assigned_officer_id' => $this->petugasTik->id,
+        'creator_id' => $this->superAdmin->id,
+        'maintenance_type' => 'Pembersihan Server',
+        'period' => MaintenancePeriod::Monthly,
+        'next_scheduled_date' => now()->addDays(5)->format('Y-m-d'),
+        'status' => MaintenanceStatus::Terjadwal,
+        'is_active' => true,
+    ]);
+
+    // Petugas TIK
+    Sanctum::actingAs($this->petugasTik);
+    $this->getJson('/api/v1/asset-maintenances')->assertOk();
+    $this->getJson("/api/v1/asset-maintenances/{$schedule->id}")->assertOk();
+
+    // Manajemen
+    $manajemen = createMaintenanceTestUser('manajemen');
+    Sanctum::actingAs($manajemen);
+    $this->getJson('/api/v1/asset-maintenances')->assertOk();
+    $this->getJson("/api/v1/asset-maintenances/{$schedule->id}")->assertOk();
+});
+
+test('User biasa GAGAL melihat jadwal pemeliharaan (403 Forbidden)', function (): void {
+    $user = createMaintenanceTestUser('user');
+    Sanctum::actingAs($user);
+
+    $this->getJson('/api/v1/asset-maintenances')->assertForbidden();
+});

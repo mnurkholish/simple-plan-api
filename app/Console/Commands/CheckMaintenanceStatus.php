@@ -13,23 +13,10 @@ use Illuminate\Database\Eloquent\Builder;
 
 class CheckMaintenanceStatus extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'maintenance:check-status';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
     protected $description = 'Periksa status jadwal pemeliharaan aset (overdue & reminder notifikasi)';
 
-    /**
-     * Execute the console command.
-     */
     public function handle(): int
     {
         $today = today()->toDateString();

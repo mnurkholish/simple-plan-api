@@ -18,6 +18,8 @@ class AssetMaintenanceController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', AssetMaintenance::class);
+
         $query = AssetMaintenance::query()
             ->with([
                 'assetCode.assetItem',
@@ -33,10 +35,10 @@ class AssetMaintenanceController extends Controller
                     $codeQuery->where('full_code', 'like', "%{$search}%")
                         ->orWhereHas('assetItem', fn (Builder $itemQuery) => $itemQuery->where('name', 'like', "%{$search}%"));
                 })
-                ->orWhereHas('assignedOfficer', function (Builder $userQuery) use ($search): void {
-                    $userQuery->where('name', 'like', "%{$search}%");
-                })
-                ->orWhere('maintenance_type', 'like', "%{$search}%");
+                    ->orWhereHas('assignedOfficer', function (Builder $userQuery) use ($search): void {
+                        $userQuery->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhere('maintenance_type', 'like', "%{$search}%");
             });
         }
 
@@ -65,6 +67,8 @@ class AssetMaintenanceController extends Controller
 
     public function store(StoreAssetMaintenanceRequest $request): JsonResponse
     {
+        $this->authorize('create', AssetMaintenance::class);
+
         $validated = $request->validated();
         $validated['creator_id'] = $request->user()?->id;
         $validated['status'] = $validated['status'] ?? MaintenanceStatus::Terjadwal->value;
@@ -90,6 +94,7 @@ class AssetMaintenanceController extends Controller
     public function show(mixed $assetMaintenance): JsonResponse
     {
         $maintenance = $this->resolveMaintenance($assetMaintenance);
+        $this->authorize('view', $maintenance);
 
         $maintenance->loadMissing([
             'assetCode.assetItem',
@@ -108,6 +113,7 @@ class AssetMaintenanceController extends Controller
     public function update(UpdateAssetMaintenanceRequest $request, mixed $assetMaintenance): JsonResponse
     {
         $maintenance = $this->resolveMaintenance($assetMaintenance);
+        $this->authorize('update', $maintenance);
 
         $maintenance->update($request->validated());
         $maintenance->load([
