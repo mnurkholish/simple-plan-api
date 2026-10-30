@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\BackupSettingService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -8,23 +9,11 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-$scheduleFile = config('backup.schedule_file', storage_path('app/backup_schedule.json'));
+Schedule::call(fn () => app(BackupSettingService::class)->enqueueDue())
+    ->everyMinute()
+    ->timezone('Asia/Jakarta')
+    ->name('backup:automatic');
 
-if (file_exists($scheduleFile)) {
-    $config = json_decode((string) file_get_contents($scheduleFile), true);
-
-    if (is_array($config) && ($config['frequency'] ?? 'none') !== 'none') {
-        $event = Schedule::command('backup:run --only-db --disable-notifications');
-        $time = $config['time'] ?? '00:00';
-
-        match ($config['frequency']) {
-            'daily' => $event->dailyAt($time),
-            'weekly' => $event->weeklyOn(1, $time),
-            'monthly' => $event->monthlyOn(1, $time),
-            default => null,
-        };
-    }
-}
-
-Schedule::command('maintenance:check-status')->daily();
-
+Schedule::command('maintenance:check-status')
+    ->daily()
+    ->timezone('Asia/Jakarta');
