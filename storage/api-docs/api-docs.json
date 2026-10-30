@@ -5314,6 +5314,400 @@
                     }
                 ]
             }
+        },
+        "/asset-maintenances": {
+            "get": {
+                "tags": [
+                    "Asset Maintenance"
+                ],
+                "summary": "Retrieve a list of asset maintenance schedules.",
+                "description": "Retrieve a paginated list of asset maintenance schedules. Supports search and filtering by date range, status, and active state.",
+                "operationId": "listAssetMaintenances",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search by inventory code (full_code), item name (assetItem.name), officer name, or maintenance type",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "date_from",
+                        "in": "query",
+                        "description": "Start date limit for maintenance schedule (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "date_to",
+                        "in": "query",
+                        "description": "End date limit for maintenance schedule (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Maintenance status",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "terjadwal",
+                                "selesai",
+                                "terlambat"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "is_active",
+                        "in": "query",
+                        "description": "Filter schedule active status",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Asset maintenance schedules retrieved successfully"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Asset Maintenance"
+                ],
+                "summary": "Create a new asset maintenance schedule.",
+                "description": "Superadmin manages IT assets & assigns IT Officers. Sarpras Coordinator manages Sarpras assets & assigns Sarpras Officers.",
+                "operationId": "createAssetMaintenance",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "asset_code_id",
+                                    "assigned_officer_id",
+                                    "maintenance_type",
+                                    "period",
+                                    "next_scheduled_date"
+                                ],
+                                "properties": {
+                                    "asset_code_id": {
+                                        "description": "Physical asset code ID",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "assigned_officer_id": {
+                                        "description": "Assigned officer ID (IT Officer / Sarpras Officer)",
+                                        "type": "integer",
+                                        "example": 3
+                                    },
+                                    "maintenance_type": {
+                                        "description": "Maintenance type",
+                                        "type": "string",
+                                        "example": "Routine Cleaning and Inspection"
+                                    },
+                                    "period": {
+                                        "description": "Recurring maintenance period",
+                                        "type": "string",
+                                        "example": "monthly",
+                                        "enum": [
+                                            "weekly",
+                                            "monthly",
+                                            "quarterly",
+                                            "semiannually",
+                                            "yearly"
+                                        ]
+                                    },
+                                    "next_scheduled_date": {
+                                        "description": "First scheduled maintenance date (minimum today)",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-11-01"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Asset maintenance schedule created successfully"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "422": {
+                        "description": "Validation Error"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/asset-maintenances/{id}": {
+            "get": {
+                "tags": [
+                    "Asset Maintenance"
+                ],
+                "summary": "Retrieve details of a specific asset maintenance schedule.",
+                "description": "Retrieve details of a maintenance schedule along with relations (asset, officer, creator, and execution logs).",
+                "operationId": "showAssetMaintenance",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Maintenance schedule ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Asset maintenance schedule details"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "404": {
+                        "description": "Maintenance schedule not found"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Asset Maintenance"
+                ],
+                "summary": "Update an existing asset maintenance schedule.",
+                "description": "Update allowed fields (maintenance_type, period, next_scheduled_date, assigned_officer_id, is_active). Validates that the new assigned officer matches the asset classification.",
+                "operationId": "updateAssetMaintenance",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Maintenance schedule ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "maintenance_type": {
+                                        "description": "Maintenance type",
+                                        "type": "string",
+                                        "example": "Component Check and Calibration"
+                                    },
+                                    "period": {
+                                        "description": "Maintenance period",
+                                        "type": "string",
+                                        "example": "quarterly",
+                                        "enum": [
+                                            "weekly",
+                                            "monthly",
+                                            "quarterly",
+                                            "semiannually",
+                                            "yearly"
+                                        ]
+                                    },
+                                    "next_scheduled_date": {
+                                        "description": "Next scheduled maintenance date",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-12-01"
+                                    },
+                                    "assigned_officer_id": {
+                                        "description": "New assigned officer ID",
+                                        "type": "integer",
+                                        "example": 4
+                                    },
+                                    "is_active": {
+                                        "description": "Active status of the maintenance schedule",
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Asset maintenance schedule updated successfully"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Maintenance schedule not found"
+                    },
+                    "422": {
+                        "description": "Validation Error"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/asset-maintenances/{id}/logs": {
+            "post": {
+                "tags": [
+                    "Asset Maintenance"
+                ],
+                "summary": "Submit an execution log for an asset maintenance schedule.",
+                "description": "Submit maintenance execution log by the assigned officer. Supports proof photo upload. Next scheduled date is automatically recalculated from the previous schedule date.",
+                "operationId": "submitAssetMaintenanceLog",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Maintenance schedule ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "work_description",
+                                    "maintenance_result",
+                                    "post_maintenance_condition",
+                                    "started_at",
+                                    "completed_at"
+                                ],
+                                "properties": {
+                                    "work_description": {
+                                        "type": "string",
+                                        "example": "Pembersihan komponen debu dan penggantian thermal paste"
+                                    },
+                                    "maintenance_result": {
+                                        "type": "string",
+                                        "example": "Suhu normal kembali dan perangkat berfungsi stabil"
+                                    },
+                                    "post_maintenance_condition": {
+                                        "type": "string",
+                                        "example": "Baik",
+                                        "enum": [
+                                            "Baik",
+                                            "Rusak Ringan",
+                                            "Rusak Berat"
+                                        ]
+                                    },
+                                    "started_at": {
+                                        "description": "Format: Y-m-d H:i:s",
+                                        "type": "string",
+                                        "example": "2026-10-28 09:00:00"
+                                    },
+                                    "completed_at": {
+                                        "description": "Format: Y-m-d H:i:s (after_or_equal:started_at)",
+                                        "type": "string",
+                                        "example": "2026-10-28 10:30:00"
+                                    },
+                                    "photo": {
+                                        "description": "Maintenance proof photo (JPG/PNG, max 5MB)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Maintenance log recorded successfully and next schedule has been updated"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Only the assigned officer can submit a maintenance log"
+                    },
+                    "404": {
+                        "description": "Maintenance schedule not found"
+                    },
+                    "422": {
+                        "description": "Validation Error"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -6803,6 +7197,10 @@
         {
             "name": "Assets",
             "description": "Asset lookup"
+        },
+        {
+            "name": "Asset Maintenance",
+            "description": "API for asset maintenance scheduling and execution"
         },
         {
             "name": "Helpdesk",

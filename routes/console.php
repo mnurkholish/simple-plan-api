@@ -13,3 +13,7 @@ Schedule::call(fn () => app(BackupSettingService::class)->enqueueDue())
     ->everyMinute()
     ->timezone('Asia/Jakarta')
     ->name('backup:automatic');
+
+Schedule::command('maintenance:check-status')
+    ->daily()
+    ->timezone('Asia/Jakarta');
