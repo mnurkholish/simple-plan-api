@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -42,5 +43,22 @@ class AssetCode extends Model
     public function asset(): HasOne
     {
         return $this->hasOne(Asset::class);
+    }
+
+    public function scopeVisibleTo(Builder $query, ?User $actor = null): Builder
+    {
+        if (! $actor) {
+            return $query;
+        }
+
+        if ($actor->hasRole('super-admin')) {
+            return $query->whereHas('classification', fn (Builder $q) => $q->where('name', 'Alat IT'));
+        }
+
+        if ($actor->hasRole('koordinator-sarpras')) {
+            return $query->whereHas('classification', fn (Builder $q) => $q->where('name', '!=', 'Alat IT'));
+        }
+
+        return $query;
     }
 }

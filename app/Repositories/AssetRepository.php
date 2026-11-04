@@ -21,7 +21,9 @@ class AssetRepository
     /** @param array<string, mixed> $filters */
     public function filteredQuery(array $filters): Builder
     {
-        $query = Asset::query()->with(['assetCode.classification', 'assetCode.location', 'assetCode.item']);
+        $query = Asset::query()
+            ->visibleTo(auth()->user())
+            ->with(['assetCode.classification', 'assetCode.location', 'assetCode.item']);
         $search = trim((string) ($filters['search'] ?? ''));
 
         if ($search !== '') {
@@ -97,6 +99,7 @@ class AssetRepository
     public function search(int $locationId, ?string $search): Collection
     {
         return Asset::query()
+            ->visibleTo(auth()->user())
             ->with(['assetCode.classification', 'assetCode.location', 'assetCode.item'])
             ->whereHas('assetCode', fn (Builder $query): Builder => $query->where('asset_location_id', $locationId))
             ->when(

@@ -21,6 +21,7 @@ class AssetMaintenanceController extends Controller
         $this->authorize('viewAny', AssetMaintenance::class);
 
         $query = AssetMaintenance::query()
+            ->visibleTo($request->user())
             ->with([
                 'assetCode.assetItem',
                 'assetCode.classification',

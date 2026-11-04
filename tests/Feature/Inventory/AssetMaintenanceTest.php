@@ -207,11 +207,18 @@ test('Endpoint Index berhasil memfilter jadwal berdasarkan status dan search', f
     expect($resSearchCode->json('data'))->toHaveCount(1)
         ->and($resSearchCode->json('data.0.id'))->toBe($schedule1->id);
 
-    // 3. Filter search by nama barang (assetItem.name)
+    // 3. Filter search by nama barang (assetItem.name) oleh Koordinator Sarpras (Domain Isolation)
+    Sanctum::actingAs($this->koordSarpras);
     $resSearchItem = $this->getJson('/api/v1/asset-maintenances?search=Genset');
     $resSearchItem->assertOk();
     expect($resSearchItem->json('data'))->toHaveCount(1)
         ->and($resSearchItem->json('data.0.id'))->toBe($schedule2->id);
+
+    // Super Admin tidak dapat melihat aset Sarpras karena dibatasi Domain Isolation
+    Sanctum::actingAs($this->superAdmin);
+    $this->getJson('/api/v1/asset-maintenances?search=Genset')
+        ->assertOk()
+        ->assertJsonCount(0, 'data');
 
     // 4. Filter search by nama petugas
     $resSearchOfficer = $this->getJson('/api/v1/asset-maintenances?search='.$this->petugasTik->name);
@@ -467,4 +474,57 @@ test('User biasa GAGAL melihat jadwal pemeliharaan (403 Forbidden)', function ()
     Sanctum::actingAs($user);
 
     $this->getJson('/api/v1/asset-maintenances')->assertForbidden();
+});
+
+test('Query scope visibleTo mengisolasi data jadwal sesuai role Super Admin, Sarpras, dan Petugas', function (): void {
+    $scheduleTik = AssetMaintenance::create([
+        'asset_code_id' => $this->codeTik->id,
+        'assigned_officer_id' => $this->petugasTik->id,
+        'creator_id' => $this->superAdmin->id,
+        'maintenance_type' => 'Jadwal TIK',
+        'period' => MaintenancePeriod::Monthly,
+        'next_scheduled_date' => now()->addDays(5)->format('Y-m-d'),
+        'status' => MaintenanceStatus::Terjadwal,
+        'is_active' => true,
+    ]);
+
+    $scheduleSarpras = AssetMaintenance::create([
+        'asset_code_id' => $this->codeSarpras->id,
+        'assigned_officer_id' => $this->petugasSarpras->id,
+        'creator_id' => $this->koordSarpras->id,
+        'maintenance_type' => 'Jadwal Sarpras',
+        'period' => MaintenancePeriod::Monthly,
+        'next_scheduled_date' => now()->addDays(5)->format('Y-m-d'),
+        'status' => MaintenanceStatus::Terjadwal,
+        'is_active' => true,
+    ]);
+
+    // 1. Super Admin hanya melihat TIK
+    Sanctum::actingAs($this->superAdmin);
+    $resTik = $this->getJson('/api/v1/asset-maintenances');
+    $idsTik = collect($resTik->json('data'))->pluck('id');
+    expect($idsTik)->toContain($scheduleTik->id)
+        ->and($idsTik)->not->toContain($scheduleSarpras->id);
+
+    // 2. Koordinator Sarpras hanya melihat Non-TIK (Sarpras)
+    Sanctum::actingAs($this->koordSarpras);
+    $resSarpras = $this->getJson('/api/v1/asset-maintenances');
+    $idsSarpras = collect($resSarpras->json('data'))->pluck('id');
+    expect($idsSarpras)->toContain($scheduleSarpras->id)
+        ->and($idsSarpras)->not->toContain($scheduleTik->id);
+
+    // 3. Petugas TIK hanya melihat jadwal yang ditugaskan kepadanya
+    Sanctum::actingAs($this->petugasTik);
+    $resPetugasTik = $this->getJson('/api/v1/asset-maintenances');
+    $idsPetugasTik = collect($resPetugasTik->json('data'))->pluck('id');
+    expect($idsPetugasTik)->toContain($scheduleTik->id)
+        ->and($idsPetugasTik)->not->toContain($scheduleSarpras->id);
+
+    // 4. Manajemen melihat semua jadwal
+    $manajemen = createMaintenanceTestUser('manajemen');
+    Sanctum::actingAs($manajemen);
+    $resManajemen = $this->getJson('/api/v1/asset-maintenances');
+    $idsManajemen = collect($resManajemen->json('data'))->pluck('id');
+    expect($idsManajemen)->toContain($scheduleTik->id)
+        ->and($idsManajemen)->toContain($scheduleSarpras->id);
 });
