@@ -4,12 +4,15 @@ namespace App\Services;
 
 use App\Models\Asset;
 use BackedEnum;
+use Illuminate\Support\Facades\File;
 
 class AssetLabelService
 {
+    private ?string $logoDataUri = null;
+
     public function __construct(private AssetQrCodeService $qrCodeService) {}
 
-    public function renderHtml(Asset $asset, float $widthMm = 90, float $heightMm = 50): string
+    public function renderHtml(Asset $asset, float $widthMm = 50, float $heightMm = 60): string
     {
         return view('inventory.labels.asset', $this->prepareLabel($asset) + [
             'widthMm' => $widthMm,
@@ -23,14 +26,9 @@ class AssetLabelService
         $asset->loadMissing([
             'assetCode.item',
             'assetCode.location',
-            'assetCode.classification',
         ]);
 
         $code = $asset->assetCode;
-
-        $inventoryType = $code->classification->name === 'Alat IT'
-            ? 'INVENTARIS ASET TIK'
-            : 'INVENTARIS ASET SARPRAS';
 
         $conditionText = $asset->condition instanceof BackedEnum
             ? $asset->condition->value
@@ -39,15 +37,17 @@ class AssetLabelService
         return [
             'asset' => $asset,
             'inventoryNumber' => $code->full_code,
-            'inventoryType' => $inventoryType,
-            'itemName' => $code->item->name,
+            'itemName' => trim($code->item->name.' '.($asset->detail_item ?? '')),
             'roomName' => $code->location->name,
             'conditionText' => $conditionText,
+            'logoDataUri' => $this->logoDataUri ??= 'data:image/png;base64,'.base64_encode(
+                File::get(resource_path('images/logo-cithus.png'))
+            ),
             'qrSvg' => $this->qrCodeService->generateSvg($asset),
         ];
     }
 
-    public function generatePng(Asset $asset, float $widthMm = 90, float $heightMm = 50): string
+    public function generatePng(Asset $asset, float $widthMm = 50, float $heightMm = 60): string
     {
         $html = $this->renderHtml($asset, $widthMm, $heightMm);
 
@@ -58,7 +58,7 @@ class AssetLabelService
             ->screenshot();
     }
 
-    public function generatePdf(Asset $asset, float $widthMm = 90, float $heightMm = 50): string
+    public function generatePdf(Asset $asset, float $widthMm = 50, float $heightMm = 60): string
     {
         $html = $this->renderHtml($asset, $widthMm, $heightMm);
 

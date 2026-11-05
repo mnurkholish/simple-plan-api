@@ -46,8 +46,8 @@ class AssetLabelController extends Controller
         ]);
 
         $format = $validated['format'] ?? 'html';
-        $widthMm = (float) ($validated['width_mm'] ?? 90);
-        $heightMm = (float) ($validated['height_mm'] ?? 50);
+        $widthMm = (float) ($validated['width_mm'] ?? 50);
+        $heightMm = (float) ($validated['height_mm'] ?? 60);
 
         if ($format !== 'html') {
             Gate::authorize('printLabel', $asset);

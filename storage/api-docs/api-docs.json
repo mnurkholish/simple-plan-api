@@ -5030,7 +5030,7 @@
                     "Inventory - QrCode Label"
                 ],
                 "summary": "Get Asset Label",
-                "description": "Generates an asset label containing the inventory number, item name, location, condition, and QR code. Supports HTML, PNG, and PDF formats.",
+                "description": "Generates a label with the RS Citra Husada letterhead, inventory number, name (asset_items.name followed by assets.detail_item when present), location, condition, and permanent UID QR code. Supports HTML, PNG, and PDF formats.",
                 "operationId": "getAssetLabel",
                 "parameters": [
                     {
@@ -5066,8 +5066,8 @@
                         "schema": {
                             "type": "number",
                             "format": "float",
-                            "example": 80,
-                            "default": 90,
+                            "example": 50,
+                            "default": 50,
                             "maximum": 150,
                             "minimum": 50
                         }
@@ -5080,8 +5080,8 @@
                         "schema": {
                             "type": "number",
                             "format": "float",
-                            "example": 40,
-                            "default": 50,
+                            "example": 60,
+                            "default": 60,
                             "maximum": 100,
                             "minimum": 25
                         }
@@ -5175,14 +5175,14 @@
                                             "width_mm": {
                                                 "type": "number",
                                                 "format": "float",
-                                                "example": 90,
+                                                "example": 50,
                                                 "maximum": 150,
                                                 "minimum": 50
                                             },
                                             "height_mm": {
                                                 "type": "number",
                                                 "format": "float",
-                                                "example": 50,
+                                                "example": 60,
                                                 "maximum": 100,
                                                 "minimum": 25
                                             }
@@ -5267,14 +5267,14 @@
                                             "width_mm": {
                                                 "type": "number",
                                                 "format": "float",
-                                                "example": 90,
+                                                "example": 50,
                                                 "maximum": 150,
                                                 "minimum": 50
                                             },
                                             "height_mm": {
                                                 "type": "number",
                                                 "format": "float",
-                                                "example": 50,
+                                                "example": 60,
                                                 "maximum": 100,
                                                 "minimum": 25
                                             }
