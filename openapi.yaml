@@ -282,6 +282,10 @@ paths:
       tags: [Assets]
       summary: Preview or download an inventory asset label
       operationId: getAssetLabel
+      description: |
+        Label contains the RS Citra Husada letterhead, inventory number, name
+        (asset_items.name followed by assets.detail_item when present), location,
+        condition, and a QR code containing the permanent asset UID.
       x-auth-required: true
       parameters:
         - name: asset
@@ -293,10 +297,10 @@ paths:
           schema: { type: string, enum: [html, png, pdf], default: html }
         - name: width_mm
           in: query
-          schema: { type: number, minimum: 50, maximum: 150, default: 90 }
+          schema: { type: number, minimum: 50, maximum: 150, default: 50 }
         - name: height_mm
           in: query
-          schema: { type: number, minimum: 25, maximum: 100, default: 50 }
+          schema: { type: number, minimum: 25, maximum: 100, default: 60 }
       responses:
         "200":
           description: The inventory label in the requested format.
@@ -341,8 +345,8 @@ paths:
                       uniqueItems: true
                       items: { type: integer, minimum: 1 }
                       example: [1, 2, 3]
-                    width_mm: { type: number, minimum: 50, maximum: 150, example: 90 }
-                    height_mm: { type: number, minimum: 25, maximum: 100, example: 50 }
+                    width_mm: { type: number, minimum: 50, maximum: 150, example: 50 }
+                    height_mm: { type: number, minimum: 25, maximum: 100, example: 60 }
                 - type: object
                   required: [selection_mode, filters, width_mm, height_mm]
                   properties:
@@ -364,8 +368,8 @@ paths:
                         year: { type: integer, description: 'Legacy alias for purchase_year.' }
                         page: { type: integer, description: 'Ignored for export.' }
                         per_page: { type: integer, description: 'Ignored for export.' }
-                    width_mm: { type: number, minimum: 50, maximum: 150, example: 90 }
-                    height_mm: { type: number, minimum: 25, maximum: 100, example: 50 }
+                    width_mm: { type: number, minimum: 50, maximum: 150, example: 50 }
+                    height_mm: { type: number, minimum: 25, maximum: 100, example: 60 }
       responses:
         "200":
           description: A4 PDF containing all selected labels.

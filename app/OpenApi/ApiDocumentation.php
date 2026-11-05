@@ -2392,7 +2392,7 @@ class ApiDocumentation
      *     operationId="getAssetLabel",
      *     tags={"Inventory - QrCode Label"},
      *     summary="Get Asset Label",
-     *     description="Generates an asset label containing the inventory number, item name, location, condition, and QR code. Supports HTML, PNG, and PDF formats.",
+     *     description="Generates a label with the RS Citra Husada letterhead, inventory number, name (asset_items.name followed by assets.detail_item when present), location, condition, and permanent UID QR code. Supports HTML, PNG, and PDF formats.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(
@@ -2431,8 +2431,8 @@ class ApiDocumentation
      *            format="float",
      *            minimum=50,
      *            maximum=150,
-     *            default=90,
-     *            example=80
+     *            default=50,
+     *            example=50
      *        )
      *    ),
      *
@@ -2447,8 +2447,8 @@ class ApiDocumentation
      *            format="float",
      *            minimum=25,
      *            maximum=100,
-     *            default=50,
-     *            example=40
+     *            default=60,
+     *            example=60
      *        )
      *    ),
      *
@@ -2517,8 +2517,8 @@ class ApiDocumentation
      *
      *                 @OA\Property(property="selection_mode", type="string", enum={"selected"}, default="selected"),
      *                 @OA\Property(property="asset_ids", type="array", minItems=1, uniqueItems=true, @OA\Items(type="integer", minimum=1), example={1,2,3}),
-     *                 @OA\Property(property="width_mm", type="number", format="float", minimum=50, maximum=150, example=90),
-     *                 @OA\Property(property="height_mm", type="number", format="float", minimum=25, maximum=100, example=50)
+     *                 @OA\Property(property="width_mm", type="number", format="float", minimum=50, maximum=150, example=50),
+     *                 @OA\Property(property="height_mm", type="number", format="float", minimum=25, maximum=100, example=60)
      *             ),
      *
      *             @OA\Schema(required={"selection_mode", "filters", "width_mm", "height_mm"},
@@ -2539,8 +2539,8 @@ class ApiDocumentation
      *                     @OA\Property(property="page", type="integer", description="Ignored for export"),
      *                     @OA\Property(property="per_page", type="integer", description="Ignored for export")
      *                 ),
-     *                 @OA\Property(property="width_mm", type="number", format="float", minimum=50, maximum=150, example=90),
-     *                 @OA\Property(property="height_mm", type="number", format="float", minimum=25, maximum=100, example=50)
+     *                 @OA\Property(property="width_mm", type="number", format="float", minimum=50, maximum=150, example=50),
+     *                 @OA\Property(property="height_mm", type="number", format="float", minimum=25, maximum=100, example=60)
      *             )
      *         }
      *     )),
