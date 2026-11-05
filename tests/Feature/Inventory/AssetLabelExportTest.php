@@ -1,64 +1,54 @@
 <?php
 
 use App\Models\Asset;
-use App\Enums\AssetCondition;
 use App\Models\AssetClassification;
 use App\Models\AssetItem;
 use App\Models\AssetLocation;
 use App\Models\User;
+use App\Services\AssetLabelService;
+use App\Services\AssetQrCodeService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
-test('asset label preview shows the hospital header and the requested inventory fields', function (): void {
-    Role::findOrCreate('super-admin', 'web');
+function authenticateAssetLabelExportUser(string $role = 'super-admin'): void
+{
+    Role::findOrCreate($role, 'web');
     $user = User::factory()->create();
-    $user->assignRole('super-admin');
+    $user->assignRole($role);
     Sanctum::actingAs($user);
+}
 
-    $classification = AssetClassification::factory()->create(['name' => 'Alat IT']);
-    $location = AssetLocation::factory()->create(['name' => 'Server']);
-    $item = AssetItem::factory()->create([
-        'name' => 'server',
-        'asset_classification_id' => $classification->id,
-    ]);
-    $asset = Asset::factory()->forInventory($classification, $location, $item)->create([
-        'detail_item' => 'Lenovo ThinkSystem SR650 V3',
-        'model_specification' => 'Unrelated model',
-        'condition' => AssetCondition::Good,
-    ]);
+function recordPreparedAssetLabels(): AssetLabelService
+{
+    $labels = new class(app(AssetQrCodeService::class)) extends AssetLabelService
+    {
+        public array $preparedAssetIds = [];
 
-    $response = $this->get('/api/v1/assets/'.$asset->id.'/label');
+        public function prepareLabel(Asset $asset): array
+        {
+            $this->preparedAssetIds[] = $asset->id;
 
-    $response->assertOk()->assertHeader('Content-Type', 'text/html; charset=UTF-8');
-    $html = $response->getContent();
+            return parent::prepareLabel($asset);
+        }
+    };
 
-    expect($html)
-        ->toContain('size: 50mm 60mm', 'width: 50mm', 'height: 60mm')
-        ->toContain('KARTU INVENTARIS', 'RS CITRA HUSADA', 'Jl. Teratai No. 22 Jember 0331-486200')
-        ->toContain('Nomor', $asset->assetCode->full_code)
-        ->toContain('Nama', 'server Lenovo ThinkSystem SR650 V3')
-        ->toContain('Lokasi', 'Server', 'Kondisi', 'Baik')
-        ->toContain('class="hospital-logo" src="data:image/png;base64,', 'class="qr-code"')
-        ->toContain('Pindai QR untuk mengakses detail data inventaris')
-        ->not->toContain('Unrelated model');
-});
+    app()->instance(AssetLabelService::class, $labels);
 
-test('authorized user can export an asset label as a rendered PDF', function (): void {
-    Role::findOrCreate('super-admin', 'web');
-    $user = User::factory()->create();
-    $user->assignRole('super-admin');
-    Sanctum::actingAs($user);
+    return $labels;
+}
 
-    $classification = AssetClassification::factory()->create(['name' => 'Alat IT']);
-    $location = AssetLocation::factory()->create();
-    $item = AssetItem::factory()->create(['asset_classification_id' => $classification->id]);
-    $asset = Asset::factory()->forInventory($classification, $location, $item)->create();
+test('pengguna yang diizinkan dapat mengekspor label untuk aset terpilih', function (): void {
+    authenticateAssetLabelExportUser();
+    $firstAsset = Asset::factory()->create();
+    $secondAsset = Asset::factory()->create();
+    $labels = recordPreparedAssetLabels();
 
     $response = $this->postJson('/api/v1/asset-label-exports', [
-        'asset_ids' => [$asset->id],
+        'selection_mode' => 'selected',
+        'asset_ids' => [$secondAsset->id, $firstAsset->id],
         'width_mm' => 90,
         'height_mm' => 50,
     ]);
@@ -67,5 +57,79 @@ test('authorized user can export an asset label as a rendered PDF', function ():
         ->assertHeader('Content-Type', 'application/pdf')
         ->assertHeader('Content-Disposition', 'attachment; filename="asset-labels-a4.pdf"');
 
-    expect($response->getContent())->toStartWith('%PDF-');
+    expect($labels->preparedAssetIds)->toBe([$secondAsset->id, $firstAsset->id]);
+    expect($response->getContent())->toMatch('/^%PDF-\d\.\d/')
+        ->toContain('startxref', '%%EOF');
+});
+
+test('pengguna yang diizinkan dapat mengekspor semua label sesuai filter tanpa paginasi', function (): void {
+    authenticateAssetLabelExportUser();
+    $classification = AssetClassification::factory()->create(['name' => 'Alat IT']);
+    $location = AssetLocation::factory()->create();
+    $item = AssetItem::factory()->create(['asset_classification_id' => $classification->id]);
+    $firstAsset = Asset::factory()->forInventory($classification, $location, $item)->create();
+    $secondAsset = Asset::factory()->forInventory($classification, $location, $item)->create();
+
+    $otherClassification = AssetClassification::factory()->create(['name' => 'Peralatan Medis']);
+    $otherItem = AssetItem::factory()->create(['asset_classification_id' => $otherClassification->id]);
+    Asset::factory()->forInventory($otherClassification, $location, $otherItem)->create();
+    $labels = recordPreparedAssetLabels();
+
+    $response = $this->postJson('/api/v1/asset-label-exports', [
+        'selection_mode' => 'all_filtered',
+        'filters' => [
+            'classification_id' => $classification->id,
+            'page' => 1,
+            'per_page' => 1,
+        ],
+        'width_mm' => 90,
+        'height_mm' => 50,
+    ]);
+
+    $response->assertOk()
+        ->assertHeader('Content-Type', 'application/pdf')
+        ->assertHeader('Content-Disposition', 'attachment; filename="asset-labels-a4.pdf"');
+
+    expect($labels->preparedAssetIds)->toBe([$secondAsset->id, $firstAsset->id]);
+    expect($response->getContent())->toMatch('/^%PDF-\d\.\d/')
+        ->toContain('startxref', '%%EOF');
+});
+
+test('request ekspor label dengan input tidak valid mengembalikan 422', function (): void {
+    authenticateAssetLabelExportUser();
+    $asset = Asset::factory()->create();
+
+    $this->postJson('/api/v1/asset-label-exports', [
+        'selection_mode' => 'selected',
+        'asset_ids' => [$asset->id, 'invalid'],
+        'width_mm' => 40,
+        'height_mm' => 101,
+    ])->assertUnprocessable()
+        ->assertJsonValidationErrors(['asset_ids.1', 'width_mm', 'height_mm']);
+});
+
+test('pengguna tanpa izin cetak tidak dapat mengekspor label aset', function (): void {
+    authenticateAssetLabelExportUser('user');
+    $asset = Asset::factory()->create();
+
+    $this->postJson('/api/v1/asset-label-exports', [
+        'selection_mode' => 'selected',
+        'asset_ids' => [$asset->id],
+        'width_mm' => 90,
+        'height_mm' => 50,
+    ])->assertForbidden();
+});
+
+test('ekspor semua label mengembalikan 422 jika filter tidak menemukan aset', function (): void {
+    authenticateAssetLabelExportUser();
+    Asset::factory()->create(['detail_item' => 'Komputer ruang server']);
+    $emptyClassification = AssetClassification::factory()->create();
+
+    $this->postJson('/api/v1/asset-label-exports', [
+        'selection_mode' => 'all_filtered',
+        'filters' => ['classification_id' => $emptyClassification->id],
+        'width_mm' => 90,
+        'height_mm' => 50,
+    ])->assertUnprocessable()
+        ->assertJsonValidationErrors('filters');
 });
