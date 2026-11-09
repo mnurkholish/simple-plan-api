@@ -2967,6 +2967,126 @@
             }
         },
         "/design-requests": {
+            "get": {
+                "tags": [
+                    "Design Graphic"
+                ],
+                "summary": "List graphic design requests",
+                "description": "Requires design-requests-read permission. Defaults to the authenticated user's requests. Assigned shows requests assigned to the user; all is restricted to super-admin.",
+                "operationId": "listDesignRequests",
+                "parameters": [
+                    {
+                        "name": "scope",
+                        "in": "query",
+                        "description": "Visible request scope.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "mine",
+                            "enum": [
+                                "mine",
+                                "assigned",
+                                "all"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search by request number or title.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 255
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Design request status.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "baru",
+                                "ditugaskan",
+                                "menunggu_persetujuan",
+                                "perlu_revisi",
+                                "selesai",
+                                "ditolak"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated design requests",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DesignRequestCollectionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing permission or all scope outside super-admin",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Invalid filters",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
             "post": {
                 "tags": [
                     "Design Graphic"
@@ -6560,6 +6680,28 @@
                     "size": {
                         "type": "integer",
                         "example": 245760
+                    }
+                },
+                "type": "object"
+            },
+            "DesignRequestCollectionResponse": {
+                "required": [
+                    "data",
+                    "links",
+                    "meta"
+                ],
+                "properties": {
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/DesignRequestRead"
+                        }
+                    },
+                    "links": {
+                        "$ref": "#/components/schemas/TicketPaginationLinks"
+                    },
+                    "meta": {
+                        "$ref": "#/components/schemas/TicketPaginationMeta"
                     }
                 },
                 "type": "object"

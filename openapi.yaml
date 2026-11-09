@@ -30,6 +30,52 @@ tags:
 
 paths:
   /design-requests:
+    get:
+      tags: [Design Graphic]
+      summary: Melihat daftar request desain grafis
+      operationId: listDesignRequests
+      description: Default scope adalah mine. Scope assigned hanya menampilkan request yang ditugaskan ke user login; scope all khusus Super Admin.
+      x-auth-required: true
+      x-required-permission: design-requests-read
+      parameters:
+        - name: scope
+          in: query
+          required: false
+          description: Cakupan data request yang terlihat.
+          schema:
+            type: string
+            enum: [mine, assigned, all]
+            default: mine
+        - name: search
+          in: query
+          required: false
+          description: Pencarian berdasarkan nomor atau judul request.
+          schema:
+            type: string
+            maxLength: 255
+        - name: status
+          in: query
+          required: false
+          description: Filter status request desain.
+          schema:
+            type: string
+            enum: [baru, ditugaskan, menunggu_persetujuan, perlu_revisi, selesai, ditolak]
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+      responses:
+        "200":
+          description: Daftar request desain berhasil diambil.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DesignRequestCollectionResponse"
+        "401":
+          $ref: "#/components/responses/TicketUnauthenticated"
+        "403":
+          $ref: "#/components/responses/TicketForbidden"
+        "422":
+          $ref: "#/components/responses/TicketValidationError"
+
     post:
       tags: [Design Graphic]
       summary: Membuat request desain grafis
@@ -1610,6 +1656,20 @@ components:
           type: string
         size:
           type: integer
+
+    DesignRequestCollectionResponse:
+      type: object
+      additionalProperties: false
+      required: [data, links, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/DesignRequestRead"
+        links:
+          $ref: "#/components/schemas/PaginationLinks"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
 
     DesignRequestCreateResponse:
       type: object

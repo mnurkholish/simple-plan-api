@@ -102,6 +102,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::get('tickets', [TicketController::class, 'index'])
             ->middleware('permission:tickets-access')
             ->name('tickets.index');
+        Route::get('design-requests', [DesignRequestController::class, 'index'])
+            ->middleware('permission:design-requests-read')
+            ->name('design-requests.index');
         Route::post('design-requests', [DesignRequestController::class, 'store'])
             ->middleware('permission:design-requests-create')
             ->name('design-requests.store');

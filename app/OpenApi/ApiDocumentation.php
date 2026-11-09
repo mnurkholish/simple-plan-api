@@ -317,6 +317,15 @@ use OpenApi\Annotations as OA;
  * )
  *
  * @OA\Schema(
+ *     schema="DesignRequestCollectionResponse",
+ *     type="object",
+ *     required={"data","links","meta"},
+ *     @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/DesignRequestRead")),
+ *     @OA\Property(property="links", ref="#/components/schemas/TicketPaginationLinks"),
+ *     @OA\Property(property="meta", ref="#/components/schemas/TicketPaginationMeta")
+ * )
+ *
+ * @OA\Schema(
  *     schema="DesignRequestCreateResponse",
  *     type="object",
  *     required={"message","data"},
@@ -1733,6 +1742,27 @@ class ApiDocumentation
      * )
      */
     public function designRequestsStore(): void {}
+
+    /**
+     * @OA\Get(
+     *     path="/design-requests",
+     *     operationId="listDesignRequests",
+     *     tags={"Design Graphic"},
+     *     summary="List graphic design requests",
+     *     description="Requires design-requests-read permission. Defaults to the authenticated user's requests. Assigned shows requests assigned to the user; all is restricted to super-admin.",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="scope", in="query", required=false, description="Visible request scope.", @OA\Schema(type="string", enum={"mine","assigned","all"}, default="mine")),
+     *     @OA\Parameter(name="search", in="query", required=false, description="Search by request number or title.", @OA\Schema(type="string", maxLength=255)),
+     *     @OA\Parameter(name="status", in="query", required=false, description="Design request status.", @OA\Schema(type="string", enum={"baru","ditugaskan","menunggu_persetujuan","perlu_revisi","selesai","ditolak"})),
+     *     @OA\Parameter(name="page", in="query", required=false, @OA\Schema(type="integer", minimum=1, default=1)),
+     *     @OA\Parameter(name="per_page", in="query", required=false, @OA\Schema(type="integer", minimum=1, maximum=100, default=15)),
+     *     @OA\Response(response=200, description="Paginated design requests", @OA\JsonContent(ref="#/components/schemas/DesignRequestCollectionResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Missing permission or all scope outside super-admin", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=422, description="Invalid filters", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
+     * )
+     */
+    public function designRequestsIndex(): void {}
 
     /**
      * @OA\Get(

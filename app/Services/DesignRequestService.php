@@ -6,6 +6,8 @@ use App\Enums\DesignRequestStatus;
 use App\Models\DesignRequest;
 use App\Models\User;
 use App\Repositories\DesignRequestRepository;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -16,6 +18,18 @@ use Throwable;
 class DesignRequestService
 {
     public function __construct(private readonly DesignRequestRepository $designRequests) {}
+
+    /** @param array<string, mixed> $filters */
+    public function paginateVisibleTo(User $actor, array $filters, int $perPage): LengthAwarePaginator
+    {
+        $scope = $filters['scope'] ?? 'mine';
+
+        if ($scope === 'all' && ! $actor->hasRole('super-admin')) {
+            throw new AuthorizationException;
+        }
+
+        return $this->designRequests->paginateVisibleTo($actor, $scope, $filters, $perPage);
+    }
 
     /** @param array<string, mixed> $data */
     public function create(array $data, User $requester, ?UploadedFile $referenceFile = null): DesignRequest
