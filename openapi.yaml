@@ -15,6 +15,8 @@ servers:
     description: Current API version
 
 tags:
+  - name: Design Graphic
+    description: Request desain grafis
   - name: Helpdesk
     description: Pengelolaan tiket Helpdesk TIK dan Sarpras
   - name: Assets
@@ -27,6 +29,34 @@ tags:
     description: Backup MySQL dan file aplikasi di MinIO
 
 paths:
+  /design-requests:
+    post:
+      tags: [Design Graphic]
+      summary: Membuat request desain grafis
+      operationId: createDesignRequest
+      description: Nomor request dibuat otomatis; status awal baru. Pemohon dan unit berasal dari user yang login. File referensi disimpan pada disk aplikasi yang terkonfigurasi.
+      x-auth-required: true
+      x-required-permission: design-requests-create
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/CreateDesignRequestRequest"
+      responses:
+        "201":
+          description: Request desain berhasil dibuat.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DesignRequestCreateResponse"
+        "401":
+          $ref: "#/components/responses/TicketUnauthenticated"
+        "403":
+          $ref: "#/components/responses/TicketForbidden"
+        "422":
+          $ref: "#/components/responses/TicketValidationError"
+
   /backup-settings:
     get:
       tags: [Backups]
@@ -1503,6 +1533,94 @@ components:
         errors:
           type: object
           additionalProperties: true
+
+    CreateDesignRequestRequest:
+      type: object
+      required: [title, design_type, description, needed_at]
+      properties:
+        title:
+          type: string
+          maxLength: 100
+          example: Poster edukasi pasien
+        design_type:
+          type: string
+          maxLength: 255
+          description: Jenis desain diisi bebas oleh pemohon, tanpa pilihan nilai tetap.
+          example: Poster edukasi
+        description:
+          type: string
+          example: Poster edukasi untuk ruang tunggu.
+        needed_at:
+          type: string
+          format: date
+          description: Tidak boleh sebelum hari ini.
+          example: "2026-11-15"
+        reference_file:
+          type: [string, "null"]
+          format: binary
+          description: File referensi opsional, maksimal 5 MB.
+
+    DesignRequestRead:
+      type: object
+      additionalProperties: false
+      required: [id, request_number, title, design_type, description, needed_at, status, requester, unit, reference_file, created_at, updated_at]
+      properties:
+        id:
+          type: integer
+        request_number:
+          type: string
+          pattern: "^DGR-[0-9]{4}-[0-9]{6}$"
+          example: DGR-2026-123456
+        title:
+          type: string
+        design_type:
+          type: string
+          description: Jenis desain sesuai teks yang diisi pemohon.
+        description:
+          type: string
+        needed_at:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [baru]
+        requester:
+          $ref: "#/components/schemas/TicketReporterSummary"
+        unit:
+          $ref: "#/components/schemas/TicketUnitSummary"
+        reference_file:
+          oneOf:
+            - $ref: "#/components/schemas/DesignReferenceFileMetadata"
+            - type: "null"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    DesignReferenceFileMetadata:
+      type: object
+      additionalProperties: false
+      required: [original_name, mime_type, size]
+      properties:
+        original_name:
+          type: string
+        mime_type:
+          type: string
+        size:
+          type: integer
+
+    DesignRequestCreateResponse:
+      type: object
+      additionalProperties: false
+      required: [message, data]
+      properties:
+        message:
+          type: string
+          example: Request desain berhasil dibuat.
+        data:
+          $ref: "#/components/schemas/DesignRequestRead"
 
     TicketRead:
       type: object

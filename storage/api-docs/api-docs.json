@@ -2966,6 +2966,73 @@
                 ]
             }
         },
+        "/design-requests": {
+            "post": {
+                "tags": [
+                    "Design Graphic"
+                ],
+                "summary": "Create a graphic design request",
+                "description": "Creates a request with status baru. Requester and unit are taken from the authenticated user. Requires design-requests-create permission.",
+                "operationId": "createDesignRequest",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateDesignRequestRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Design request created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DesignRequestCreateResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing design-requests-create permission",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Invalid design request data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/tickets/classification-options": {
             "get": {
                 "tags": [
@@ -6365,6 +6432,154 @@
                 },
                 "type": "object"
             },
+            "CreateDesignRequestRequest": {
+                "required": [
+                    "title",
+                    "design_type",
+                    "description",
+                    "needed_at"
+                ],
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "example": "Poster edukasi pasien",
+                        "maxLength": 100
+                    },
+                    "design_type": {
+                        "type": "string",
+                        "example": "Poster edukasi",
+                        "maxLength": 255
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Poster edukasi untuk ruang tunggu."
+                    },
+                    "needed_at": {
+                        "description": "Tidak boleh sebelum hari ini.",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-11-15"
+                    },
+                    "reference_file": {
+                        "description": "File referensi opsional, maksimal 5 MB.",
+                        "type": "string",
+                        "format": "binary",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "DesignRequestRead": {
+                "required": [
+                    "id",
+                    "request_number",
+                    "title",
+                    "design_type",
+                    "description",
+                    "needed_at",
+                    "status",
+                    "requester",
+                    "unit",
+                    "reference_file",
+                    "created_at",
+                    "updated_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "request_number": {
+                        "type": "string",
+                        "pattern": "^DGR-[0-9]{4}-[0-9]{6}$",
+                        "example": "DGR-2026-123456"
+                    },
+                    "title": {
+                        "type": "string",
+                        "example": "Poster edukasi pasien"
+                    },
+                    "design_type": {
+                        "type": "string",
+                        "example": "Poster"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Poster edukasi untuk ruang tunggu."
+                    },
+                    "needed_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "status": {
+                        "type": "string",
+                        "example": "baru",
+                        "enum": [
+                            "baru"
+                        ]
+                    },
+                    "requester": {
+                        "$ref": "#/components/schemas/TicketReporterSummary"
+                    },
+                    "unit": {
+                        "$ref": "#/components/schemas/TicketUnitSummary"
+                    },
+                    "reference_file": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/DesignReferenceFileMetadata"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "DesignReferenceFileMetadata": {
+                "required": [
+                    "original_name",
+                    "mime_type",
+                    "size"
+                ],
+                "properties": {
+                    "original_name": {
+                        "type": "string",
+                        "example": "referensi.pdf"
+                    },
+                    "mime_type": {
+                        "type": "string",
+                        "example": "application/pdf"
+                    },
+                    "size": {
+                        "type": "integer",
+                        "example": 245760
+                    }
+                },
+                "type": "object"
+            },
+            "DesignRequestCreateResponse": {
+                "required": [
+                    "message",
+                    "data"
+                ],
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "example": "Request desain berhasil dibuat."
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/DesignRequestRead"
+                    }
+                },
+                "type": "object"
+            },
             "TicketHandling": {
                 "required": [
                     "id",
@@ -7205,6 +7420,10 @@
         {
             "name": "Helpdesk",
             "description": "Helpdesk TIK and Sarpras tickets"
+        },
+        {
+            "name": "Design Graphic",
+            "description": "Graphic design requests"
         },
         {
             "name": "Inventory - Master Data",

@@ -210,7 +210,8 @@ success dan `file_name` serta `file_size` tetap menyimpan metadata proses semula
 `design_requests` menyimpan nomor request unik (maksimal 20 karakter), pemohon,
 unit, kebutuhan waktu, status, penugasan, dan metadata file referensi opsional.
 Status awal adalah `baru`; nilai status lain mengikuti `DesignRequestStatus`.
-`design_type` dan `priority` tetap berupa string sampai daftar nilainya disepakati.
+`design_type` diisi manual oleh pemohon sebagai teks bebas (maksimal 255 karakter),
+tanpa daftar nilai tetap. `priority` tetap berupa string sampai daftar nilainya disepakati.
 
 `design_drafts` menyimpan setiap file draft sebagai `file_object_key` dan metadata,
 serta pencatat unggahan. `design_revisions` mencatat catatan revisi untuk satu

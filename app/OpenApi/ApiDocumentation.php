@@ -37,6 +37,7 @@ use OpenApi\Annotations as OA;
  * @OA\Tag(name="Assets", description="Asset lookup")
  * @OA\Tag(name="Asset Maintenance", description="API for asset maintenance scheduling and execution")
  * @OA\Tag(name="Helpdesk", description="Helpdesk TIK and Sarpras tickets")
+ * @OA\Tag(name="Design Graphic", description="Graphic design requests")
  *
  * @OA\Schema(
  *     schema="User",
@@ -275,6 +276,52 @@ use OpenApi\Annotations as OA;
  *     @OA\Property(property="mime_type", type="string", example="image/jpeg"),
  *     @OA\Property(property="size", type="integer", example=245760),
  *     @OA\Property(property="url", type="string", format="uri", description="Temporary URL included only in the ticket detail/show response and generated at runtime from the object key on the configured filesystem disk.", example="https://simple-plan.internal/storage/local/helpdesk/evidence/example.jpg?expires=1790985600&signature=example")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="CreateDesignRequestRequest",
+ *     type="object",
+ *     required={"title","design_type","description","needed_at"},
+ *     @OA\Property(property="title", type="string", maxLength=100, example="Poster edukasi pasien"),
+ *     @OA\Property(property="design_type", type="string", maxLength=255, example="Poster edukasi"),
+ *     @OA\Property(property="description", type="string", example="Poster edukasi untuk ruang tunggu."),
+ *     @OA\Property(property="needed_at", type="string", format="date", description="Tidak boleh sebelum hari ini.", example="2026-11-15"),
+ *     @OA\Property(property="reference_file", type="string", format="binary", nullable=true, description="File referensi opsional, maksimal 5 MB.")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="DesignRequestRead",
+ *     type="object",
+ *     required={"id","request_number","title","design_type","description","needed_at","status","requester","unit","reference_file","created_at","updated_at"},
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="request_number", type="string", pattern="^DGR-[0-9]{4}-[0-9]{6}$", example="DGR-2026-123456"),
+ *     @OA\Property(property="title", type="string", example="Poster edukasi pasien"),
+ *     @OA\Property(property="design_type", type="string", example="Poster"),
+ *     @OA\Property(property="description", type="string", example="Poster edukasi untuk ruang tunggu."),
+ *     @OA\Property(property="needed_at", type="string", format="date-time"),
+ *     @OA\Property(property="status", type="string", enum={"baru"}, example="baru"),
+ *     @OA\Property(property="requester", ref="#/components/schemas/TicketReporterSummary"),
+ *     @OA\Property(property="unit", ref="#/components/schemas/TicketUnitSummary"),
+ *     @OA\Property(property="reference_file", ref="#/components/schemas/DesignReferenceFileMetadata", nullable=true),
+ *     @OA\Property(property="created_at", type="string", format="date-time"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="DesignReferenceFileMetadata",
+ *     type="object",
+ *     required={"original_name","mime_type","size"},
+ *     @OA\Property(property="original_name", type="string", example="referensi.pdf"),
+ *     @OA\Property(property="mime_type", type="string", example="application/pdf"),
+ *     @OA\Property(property="size", type="integer", example=245760)
+ * )
+ *
+ * @OA\Schema(
+ *     schema="DesignRequestCreateResponse",
+ *     type="object",
+ *     required={"message","data"},
+ *     @OA\Property(property="message", type="string", example="Request desain berhasil dibuat."),
+ *     @OA\Property(property="data", ref="#/components/schemas/DesignRequestRead")
  * )
  *
  * @OA\Schema(
@@ -1669,6 +1716,23 @@ class ApiDocumentation
      * )
      */
     public function ticketsStore(): void {}
+
+    /**
+     * @OA\Post(
+     *     path="/design-requests",
+     *     operationId="createDesignRequest",
+     *     tags={"Design Graphic"},
+     *     summary="Create a graphic design request",
+     *     description="Creates a request with status baru. Requester and unit are taken from the authenticated user. Requires design-requests-create permission.",
+     *     security={{"sanctum":{}}},
+     *     @OA\RequestBody(required=true, @OA\MediaType(mediaType="multipart/form-data", @OA\Schema(ref="#/components/schemas/CreateDesignRequestRequest"))),
+     *     @OA\Response(response=201, description="Design request created", @OA\JsonContent(ref="#/components/schemas/DesignRequestCreateResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Missing design-requests-create permission", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=422, description="Invalid design request data", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
+     * )
+     */
+    public function designRequestsStore(): void {}
 
     /**
      * @OA\Get(

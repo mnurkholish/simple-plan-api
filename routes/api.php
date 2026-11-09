@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\V1\Auth\SsoController;
 use App\Http\Controllers\Api\V1\BackupController;
 use App\Http\Controllers\Api\V1\BackupSettingController;
 use App\Http\Controllers\Api\V1\DashboardController;
+use App\Http\Controllers\Api\V1\DesignRequestController;
 use App\Http\Controllers\Api\V1\ExampleLiveController;
 use App\Http\Controllers\Api\V1\ImpersonationController;
 use App\Http\Controllers\Api\V1\NotificationController;
@@ -101,6 +102,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::get('tickets', [TicketController::class, 'index'])
             ->middleware('permission:tickets-access')
             ->name('tickets.index');
+        Route::post('design-requests', [DesignRequestController::class, 'store'])
+            ->middleware('permission:design-requests-create')
+            ->name('design-requests.store');
         Route::post('tickets', [TicketController::class, 'store'])
             ->middleware('permission:tickets-create')
             ->name('tickets.store');
