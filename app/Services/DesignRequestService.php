@@ -6,7 +6,6 @@ use App\Enums\DesignRequestStatus;
 use App\Models\DesignRequest;
 use App\Models\User;
 use App\Repositories\DesignRequestRepository;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\UploadedFile;
@@ -22,13 +21,7 @@ class DesignRequestService
     /** @param array<string, mixed> $filters */
     public function paginateVisibleTo(User $actor, array $filters, int $perPage): LengthAwarePaginator
     {
-        $scope = $filters['scope'] ?? 'mine';
-
-        if ($scope === 'all' && ! $actor->hasRole('super-admin')) {
-            throw new AuthorizationException;
-        }
-
-        return $this->designRequests->paginateVisibleTo($actor, $scope, $filters, $perPage);
+        return $this->designRequests->paginateVisibleTo($actor, $filters['scope'] ?? 'mine', $filters, $perPage);
     }
 
     /** @param array<string, mixed> $data */
