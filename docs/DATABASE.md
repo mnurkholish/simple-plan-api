@@ -205,6 +205,20 @@ proses. Proses gagal atau belum selesai boleh tidak memiliki metadata file.
 Setelah ZIP dihapus, `disk` dan `object_key` dikosongkan. Histori tetap berstatus
 success dan `file_name` serta `file_size` tetap menyimpan metadata proses semula.
 
+## Fondasi Design Request
+
+`design_requests` menyimpan nomor request unik (maksimal 20 karakter), pemohon,
+unit, kebutuhan waktu, status, penugasan, dan metadata file referensi opsional.
+Status awal adalah `baru`; nilai status lain mengikuti `DesignRequestStatus`.
+`design_type` dan `priority` tetap berupa string sampai daftar nilainya disepakati.
+
+`design_drafts` menyimpan setiap file draft sebagai `file_object_key` dan metadata,
+serta pencatat unggahan. `design_revisions` mencatat catatan revisi untuk satu
+draft dalam satu request dan pengguna yang meminta revisi. Relasi `design_request_id`
+di kedua tabel harus merujuk request yang sama saat revisi dibuat; layanan aplikasi
+nantinya menegakkan aturan ini. File final berasal dari draft terakhir yang
+disetujui saat request berstatus `selesai`, tanpa kolom atau tabel file final.
+
 ---
 
 ## 9. Audit and History
