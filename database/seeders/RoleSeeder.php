@@ -13,6 +13,13 @@ class RoleSeeder extends Seeder
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
+        $designRequestPermissions = [
+            'design-requests-create',
+            'design-requests-read',
+            'design-requests-revise',
+            'design-requests-approve',
+        ];
+
         $rolePermissions = [
             'koordinator-sarpras' => [
                 'tickets-access',
@@ -48,12 +55,20 @@ class RoleSeeder extends Seeder
                 'guard_name' => 'web',
             ]);
 
-            $role->syncPermissions($permissions);
+            $role->givePermissionTo(array_merge(
+                $permissions,
+                $designRequestPermissions,
+                match ($roleName) {
+                    'petugas-tik' => ['design-drafts-upload'],
+                    'management' => ['design-reports-read'],
+                    default => [],
+                },
+            ));
         }
 
         Role::firstOrCreate([
             'name' => 'super-admin',
             'guard_name' => 'web',
-        ])->syncPermissions(Permission::all());
+        ])->givePermissionTo(Permission::all());
     }
 }

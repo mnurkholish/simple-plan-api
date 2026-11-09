@@ -23,5 +23,15 @@ class DomainPermissionSeeder extends Seeder
         $create('tickets-reject');
         $create('tickets-assign');
         $create('tickets-handle');
+
+        $create('design-requests-create');
+        $create('design-requests-read');
+        $create('design-requests-manage');
+        $create('design-requests-assign');
+        $create('design-requests-reject');
+        $create('design-drafts-upload');
+        $create('design-requests-revise');
+        $create('design-requests-approve');
+        $create('design-reports-read');
     }
 }
