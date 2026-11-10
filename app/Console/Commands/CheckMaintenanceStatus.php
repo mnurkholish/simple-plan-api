@@ -23,6 +23,14 @@ class CheckMaintenanceStatus extends Command
         $h1 = today()->addDay()->toDateString();
         $h3 = today()->addDays(3)->toDateString();
 
+        $completedToScheduledCount = AssetMaintenance::query()
+            ->where('status', MaintenanceStatus::Selesai)
+            ->whereNotNull('last_executed_at')
+            ->where('last_executed_at', '<=', now()->subHours(24))
+            ->update([
+                'status' => MaintenanceStatus::Terjadwal,
+            ]);
+
         $overdueSchedules = AssetMaintenance::query()
             ->where('is_active', true)
             ->where('status', MaintenanceStatus::Terjadwal)
@@ -72,7 +80,7 @@ class CheckMaintenanceStatus extends Command
             }
         }
 
-        $this->info("Pemeriksaan jadwal pemeliharaan selesai: {$overdueCount} jadwal diperbarui menjadi terlambat, {$reminderCount} pengingat terkirim.");
+        $this->info("Pemeriksaan jadwal pemeliharaan selesai: {$completedToScheduledCount} jadwal selesai dikembalikan ke terjadwal, {$overdueCount} jadwal diperbarui menjadi terlambat, {$reminderCount} pengingat terkirim.");
 
         return self::SUCCESS;
     }

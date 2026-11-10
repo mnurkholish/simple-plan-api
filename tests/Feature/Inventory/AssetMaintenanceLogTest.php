@@ -124,7 +124,7 @@ test('Petugas LAIN gagal submit log (403 Forbidden)', function (): void {
     expect(AssetMaintenanceLog::count())->toBe(0);
 });
 
-test('Setelah log disubmit, status Jadwal Induk kembali menjadi terjadwal dan next_scheduled_date bertambah sesuai periode', function (): void {
+test('Setelah log disubmit, status Jadwal Induk menjadi Selesai selama 24 jam dan next_scheduled_date bertambah sesuai periode', function (): void {
     Sanctum::actingAs($this->petugasTik);
 
     $schedule = AssetMaintenance::create([
@@ -150,8 +150,9 @@ test('Setelah log disubmit, status Jadwal Induk kembali menjadi terjadwal dan ne
 
     $schedule->refresh();
 
-    // Pastikan status kembali menjadi 'terjadwal'
-    expect($schedule->status)->toBe(MaintenanceStatus::Terjadwal);
+    // Pastikan status menjadi 'selesai' dan last_executed_at tercatat
+    expect($schedule->status)->toBe(MaintenanceStatus::Selesai)
+        ->and($schedule->last_executed_at)->not->toBeNull();
 
     // Pastikan tanggal berikutnya dihitung dari tanggal jadwal lama (2026-11-01 + 1 bulan = 2026-12-01)
     expect($schedule->next_scheduled_date->format('Y-m-d'))->toBe('2026-12-01');
@@ -162,4 +163,39 @@ test('Setelah log disubmit, status Jadwal Induk kembali menjadi terjadwal dan ne
         'scheduled_date' => '2026-11-01',
         'work_description' => 'Pemeriksaan rutin kelayakan hardware',
     ]);
+});
+
+test('Command maintenance:check-status mengubah status Selesai menjadi Terjadwal setelah 24 jam', function (): void {
+    $scheduleRecent = AssetMaintenance::create([
+        'asset_code_id' => $this->code->id,
+        'assigned_officer_id' => $this->petugasTik->id,
+        'creator_id' => $this->superAdmin->id,
+        'maintenance_type' => 'Pembersihan Rutin',
+        'period' => MaintenancePeriod::Monthly,
+        'next_scheduled_date' => now()->addMonth()->toDateString(),
+        'status' => MaintenanceStatus::Selesai,
+        'last_executed_at' => now()->subHours(12),
+        'is_active' => true,
+    ]);
+
+    $schedulePast24h = AssetMaintenance::create([
+        'asset_code_id' => $this->code->id,
+        'assigned_officer_id' => $this->petugasTik->id,
+        'creator_id' => $this->superAdmin->id,
+        'maintenance_type' => 'Pengecekan Server',
+        'period' => MaintenancePeriod::Monthly,
+        'next_scheduled_date' => now()->addMonth()->toDateString(),
+        'status' => MaintenanceStatus::Selesai,
+        'last_executed_at' => now()->subHours(25),
+        'is_active' => true,
+    ]);
+
+    $this->artisan('maintenance:check-status')
+        ->assertSuccessful();
+
+    $scheduleRecent->refresh();
+    $schedulePast24h->refresh();
+
+    expect($scheduleRecent->status)->toBe(MaintenanceStatus::Selesai);
+    expect($schedulePast24h->status)->toBe(MaintenanceStatus::Terjadwal);
 });

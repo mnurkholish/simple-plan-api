@@ -17,7 +17,40 @@ class DesignDraft extends Model
         'file_size',
         'notes',
         'uploaded_by_id',
+        'file_path',
+        'file_name',
+        'mime_type',
     ];
+
+    public function getFilePathAttribute(): ?string
+    {
+        return $this->attributes['file_object_key'] ?? null;
+    }
+
+    public function setFilePathAttribute(?string $value): void
+    {
+        $this->attributes['file_object_key'] = $value;
+    }
+
+    public function getFileNameAttribute(): ?string
+    {
+        return $this->attributes['file_original_name'] ?? null;
+    }
+
+    public function setFileNameAttribute(?string $value): void
+    {
+        $this->attributes['file_original_name'] = $value;
+    }
+
+    public function getMimeTypeAttribute(): ?string
+    {
+        return $this->attributes['file_mime_type'] ?? null;
+    }
+
+    public function setMimeTypeAttribute(?string $value): void
+    {
+        $this->attributes['file_mime_type'] = $value;
+    }
 
     /** @return array<string, string> */
     protected function casts(): array

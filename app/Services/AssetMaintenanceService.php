@@ -67,8 +67,9 @@ class AssetMaintenanceService
             $newScheduledDate = $this->calculateNextScheduledDate($oldScheduledDate, $schedule->period);
 
             $schedule->update([
-                'status' => MaintenanceStatus::Terjadwal,
+                'status' => MaintenanceStatus::Selesai,
                 'next_scheduled_date' => $newScheduledDate->toDateString(),
+                'last_executed_at' => now(),
             ]);
 
             return $log;

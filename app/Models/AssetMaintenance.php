@@ -24,6 +24,7 @@ class AssetMaintenance extends Model
         'next_scheduled_date',
         'status',
         'is_active',
+        'last_executed_at',
     ];
 
     protected $attributes = [
@@ -41,6 +42,7 @@ class AssetMaintenance extends Model
             'next_scheduled_date' => 'date:Y-m-d',
             'status' => MaintenanceStatus::class,
             'is_active' => 'boolean',
+            'last_executed_at' => 'datetime',
         ];
     }
 

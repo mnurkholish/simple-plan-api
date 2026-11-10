@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\V1\BackupController;
 use App\Http\Controllers\Api\V1\BackupSettingController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\DesignRequestController;
+use App\Http\Controllers\Api\V1\DesignWorkflowController;
 use App\Http\Controllers\Api\V1\ExampleLiveController;
 use App\Http\Controllers\Api\V1\ImpersonationController;
 use App\Http\Controllers\Api\V1\NotificationController;
@@ -105,6 +106,17 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::post('design-requests', [DesignRequestController::class, 'store'])
             ->middleware('permission:design-requests-create')
             ->name('design-requests.store');
+        Route::post('design-requests/{id}/drafts', [DesignWorkflowController::class, 'storeDraft'])
+            ->middleware('permission:design-drafts-upload')
+            ->name('design-requests.drafts.store');
+        Route::post('design-requests/{id}/revisions', [DesignWorkflowController::class, 'storeRevision'])
+            ->middleware('permission:design-requests-revise')
+            ->name('design-requests.revisions.store');
+        Route::post('design-requests/{id}/approvals', [DesignWorkflowController::class, 'storeApproval'])
+            ->middleware('permission:design-requests-approve')
+            ->name('design-requests.approvals.store');
+        Route::get('design-requests/{id}/final-file', [DesignWorkflowController::class, 'downloadFinal'])
+            ->name('design-requests.final-file');
         Route::post('tickets', [TicketController::class, 'store'])
             ->middleware('permission:tickets-create')
             ->name('tickets.store');

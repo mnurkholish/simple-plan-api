@@ -3033,6 +3033,360 @@
                 ]
             }
         },
+        "/design-requests/{id}/drafts": {
+            "post": {
+                "tags": [
+                    "Design Workflow"
+                ],
+                "summary": "Mengunggah draft",
+                "description": "Upload a new design draft file for the design request. Requires design-drafts-upload permission.",
+                "operationId": "uploadDesignDraft",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Design Request ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "file"
+                                ],
+                                "properties": {
+                                    "file": {
+                                        "description": "File draft maksimal 10 MB",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "notes": {
+                                        "description": "Catatan draft",
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Draft desain berhasil diunggah",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Draft desain berhasil diunggah."
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/DesignDraft"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/design-requests/{id}/revisions": {
+            "post": {
+                "tags": [
+                    "Design Workflow"
+                ],
+                "summary": "Mengajukan revisi",
+                "description": "Submit a revision note for the latest design draft. Requires design-requests-revise permission.",
+                "operationId": "createDesignRevision",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Design Request ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "revision_note"
+                                ],
+                                "properties": {
+                                    "revision_note": {
+                                        "type": "string",
+                                        "example": "Perbaiki tata letak teks logo"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Revisi desain berhasil diajukan",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Revisi desain berhasil diajukan."
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/DesignRevision"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/design-requests/{id}/approvals": {
+            "post": {
+                "tags": [
+                    "Design Workflow"
+                ],
+                "summary": "Menyetujui desain",
+                "description": "Approve the design request and mark it as selesai. Requires design-requests-approve permission.",
+                "operationId": "approveDesignRequest",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Design Request ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Request desain berhasil disetujui",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Request desain berhasil disetujui."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Resource not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/design-requests/{id}/final-file": {
+            "get": {
+                "tags": [
+                    "Design Workflow"
+                ],
+                "summary": "Mengunduh file final",
+                "description": "Get temporary or public URL for the final approved design file. Only accessible when request is selesai.",
+                "operationId": "downloadDesignFinalFile",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Design Request ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "URL file final berhasil diambil",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "final_file_url"
+                                    ],
+                                    "properties": {
+                                        "final_file_url": {
+                                            "type": "string",
+                                            "format": "uri",
+                                            "example": "http://localhost:8000/storage/design_drafts/1/sample.png"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Resource not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/tickets/classification-options": {
             "get": {
                 "tags": [
@@ -6580,6 +6934,105 @@
                 },
                 "type": "object"
             },
+            "DesignDraft": {
+                "required": [
+                    "id",
+                    "design_request_id",
+                    "file_path",
+                    "file_name",
+                    "file_size",
+                    "mime_type",
+                    "uploaded_by_id",
+                    "created_at",
+                    "updated_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "design_request_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "file_path": {
+                        "type": "string",
+                        "example": "design_drafts/1/draft.png"
+                    },
+                    "file_name": {
+                        "type": "string",
+                        "example": "draft.png"
+                    },
+                    "file_size": {
+                        "type": "integer",
+                        "example": 1048576
+                    },
+                    "mime_type": {
+                        "type": "string",
+                        "example": "image/png"
+                    },
+                    "notes": {
+                        "type": "string",
+                        "example": "Draft revisi pertama",
+                        "nullable": true
+                    },
+                    "uploaded_by_id": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "DesignRevision": {
+                "required": [
+                    "id",
+                    "design_request_id",
+                    "design_draft_id",
+                    "revision_note",
+                    "requested_by_id",
+                    "created_at",
+                    "updated_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "design_request_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "design_draft_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "revision_note": {
+                        "type": "string",
+                        "example": "Tolong ubah warna latar belakang menjadi biru rumah sakit."
+                    },
+                    "requested_by_id": {
+                        "type": "integer",
+                        "example": 3
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
             "TicketHandling": {
                 "required": [
                     "id",
@@ -7424,6 +7877,10 @@
         {
             "name": "Design Graphic",
             "description": "Graphic design requests"
+        },
+        {
+            "name": "Design Workflow",
+            "description": "Graphic design workflow: drafts, revisions, approvals, and final file"
         },
         {
             "name": "Inventory - Master Data",
