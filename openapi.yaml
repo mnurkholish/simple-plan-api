@@ -15,6 +15,8 @@ servers:
     description: Current API version
 
 tags:
+  - name: Design Graphic
+    description: Request desain grafis
   - name: Helpdesk
     description: Pengelolaan tiket Helpdesk TIK dan Sarpras
   - name: Assets
@@ -27,6 +29,211 @@ tags:
     description: Backup MySQL dan file aplikasi di MinIO
 
 paths:
+  /design-reports:
+    get:
+      tags: [Design Graphic]
+      summary: Melihat rekap request desain grafis
+      operationId: listDesignReports
+      description: Periode memfilter rekap dan daftar; search hanya daftar; pagination tidak mengubah rekap. Jenis desain dikelompokkan dari database.
+      x-auth-required: true
+      x-required-permission: design-reports-read
+      parameters:
+        - { name: search, in: query, description: Nomor atau judul request, schema: { type: string, maxLength: 255 } }
+        - { name: start_date, in: query, description: Tanggal request awal (inklusif), schema: { type: string, format: date } }
+        - { name: end_date, in: query, description: Tanggal request akhir (inklusif; tidak sebelum start_date), schema: { type: string, format: date } }
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+      responses:
+        "200":
+          description: Rekap desain berhasil diambil.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DesignReportResponse"
+        "401": { $ref: "#/components/responses/TicketUnauthenticated" }
+        "403": { $ref: "#/components/responses/TicketForbidden" }
+        "422": { $ref: "#/components/responses/TicketValidationError" }
+
+  /design-requests:
+    get:
+      tags: [Design Graphic]
+      summary: Melihat daftar request desain grafis
+      operationId: listDesignRequests
+      description: Default scope adalah mine. Scope assigned hanya menampilkan request yang ditugaskan ke user login; scope all khusus Super Admin.
+      x-auth-required: true
+      x-required-permission: design-requests-read
+      parameters:
+        - name: scope
+          in: query
+          required: false
+          description: Cakupan data request yang terlihat.
+          schema:
+            type: string
+            enum: [mine, assigned, all]
+            default: mine
+        - name: search
+          in: query
+          required: false
+          description: Pencarian berdasarkan nomor atau judul request.
+          schema:
+            type: string
+            maxLength: 255
+        - name: status
+          in: query
+          required: false
+          description: Filter status request desain.
+          schema:
+            type: string
+            enum: [baru, ditugaskan, menunggu_persetujuan, perlu_revisi, selesai, ditolak]
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+      responses:
+        "200":
+          description: Daftar request desain berhasil diambil.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DesignRequestCollectionResponse"
+        "401":
+          $ref: "#/components/responses/TicketUnauthenticated"
+        "403":
+          $ref: "#/components/responses/TicketForbidden"
+        "422":
+          $ref: "#/components/responses/TicketValidationError"
+
+    post:
+      tags: [Design Graphic]
+      summary: Membuat request desain grafis
+      operationId: createDesignRequest
+      description: Nomor request dibuat otomatis; status awal baru. Pemohon dan unit berasal dari user yang login. File referensi disimpan pada disk aplikasi yang terkonfigurasi.
+      x-auth-required: true
+      x-required-permission: design-requests-create
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/CreateDesignRequestRequest"
+      responses:
+        "201":
+          description: Request desain berhasil dibuat.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DesignRequestCreateResponse"
+        "401":
+          $ref: "#/components/responses/TicketUnauthenticated"
+        "403":
+          $ref: "#/components/responses/TicketForbidden"
+        "422":
+          $ref: "#/components/responses/TicketValidationError"
+
+  /design-requests/{designRequest}:
+    get:
+      tags: [Design Graphic]
+      summary: Melihat detail request desain grafis
+      operationId: getDesignRequest
+      description: Dapat dilihat oleh pemohon, petugas yang ditugaskan, atau Super Admin. File referensi memiliki temporary signed URL.
+      x-auth-required: true
+      x-required-permission: design-requests-read
+      parameters:
+        - name: designRequest
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Detail request desain berhasil diambil.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DesignRequestDetailResponse"
+        "401":
+          $ref: "#/components/responses/TicketUnauthenticated"
+        "403":
+          $ref: "#/components/responses/TicketForbidden"
+        "404":
+          $ref: "#/components/responses/TicketNotFound"
+
+  /design-requests/{designRequest}/assignment:
+    put:
+      tags: [Design Graphic]
+      summary: Verifikasi dan penugasan request desain grafis
+      operationId: assignDesignRequest
+      description: Hanya Super Admin dengan permission design-requests-assign dapat menugaskan request berstatus baru kepada pengguna aktif dengan role petugas-tik dan permission design-drafts-upload. Assignment kedua atau status lain ditolak.
+      x-auth-required: true
+      x-required-role: super-admin
+      x-required-permission: design-requests-assign
+      parameters:
+        - name: designRequest
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DesignRequestAssignmentRequest"
+      responses:
+        "200":
+          description: Request desain berhasil ditugaskan.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DesignRequestAssignmentResponse"
+        "401":
+          $ref: "#/components/responses/TicketUnauthenticated"
+        "403":
+          $ref: "#/components/responses/TicketForbidden"
+        "404":
+          $ref: "#/components/responses/TicketNotFound"
+        "409":
+          $ref: "#/components/responses/TicketConflict"
+        "422":
+          $ref: "#/components/responses/TicketValidationError"
+
+  /design-requests/{designRequest}/rejections:
+    post:
+      tags: [Design Graphic]
+      summary: Menolak request desain grafis
+      operationId: rejectDesignRequest
+      description: Hanya Super Admin dengan permission design-requests-reject dapat menolak request berstatus baru. Simpan alasan penolakan dan ubah status menjadi ditolak. Request yang ditolak tidak dapat ditugaskan.
+      x-auth-required: true
+      x-required-role: super-admin
+      x-required-permission: design-requests-reject
+      parameters:
+        - name: designRequest
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DesignRequestRejectionRequest"
+      responses:
+        "200":
+          description: Request desain berhasil ditolak.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DesignRequestRejectionResponse"
+        "401":
+          $ref: "#/components/responses/TicketUnauthenticated"
+        "403":
+          $ref: "#/components/responses/TicketForbidden"
+        "404":
+          $ref: "#/components/responses/TicketNotFound"
+        "409":
+          $ref: "#/components/responses/TicketConflict"
+        "422":
+          $ref: "#/components/responses/TicketValidationError"
+
   /backup-settings:
     get:
       tags: [Backups]
@@ -1503,6 +1710,296 @@ components:
         errors:
           type: object
           additionalProperties: true
+
+    CreateDesignRequestRequest:
+      type: object
+      required: [title, design_type, description, needed_at]
+      properties:
+        title:
+          type: string
+          maxLength: 100
+          example: Poster edukasi pasien
+        design_type:
+          type: string
+          maxLength: 255
+          description: Jenis desain diisi bebas oleh pemohon, tanpa pilihan nilai tetap.
+          example: Poster edukasi
+        description:
+          type: string
+          example: Poster edukasi untuk ruang tunggu.
+        needed_at:
+          type: string
+          format: date
+          description: Tidak boleh sebelum hari ini.
+          example: "2026-11-15"
+        reference_file:
+          type: [string, "null"]
+          format: binary
+          description: File referensi opsional, maksimal 5 MB.
+
+    DesignRequestRead:
+      type: object
+      additionalProperties: false
+      required: [id, request_number, title, design_type, description, needed_at, status, requester, unit, reference_file, created_at, updated_at]
+      properties:
+        id:
+          type: integer
+        request_number:
+          type: string
+          pattern: "^DGR-[0-9]{4}-[0-9]{6}$"
+          example: DGR-2026-123456
+        title:
+          type: string
+        design_type:
+          type: string
+          description: Jenis desain sesuai teks yang diisi pemohon.
+        description:
+          type: string
+        needed_at:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [baru, ditugaskan, menunggu_persetujuan, perlu_revisi, selesai, ditolak]
+        requester:
+          $ref: "#/components/schemas/TicketReporterSummary"
+        unit:
+          $ref: "#/components/schemas/TicketUnitSummary"
+        reference_file:
+          oneOf:
+            - $ref: "#/components/schemas/DesignReferenceFileMetadata"
+            - type: "null"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    DesignReferenceFileMetadata:
+      type: object
+      additionalProperties: false
+      required: [original_name, mime_type, size]
+      properties:
+        original_name:
+          type: string
+        mime_type:
+          type: string
+        size:
+          type: integer
+
+    DesignReportRequest:
+      type: object
+      additionalProperties: false
+      required: [id, request_number, title, unit, status, created_at, completed_at]
+      properties:
+        id: { type: integer }
+        request_number: { type: string, example: DGR-2026-123456 }
+        title: { type: string }
+        unit: { $ref: "#/components/schemas/TicketUnitSummary" }
+        status: { type: string, enum: [baru, ditugaskan, menunggu_persetujuan, perlu_revisi, selesai, ditolak] }
+        created_at: { type: string, format: date-time }
+        completed_at: { type: [string, "null"], format: date-time }
+
+    DesignReportResponse:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [total, by_status, by_design_type, requests]
+          properties:
+            total: { type: integer, minimum: 0, description: Jumlah request dalam periode tanpa pengaruh search atau pagination }
+            by_status:
+              type: object
+              additionalProperties: false
+              required: [baru, ditugaskan, menunggu_persetujuan, perlu_revisi, selesai, ditolak]
+              properties:
+                baru: { type: integer, minimum: 0 }
+                ditugaskan: { type: integer, minimum: 0 }
+                menunggu_persetujuan: { type: integer, minimum: 0 }
+                perlu_revisi: { type: integer, minimum: 0 }
+                selesai: { type: integer, minimum: 0 }
+                ditolak: { type: integer, minimum: 0 }
+            by_design_type:
+              type: array
+              description: Jenis desain dinamis, urut jumlah terbanyak lalu nama.
+              items:
+                type: object
+                additionalProperties: false
+                required: [design_type, total]
+                properties:
+                  design_type: { type: string }
+                  total: { type: integer, minimum: 0 }
+            requests:
+              type: object
+              additionalProperties: false
+              required: [data, links, meta]
+              properties:
+                data: { type: array, items: { $ref: "#/components/schemas/DesignReportRequest" } }
+                links: { $ref: "#/components/schemas/PaginationLinks" }
+                meta: { $ref: "#/components/schemas/PaginationMeta" }
+
+    DesignRequestCollectionResponse:
+      type: object
+      additionalProperties: false
+      required: [data, links, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/DesignRequestRead"
+        links:
+          $ref: "#/components/schemas/PaginationLinks"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+
+    DesignRequestDetail:
+      type: object
+      additionalProperties: false
+      required: [id, request_number, title, design_type, description, needed_at, status, priority, requester, unit, assigned_officer, assigned_at, completed_at, rejection_note, reference_file, latest_draft, latest_revision, created_at, updated_at]
+      properties:
+        id: { type: integer }
+        request_number: { type: string, example: DGR-2026-123456 }
+        title: { type: string }
+        design_type: { type: string }
+        description: { type: string }
+        needed_at: { type: string, format: date-time }
+        status:
+          type: string
+          enum: [baru, ditugaskan, menunggu_persetujuan, perlu_revisi, selesai, ditolak]
+        priority:
+          type: [string, "null"]
+          enum: [rendah, sedang, tinggi, null]
+        requester:
+          $ref: "#/components/schemas/TicketReporterSummary"
+        unit:
+          $ref: "#/components/schemas/TicketUnitSummary"
+        assigned_officer:
+          oneOf:
+            - $ref: "#/components/schemas/TicketOfficerSummary"
+            - type: "null"
+        assigned_at: { type: [string, "null"], format: date-time }
+        completed_at: { type: [string, "null"], format: date-time }
+        rejection_note: { type: [string, "null"] }
+        reference_file:
+          oneOf:
+            - $ref: "#/components/schemas/DesignReferenceFileDetail"
+            - type: "null"
+        latest_draft:
+          oneOf:
+            - $ref: "#/components/schemas/DesignDraftSummary"
+            - type: "null"
+        latest_revision:
+          oneOf:
+            - $ref: "#/components/schemas/DesignRevisionSummary"
+            - type: "null"
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    DesignReferenceFileDetail:
+      type: object
+      additionalProperties: false
+      required: [original_name, mime_type, size, url]
+      properties:
+        original_name: { type: string }
+        mime_type: { type: string }
+        size: { type: integer }
+        url:
+          type: string
+          format: uri
+          description: Temporary signed URL dari disk file aplikasi.
+
+    DesignDraftSummary:
+      type: object
+      additionalProperties: false
+      required: [id, notes, file, uploaded_by, created_at]
+      properties:
+        id: { type: integer }
+        notes: { type: [string, "null"] }
+        file:
+          $ref: "#/components/schemas/DesignReferenceFileMetadata"
+        uploaded_by:
+          $ref: "#/components/schemas/TicketReporterSummary"
+        created_at: { type: string, format: date-time }
+
+    DesignRevisionSummary:
+      type: object
+      additionalProperties: false
+      required: [id, design_draft_id, revision_note, requested_by, created_at]
+      properties:
+        id: { type: integer }
+        design_draft_id: { type: integer }
+        revision_note: { type: string }
+        requested_by:
+          $ref: "#/components/schemas/TicketReporterSummary"
+        created_at: { type: string, format: date-time }
+
+    DesignRequestAssignmentRequest:
+      type: object
+      additionalProperties: false
+      required: [priority, assigned_officer_id]
+      properties:
+        priority:
+          type: string
+          enum: [rendah, sedang, tinggi]
+          example: sedang
+        assigned_officer_id:
+          type: integer
+          description: ID pengguna aktif dengan role petugas-tik dan permission design-drafts-upload.
+          example: 2
+
+    DesignRequestAssignmentResponse:
+      type: object
+      additionalProperties: false
+      required: [message, data]
+      properties:
+        message:
+          type: string
+          example: Request desain berhasil ditugaskan.
+        data:
+          $ref: "#/components/schemas/DesignRequestDetail"
+
+    DesignRequestRejectionRequest:
+      type: object
+      additionalProperties: false
+      required: [rejection_note]
+      properties:
+        rejection_note:
+          type: string
+          example: Informasi kebutuhan desain belum lengkap.
+
+    DesignRequestRejectionResponse:
+      type: object
+      additionalProperties: false
+      required: [message, data]
+      properties:
+        message:
+          type: string
+          example: Request desain berhasil ditolak.
+        data:
+          $ref: "#/components/schemas/DesignRequestDetail"
+
+    DesignRequestDetailResponse:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/DesignRequestDetail"
+
+    DesignRequestCreateResponse:
+      type: object
+      additionalProperties: false
+      required: [message, data]
+      properties:
+        message:
+          type: string
+          example: Request desain berhasil dibuat.
+        data:
+          $ref: "#/components/schemas/DesignRequestRead"
 
     TicketRead:
       type: object

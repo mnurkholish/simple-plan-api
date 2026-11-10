@@ -15,6 +15,8 @@ use App\Http\Controllers\Api\V1\Auth\SsoController;
 use App\Http\Controllers\Api\V1\BackupController;
 use App\Http\Controllers\Api\V1\BackupSettingController;
 use App\Http\Controllers\Api\V1\DashboardController;
+use App\Http\Controllers\Api\V1\DesignReportController;
+use App\Http\Controllers\Api\V1\DesignRequestController;
 use App\Http\Controllers\Api\V1\ExampleLiveController;
 use App\Http\Controllers\Api\V1\ImpersonationController;
 use App\Http\Controllers\Api\V1\NotificationController;
@@ -101,6 +103,27 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::get('tickets', [TicketController::class, 'index'])
             ->middleware('permission:tickets-access')
             ->name('tickets.index');
+        Route::get('design-requests', [DesignRequestController::class, 'index'])
+            ->middleware('permission:design-requests-read')
+            ->name('design-requests.index');
+        Route::get('design-reports', [DesignReportController::class, 'index'])
+            ->middleware('permission:design-reports-read')
+            ->name('design-reports.index');
+        Route::post('design-requests', [DesignRequestController::class, 'store'])
+            ->middleware('permission:design-requests-create')
+            ->name('design-requests.store');
+        Route::get('design-requests/{designRequest}', [DesignRequestController::class, 'show'])
+            ->middleware('permission:design-requests-read')
+            ->name('design-requests.show')
+            ->missing(fn () => response()->json(['message' => 'Resource not found.'], 404));
+        Route::put('design-requests/{designRequest}/assignment', [DesignRequestController::class, 'assign'])
+            ->middleware('permission:design-requests-assign')
+            ->name('design-requests.assignment')
+            ->missing(fn () => response()->json(['message' => 'Resource not found.'], 404));
+        Route::post('design-requests/{designRequest}/rejections', [DesignRequestController::class, 'reject'])
+            ->middleware('permission:design-requests-reject')
+            ->name('design-requests.rejections.store')
+            ->missing(fn () => response()->json(['message' => 'Resource not found.'], 404));
         Route::post('tickets', [TicketController::class, 'store'])
             ->middleware('permission:tickets-create')
             ->name('tickets.store');

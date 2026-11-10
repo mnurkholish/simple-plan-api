@@ -2966,6 +2966,564 @@
                 ]
             }
         },
+        "/design-requests": {
+            "get": {
+                "tags": [
+                    "Design Graphic"
+                ],
+                "summary": "List graphic design requests",
+                "description": "Requires design-requests-read permission. Defaults to the authenticated user's requests. Assigned shows requests assigned to the user; all is restricted to super-admin.",
+                "operationId": "listDesignRequests",
+                "parameters": [
+                    {
+                        "name": "scope",
+                        "in": "query",
+                        "description": "Visible request scope.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "mine",
+                            "enum": [
+                                "mine",
+                                "assigned",
+                                "all"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search by request number or title.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 255
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Design request status.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "baru",
+                                "ditugaskan",
+                                "menunggu_persetujuan",
+                                "perlu_revisi",
+                                "selesai",
+                                "ditolak"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated design requests",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DesignRequestCollectionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing permission or all scope outside super-admin",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Invalid filters",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Design Graphic"
+                ],
+                "summary": "Create a graphic design request",
+                "description": "Creates a request with status baru. Requester and unit are taken from the authenticated user. Requires design-requests-create permission.",
+                "operationId": "createDesignRequest",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateDesignRequestRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Design request created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DesignRequestCreateResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing design-requests-create permission",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Invalid design request data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/design-reports": {
+            "get": {
+                "tags": [
+                    "Design Graphic"
+                ],
+                "summary": "Get graphic design request report",
+                "description": "Requires design-reports-read permission. Date filters apply to all counts and the list. Search affects only the list; pagination does not affect the counts.",
+                "operationId": "listDesignReports",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search list by request number or title.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 255
+                        }
+                    },
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "Inclusive request creation date lower bound.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "Inclusive request creation date upper bound.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Design report",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DesignReportResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing design-reports-read permission",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Invalid filters",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/design-requests/{designRequest}": {
+            "get": {
+                "tags": [
+                    "Design Graphic"
+                ],
+                "summary": "Get graphic design request detail",
+                "description": "Visible to its requester, assigned officer, or super-admin. Requires design-requests-read permission.",
+                "operationId": "getDesignRequest",
+                "parameters": [
+                    {
+                        "name": "designRequest",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Design request detail",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DesignRequestDetailResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing permission or ownership",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Design request not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/design-requests/{designRequest}/assignment": {
+            "put": {
+                "tags": [
+                    "Design Graphic"
+                ],
+                "summary": "Assign a graphic design request",
+                "description": "Only super-admin with design-requests-assign permission may assign a request in status baru to an active petugas-tik with design-drafts-upload permission. Sets priority, assigned officer, assigned_at, and status ditugaskan.",
+                "operationId": "assignDesignRequest",
+                "parameters": [
+                    {
+                        "name": "designRequest",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DesignRequestAssignmentRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Design request assigned",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DesignRequestAssignmentResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing permission or super-admin role",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Design request not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Request is not in status baru",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Invalid priority or officer",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/design-requests/{designRequest}/rejections": {
+            "post": {
+                "tags": [
+                    "Design Graphic"
+                ],
+                "summary": "Reject a graphic design request",
+                "description": "Only super-admin with design-requests-reject permission may reject a request in status baru. Stores the rejection note and changes status to ditolak. Rejected requests cannot be assigned.",
+                "operationId": "rejectDesignRequest",
+                "parameters": [
+                    {
+                        "name": "designRequest",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DesignRequestRejectionRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Design request rejected",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DesignRequestRejectionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing permission or super-admin role",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Design request not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Request is not in status baru",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Missing or invalid rejection note",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/tickets/classification-options": {
             "get": {
                 "tags": [
@@ -6365,6 +6923,620 @@
                 },
                 "type": "object"
             },
+            "CreateDesignRequestRequest": {
+                "required": [
+                    "title",
+                    "design_type",
+                    "description",
+                    "needed_at"
+                ],
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "example": "Poster edukasi pasien",
+                        "maxLength": 100
+                    },
+                    "design_type": {
+                        "type": "string",
+                        "example": "Poster edukasi",
+                        "maxLength": 255
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Poster edukasi untuk ruang tunggu."
+                    },
+                    "needed_at": {
+                        "description": "Tidak boleh sebelum hari ini.",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-11-15"
+                    },
+                    "reference_file": {
+                        "description": "File referensi opsional, maksimal 5 MB.",
+                        "type": "string",
+                        "format": "binary",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "DesignRequestRead": {
+                "required": [
+                    "id",
+                    "request_number",
+                    "title",
+                    "design_type",
+                    "description",
+                    "needed_at",
+                    "status",
+                    "requester",
+                    "unit",
+                    "reference_file",
+                    "created_at",
+                    "updated_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "request_number": {
+                        "type": "string",
+                        "pattern": "^DGR-[0-9]{4}-[0-9]{6}$",
+                        "example": "DGR-2026-123456"
+                    },
+                    "title": {
+                        "type": "string",
+                        "example": "Poster edukasi pasien"
+                    },
+                    "design_type": {
+                        "type": "string",
+                        "example": "Poster"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Poster edukasi untuk ruang tunggu."
+                    },
+                    "needed_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "status": {
+                        "type": "string",
+                        "example": "baru",
+                        "enum": [
+                            "baru",
+                            "ditugaskan",
+                            "menunggu_persetujuan",
+                            "perlu_revisi",
+                            "selesai",
+                            "ditolak"
+                        ]
+                    },
+                    "requester": {
+                        "$ref": "#/components/schemas/TicketReporterSummary"
+                    },
+                    "unit": {
+                        "$ref": "#/components/schemas/TicketUnitSummary"
+                    },
+                    "reference_file": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/DesignReferenceFileMetadata"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "DesignReferenceFileMetadata": {
+                "required": [
+                    "original_name",
+                    "mime_type",
+                    "size"
+                ],
+                "properties": {
+                    "original_name": {
+                        "type": "string",
+                        "example": "referensi.pdf"
+                    },
+                    "mime_type": {
+                        "type": "string",
+                        "example": "application/pdf"
+                    },
+                    "size": {
+                        "type": "integer",
+                        "example": 245760
+                    }
+                },
+                "type": "object"
+            },
+            "DesignRequestCollectionResponse": {
+                "required": [
+                    "data",
+                    "links",
+                    "meta"
+                ],
+                "properties": {
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/DesignRequestRead"
+                        }
+                    },
+                    "links": {
+                        "$ref": "#/components/schemas/TicketPaginationLinks"
+                    },
+                    "meta": {
+                        "$ref": "#/components/schemas/TicketPaginationMeta"
+                    }
+                },
+                "type": "object"
+            },
+            "DesignReportRequest": {
+                "required": [
+                    "id",
+                    "request_number",
+                    "title",
+                    "unit",
+                    "status",
+                    "created_at",
+                    "completed_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "request_number": {
+                        "type": "string",
+                        "example": "DGR-2026-123456"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "unit": {
+                        "$ref": "#/components/schemas/TicketUnitSummary"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "baru",
+                            "ditugaskan",
+                            "menunggu_persetujuan",
+                            "perlu_revisi",
+                            "selesai",
+                            "ditolak"
+                        ]
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "completed_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "DesignReportResponse": {
+                "required": [
+                    "data"
+                ],
+                "properties": {
+                    "data": {
+                        "required": [
+                            "total",
+                            "by_status",
+                            "by_design_type",
+                            "requests"
+                        ],
+                        "properties": {
+                            "total": {
+                                "description": "All requests in the selected period, unaffected by search and pagination",
+                                "type": "integer",
+                                "minimum": 0
+                            },
+                            "by_status": {
+                                "required": [
+                                    "baru",
+                                    "ditugaskan",
+                                    "menunggu_persetujuan",
+                                    "perlu_revisi",
+                                    "selesai",
+                                    "ditolak"
+                                ],
+                                "properties": {
+                                    "baru": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                    },
+                                    "ditugaskan": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                    },
+                                    "menunggu_persetujuan": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                    },
+                                    "perlu_revisi": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                    },
+                                    "selesai": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                    },
+                                    "ditolak": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "by_design_type": {
+                                "description": "Dynamic design types ordered by count descending, then name ascending",
+                                "type": "array",
+                                "items": {
+                                    "required": [
+                                        "design_type",
+                                        "total"
+                                    ],
+                                    "properties": {
+                                        "design_type": {
+                                            "type": "string"
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            },
+                            "requests": {
+                                "required": [
+                                    "data",
+                                    "links",
+                                    "meta"
+                                ],
+                                "properties": {
+                                    "data": {
+                                        "type": "array",
+                                        "items": {
+                                            "$ref": "#/components/schemas/DesignReportRequest"
+                                        }
+                                    },
+                                    "links": {
+                                        "$ref": "#/components/schemas/TicketPaginationLinks"
+                                    },
+                                    "meta": {
+                                        "$ref": "#/components/schemas/TicketPaginationMeta"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "DesignRequestDetail": {
+                "required": [
+                    "id",
+                    "request_number",
+                    "title",
+                    "design_type",
+                    "description",
+                    "needed_at",
+                    "status",
+                    "priority",
+                    "requester",
+                    "unit",
+                    "assigned_officer",
+                    "assigned_at",
+                    "completed_at",
+                    "rejection_note",
+                    "reference_file",
+                    "latest_draft",
+                    "latest_revision",
+                    "created_at",
+                    "updated_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "request_number": {
+                        "type": "string",
+                        "example": "DGR-2026-123456"
+                    },
+                    "title": {
+                        "type": "string",
+                        "example": "Poster edukasi pasien"
+                    },
+                    "design_type": {
+                        "type": "string",
+                        "example": "Poster edukasi"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "needed_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "baru",
+                            "ditugaskan",
+                            "menunggu_persetujuan",
+                            "perlu_revisi",
+                            "selesai",
+                            "ditolak"
+                        ]
+                    },
+                    "priority": {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                            "rendah",
+                            "sedang",
+                            "tinggi"
+                        ]
+                    },
+                    "requester": {
+                        "$ref": "#/components/schemas/TicketReporterSummary"
+                    },
+                    "unit": {
+                        "$ref": "#/components/schemas/TicketUnitSummary"
+                    },
+                    "assigned_officer": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/TicketOfficerSummary"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "assigned_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "completed_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "rejection_note": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "reference_file": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/DesignReferenceFileDetail"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "latest_draft": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/DesignDraftSummary"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "latest_revision": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/DesignRevisionSummary"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "DesignReferenceFileDetail": {
+                "required": [
+                    "original_name",
+                    "mime_type",
+                    "size",
+                    "url"
+                ],
+                "properties": {
+                    "original_name": {
+                        "type": "string"
+                    },
+                    "mime_type": {
+                        "type": "string"
+                    },
+                    "size": {
+                        "type": "integer"
+                    },
+                    "url": {
+                        "description": "Temporary signed URL from the configured filesystem disk",
+                        "type": "string",
+                        "format": "uri"
+                    }
+                },
+                "type": "object"
+            },
+            "DesignDraftSummary": {
+                "required": [
+                    "id",
+                    "notes",
+                    "file",
+                    "uploaded_by",
+                    "created_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "notes": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "file": {
+                        "$ref": "#/components/schemas/DesignReferenceFileMetadata"
+                    },
+                    "uploaded_by": {
+                        "$ref": "#/components/schemas/TicketReporterSummary"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "DesignRevisionSummary": {
+                "required": [
+                    "id",
+                    "design_draft_id",
+                    "revision_note",
+                    "requested_by",
+                    "created_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "design_draft_id": {
+                        "type": "integer"
+                    },
+                    "revision_note": {
+                        "type": "string"
+                    },
+                    "requested_by": {
+                        "$ref": "#/components/schemas/TicketReporterSummary"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "DesignRequestDetailResponse": {
+                "required": [
+                    "data"
+                ],
+                "properties": {
+                    "data": {
+                        "$ref": "#/components/schemas/DesignRequestDetail"
+                    }
+                },
+                "type": "object"
+            },
+            "DesignRequestAssignmentRequest": {
+                "required": [
+                    "priority",
+                    "assigned_officer_id"
+                ],
+                "properties": {
+                    "priority": {
+                        "type": "string",
+                        "example": "sedang",
+                        "enum": [
+                            "rendah",
+                            "sedang",
+                            "tinggi"
+                        ]
+                    },
+                    "assigned_officer_id": {
+                        "description": "ID pengguna aktif dengan role petugas-tik dan permission design-drafts-upload",
+                        "type": "integer",
+                        "example": 2
+                    }
+                },
+                "type": "object"
+            },
+            "DesignRequestAssignmentResponse": {
+                "required": [
+                    "message",
+                    "data"
+                ],
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "example": "Request desain berhasil ditugaskan."
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/DesignRequestDetail"
+                    }
+                },
+                "type": "object"
+            },
+            "DesignRequestRejectionRequest": {
+                "required": [
+                    "rejection_note"
+                ],
+                "properties": {
+                    "rejection_note": {
+                        "type": "string",
+                        "example": "Informasi kebutuhan desain belum lengkap."
+                    }
+                },
+                "type": "object"
+            },
+            "DesignRequestRejectionResponse": {
+                "required": [
+                    "message",
+                    "data"
+                ],
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "example": "Request desain berhasil ditolak."
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/DesignRequestDetail"
+                    }
+                },
+                "type": "object"
+            },
+            "DesignRequestCreateResponse": {
+                "required": [
+                    "message",
+                    "data"
+                ],
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "example": "Request desain berhasil dibuat."
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/DesignRequestRead"
+                    }
+                },
+                "type": "object"
+            },
             "TicketHandling": {
                 "required": [
                     "id",
@@ -7205,6 +8377,10 @@
         {
             "name": "Helpdesk",
             "description": "Helpdesk TIK and Sarpras tickets"
+        },
+        {
+            "name": "Design Graphic",
+            "description": "Graphic design requests"
         },
         {
             "name": "Inventory - Master Data",
