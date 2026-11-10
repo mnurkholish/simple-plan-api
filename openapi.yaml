@@ -170,6 +170,45 @@ paths:
         "422":
           $ref: "#/components/responses/TicketValidationError"
 
+  /design-requests/{designRequest}/rejections:
+    post:
+      tags: [Design Graphic]
+      summary: Menolak request desain grafis
+      operationId: rejectDesignRequest
+      description: Hanya Super Admin dengan permission design-requests-reject dapat menolak request berstatus baru. Simpan alasan penolakan dan ubah status menjadi ditolak. Request yang ditolak tidak dapat ditugaskan.
+      x-auth-required: true
+      x-required-role: super-admin
+      x-required-permission: design-requests-reject
+      parameters:
+        - name: designRequest
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DesignRequestRejectionRequest"
+      responses:
+        "200":
+          description: Request desain berhasil ditolak.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DesignRequestRejectionResponse"
+        "401":
+          $ref: "#/components/responses/TicketUnauthenticated"
+        "403":
+          $ref: "#/components/responses/TicketForbidden"
+        "404":
+          $ref: "#/components/responses/TicketNotFound"
+        "409":
+          $ref: "#/components/responses/TicketConflict"
+        "422":
+          $ref: "#/components/responses/TicketValidationError"
+
   /backup-settings:
     get:
       tags: [Backups]
@@ -1841,6 +1880,26 @@ components:
         message:
           type: string
           example: Request desain berhasil ditugaskan.
+        data:
+          $ref: "#/components/schemas/DesignRequestDetail"
+
+    DesignRequestRejectionRequest:
+      type: object
+      additionalProperties: false
+      required: [rejection_note]
+      properties:
+        rejection_note:
+          type: string
+          example: Informasi kebutuhan desain belum lengkap.
+
+    DesignRequestRejectionResponse:
+      type: object
+      additionalProperties: false
+      required: [message, data]
+      properties:
+        message:
+          type: string
+          example: Request desain berhasil ditolak.
         data:
           $ref: "#/components/schemas/DesignRequestDetail"
 

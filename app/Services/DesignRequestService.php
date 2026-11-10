@@ -50,6 +50,22 @@ class DesignRequestService
         });
     }
 
+    public function reject(DesignRequest $designRequest, string $rejectionNote): DesignRequest
+    {
+        return DB::transaction(function () use ($designRequest, $rejectionNote): DesignRequest {
+            $lockedRequest = $this->designRequests->findForUpdate((int) $designRequest->getKey());
+
+            if ($lockedRequest->status !== DesignRequestStatus::Baru) {
+                throw new ConflictHttpException('Request desain hanya dapat ditolak saat berstatus baru.');
+            }
+
+            return $this->designRequests->update($lockedRequest, [
+                'rejection_note' => $rejectionNote,
+                'status' => DesignRequestStatus::Ditolak,
+            ]);
+        });
+    }
+
     /** @param array<string, mixed> $data */
     public function create(array $data, User $requester, ?UploadedFile $referenceFile = null): DesignRequest
     {

@@ -31,4 +31,10 @@ class DesignRequestPolicy
         return $user->hasRole('super-admin')
             && $user->can('design-requests-assign');
     }
+
+    public function reject(User $user, DesignRequest $designRequest): bool
+    {
+        return $user->hasRole('super-admin')
+            && $user->can('design-requests-reject');
+    }
 }

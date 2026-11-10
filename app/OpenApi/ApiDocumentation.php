@@ -406,6 +406,21 @@ use OpenApi\Annotations as OA;
  * )
  *
  * @OA\Schema(
+ *     schema="DesignRequestRejectionRequest",
+ *     type="object",
+ *     required={"rejection_note"},
+ *     @OA\Property(property="rejection_note", type="string", example="Informasi kebutuhan desain belum lengkap.")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="DesignRequestRejectionResponse",
+ *     type="object",
+ *     required={"message","data"},
+ *     @OA\Property(property="message", type="string", example="Request desain berhasil ditolak."),
+ *     @OA\Property(property="data", ref="#/components/schemas/DesignRequestDetail")
+ * )
+ *
+ * @OA\Schema(
  *     schema="DesignRequestCreateResponse",
  *     type="object",
  *     required={"message","data"},
@@ -1880,6 +1895,26 @@ class ApiDocumentation
      * )
      */
     public function designRequestsAssign(): void {}
+
+    /**
+     * @OA\Post(
+     *     path="/design-requests/{designRequest}/rejections",
+     *     operationId="rejectDesignRequest",
+     *     tags={"Design Graphic"},
+     *     summary="Reject a graphic design request",
+     *     description="Only super-admin with design-requests-reject permission may reject a request in status baru. Stores the rejection note and changes status to ditolak. Rejected requests cannot be assigned.",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="designRequest", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/DesignRequestRejectionRequest")),
+     *     @OA\Response(response=200, description="Design request rejected", @OA\JsonContent(ref="#/components/schemas/DesignRequestRejectionResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Missing permission or super-admin role", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=404, description="Design request not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=409, description="Request is not in status baru", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=422, description="Missing or invalid rejection note", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
+     * )
+     */
+    public function designRequestsReject(): void {}
 
     /**
      * @OA\Get(

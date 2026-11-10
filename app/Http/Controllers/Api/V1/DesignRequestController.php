@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ListDesignRequestRequest;
 use App\Http\Requests\AssignDesignRequestRequest;
+use App\Http\Requests\RejectDesignRequestRequest;
 use App\Http\Requests\StoreDesignRequestRequest;
 use App\Http\Resources\DesignRequestResource;
 use App\Http\Resources\DesignRequestDetailResource;
@@ -47,6 +48,19 @@ class DesignRequestController extends Controller
 
         return (new DesignRequestDetailResource($this->service->loadDetail($designRequest)))
             ->additional(['message' => 'Request desain berhasil ditugaskan.']);
+    }
+
+    public function reject(RejectDesignRequestRequest $request, DesignRequest $designRequest): DesignRequestDetailResource
+    {
+        Gate::authorize('reject', $designRequest);
+
+        $designRequest = $this->service->reject(
+            $designRequest,
+            $request->string('rejection_note')->toString(),
+        );
+
+        return (new DesignRequestDetailResource($this->service->loadDetail($designRequest)))
+            ->additional(['message' => 'Request desain berhasil ditolak.']);
     }
 
     public function store(StoreDesignRequestRequest $request): JsonResponse

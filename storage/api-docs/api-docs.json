@@ -6059,6 +6059,103 @@
                     }
                 ]
             }
+        },
+        "/design-requests/{designRequest}/rejections": {
+            "post": {
+                "tags": [
+                    "Design Graphic"
+                ],
+                "summary": "Reject a graphic design request",
+                "description": "Only super-admin with design-requests-reject permission may reject a request in status baru. Stores the rejection note and changes status to ditolak. Rejected requests cannot be assigned.",
+                "operationId": "rejectDesignRequest",
+                "parameters": [
+                    {
+                        "name": "designRequest",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DesignRequestRejectionRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Design request rejected",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DesignRequestRejectionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing permission or super-admin role",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Design request not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Request is not in status baru",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Missing or invalid rejection note",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -7864,6 +7961,36 @@
                     "message": {
                         "type": "string",
                         "example": "Request desain berhasil ditugaskan."
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/DesignRequestDetail"
+                    }
+                }
+            },
+            "DesignRequestRejectionRequest": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "rejection_note"
+                ],
+                "properties": {
+                    "rejection_note": {
+                        "type": "string",
+                        "example": "Informasi kebutuhan desain belum lengkap."
+                    }
+                }
+            },
+            "DesignRequestRejectionResponse": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "message",
+                    "data"
+                ],
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "example": "Request desain berhasil ditolak."
                     },
                     "data": {
                         "$ref": "#/components/schemas/DesignRequestDetail"
