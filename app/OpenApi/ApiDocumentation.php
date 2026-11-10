@@ -336,7 +336,7 @@ use OpenApi\Annotations as OA;
  *     @OA\Property(property="description", type="string"),
  *     @OA\Property(property="needed_at", type="string", format="date-time"),
  *     @OA\Property(property="status", type="string", enum={"baru","ditugaskan","menunggu_persetujuan","perlu_revisi","selesai","ditolak"}),
- *     @OA\Property(property="priority", type="string", nullable=true),
+ *     @OA\Property(property="priority", type="string", enum={"rendah","sedang","tinggi"}, nullable=true),
  *     @OA\Property(property="requester", ref="#/components/schemas/TicketReporterSummary"),
  *     @OA\Property(property="unit", ref="#/components/schemas/TicketUnitSummary"),
  *     @OA\Property(property="assigned_officer", ref="#/components/schemas/TicketOfficerSummary", nullable=true),
@@ -386,6 +386,22 @@ use OpenApi\Annotations as OA;
  *     schema="DesignRequestDetailResponse",
  *     type="object",
  *     required={"data"},
+ *     @OA\Property(property="data", ref="#/components/schemas/DesignRequestDetail")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="DesignRequestAssignmentRequest",
+ *     type="object",
+ *     required={"priority","assigned_officer_id"},
+ *     @OA\Property(property="priority", type="string", enum={"rendah","sedang","tinggi"}, example="sedang"),
+ *     @OA\Property(property="assigned_officer_id", type="integer", description="ID pengguna aktif dengan role petugas-tik dan permission design-drafts-upload", example=2)
+ * )
+ *
+ * @OA\Schema(
+ *     schema="DesignRequestAssignmentResponse",
+ *     type="object",
+ *     required={"message","data"},
+ *     @OA\Property(property="message", type="string", example="Request desain berhasil ditugaskan."),
  *     @OA\Property(property="data", ref="#/components/schemas/DesignRequestDetail")
  * )
  *
@@ -1844,6 +1860,26 @@ class ApiDocumentation
      * )
      */
     public function designRequestsShow(): void {}
+
+    /**
+     * @OA\Put(
+     *     path="/design-requests/{designRequest}/assignment",
+     *     operationId="assignDesignRequest",
+     *     tags={"Design Graphic"},
+     *     summary="Assign a graphic design request",
+     *     description="Only super-admin with design-requests-assign permission may assign a request in status baru to an active petugas-tik with design-drafts-upload permission. Sets priority, assigned officer, assigned_at, and status ditugaskan.",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="designRequest", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/DesignRequestAssignmentRequest")),
+     *     @OA\Response(response=200, description="Design request assigned", @OA\JsonContent(ref="#/components/schemas/DesignRequestAssignmentResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Missing permission or super-admin role", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=404, description="Design request not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=409, description="Request is not in status baru", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=422, description="Invalid priority or officer", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
+     * )
+     */
+    public function designRequestsAssign(): void {}
 
     /**
      * @OA\Get(

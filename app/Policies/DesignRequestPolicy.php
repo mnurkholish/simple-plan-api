@@ -25,4 +25,10 @@ class DesignRequestPolicy
                 || (int) $designRequest->requester_id === (int) $user->getKey()
                 || (int) $designRequest->assigned_officer_id === (int) $user->getKey());
     }
+
+    public function assign(User $user, DesignRequest $designRequest): bool
+    {
+        return $user->hasRole('super-admin')
+            && $user->can('design-requests-assign');
+    }
 }

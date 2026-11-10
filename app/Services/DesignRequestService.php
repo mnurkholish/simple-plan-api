@@ -10,9 +10,11 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
 use Throwable;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 class DesignRequestService
 {
@@ -27,6 +29,25 @@ class DesignRequestService
     public function loadDetail(DesignRequest $designRequest): DesignRequest
     {
         return $this->designRequests->loadDetail($designRequest);
+    }
+
+    /** @param array{priority: string, assigned_officer_id: int} $data */
+    public function assign(DesignRequest $designRequest, array $data): DesignRequest
+    {
+        return DB::transaction(function () use ($designRequest, $data): DesignRequest {
+            $lockedRequest = $this->designRequests->findForUpdate((int) $designRequest->getKey());
+
+            if ($lockedRequest->status !== DesignRequestStatus::Baru) {
+                throw new ConflictHttpException('Request desain hanya dapat ditugaskan saat berstatus baru.');
+            }
+
+            return $this->designRequests->update($lockedRequest, [
+                'priority' => $data['priority'],
+                'assigned_officer_id' => $data['assigned_officer_id'],
+                'assigned_at' => now(),
+                'status' => DesignRequestStatus::Ditugaskan,
+            ]);
+        });
     }
 
     /** @param array<string, mixed> $data */

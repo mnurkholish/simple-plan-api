@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ListDesignRequestRequest;
+use App\Http\Requests\AssignDesignRequestRequest;
 use App\Http\Requests\StoreDesignRequestRequest;
 use App\Http\Resources\DesignRequestResource;
 use App\Http\Resources\DesignRequestDetailResource;
@@ -36,6 +37,16 @@ class DesignRequestController extends Controller
         Gate::authorize('view', $designRequest);
 
         return new DesignRequestDetailResource($this->service->loadDetail($designRequest));
+    }
+
+    public function assign(AssignDesignRequestRequest $request, DesignRequest $designRequest): DesignRequestDetailResource
+    {
+        Gate::authorize('assign', $designRequest);
+
+        $designRequest = $this->service->assign($designRequest, $request->validated());
+
+        return (new DesignRequestDetailResource($this->service->loadDetail($designRequest)))
+            ->additional(['message' => 'Request desain berhasil ditugaskan.']);
     }
 
     public function store(StoreDesignRequestRequest $request): JsonResponse

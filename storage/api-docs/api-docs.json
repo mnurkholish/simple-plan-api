@@ -5962,6 +5962,103 @@
                     }
                 ]
             }
+        },
+        "/design-requests/{designRequest}/assignment": {
+            "put": {
+                "tags": [
+                    "Design Graphic"
+                ],
+                "summary": "Assign a graphic design request",
+                "description": "Only super-admin with design-requests-assign permission may assign a request in status baru to an active petugas-tik with design-drafts-upload permission. Sets priority, assigned officer, assigned_at, and status ditugaskan.",
+                "operationId": "assignDesignRequest",
+                "parameters": [
+                    {
+                        "name": "designRequest",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DesignRequestAssignmentRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Design request assigned",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DesignRequestAssignmentResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing permission or super-admin role",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Design request not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Request is not in status baru",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Invalid priority or officer",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -7582,7 +7679,12 @@
                     },
                     "priority": {
                         "type": "string",
-                        "nullable": true
+                        "nullable": true,
+                        "enum": [
+                            "rendah",
+                            "sedang",
+                            "tinggi"
+                        ]
                     },
                     "requester": {
                         "$ref": "#/components/schemas/TicketReporterSummary"
@@ -7722,6 +7824,47 @@
                     "data"
                 ],
                 "properties": {
+                    "data": {
+                        "$ref": "#/components/schemas/DesignRequestDetail"
+                    }
+                }
+            },
+            "DesignRequestAssignmentRequest": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "priority",
+                    "assigned_officer_id"
+                ],
+                "properties": {
+                    "priority": {
+                        "type": "string",
+                        "enum": [
+                            "rendah",
+                            "sedang",
+                            "tinggi"
+                        ],
+                        "example": "sedang"
+                    },
+                    "assigned_officer_id": {
+                        "type": "integer",
+                        "description": "ID pengguna aktif dengan role petugas-tik dan permission design-drafts-upload.",
+                        "example": 2
+                    }
+                }
+            },
+            "DesignRequestAssignmentResponse": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "message",
+                    "data"
+                ],
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "example": "Request desain berhasil ditugaskan."
+                    },
                     "data": {
                         "$ref": "#/components/schemas/DesignRequestDetail"
                     }

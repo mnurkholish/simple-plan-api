@@ -60,4 +60,17 @@ class DesignRequestRepository
             'latestRevision.requestedBy:id,name',
         ]);
     }
+
+    public function findForUpdate(int $id): DesignRequest
+    {
+        return DesignRequest::query()->whereKey($id)->lockForUpdate()->firstOrFail();
+    }
+
+    /** @param array<string, mixed> $attributes */
+    public function update(DesignRequest $designRequest, array $attributes): DesignRequest
+    {
+        $designRequest->update($attributes);
+
+        return $designRequest->refresh();
+    }
 }

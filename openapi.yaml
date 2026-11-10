@@ -131,6 +131,45 @@ paths:
         "404":
           $ref: "#/components/responses/TicketNotFound"
 
+  /design-requests/{designRequest}/assignment:
+    put:
+      tags: [Design Graphic]
+      summary: Verifikasi dan penugasan request desain grafis
+      operationId: assignDesignRequest
+      description: Hanya Super Admin dengan permission design-requests-assign dapat menugaskan request berstatus baru kepada pengguna aktif dengan role petugas-tik dan permission design-drafts-upload. Assignment kedua atau status lain ditolak.
+      x-auth-required: true
+      x-required-role: super-admin
+      x-required-permission: design-requests-assign
+      parameters:
+        - name: designRequest
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DesignRequestAssignmentRequest"
+      responses:
+        "200":
+          description: Request desain berhasil ditugaskan.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DesignRequestAssignmentResponse"
+        "401":
+          $ref: "#/components/responses/TicketUnauthenticated"
+        "403":
+          $ref: "#/components/responses/TicketForbidden"
+        "404":
+          $ref: "#/components/responses/TicketNotFound"
+        "409":
+          $ref: "#/components/responses/TicketConflict"
+        "422":
+          $ref: "#/components/responses/TicketValidationError"
+
   /backup-settings:
     get:
       tags: [Backups]
@@ -1713,7 +1752,9 @@ components:
         status:
           type: string
           enum: [baru, ditugaskan, menunggu_persetujuan, perlu_revisi, selesai, ditolak]
-        priority: { type: [string, "null"] }
+        priority:
+          type: [string, "null"]
+          enum: [rendah, sedang, tinggi, null]
         requester:
           $ref: "#/components/schemas/TicketReporterSummary"
         unit:
@@ -1777,6 +1818,31 @@ components:
         requested_by:
           $ref: "#/components/schemas/TicketReporterSummary"
         created_at: { type: string, format: date-time }
+
+    DesignRequestAssignmentRequest:
+      type: object
+      additionalProperties: false
+      required: [priority, assigned_officer_id]
+      properties:
+        priority:
+          type: string
+          enum: [rendah, sedang, tinggi]
+          example: sedang
+        assigned_officer_id:
+          type: integer
+          description: ID pengguna aktif dengan role petugas-tik dan permission design-drafts-upload.
+          example: 2
+
+    DesignRequestAssignmentResponse:
+      type: object
+      additionalProperties: false
+      required: [message, data]
+      properties:
+        message:
+          type: string
+          example: Request desain berhasil ditugaskan.
+        data:
+          $ref: "#/components/schemas/DesignRequestDetail"
 
     DesignRequestDetailResponse:
       type: object
