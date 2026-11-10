@@ -103,6 +103,34 @@ paths:
         "422":
           $ref: "#/components/responses/TicketValidationError"
 
+  /design-requests/{designRequest}:
+    get:
+      tags: [Design Graphic]
+      summary: Melihat detail request desain grafis
+      operationId: getDesignRequest
+      description: Dapat dilihat oleh pemohon, petugas yang ditugaskan, atau Super Admin. File referensi memiliki temporary signed URL.
+      x-auth-required: true
+      x-required-permission: design-requests-read
+      parameters:
+        - name: designRequest
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Detail request desain berhasil diambil.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DesignRequestDetailResponse"
+        "401":
+          $ref: "#/components/responses/TicketUnauthenticated"
+        "403":
+          $ref: "#/components/responses/TicketForbidden"
+        "404":
+          $ref: "#/components/responses/TicketNotFound"
+
   /backup-settings:
     get:
       tags: [Backups]
@@ -1629,7 +1657,7 @@ components:
           format: date-time
         status:
           type: string
-          enum: [baru]
+          enum: [baru, ditugaskan, menunggu_persetujuan, perlu_revisi, selesai, ditolak]
         requester:
           $ref: "#/components/schemas/TicketReporterSummary"
         unit:
@@ -1670,6 +1698,93 @@ components:
           $ref: "#/components/schemas/PaginationLinks"
         meta:
           $ref: "#/components/schemas/PaginationMeta"
+
+    DesignRequestDetail:
+      type: object
+      additionalProperties: false
+      required: [id, request_number, title, design_type, description, needed_at, status, priority, requester, unit, assigned_officer, assigned_at, completed_at, rejection_note, reference_file, latest_draft, latest_revision, created_at, updated_at]
+      properties:
+        id: { type: integer }
+        request_number: { type: string, example: DGR-2026-123456 }
+        title: { type: string }
+        design_type: { type: string }
+        description: { type: string }
+        needed_at: { type: string, format: date-time }
+        status:
+          type: string
+          enum: [baru, ditugaskan, menunggu_persetujuan, perlu_revisi, selesai, ditolak]
+        priority: { type: [string, "null"] }
+        requester:
+          $ref: "#/components/schemas/TicketReporterSummary"
+        unit:
+          $ref: "#/components/schemas/TicketUnitSummary"
+        assigned_officer:
+          oneOf:
+            - $ref: "#/components/schemas/TicketOfficerSummary"
+            - type: "null"
+        assigned_at: { type: [string, "null"], format: date-time }
+        completed_at: { type: [string, "null"], format: date-time }
+        rejection_note: { type: [string, "null"] }
+        reference_file:
+          oneOf:
+            - $ref: "#/components/schemas/DesignReferenceFileDetail"
+            - type: "null"
+        latest_draft:
+          oneOf:
+            - $ref: "#/components/schemas/DesignDraftSummary"
+            - type: "null"
+        latest_revision:
+          oneOf:
+            - $ref: "#/components/schemas/DesignRevisionSummary"
+            - type: "null"
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    DesignReferenceFileDetail:
+      type: object
+      additionalProperties: false
+      required: [original_name, mime_type, size, url]
+      properties:
+        original_name: { type: string }
+        mime_type: { type: string }
+        size: { type: integer }
+        url:
+          type: string
+          format: uri
+          description: Temporary signed URL dari disk file aplikasi.
+
+    DesignDraftSummary:
+      type: object
+      additionalProperties: false
+      required: [id, notes, file, uploaded_by, created_at]
+      properties:
+        id: { type: integer }
+        notes: { type: [string, "null"] }
+        file:
+          $ref: "#/components/schemas/DesignReferenceFileMetadata"
+        uploaded_by:
+          $ref: "#/components/schemas/TicketReporterSummary"
+        created_at: { type: string, format: date-time }
+
+    DesignRevisionSummary:
+      type: object
+      additionalProperties: false
+      required: [id, design_draft_id, revision_note, requested_by, created_at]
+      properties:
+        id: { type: integer }
+        design_draft_id: { type: integer }
+        revision_note: { type: string }
+        requested_by:
+          $ref: "#/components/schemas/TicketReporterSummary"
+        created_at: { type: string, format: date-time }
+
+    DesignRequestDetailResponse:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/DesignRequestDetail"
 
     DesignRequestCreateResponse:
       type: object

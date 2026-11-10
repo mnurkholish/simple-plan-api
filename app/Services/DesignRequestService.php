@@ -24,6 +24,11 @@ class DesignRequestService
         return $this->designRequests->paginateVisibleTo($actor, $filters['scope'] ?? 'mine', $filters, $perPage);
     }
 
+    public function loadDetail(DesignRequest $designRequest): DesignRequest
+    {
+        return $this->designRequests->loadDetail($designRequest);
+    }
+
     /** @param array<string, mixed> $data */
     public function create(array $data, User $requester, ?UploadedFile $referenceFile = null): DesignRequest
     {

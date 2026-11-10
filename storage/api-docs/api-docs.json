@@ -5895,6 +5895,73 @@
                     }
                 ]
             }
+        },
+        "/design-requests/{designRequest}": {
+            "get": {
+                "tags": [
+                    "Design Graphic"
+                ],
+                "summary": "Get graphic design request detail",
+                "description": "Visible to its requester, assigned officer, or super-admin. Requires design-requests-read permission.",
+                "operationId": "getDesignRequest",
+                "parameters": [
+                    {
+                        "name": "designRequest",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Design request detail",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DesignRequestDetailResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing permission or ownership",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Design request not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -6634,7 +6701,12 @@
                         "type": "string",
                         "example": "baru",
                         "enum": [
-                            "baru"
+                            "baru",
+                            "ditugaskan",
+                            "menunggu_persetujuan",
+                            "perlu_revisi",
+                            "selesai",
+                            "ditolak"
                         ]
                     },
                     "requester": {
@@ -7451,6 +7523,209 @@
                     }
                 },
                 "type": "object"
+            },
+            "DesignRequestDetail": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "id",
+                    "request_number",
+                    "title",
+                    "design_type",
+                    "description",
+                    "needed_at",
+                    "status",
+                    "priority",
+                    "requester",
+                    "unit",
+                    "assigned_officer",
+                    "assigned_at",
+                    "completed_at",
+                    "rejection_note",
+                    "reference_file",
+                    "latest_draft",
+                    "latest_revision",
+                    "created_at",
+                    "updated_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "request_number": {
+                        "type": "string",
+                        "example": "DGR-2026-123456"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "design_type": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "needed_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "baru",
+                            "ditugaskan",
+                            "menunggu_persetujuan",
+                            "perlu_revisi",
+                            "selesai",
+                            "ditolak"
+                        ]
+                    },
+                    "priority": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "requester": {
+                        "$ref": "#/components/schemas/TicketReporterSummary"
+                    },
+                    "unit": {
+                        "$ref": "#/components/schemas/TicketUnitSummary"
+                    },
+                    "assigned_officer": {
+                        "$ref": "#/components/schemas/TicketOfficerSummary",
+                        "nullable": true
+                    },
+                    "assigned_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "completed_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "rejection_note": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "reference_file": {
+                        "$ref": "#/components/schemas/DesignReferenceFileDetail",
+                        "nullable": true
+                    },
+                    "latest_draft": {
+                        "$ref": "#/components/schemas/DesignDraftSummary",
+                        "nullable": true
+                    },
+                    "latest_revision": {
+                        "$ref": "#/components/schemas/DesignRevisionSummary",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "DesignReferenceFileDetail": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "original_name",
+                    "mime_type",
+                    "size",
+                    "url"
+                ],
+                "properties": {
+                    "original_name": {
+                        "type": "string"
+                    },
+                    "mime_type": {
+                        "type": "string"
+                    },
+                    "size": {
+                        "type": "integer"
+                    },
+                    "url": {
+                        "type": "string",
+                        "format": "uri",
+                        "description": "Temporary signed URL dari disk file aplikasi."
+                    }
+                }
+            },
+            "DesignDraftSummary": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "id",
+                    "notes",
+                    "file",
+                    "uploaded_by",
+                    "created_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "notes": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "file": {
+                        "$ref": "#/components/schemas/DesignReferenceFileMetadata"
+                    },
+                    "uploaded_by": {
+                        "$ref": "#/components/schemas/TicketReporterSummary"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "DesignRevisionSummary": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "id",
+                    "design_draft_id",
+                    "revision_note",
+                    "requested_by",
+                    "created_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "design_draft_id": {
+                        "type": "integer"
+                    },
+                    "revision_note": {
+                        "type": "string"
+                    },
+                    "requested_by": {
+                        "$ref": "#/components/schemas/TicketReporterSummary"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "DesignRequestDetailResponse": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "data"
+                ],
+                "properties": {
+                    "data": {
+                        "$ref": "#/components/schemas/DesignRequestDetail"
+                    }
+                }
             }
         },
         "parameters": {

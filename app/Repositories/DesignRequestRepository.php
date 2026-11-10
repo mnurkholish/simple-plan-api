@@ -49,4 +49,15 @@ class DesignRequestRepository
     {
         return $designRequest->load(['requester:id,name', 'unit:id,unit_name']);
     }
+
+    public function loadDetail(DesignRequest $designRequest): DesignRequest
+    {
+        return $designRequest->load([
+            'requester:id,name',
+            'unit:id,unit_name',
+            'assignedOfficer:id,name',
+            'latestDraft.uploadedBy:id,name',
+            'latestRevision.requestedBy:id,name',
+        ]);
+    }
 }

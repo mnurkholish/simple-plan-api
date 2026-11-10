@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Models\DesignRequest;
 use App\Models\User;
 
 class DesignRequestPolicy
@@ -15,5 +16,13 @@ class DesignRequestPolicy
     public function create(User $user): bool
     {
         return $user->can('design-requests-create');
+    }
+
+    public function view(User $user, DesignRequest $designRequest): bool
+    {
+        return $user->can('design-requests-read')
+            && ($user->hasRole('super-admin')
+                || (int) $designRequest->requester_id === (int) $user->getKey()
+                || (int) $designRequest->assigned_officer_id === (int) $user->getKey());
     }
 }

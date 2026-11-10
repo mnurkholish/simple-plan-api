@@ -299,7 +299,7 @@ use OpenApi\Annotations as OA;
  *     @OA\Property(property="design_type", type="string", example="Poster"),
  *     @OA\Property(property="description", type="string", example="Poster edukasi untuk ruang tunggu."),
  *     @OA\Property(property="needed_at", type="string", format="date-time"),
- *     @OA\Property(property="status", type="string", enum={"baru"}, example="baru"),
+ *     @OA\Property(property="status", type="string", enum={"baru","ditugaskan","menunggu_persetujuan","perlu_revisi","selesai","ditolak"}, example="baru"),
  *     @OA\Property(property="requester", ref="#/components/schemas/TicketReporterSummary"),
  *     @OA\Property(property="unit", ref="#/components/schemas/TicketUnitSummary"),
  *     @OA\Property(property="reference_file", ref="#/components/schemas/DesignReferenceFileMetadata", nullable=true),
@@ -323,6 +323,70 @@ use OpenApi\Annotations as OA;
  *     @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/DesignRequestRead")),
  *     @OA\Property(property="links", ref="#/components/schemas/TicketPaginationLinks"),
  *     @OA\Property(property="meta", ref="#/components/schemas/TicketPaginationMeta")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="DesignRequestDetail",
+ *     type="object",
+ *     required={"id","request_number","title","design_type","description","needed_at","status","priority","requester","unit","assigned_officer","assigned_at","completed_at","rejection_note","reference_file","latest_draft","latest_revision","created_at","updated_at"},
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="request_number", type="string", example="DGR-2026-123456"),
+ *     @OA\Property(property="title", type="string", example="Poster edukasi pasien"),
+ *     @OA\Property(property="design_type", type="string", example="Poster edukasi"),
+ *     @OA\Property(property="description", type="string"),
+ *     @OA\Property(property="needed_at", type="string", format="date-time"),
+ *     @OA\Property(property="status", type="string", enum={"baru","ditugaskan","menunggu_persetujuan","perlu_revisi","selesai","ditolak"}),
+ *     @OA\Property(property="priority", type="string", nullable=true),
+ *     @OA\Property(property="requester", ref="#/components/schemas/TicketReporterSummary"),
+ *     @OA\Property(property="unit", ref="#/components/schemas/TicketUnitSummary"),
+ *     @OA\Property(property="assigned_officer", ref="#/components/schemas/TicketOfficerSummary", nullable=true),
+ *     @OA\Property(property="assigned_at", type="string", format="date-time", nullable=true),
+ *     @OA\Property(property="completed_at", type="string", format="date-time", nullable=true),
+ *     @OA\Property(property="rejection_note", type="string", nullable=true),
+ *     @OA\Property(property="reference_file", ref="#/components/schemas/DesignReferenceFileDetail", nullable=true),
+ *     @OA\Property(property="latest_draft", ref="#/components/schemas/DesignDraftSummary", nullable=true),
+ *     @OA\Property(property="latest_revision", ref="#/components/schemas/DesignRevisionSummary", nullable=true),
+ *     @OA\Property(property="created_at", type="string", format="date-time"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="DesignReferenceFileDetail",
+ *     type="object",
+ *     required={"original_name","mime_type","size","url"},
+ *     @OA\Property(property="original_name", type="string"),
+ *     @OA\Property(property="mime_type", type="string"),
+ *     @OA\Property(property="size", type="integer"),
+ *     @OA\Property(property="url", type="string", format="uri", description="Temporary signed URL from the configured filesystem disk")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="DesignDraftSummary",
+ *     type="object",
+ *     required={"id","notes","file","uploaded_by","created_at"},
+ *     @OA\Property(property="id", type="integer"),
+ *     @OA\Property(property="notes", type="string", nullable=true),
+ *     @OA\Property(property="file", ref="#/components/schemas/DesignReferenceFileMetadata"),
+ *     @OA\Property(property="uploaded_by", ref="#/components/schemas/TicketReporterSummary"),
+ *     @OA\Property(property="created_at", type="string", format="date-time")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="DesignRevisionSummary",
+ *     type="object",
+ *     required={"id","design_draft_id","revision_note","requested_by","created_at"},
+ *     @OA\Property(property="id", type="integer"),
+ *     @OA\Property(property="design_draft_id", type="integer"),
+ *     @OA\Property(property="revision_note", type="string"),
+ *     @OA\Property(property="requested_by", ref="#/components/schemas/TicketReporterSummary"),
+ *     @OA\Property(property="created_at", type="string", format="date-time")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="DesignRequestDetailResponse",
+ *     type="object",
+ *     required={"data"},
+ *     @OA\Property(property="data", ref="#/components/schemas/DesignRequestDetail")
  * )
  *
  * @OA\Schema(
@@ -1763,6 +1827,23 @@ class ApiDocumentation
      * )
      */
     public function designRequestsIndex(): void {}
+
+    /**
+     * @OA\Get(
+     *     path="/design-requests/{designRequest}",
+     *     operationId="getDesignRequest",
+     *     tags={"Design Graphic"},
+     *     summary="Get graphic design request detail",
+     *     description="Visible to its requester, assigned officer, or super-admin. Requires design-requests-read permission.",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="designRequest", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Design request detail", @OA\JsonContent(ref="#/components/schemas/DesignRequestDetailResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Missing permission or ownership", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=404, description="Design request not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError"))
+     * )
+     */
+    public function designRequestsShow(): void {}
 
     /**
      * @OA\Get(

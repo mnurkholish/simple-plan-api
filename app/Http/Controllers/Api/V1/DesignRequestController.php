@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ListDesignRequestRequest;
 use App\Http\Requests\StoreDesignRequestRequest;
 use App\Http\Resources\DesignRequestResource;
+use App\Http\Resources\DesignRequestDetailResource;
 use App\Models\DesignRequest;
 use App\Services\DesignRequestService;
 use Illuminate\Http\JsonResponse;
@@ -28,6 +29,13 @@ class DesignRequestController extends Controller
                 $request->integer('per_page', 15),
             ),
         );
+    }
+
+    public function show(DesignRequest $designRequest): DesignRequestDetailResource
+    {
+        Gate::authorize('view', $designRequest);
+
+        return new DesignRequestDetailResource($this->service->loadDetail($designRequest));
     }
 
     public function store(StoreDesignRequestRequest $request): JsonResponse

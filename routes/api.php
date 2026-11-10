@@ -108,6 +108,10 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::post('design-requests', [DesignRequestController::class, 'store'])
             ->middleware('permission:design-requests-create')
             ->name('design-requests.store');
+        Route::get('design-requests/{designRequest}', [DesignRequestController::class, 'show'])
+            ->middleware('permission:design-requests-read')
+            ->name('design-requests.show')
+            ->missing(fn () => response()->json(['message' => 'Resource not found.'], 404));
         Route::post('tickets', [TicketController::class, 'store'])
             ->middleware('permission:tickets-create')
             ->name('tickets.store');
