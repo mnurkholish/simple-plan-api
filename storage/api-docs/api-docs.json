@@ -6156,6 +6156,116 @@
                     }
                 ]
             }
+        },
+        "/design-reports": {
+            "get": {
+                "tags": [
+                    "Design Graphic"
+                ],
+                "summary": "Get graphic design request report",
+                "description": "Requires design-reports-read permission. Date filters apply to all counts and the list. Search affects only the list; pagination does not affect the counts.",
+                "operationId": "listDesignReports",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "description": "Search list by request number or title.",
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 255
+                        }
+                    },
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "required": false,
+                        "description": "Inclusive request creation date lower bound.",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "required": false,
+                        "description": "Inclusive request creation date upper bound.",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 100,
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Design report",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DesignReportResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing design-reports-read permission",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Invalid filters",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -7994,6 +8104,162 @@
                     },
                     "data": {
                         "$ref": "#/components/schemas/DesignRequestDetail"
+                    }
+                }
+            },
+            "DesignReportRequest": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "id",
+                    "request_number",
+                    "title",
+                    "unit",
+                    "status",
+                    "created_at",
+                    "completed_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "request_number": {
+                        "type": "string",
+                        "example": "DGR-2026-123456"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "unit": {
+                        "$ref": "#/components/schemas/TicketUnitSummary"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "baru",
+                            "ditugaskan",
+                            "menunggu_persetujuan",
+                            "perlu_revisi",
+                            "selesai",
+                            "ditolak"
+                        ]
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "completed_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    }
+                }
+            },
+            "DesignReportResponse": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "data"
+                ],
+                "properties": {
+                    "data": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "total",
+                            "by_status",
+                            "by_design_type",
+                            "requests"
+                        ],
+                        "properties": {
+                            "total": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "description": "Jumlah request dalam periode, tidak dipengaruhi search atau pagination."
+                            },
+                            "by_status": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                    "baru",
+                                    "ditugaskan",
+                                    "menunggu_persetujuan",
+                                    "perlu_revisi",
+                                    "selesai",
+                                    "ditolak"
+                                ],
+                                "properties": {
+                                    "baru": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                    },
+                                    "ditugaskan": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                    },
+                                    "menunggu_persetujuan": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                    },
+                                    "perlu_revisi": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                    },
+                                    "selesai": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                    },
+                                    "ditolak": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                    }
+                                }
+                            },
+                            "by_design_type": {
+                                "type": "array",
+                                "description": "Jenis desain dinamis, urut jumlah terbanyak lalu nama.",
+                                "items": {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "required": [
+                                        "design_type",
+                                        "total"
+                                    ],
+                                    "properties": {
+                                        "design_type": {
+                                            "type": "string"
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                        }
+                                    }
+                                }
+                            },
+                            "requests": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                    "data",
+                                    "links",
+                                    "meta"
+                                ],
+                                "properties": {
+                                    "data": {
+                                        "type": "array",
+                                        "items": {
+                                            "$ref": "#/components/schemas/DesignReportRequest"
+                                        }
+                                    },
+                                    "links": {
+                                        "$ref": "#/components/schemas/PaginationLinks"
+                                    },
+                                    "meta": {
+                                        "$ref": "#/components/schemas/PaginationMeta"
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }

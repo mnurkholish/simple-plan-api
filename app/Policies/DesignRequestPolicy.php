@@ -37,4 +37,9 @@ class DesignRequestPolicy
         return $user->hasRole('super-admin')
             && $user->can('design-requests-reject');
     }
+
+    public function viewReport(User $user): bool
+    {
+        return $user->can('design-reports-read');
+    }
 }

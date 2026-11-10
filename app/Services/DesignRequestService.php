@@ -9,12 +9,12 @@ use App\Repositories\DesignRequestRepository;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
-use Throwable;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
+use Throwable;
 
 class DesignRequestService
 {
@@ -29,6 +29,31 @@ class DesignRequestService
     public function loadDetail(DesignRequest $designRequest): DesignRequest
     {
         return $this->designRequests->loadDetail($designRequest);
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return array{total: int, by_status: array<string, int>, by_design_type: list<array{design_type: string, total: int}>, requests: LengthAwarePaginator}
+     */
+    public function report(array $filters, int $perPage): array
+    {
+        $statusCounts = $this->designRequests->reportStatusCounts($filters);
+        $byStatus = collect(DesignRequestStatus::cases())
+            ->mapWithKeys(fn (DesignRequestStatus $status): array => [$status->value => 0])
+            ->all();
+
+        foreach ($statusCounts as $status => $count) {
+            if (array_key_exists($status, $byStatus)) {
+                $byStatus[$status] = $count;
+            }
+        }
+
+        return [
+            'total' => array_sum($statusCounts),
+            'by_status' => $byStatus,
+            'by_design_type' => $this->designRequests->reportDesignTypeCounts($filters),
+            'requests' => $this->designRequests->paginateReportRequests($filters, $perPage),
+        ];
     }
 
     /** @param array{priority: string, assigned_officer_id: int} $data */

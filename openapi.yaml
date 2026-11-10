@@ -29,6 +29,31 @@ tags:
     description: Backup MySQL dan file aplikasi di MinIO
 
 paths:
+  /design-reports:
+    get:
+      tags: [Design Graphic]
+      summary: Melihat rekap request desain grafis
+      operationId: listDesignReports
+      description: Periode memfilter rekap dan daftar; search hanya daftar; pagination tidak mengubah rekap. Jenis desain dikelompokkan dari database.
+      x-auth-required: true
+      x-required-permission: design-reports-read
+      parameters:
+        - { name: search, in: query, description: Nomor atau judul request, schema: { type: string, maxLength: 255 } }
+        - { name: start_date, in: query, description: Tanggal request awal (inklusif), schema: { type: string, format: date } }
+        - { name: end_date, in: query, description: Tanggal request akhir (inklusif; tidak sebelum start_date), schema: { type: string, format: date } }
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+      responses:
+        "200":
+          description: Rekap desain berhasil diambil.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DesignReportResponse"
+        "401": { $ref: "#/components/responses/TicketUnauthenticated" }
+        "403": { $ref: "#/components/responses/TicketForbidden" }
+        "422": { $ref: "#/components/responses/TicketValidationError" }
+
   /design-requests:
     get:
       tags: [Design Graphic]
@@ -1762,6 +1787,60 @@ components:
           type: string
         size:
           type: integer
+
+    DesignReportRequest:
+      type: object
+      additionalProperties: false
+      required: [id, request_number, title, unit, status, created_at, completed_at]
+      properties:
+        id: { type: integer }
+        request_number: { type: string, example: DGR-2026-123456 }
+        title: { type: string }
+        unit: { $ref: "#/components/schemas/TicketUnitSummary" }
+        status: { type: string, enum: [baru, ditugaskan, menunggu_persetujuan, perlu_revisi, selesai, ditolak] }
+        created_at: { type: string, format: date-time }
+        completed_at: { type: [string, "null"], format: date-time }
+
+    DesignReportResponse:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [total, by_status, by_design_type, requests]
+          properties:
+            total: { type: integer, minimum: 0, description: Jumlah request dalam periode tanpa pengaruh search atau pagination }
+            by_status:
+              type: object
+              additionalProperties: false
+              required: [baru, ditugaskan, menunggu_persetujuan, perlu_revisi, selesai, ditolak]
+              properties:
+                baru: { type: integer, minimum: 0 }
+                ditugaskan: { type: integer, minimum: 0 }
+                menunggu_persetujuan: { type: integer, minimum: 0 }
+                perlu_revisi: { type: integer, minimum: 0 }
+                selesai: { type: integer, minimum: 0 }
+                ditolak: { type: integer, minimum: 0 }
+            by_design_type:
+              type: array
+              description: Jenis desain dinamis, urut jumlah terbanyak lalu nama.
+              items:
+                type: object
+                additionalProperties: false
+                required: [design_type, total]
+                properties:
+                  design_type: { type: string }
+                  total: { type: integer, minimum: 0 }
+            requests:
+              type: object
+              additionalProperties: false
+              required: [data, links, meta]
+              properties:
+                data: { type: array, items: { $ref: "#/components/schemas/DesignReportRequest" } }
+                links: { $ref: "#/components/schemas/PaginationLinks" }
+                meta: { $ref: "#/components/schemas/PaginationMeta" }
 
     DesignRequestCollectionResponse:
       type: object

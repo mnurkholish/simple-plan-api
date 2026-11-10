@@ -326,6 +326,45 @@ use OpenApi\Annotations as OA;
  * )
  *
  * @OA\Schema(
+ *     schema="DesignReportRequest",
+ *     type="object",
+ *     required={"id","request_number","title","unit","status","created_at","completed_at"},
+ *     @OA\Property(property="id", type="integer"),
+ *     @OA\Property(property="request_number", type="string", example="DGR-2026-123456"),
+ *     @OA\Property(property="title", type="string"),
+ *     @OA\Property(property="unit", ref="#/components/schemas/TicketUnitSummary"),
+ *     @OA\Property(property="status", type="string", enum={"baru","ditugaskan","menunggu_persetujuan","perlu_revisi","selesai","ditolak"}),
+ *     @OA\Property(property="created_at", type="string", format="date-time"),
+ *     @OA\Property(property="completed_at", type="string", format="date-time", nullable=true)
+ * )
+ *
+ * @OA\Schema(
+ *     schema="DesignReportResponse",
+ *     type="object",
+ *     required={"data"},
+ *     @OA\Property(property="data", type="object", required={"total","by_status","by_design_type","requests"},
+ *         @OA\Property(property="total", type="integer", minimum=0, description="All requests in the selected period, unaffected by search and pagination"),
+ *         @OA\Property(property="by_status", type="object", required={"baru","ditugaskan","menunggu_persetujuan","perlu_revisi","selesai","ditolak"},
+ *             @OA\Property(property="baru", type="integer", minimum=0),
+ *             @OA\Property(property="ditugaskan", type="integer", minimum=0),
+ *             @OA\Property(property="menunggu_persetujuan", type="integer", minimum=0),
+ *             @OA\Property(property="perlu_revisi", type="integer", minimum=0),
+ *             @OA\Property(property="selesai", type="integer", minimum=0),
+ *             @OA\Property(property="ditolak", type="integer", minimum=0)
+ *         ),
+ *         @OA\Property(property="by_design_type", type="array", description="Dynamic design types ordered by count descending, then name ascending", @OA\Items(type="object", required={"design_type","total"},
+ *             @OA\Property(property="design_type", type="string"),
+ *             @OA\Property(property="total", type="integer", minimum=0)
+ *         )),
+ *         @OA\Property(property="requests", type="object", required={"data","links","meta"},
+ *             @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/DesignReportRequest")),
+ *             @OA\Property(property="links", ref="#/components/schemas/TicketPaginationLinks"),
+ *             @OA\Property(property="meta", ref="#/components/schemas/TicketPaginationMeta")
+ *         )
+ *     )
+ * )
+ *
+ * @OA\Schema(
  *     schema="DesignRequestDetail",
  *     type="object",
  *     required={"id","request_number","title","design_type","description","needed_at","status","priority","requester","unit","assigned_officer","assigned_at","completed_at","rejection_note","reference_file","latest_draft","latest_revision","created_at","updated_at"},
@@ -1858,6 +1897,27 @@ class ApiDocumentation
      * )
      */
     public function designRequestsIndex(): void {}
+
+    /**
+     * @OA\Get(
+     *     path="/design-reports",
+     *     operationId="listDesignReports",
+     *     tags={"Design Graphic"},
+     *     summary="Get graphic design request report",
+     *     description="Requires design-reports-read permission. Date filters apply to all counts and the list. Search affects only the list; pagination does not affect the counts.",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="search", in="query", required=false, description="Search list by request number or title.", @OA\Schema(type="string", maxLength=255)),
+     *     @OA\Parameter(name="start_date", in="query", required=false, description="Inclusive request creation date lower bound.", @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="end_date", in="query", required=false, description="Inclusive request creation date upper bound.", @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="page", in="query", required=false, @OA\Schema(type="integer", minimum=1, default=1)),
+     *     @OA\Parameter(name="per_page", in="query", required=false, @OA\Schema(type="integer", minimum=1, maximum=100, default=15)),
+     *     @OA\Response(response=200, description="Design report", @OA\JsonContent(ref="#/components/schemas/DesignReportResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Missing design-reports-read permission", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=422, description="Invalid filters", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
+     * )
+     */
+    public function designReportsIndex(): void {}
 
     /**
      * @OA\Get(
