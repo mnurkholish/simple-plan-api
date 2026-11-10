@@ -282,6 +282,7 @@ use OpenApi\Annotations as OA;
  *     schema="CreateDesignRequestRequest",
  *     type="object",
  *     required={"title","design_type","description","needed_at"},
+ *
  *     @OA\Property(property="title", type="string", maxLength=100, example="Poster edukasi pasien"),
  *     @OA\Property(property="design_type", type="string", maxLength=255, example="Poster edukasi"),
  *     @OA\Property(property="description", type="string", example="Poster edukasi untuk ruang tunggu."),
@@ -293,6 +294,7 @@ use OpenApi\Annotations as OA;
  *     schema="DesignRequestRead",
  *     type="object",
  *     required={"id","request_number","title","design_type","description","needed_at","status","requester","unit","reference_file","created_at","updated_at"},
+ *
  *     @OA\Property(property="id", type="integer", example=1),
  *     @OA\Property(property="request_number", type="string", pattern="^DGR-[0-9]{4}-[0-9]{6}$", example="DGR-2026-123456"),
  *     @OA\Property(property="title", type="string", example="Poster edukasi pasien"),
@@ -311,6 +313,7 @@ use OpenApi\Annotations as OA;
  *     schema="DesignReferenceFileMetadata",
  *     type="object",
  *     required={"original_name","mime_type","size"},
+ *
  *     @OA\Property(property="original_name", type="string", example="referensi.pdf"),
  *     @OA\Property(property="mime_type", type="string", example="application/pdf"),
  *     @OA\Property(property="size", type="integer", example=245760)
@@ -320,6 +323,7 @@ use OpenApi\Annotations as OA;
  *     schema="DesignRequestCollectionResponse",
  *     type="object",
  *     required={"data","links","meta"},
+ *
  *     @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/DesignRequestRead")),
  *     @OA\Property(property="links", ref="#/components/schemas/TicketPaginationLinks"),
  *     @OA\Property(property="meta", ref="#/components/schemas/TicketPaginationMeta")
@@ -329,6 +333,7 @@ use OpenApi\Annotations as OA;
  *     schema="DesignReportRequest",
  *     type="object",
  *     required={"id","request_number","title","unit","status","created_at","completed_at"},
+ *
  *     @OA\Property(property="id", type="integer"),
  *     @OA\Property(property="request_number", type="string", example="DGR-2026-123456"),
  *     @OA\Property(property="title", type="string"),
@@ -342,6 +347,7 @@ use OpenApi\Annotations as OA;
  *     schema="DesignReportResponse",
  *     type="object",
  *     required={"data"},
+ *
  *     @OA\Property(property="data", type="object", required={"total","by_status","by_design_type","requests"},
  *         @OA\Property(property="total", type="integer", minimum=0, description="All requests in the selected period, unaffected by search and pagination"),
  *         @OA\Property(property="by_status", type="object", required={"baru","ditugaskan","menunggu_persetujuan","perlu_revisi","selesai","ditolak"},
@@ -368,6 +374,7 @@ use OpenApi\Annotations as OA;
  *     schema="DesignRequestDetail",
  *     type="object",
  *     required={"id","request_number","title","design_type","description","needed_at","status","priority","requester","unit","assigned_officer","assigned_at","completed_at","rejection_note","reference_file","latest_draft","latest_revision","created_at","updated_at"},
+ *
  *     @OA\Property(property="id", type="integer", example=1),
  *     @OA\Property(property="request_number", type="string", example="DGR-2026-123456"),
  *     @OA\Property(property="title", type="string", example="Poster edukasi pasien"),
@@ -393,6 +400,7 @@ use OpenApi\Annotations as OA;
  *     schema="DesignReferenceFileDetail",
  *     type="object",
  *     required={"original_name","mime_type","size","url"},
+ *
  *     @OA\Property(property="original_name", type="string"),
  *     @OA\Property(property="mime_type", type="string"),
  *     @OA\Property(property="size", type="integer"),
@@ -403,6 +411,7 @@ use OpenApi\Annotations as OA;
  *     schema="DesignDraftSummary",
  *     type="object",
  *     required={"id","notes","file","uploaded_by","created_at"},
+ *
  *     @OA\Property(property="id", type="integer"),
  *     @OA\Property(property="notes", type="string", nullable=true),
  *     @OA\Property(property="file", ref="#/components/schemas/DesignReferenceFileMetadata"),
@@ -414,6 +423,7 @@ use OpenApi\Annotations as OA;
  *     schema="DesignRevisionSummary",
  *     type="object",
  *     required={"id","design_draft_id","revision_note","requested_by","created_at"},
+ *
  *     @OA\Property(property="id", type="integer"),
  *     @OA\Property(property="design_draft_id", type="integer"),
  *     @OA\Property(property="revision_note", type="string"),
@@ -425,6 +435,7 @@ use OpenApi\Annotations as OA;
  *     schema="DesignRequestDetailResponse",
  *     type="object",
  *     required={"data"},
+ *
  *     @OA\Property(property="data", ref="#/components/schemas/DesignRequestDetail")
  * )
  *
@@ -432,6 +443,7 @@ use OpenApi\Annotations as OA;
  *     schema="DesignRequestAssignmentRequest",
  *     type="object",
  *     required={"priority","assigned_officer_id"},
+ *
  *     @OA\Property(property="priority", type="string", enum={"rendah","sedang","tinggi"}, example="sedang"),
  *     @OA\Property(property="assigned_officer_id", type="integer", description="ID pengguna aktif dengan role petugas-tik dan permission design-drafts-upload", example=2)
  * )
@@ -440,6 +452,7 @@ use OpenApi\Annotations as OA;
  *     schema="DesignRequestAssignmentResponse",
  *     type="object",
  *     required={"message","data"},
+ *
  *     @OA\Property(property="message", type="string", example="Request desain berhasil ditugaskan."),
  *     @OA\Property(property="data", ref="#/components/schemas/DesignRequestDetail")
  * )
@@ -448,6 +461,7 @@ use OpenApi\Annotations as OA;
  *     schema="DesignRequestRejectionRequest",
  *     type="object",
  *     required={"rejection_note"},
+ *
  *     @OA\Property(property="rejection_note", type="string", example="Informasi kebutuhan desain belum lengkap.")
  * )
  *
@@ -455,6 +469,7 @@ use OpenApi\Annotations as OA;
  *     schema="DesignRequestRejectionResponse",
  *     type="object",
  *     required={"message","data"},
+ *
  *     @OA\Property(property="message", type="string", example="Request desain berhasil ditolak."),
  *     @OA\Property(property="data", ref="#/components/schemas/DesignRequestDetail")
  * )
@@ -463,6 +478,7 @@ use OpenApi\Annotations as OA;
  *     schema="DesignRequestCreateResponse",
  *     type="object",
  *     required={"message","data"},
+ *
  *     @OA\Property(property="message", type="string", example="Request desain berhasil dibuat."),
  *     @OA\Property(property="data", ref="#/components/schemas/DesignRequestRead")
  * )
@@ -1868,7 +1884,9 @@ class ApiDocumentation
      *     summary="Create a graphic design request",
      *     description="Creates a request with status baru. Requester and unit are taken from the authenticated user. Requires design-requests-create permission.",
      *     security={{"sanctum":{}}},
+     *
      *     @OA\RequestBody(required=true, @OA\MediaType(mediaType="multipart/form-data", @OA\Schema(ref="#/components/schemas/CreateDesignRequestRequest"))),
+     *
      *     @OA\Response(response=201, description="Design request created", @OA\JsonContent(ref="#/components/schemas/DesignRequestCreateResponse")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=403, description="Missing design-requests-create permission", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
@@ -1885,11 +1903,13 @@ class ApiDocumentation
      *     summary="List graphic design requests",
      *     description="Requires design-requests-read permission. Defaults to the authenticated user's requests. Assigned shows requests assigned to the user; all is restricted to super-admin.",
      *     security={{"sanctum":{}}},
+     *
      *     @OA\Parameter(name="scope", in="query", required=false, description="Visible request scope.", @OA\Schema(type="string", enum={"mine","assigned","all"}, default="mine")),
      *     @OA\Parameter(name="search", in="query", required=false, description="Search by request number or title.", @OA\Schema(type="string", maxLength=255)),
      *     @OA\Parameter(name="status", in="query", required=false, description="Design request status.", @OA\Schema(type="string", enum={"baru","ditugaskan","menunggu_persetujuan","perlu_revisi","selesai","ditolak"})),
      *     @OA\Parameter(name="page", in="query", required=false, @OA\Schema(type="integer", minimum=1, default=1)),
      *     @OA\Parameter(name="per_page", in="query", required=false, @OA\Schema(type="integer", minimum=1, maximum=100, default=15)),
+     *
      *     @OA\Response(response=200, description="Paginated design requests", @OA\JsonContent(ref="#/components/schemas/DesignRequestCollectionResponse")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=403, description="Missing permission or all scope outside super-admin", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
@@ -1906,11 +1926,13 @@ class ApiDocumentation
      *     summary="Get graphic design request report",
      *     description="Requires design-reports-read permission. Date filters apply to all counts and the list. Search affects only the list; pagination does not affect the counts.",
      *     security={{"sanctum":{}}},
+     *
      *     @OA\Parameter(name="search", in="query", required=false, description="Search list by request number or title.", @OA\Schema(type="string", maxLength=255)),
      *     @OA\Parameter(name="start_date", in="query", required=false, description="Inclusive request creation date lower bound.", @OA\Schema(type="string", format="date")),
      *     @OA\Parameter(name="end_date", in="query", required=false, description="Inclusive request creation date upper bound.", @OA\Schema(type="string", format="date")),
      *     @OA\Parameter(name="page", in="query", required=false, @OA\Schema(type="integer", minimum=1, default=1)),
      *     @OA\Parameter(name="per_page", in="query", required=false, @OA\Schema(type="integer", minimum=1, maximum=100, default=15)),
+     *
      *     @OA\Response(response=200, description="Design report", @OA\JsonContent(ref="#/components/schemas/DesignReportResponse")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=403, description="Missing design-reports-read permission", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
@@ -1927,7 +1949,9 @@ class ApiDocumentation
      *     summary="Get graphic design request detail",
      *     description="Visible to its requester, assigned officer, or super-admin. Requires design-requests-read permission.",
      *     security={{"sanctum":{}}},
+     *
      *     @OA\Parameter(name="designRequest", in="path", required=true, @OA\Schema(type="integer")),
+     *
      *     @OA\Response(response=200, description="Design request detail", @OA\JsonContent(ref="#/components/schemas/DesignRequestDetailResponse")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=403, description="Missing permission or ownership", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
@@ -1944,8 +1968,11 @@ class ApiDocumentation
      *     summary="Assign a graphic design request",
      *     description="Only super-admin with design-requests-assign permission may assign a request in status baru to an active petugas-tik with design-drafts-upload permission. Sets priority, assigned officer, assigned_at, and status ditugaskan.",
      *     security={{"sanctum":{}}},
+     *
      *     @OA\Parameter(name="designRequest", in="path", required=true, @OA\Schema(type="integer")),
+     *
      *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/DesignRequestAssignmentRequest")),
+     *
      *     @OA\Response(response=200, description="Design request assigned", @OA\JsonContent(ref="#/components/schemas/DesignRequestAssignmentResponse")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=403, description="Missing permission or super-admin role", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
@@ -1964,8 +1991,11 @@ class ApiDocumentation
      *     summary="Reject a graphic design request",
      *     description="Only super-admin with design-requests-reject permission may reject a request in status baru. Stores the rejection note and changes status to ditolak. Rejected requests cannot be assigned.",
      *     security={{"sanctum":{}}},
+     *
      *     @OA\Parameter(name="designRequest", in="path", required=true, @OA\Schema(type="integer")),
+     *
      *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/DesignRequestRejectionRequest")),
+     *
      *     @OA\Response(response=200, description="Design request rejected", @OA\JsonContent(ref="#/components/schemas/DesignRequestRejectionResponse")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=403, description="Missing permission or super-admin role", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
