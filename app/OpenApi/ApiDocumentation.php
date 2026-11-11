@@ -2842,8 +2842,8 @@ class ApiDocumentation
      *     path="/asset-label-exports",
      *     operationId="exportAssetLabels",
      *     tags={"Inventory - QrCode Label"},
-     *     summary="Export inventory labels as an A4 PDF",
-     *     description="Generates one PDF synchronously. Selected mode follows asset_ids order; omitting selection_mode keeps legacy selected behavior. All_filtered mode reapplies list filters without pagination and orders labels by descending asset ID. Only coded Inventory assets can be printed. Each asset requires printLabel authorization. A4 pages use 10 mm margins and 2 mm gaps.",
+     *     summary="Export inventory labels as a PDF",
+     *     description="Generates one PDF synchronously with one label per page. Each page uses width_mm by height_mm and zero margins. Selected mode follows asset_ids order; omitting selection_mode keeps legacy selected behavior. All_filtered mode reapplies list filters without pagination and orders labels by descending asset ID. Only coded Inventory assets can be printed. Each asset requires printLabel authorization.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\RequestBody(required=true, @OA\JsonContent(
@@ -2881,7 +2881,7 @@ class ApiDocumentation
      *         }
      *     )),
      *
-     *     @OA\Response(response=200, description="A4 PDF containing the selected labels", @OA\MediaType(mediaType="application/pdf", @OA\Schema(type="string", format="binary"))),
+     *     @OA\Response(response=200, description="PDF containing one selected label per page", @OA\MediaType(mediaType="application/pdf", @OA\Schema(type="string", format="binary"))),
      *     @OA\Response(response=401, description="Unauthenticated"),
      *     @OA\Response(response=403, description="Printing at least one selected asset is forbidden"),
      *     @OA\Response(response=422, description="Invalid selection, filters, dimensions, or no printable assets matched")

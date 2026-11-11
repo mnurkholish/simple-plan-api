@@ -5693,8 +5693,8 @@
                 "tags": [
                     "Inventory - QrCode Label"
                 ],
-                "summary": "Export inventory labels as an A4 PDF",
-                "description": "Generates one PDF synchronously. Selected mode follows asset_ids order; omitting selection_mode keeps legacy selected behavior. All_filtered mode reapplies list filters without pagination and orders labels by descending asset ID. Only coded Inventory assets can be printed. Each asset requires printLabel authorization. A4 pages use 10 mm margins and 2 mm gaps.",
+                "summary": "Export inventory labels as a PDF",
+                "description": "Generates one PDF synchronously with one label per page. Each page uses width_mm by height_mm and zero margins. Selected mode follows asset_ids order; omitting selection_mode keeps legacy selected behavior. All_filtered mode reapplies list filters without pagination and orders labels by descending asset ID. Only coded Inventory assets can be printed. Each asset requires printLabel authorization.",
                 "operationId": "exportAssetLabels",
                 "requestBody": {
                     "required": true,
@@ -5846,7 +5846,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "A4 PDF containing the selected labels",
+                        "description": "PDF containing one selected label per page",
                         "content": {
                             "application/pdf": {
                                 "schema": {

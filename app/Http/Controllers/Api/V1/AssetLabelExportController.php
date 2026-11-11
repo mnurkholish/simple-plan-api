@@ -21,7 +21,7 @@ class AssetLabelExportController extends Controller
             (float) $data['height_mm'],
         ), 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="asset-labels-a4.pdf"',
+            'Content-Disposition' => 'attachment; filename="asset-labels.pdf"',
             'Cache-Control' => 'private, no-store',
             'X-Content-Type-Options' => 'nosniff',
         ]);

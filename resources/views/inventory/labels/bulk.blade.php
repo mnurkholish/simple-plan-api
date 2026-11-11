@@ -2,17 +2,15 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    @include('inventory.labels.partials.styles', ['pageMode' => 'a4'])
+    @include('inventory.labels.partials.styles', ['pageMode' => 'bulk'])
 </head>
 
 <body>
-    @foreach ($pages as $page)
+    @foreach ($labels as $label)
         <div class="label-page">
-            @foreach ($page as $label)
-                <div class="asset-label">
-                    @include('inventory.labels.partials.content', $label)
-                </div>
-            @endforeach
+            <div class="asset-label">
+                @include('inventory.labels.partials.content', $label)
+            </div>
         </div>
     @endforeach
     @include('inventory.labels.partials.fit')

@@ -55,11 +55,17 @@ test('pengguna yang diizinkan dapat mengekspor label untuk aset terpilih', funct
 
     $response->assertOk()
         ->assertHeader('Content-Type', 'application/pdf')
-        ->assertHeader('Content-Disposition', 'attachment; filename="asset-labels-a4.pdf"');
+        ->assertHeader('Content-Disposition', 'attachment; filename="asset-labels.pdf"');
 
     expect($labels->preparedAssetIds)->toBe([$secondAsset->id, $firstAsset->id]);
-    expect($response->getContent())->toMatch('/^%PDF-\d\.\d/')
+    $pdf = $response->getContent();
+    expect($pdf)->toMatch('/^%PDF-\d\.\d/')
         ->toContain('startxref', '%%EOF');
+    expect(preg_match_all('/\/Type\s*\/Page\b/', $pdf))->toBe(2);
+    expect(preg_match('/\/MediaBox\s*\[\s*0\s+0\s+([\d.]+)\s+([\d.]+)\s*\]/', $pdf, $mediaBox))->toBe(1);
+    expect(abs((float) $mediaBox[1] - 90 / 25.4 * 72))->toBeLessThan(1.42);
+    expect(abs((float) $mediaBox[2] - 50 / 25.4 * 72))->toBeLessThan(1.42);
+    expect(abs((float) $mediaBox[1] / (float) $mediaBox[2] - 90 / 50))->toBeLessThan(0.01);
 });
 
 test('pengguna yang diizinkan dapat mengekspor semua label sesuai filter tanpa paginasi', function (): void {
@@ -82,17 +88,23 @@ test('pengguna yang diizinkan dapat mengekspor semua label sesuai filter tanpa p
             'page' => 1,
             'per_page' => 1,
         ],
-        'width_mm' => 90,
-        'height_mm' => 50,
+        'width_mm' => 50,
+        'height_mm' => 60,
     ]);
 
     $response->assertOk()
         ->assertHeader('Content-Type', 'application/pdf')
-        ->assertHeader('Content-Disposition', 'attachment; filename="asset-labels-a4.pdf"');
+        ->assertHeader('Content-Disposition', 'attachment; filename="asset-labels.pdf"');
 
     expect($labels->preparedAssetIds)->toBe([$secondAsset->id, $firstAsset->id]);
-    expect($response->getContent())->toMatch('/^%PDF-\d\.\d/')
+    $pdf = $response->getContent();
+    expect($pdf)->toMatch('/^%PDF-\d\.\d/')
         ->toContain('startxref', '%%EOF');
+    expect(preg_match_all('/\/Type\s*\/Page\b/', $pdf))->toBe(2);
+    expect(preg_match('/\/MediaBox\s*\[\s*0\s+0\s+([\d.]+)\s+([\d.]+)\s*\]/', $pdf, $mediaBox))->toBe(1);
+    expect(abs((float) $mediaBox[1] - 50 / 25.4 * 72))->toBeLessThan(1.42);
+    expect(abs((float) $mediaBox[2] - 60 / 25.4 * 72))->toBeLessThan(1.42);
+    expect(abs((float) $mediaBox[1] / (float) $mediaBox[2] - 50 / 60))->toBeLessThan(0.01);
 });
 
 test('request ekspor label dengan input tidak valid mengembalikan 422', function (): void {
