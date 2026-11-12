@@ -37,7 +37,7 @@ use OpenApi\Annotations as OA;
  * @OA\Tag(name="Assets", description="Asset lookup")
  * @OA\Tag(name="Asset Maintenance", description="API for asset maintenance scheduling and execution")
  * @OA\Tag(name="Helpdesk", description="Helpdesk TIK and Sarpras tickets")
- * @OA\Tag(name="Design Graphic", description="Graphic design requests")
+ * @OA\Tag(name="Design Graphic", description="Graphic design requests and workflow")
  *
  * @OA\Schema(
  *     schema="User",
@@ -481,6 +481,37 @@ use OpenApi\Annotations as OA;
  *
  *     @OA\Property(property="message", type="string", example="Request desain berhasil dibuat."),
  *     @OA\Property(property="data", ref="#/components/schemas/DesignRequestRead")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="DesignDraft",
+ *     type="object",
+ *     required={"id","design_request_id","file_path","file_name","file_size","mime_type","uploaded_by_id","created_at","updated_at"},
+ *
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="design_request_id", type="integer", example=1),
+ *     @OA\Property(property="file_path", type="string", example="design_drafts/1/draft.png"),
+ *     @OA\Property(property="file_name", type="string", example="draft.png"),
+ *     @OA\Property(property="file_size", type="integer", example=1048576),
+ *     @OA\Property(property="mime_type", type="string", example="image/png"),
+ *     @OA\Property(property="notes", type="string", nullable=true, example="Draft revisi pertama"),
+ *     @OA\Property(property="uploaded_by_id", type="integer", example=2),
+ *     @OA\Property(property="created_at", type="string", format="date-time"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="DesignRevision",
+ *     type="object",
+ *     required={"id","design_request_id","design_draft_id","revision_note","requested_by_id","created_at","updated_at"},
+ *
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="design_request_id", type="integer", example=1),
+ *     @OA\Property(property="design_draft_id", type="integer", example=1),
+ *     @OA\Property(property="revision_note", type="string", example="Tolong ubah warna latar belakang menjadi biru rumah sakit."),
+ *     @OA\Property(property="requested_by_id", type="integer", example=3),
+ *     @OA\Property(property="created_at", type="string", format="date-time"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time")
  * )
  *
  * @OA\Schema(
@@ -2007,6 +2038,178 @@ class ApiDocumentation
     public function designRequestsReject(): void {}
 
     /**
+     * @OA\Post(
+     *     path="/design-requests/{id}/drafts",
+     *     operationId="uploadDesignDraft",
+     *     tags={"Design Graphic"},
+     *     summary="Mengunggah draft",
+     *     description="Upload a new design draft file for the design request. Requires design-drafts-upload permission.",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Design Request ID",
+     *
+     *         @OA\Schema(type="integer", minimum=1)
+     *     ),
+     *
+     *     @OA\RequestBody(
+     *         required=true,
+     *
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *
+     *             @OA\Schema(
+     *                 required={"file"},
+     *
+     *                 @OA\Property(property="file", type="string", format="binary", description="File draft maksimal 10 MB"),
+     *                 @OA\Property(property="notes", type="string", nullable=true, description="Catatan draft")
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=201,
+     *         description="Draft desain berhasil diunggah",
+     *
+     *         @OA\JsonContent(
+     *
+     *             @OA\Property(property="message", type="string", example="Draft desain berhasil diunggah."),
+     *             @OA\Property(property="data", ref="#/components/schemas/DesignDraft")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Forbidden", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=409, description="Request status changed", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=422, description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
+     * )
+     */
+    public function designWorkflowStoreDraft(): void {}
+
+    /**
+     * @OA\Post(
+     *     path="/design-requests/{id}/revisions",
+     *     operationId="createDesignRevision",
+     *     tags={"Design Graphic"},
+     *     summary="Mengajukan revisi",
+     *     description="Submit a revision note for the latest design draft. Requires design-requests-revise permission.",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Design Request ID",
+     *
+     *         @OA\Schema(type="integer", minimum=1)
+     *     ),
+     *
+     *     @OA\RequestBody(
+     *         required=true,
+     *
+     *         @OA\JsonContent(
+     *             required={"revision_note"},
+     *
+     *             @OA\Property(property="revision_note", type="string", example="Perbaiki tata letak teks logo")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=201,
+     *         description="Revisi desain berhasil diajukan",
+     *
+     *         @OA\JsonContent(
+     *
+     *             @OA\Property(property="message", type="string", example="Revisi desain berhasil diajukan."),
+     *             @OA\Property(property="data", ref="#/components/schemas/DesignRevision")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Forbidden", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=409, description="Request status changed", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=422, description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
+     * )
+     */
+    public function designWorkflowStoreRevision(): void {}
+
+    /**
+     * @OA\Post(
+     *     path="/design-requests/{id}/approvals",
+     *     operationId="approveDesignRequest",
+     *     tags={"Design Graphic"},
+     *     summary="Menyetujui desain",
+     *     description="Approve the design request and mark it as selesai. Requires design-requests-approve permission.",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Design Request ID",
+     *
+     *         @OA\Schema(type="integer", minimum=1)
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Request desain berhasil disetujui",
+     *
+     *         @OA\JsonContent(
+     *
+     *             @OA\Property(property="message", type="string", example="Request desain berhasil disetujui.")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Forbidden", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=404, description="Resource not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=409, description="Request status changed", @OA\JsonContent(ref="#/components/schemas/TicketReadError"))
+     * )
+     */
+    public function designWorkflowStoreApproval(): void {}
+
+    /**
+     * @OA\Get(
+     *     path="/design-requests/{id}/final-file",
+     *     operationId="downloadDesignFinalFile",
+     *     tags={"Design Graphic"},
+     *     summary="Mengunduh file final",
+     *     description="Get a temporary signed URL and file metadata when the request is selesai.",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Design Request ID",
+     *
+     *         @OA\Schema(type="integer", minimum=1)
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="URL file final berhasil diambil",
+     *
+     *         @OA\JsonContent(
+     *             required={"final_file_url","file"},
+     *
+     *             @OA\Property(property="final_file_url", type="string", format="uri"),
+     *             @OA\Property(property="file", ref="#/components/schemas/DesignReferenceFileMetadata")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Forbidden", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=404, description="Resource not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError"))
+     * )
+     */
+    public function designWorkflowDownloadFinal(): void {}
+
+    /**
      * @OA\Get(
      *     path="/tickets/classification-options",
      *     operationId="listTicketClassificationOptions",
@@ -2499,9 +2702,7 @@ class ApiDocumentation
      *
      *     @OA\Parameter(name="search", in="query", required=false, description="Live search by serial number, notes, full code, item name, asset brand, location name, or classification name", @OA\Schema(type="string")),
      *     @OA\Parameter(name="asset_classification_id", in="query", required=false, description="Filter by classification ID", @OA\Schema(type="integer")),
-     *     @OA\Parameter(name="classification_id", in="query", required=false, description="Filter by current asset classification; alias of asset_classification_id", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="asset_location_id", in="query", required=false, description="Filter by location ID", @OA\Schema(type="integer")),
-     *     @OA\Parameter(name="location_id", in="query", required=false, description="Filter by current asset room through asset_codes.asset_location_id; alias of asset_location_id", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="asset_item_id", in="query", required=false, description="Filter by item ID", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="status", in="query", required=false, description="Filter by asset status", @OA\Schema(type="string", enum={"Digunakan", "Tidak Digunakan", "Rusak", "Dipinjam"})),
      *     @OA\Parameter(name="condition", in="query", required=false, description="Filter by asset condition", @OA\Schema(type="string", enum={"Baik", "Rusak Ringan", "Rusak Berat"})),

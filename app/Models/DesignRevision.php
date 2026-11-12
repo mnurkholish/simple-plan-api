@@ -13,7 +13,18 @@ class DesignRevision extends Model
         'design_draft_id',
         'revision_note',
         'requested_by_id',
+        'note',
     ];
+
+    public function getNoteAttribute(): ?string
+    {
+        return $this->attributes['revision_note'] ?? null;
+    }
+
+    public function setNoteAttribute(?string $value): void
+    {
+        $this->attributes['revision_note'] = $value;
+    }
 
     public function designRequest(): BelongsTo
     {

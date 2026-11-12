@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\V1\BackupSettingController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\DesignReportController;
 use App\Http\Controllers\Api\V1\DesignRequestController;
+use App\Http\Controllers\Api\V1\DesignWorkflowController;
 use App\Http\Controllers\Api\V1\ExampleLiveController;
 use App\Http\Controllers\Api\V1\ImpersonationController;
 use App\Http\Controllers\Api\V1\NotificationController;
@@ -86,19 +87,30 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::apiResource('assets', AssetController::class);
         Route::post('assets/{asset}', [AssetController::class, 'update'])->name('assets.update.post');
 
-        Route::apiResource('asset-classifications', AssetClassificationController::class)->except(['destroy']);
-        Route::apiResource('asset-locations', AssetLocationController::class)->except(['destroy']);
-        Route::apiResource('asset-items', AssetItemController::class)->except(['destroy']);
+        // Master Data Inventaris: Role internal (Super Admin, Manajemen, Petugas TIK, Petugas Sarpras, Koordinator Sarpras), blokir User
+        Route::middleware('role:super_admin|super-admin|manajemen|management|petugas_tik|petugas-tik|petugas_sarpras|petugas-sarpras|koordinator_sarpras|koordinator-sarpras')->group(function (): void {
+            Route::apiResource('asset-classifications', AssetClassificationController::class)->except(['destroy']);
+            Route::apiResource('asset-locations', AssetLocationController::class)->except(['destroy']);
+            Route::apiResource('asset-items', AssetItemController::class)->except(['destroy']);
+        });
 
         Route::get('/assets/{asset}/qr', [AssetQrCodeController::class, 'show']);
         Route::get('/assets/{asset}/label', [AssetLabelController::class, 'show']);
         Route::post('asset-label-exports', [AssetLabelExportController::class, 'store'])
             ->name('asset-label-exports.store');
 
-        // Jadwal Maintenance (Induk)
-        Route::apiResource('asset-maintenances', AssetMaintenanceController::class)->except(['destroy']);
-        // Eksekusi Log Maintenance (Nested)
-        Route::post('asset-maintenances/{maintenance}/logs', [AssetMaintenanceLogController::class, 'store']);
+        // Modul Maintenance: Dilarang untuk role 'user'
+        Route::middleware('role:super_admin|super-admin|koordinator_sarpras|koordinator-sarpras|petugas_tik|petugas-tik|petugas_sarpras|petugas-sarpras|manajemen|management')->group(function (): void {
+            // Jadwal Maintenance (Induk)
+            Route::apiResource('asset-maintenances', AssetMaintenanceController::class)->except(['destroy']);
+            // Eksekusi Log Maintenance (Nested)
+            Route::post('asset-maintenances/{maintenance}/logs', [AssetMaintenanceLogController::class, 'store']);
+            Route::apiResource('maintenances', AssetMaintenanceController::class)->except(['destroy']);
+        });
+
+        // Alias untuk inventories
+        Route::get('inventories', [AssetController::class, 'index'])->name('inventories.index');
+        Route::apiResource('inventories', AssetController::class);
 
         Route::get('tickets', [TicketController::class, 'index'])
             ->middleware('permission:tickets-access')
@@ -124,6 +136,17 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             ->middleware('permission:design-requests-reject')
             ->name('design-requests.rejections.store')
             ->missing(fn () => response()->json(['message' => 'Resource not found.'], 404));
+        Route::post('design-requests/{id}/drafts', [DesignWorkflowController::class, 'storeDraft'])
+            ->middleware('permission:design-drafts-upload')
+            ->name('design-requests.drafts.store');
+        Route::post('design-requests/{id}/revisions', [DesignWorkflowController::class, 'storeRevision'])
+            ->middleware('permission:design-requests-revise')
+            ->name('design-requests.revisions.store');
+        Route::post('design-requests/{id}/approvals', [DesignWorkflowController::class, 'storeApproval'])
+            ->middleware('permission:design-requests-approve')
+            ->name('design-requests.approvals.store');
+        Route::get('design-requests/{id}/final-file', [DesignWorkflowController::class, 'downloadFinal'])
+            ->name('design-requests.final-file');
         Route::post('tickets', [TicketController::class, 'store'])
             ->middleware('permission:tickets-create')
             ->name('tickets.store');
@@ -269,3 +292,5 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             ->name('units.destroy');
     });
 });
+
+Route::middleware('auth:sanctum')->get('inventories', [AssetController::class, 'index']);

@@ -38,9 +38,24 @@ paths:
       x-auth-required: true
       x-required-permission: design-reports-read
       parameters:
-        - { name: search, in: query, description: Nomor atau judul request, schema: { type: string, maxLength: 255 } }
-        - { name: start_date, in: query, description: Tanggal request awal (inklusif), schema: { type: string, format: date } }
-        - { name: end_date, in: query, description: Tanggal request akhir (inklusif; tidak sebelum start_date), schema: { type: string, format: date } }
+        - {
+            name: search,
+            in: query,
+            description: Nomor atau judul request,
+            schema: { type: string, maxLength: 255 },
+          }
+        - {
+            name: start_date,
+            in: query,
+            description: Tanggal request awal (inklusif),
+            schema: { type: string, format: date },
+          }
+        - {
+            name: end_date,
+            in: query,
+            description: Tanggal request akhir (inklusif; tidak sebelum start_date),
+            schema: { type: string, format: date },
+          }
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/PerPage"
       responses:
@@ -84,7 +99,15 @@ paths:
           description: Filter status request desain.
           schema:
             type: string
-            enum: [baru, ditugaskan, menunggu_persetujuan, perlu_revisi, selesai, ditolak]
+            enum:
+              [
+                baru,
+                ditugaskan,
+                menunggu_persetujuan,
+                perlu_revisi,
+                selesai,
+                ditolak,
+              ]
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/PerPage"
       responses:
@@ -234,6 +257,143 @@ paths:
         "422":
           $ref: "#/components/responses/TicketValidationError"
 
+  /design-requests/{id}/drafts:
+    post:
+      tags: [Design Graphic]
+      summary: Unggah draft desain
+      description: Petugas TIK yang ditugaskan dapat mengunggah draft saat status ditugaskan atau perlu_revisi.
+      operationId: uploadDesignDraft
+      x-auth-required: true
+      x-required-permission: design-drafts-upload
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  { type: string, format: binary, description: Maksimal 10 MB }
+                notes: { type: [string, "null"] }
+      responses:
+        "201":
+          {
+            description: Draft tersimpan,
+            content:
+              {
+                application/json:
+                  {
+                    schema:
+                      {
+                        $ref: "#/components/schemas/DesignWorkflowDraftResponse",
+                      },
+                  },
+              },
+          }
+        "401": { $ref: "#/components/responses/TicketUnauthenticated" }
+        "403": { $ref: "#/components/responses/TicketForbidden" }
+        "404": { $ref: "#/components/responses/TicketNotFound" }
+        "409": { $ref: "#/components/responses/TicketConflict" }
+        "422": { $ref: "#/components/responses/TicketValidationError" }
+
+  /design-requests/{id}/revisions:
+    post:
+      tags: [Design Graphic]
+      summary: Ajukan revisi draft terbaru
+      operationId: createDesignRevision
+      x-auth-required: true
+      x-required-permission: design-requests-revise
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision_note]
+              properties:
+                revision_note: { type: string }
+      responses:
+        "201":
+          {
+            description: Revisi tersimpan,
+            content:
+              {
+                application/json:
+                  {
+                    schema:
+                      {
+                        $ref: "#/components/schemas/DesignWorkflowRevisionResponse",
+                      },
+                  },
+              },
+          }
+        "401": { $ref: "#/components/responses/TicketUnauthenticated" }
+        "403": { $ref: "#/components/responses/TicketForbidden" }
+        "404": { $ref: "#/components/responses/TicketNotFound" }
+        "409": { $ref: "#/components/responses/TicketConflict" }
+        "422": { $ref: "#/components/responses/TicketValidationError" }
+
+  /design-requests/{id}/approvals:
+    post:
+      tags: [Design Graphic]
+      summary: Setujui draft terbaru
+      operationId: approveDesignRequest
+      x-auth-required: true
+      x-required-permission: design-requests-approve
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          {
+            description: Request selesai,
+            content:
+              {
+                application/json:
+                  {
+                    schema:
+                      {
+                        $ref: "#/components/schemas/DesignWorkflowApprovalResponse",
+                      },
+                  },
+              },
+          }
+        "401": { $ref: "#/components/responses/TicketUnauthenticated" }
+        "403": { $ref: "#/components/responses/TicketForbidden" }
+        "404": { $ref: "#/components/responses/TicketNotFound" }
+        "409": { $ref: "#/components/responses/TicketConflict" }
+
+  /design-requests/{id}/final-file:
+    get:
+      tags: [Design Graphic]
+      summary: Ambil metadata dan temporary signed URL file final
+      operationId: downloadDesignFinalFile
+      x-auth-required: true
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          {
+            description: File final tersedia,
+            content:
+              {
+                application/json:
+                  {
+                    schema:
+                      {
+                        $ref: "#/components/schemas/DesignWorkflowFinalFileResponse",
+                      },
+                  },
+              },
+          }
+        "401": { $ref: "#/components/responses/TicketUnauthenticated" }
+        "403": { $ref: "#/components/responses/TicketForbidden" }
+        "404": { $ref: "#/components/responses/TicketNotFound" }
+
   /backup-settings:
     get:
       tags: [Backups]
@@ -253,7 +413,10 @@ paths:
                 properties:
                   data: { $ref: "#/components/schemas/BackupSetting" }
         "401": { description: Belum terautentikasi. }
-        "403": { description: Bukan Super Admin atau tidak memiliki permission backups-schedule. }
+        "403":
+          {
+            description: Bukan Super Admin atau tidak memiliki permission backups-schedule.,
+          }
     put:
       tags: [Backups]
       summary: Memperbarui pengaturan backup otomatis
@@ -282,7 +445,10 @@ paths:
                 properties:
                   data: { $ref: "#/components/schemas/BackupSetting" }
         "401": { description: Belum terautentikasi. }
-        "403": { description: Bukan Super Admin atau tidak memiliki permission backups-schedule. }
+        "403":
+          {
+            description: Bukan Super Admin atau tidak memiliki permission backups-schedule.,
+          }
         "422": { description: Pengaturan tidak valid. }
 
   /backups:
@@ -402,7 +568,10 @@ paths:
       responses:
         "204": { description: File backup dihapus atau sudah tidak tersedia. }
         "401": { description: Belum terautentikasi. }
-        "403": { description: Bukan Super Admin atau tidak memiliki permission backups-delete. }
+        "403":
+          {
+            description: Bukan Super Admin atau tidak memiliki permission backups-delete.,
+          }
         "404": { description: Histori backup tidak ditemukan. }
         "409": { description: Status backup belum berhasil. }
         "500": { description: Gagal menghapus file backup dari storage. }
@@ -428,7 +597,10 @@ paths:
             application/zip:
               schema: { type: string, format: binary }
         "401": { description: Belum terautentikasi. }
-        "403": { description: Bukan Super Admin atau tidak memiliki permission backups-download. }
+        "403":
+          {
+            description: Bukan Super Admin atau tidak memiliki permission backups-download.,
+          }
         "404": { description: Histori atau file backup tidak ditemukan. }
         "409": { description: Status backup belum berhasil. }
 
@@ -452,7 +624,16 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [data, unread_count, activity, current_page, last_page, per_page, total]
+                required:
+                  [
+                    data,
+                    unread_count,
+                    activity,
+                    current_page,
+                    last_page,
+                    per_page,
+                    total,
+                  ]
                 properties:
                   data:
                     type: array
@@ -464,17 +645,35 @@ paths:
                         title: { type: string }
                         subtitle: { type: string }
                         target:
-                          type: [object, 'null']
+                          type: [object, "null"]
                           description: Navigation metadata. Null for notifications without a detail destination.
                           properties:
                             feature: { type: string, example: helpdesk }
-                            service: { type: string, enum: [tik, sarpras], description: Helpdesk service; other features may use different metadata. }
+                            service:
+                              {
+                                type: string,
+                                enum: [tik, sarpras],
+                                description: Helpdesk service; other features may use different metadata.,
+                              }
                             resource_id: { type: integer, example: 123 }
-                        ticket_id: { type: [integer, 'null'], description: Related ticket ID when this is a ticket notification. }
-                        nomor_tiket: { type: [string, 'null'], description: Related ticket number when this is a ticket notification. }
-                        url: { type: [string, 'null'], description: "Frontend ticket detail path (/helpdesk/tik/{id} or /helpdesk/sarpras/{id}) for ticket notifications." }
+                        ticket_id:
+                          {
+                            type: [integer, "null"],
+                            description: Related ticket ID when this is a ticket notification.,
+                          }
+                        nomor_tiket:
+                          {
+                            type: [string, "null"],
+                            description: Related ticket number when this is a ticket notification.,
+                          }
+                        url:
+                          {
+                            type: [string, "null"],
+                            description: "Frontend ticket detail path (/helpdesk/tik/{id} or /helpdesk/sarpras/{id}) for ticket notifications.",
+                          }
                         is_read: { type: boolean }
-                        created_at: { type: [string, 'null'], format: date-time }
+                        created_at:
+                          { type: [string, "null"], format: date-time }
                   unread_count: { type: integer }
                   activity: { type: array, items: { type: object } }
                   current_page: { type: integer }
@@ -546,15 +745,18 @@ paths:
                 - type: object
                   required: [asset_ids, width_mm, height_mm]
                   properties:
-                    selection_mode: { type: string, const: selected, default: selected }
+                    selection_mode:
+                      { type: string, const: selected, default: selected }
                     asset_ids:
                       type: array
                       minItems: 1
                       uniqueItems: true
                       items: { type: integer, minimum: 1 }
                       example: [1, 2, 3]
-                    width_mm: { type: number, minimum: 50, maximum: 150, example: 50 }
-                    height_mm: { type: number, minimum: 25, maximum: 100, example: 60 }
+                    width_mm:
+                      { type: number, minimum: 50, maximum: 150, example: 50 }
+                    height_mm:
+                      { type: number, minimum: 25, maximum: 100, example: 60 }
                 - type: object
                   required: [selection_mode, filters, width_mm, height_mm]
                   properties:
@@ -565,31 +767,67 @@ paths:
                       properties:
                         search: { type: string }
                         location_id: { type: integer }
-                        status: { type: string, enum: [Digunakan, Tidak Digunakan, Rusak, Dipinjam] }
+                        status:
+                          {
+                            type: string,
+                            enum: [Digunakan, Tidak Digunakan, Rusak, Dipinjam],
+                          }
                         classification_id: { type: integer }
-                        moved_last_3_months: { type: boolean, description: 'When true, requires a location change in the last three months.' }
-                        asset_location_id: { type: integer, description: 'Legacy alias for location_id.' }
-                        asset_classification_id: { type: integer, description: 'Legacy alias for classification_id.' }
+                        moved_last_3_months:
+                          {
+                            type: boolean,
+                            description: "When true, requires a location change in the last three months.",
+                          }
+                        asset_location_id:
+                          {
+                            type: integer,
+                            description: "Legacy alias for location_id.",
+                          }
+                        asset_classification_id:
+                          {
+                            type: integer,
+                            description: "Legacy alias for classification_id.",
+                          }
                         asset_item_id: { type: integer }
-                        condition: { type: string, enum: [Baik, Rusak Ringan, Rusak Berat] }
+                        condition:
+                          {
+                            type: string,
+                            enum: [Baik, Rusak Ringan, Rusak Berat],
+                          }
                         purchase_year: { type: integer }
-                        year: { type: integer, description: 'Legacy alias for purchase_year.' }
-                        page: { type: integer, description: 'Ignored for export.' }
-                        per_page: { type: integer, description: 'Ignored for export.' }
-                    width_mm: { type: number, minimum: 50, maximum: 150, example: 50 }
-                    height_mm: { type: number, minimum: 25, maximum: 100, example: 60 }
+                        year:
+                          {
+                            type: integer,
+                            description: "Legacy alias for purchase_year.",
+                          }
+                        page:
+                          { type: integer, description: "Ignored for export." }
+                        per_page:
+                          { type: integer, description: "Ignored for export." }
+                    width_mm:
+                      { type: number, minimum: 50, maximum: 150, example: 50 }
+                    height_mm:
+                      { type: number, minimum: 25, maximum: 100, example: 60 }
       responses:
         "200":
           description: PDF with one selected label per page at the requested dimensions.
           headers:
             Content-Disposition:
-              schema: { type: string, example: 'attachment; filename="asset-labels.pdf"' }
+              schema:
+                {
+                  type: string,
+                  example: 'attachment; filename="asset-labels.pdf"',
+                }
           content:
             application/pdf:
               schema: { type: string, format: binary }
         "401": { description: Unauthenticated. }
-        "403": { description: Printing at least one selected asset is forbidden. }
-        "422": { description: "Invalid selection, filters, label dimensions, or no printable assets matched." }
+        "403":
+          { description: Printing at least one selected asset is forbidden. }
+        "422":
+          {
+            description: "Invalid selection, filters, label dimensions, or no printable assets matched.",
+          }
 
   /assets:
     get:
@@ -623,7 +861,11 @@ paths:
           schema: { type: integer }
         - name: status
           in: query
-          schema: { type: string, enum: [Digunakan, Tidak Digunakan, Rusak, Dipinjam] }
+          schema:
+            {
+              type: string,
+              enum: [Digunakan, Tidak Digunakan, Rusak, Dipinjam],
+            }
         - name: condition
           in: query
           schema: { type: string, enum: [Baik, Rusak Ringan, Rusak Berat] }
@@ -769,7 +1011,10 @@ paths:
       operationId: deleteInventoryAsset
       x-auth-required: true
       responses:
-        "200": { description: Aset dihapus secara soft delete; kode tetap tersimpan. }
+        "200":
+          {
+            description: Aset dihapus secara soft delete; kode tetap tersimpan.,
+          }
 
   /assets/uid/{uid}:
     get:
@@ -794,17 +1039,55 @@ paths:
                 properties:
                   data:
                     type: object
-                    required: [id, uid, classification, asset_code, location, detail_location, name, detail_name, brand, status]
+                    required:
+                      [
+                        id,
+                        uid,
+                        classification,
+                        asset_code,
+                        location,
+                        detail_location,
+                        name,
+                        detail_name,
+                        brand,
+                        status,
+                      ]
                     properties:
                       id: { type: integer }
                       uid: { type: string }
-                      classification: { type: string, enum: [TIK, SARPRAS], description: TIK when asset_classifications.name is Alat IT; SARPRAS otherwise. }
-                      asset_code: { type: [string, 'null'], description: Current asset_codes.full_code; null for an uncoded asset. }
-                      location: { type: [string, 'null'], description: asset_locations.name. }
-                      detail_location: { type: [string, 'null'], description: assets.location_detail. }
-                      name: { type: [string, 'null'], description: asset_items.name. }
-                      detail_name: { type: [string, 'null'], description: assets.detail_item. }
-                      brand: { type: [string, 'null'], description: assets.brand. }
+                      classification:
+                        {
+                          type: string,
+                          enum: [TIK, SARPRAS],
+                          description: TIK when asset_classifications.name is Alat IT; SARPRAS otherwise.,
+                        }
+                      asset_code:
+                        {
+                          type: [string, "null"],
+                          description: Current asset_codes.full_code; null for an uncoded asset.,
+                        }
+                      location:
+                        {
+                          type: [string, "null"],
+                          description: asset_locations.name.,
+                        }
+                      detail_location:
+                        {
+                          type: [string, "null"],
+                          description: assets.location_detail.,
+                        }
+                      name:
+                        {
+                          type: [string, "null"],
+                          description: asset_items.name.,
+                        }
+                      detail_name:
+                        {
+                          type: [string, "null"],
+                          description: assets.detail_item.,
+                        }
+                      brand:
+                        { type: [string, "null"], description: assets.brand. }
                       status: { type: string, description: assets.status. }
         "401": { description: Unauthenticated. }
         "403": { description: Asset access forbidden. }
@@ -920,7 +1203,15 @@ paths:
           schema:
             type: string
             enum:
-              [baru, diklasifikasi, diproses, eskalasi, terselesaikan, ditutup, ditolak]
+              [
+                baru,
+                diklasifikasi,
+                diproses,
+                eskalasi,
+                terselesaikan,
+                ditutup,
+                ditolak,
+              ]
             example: baru
         - name: priority
           in: query
@@ -1513,10 +1804,17 @@ components:
       required: [is_active, frequency, backup_time, day_of_week, day_of_month]
       properties:
         is_active: { type: boolean }
-        frequency: { type: [string, 'null'], enum: [daily, weekly, monthly, null] }
-        backup_time: { type: [string, 'null'], example: '02:00' }
-        day_of_week: { type: [integer, 'null'], minimum: 1, maximum: 7, description: 1=Senin sampai 7=Minggu. }
-        day_of_month: { type: [integer, 'null'], minimum: 1, maximum: 28 }
+        frequency:
+          { type: [string, "null"], enum: [daily, weekly, monthly, null] }
+        backup_time: { type: [string, "null"], example: "02:00" }
+        day_of_week:
+          {
+            type: [integer, "null"],
+            minimum: 1,
+            maximum: 7,
+            description: 1=Senin sampai 7=Minggu.,
+          }
+        day_of_month: { type: [integer, "null"], minimum: 1, maximum: 28 }
 
     BackupSettingUpdate:
       type: object
@@ -1524,29 +1822,52 @@ components:
       properties:
         is_active: { type: boolean }
         frequency: { type: string, enum: [daily, weekly, monthly] }
-        backup_time: { type: string, pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$', example: '02:00' }
+        backup_time:
+          {
+            type: string,
+            pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$",
+            example: "02:00",
+          }
         day_of_week: { type: integer, minimum: 1, maximum: 7 }
         day_of_month: { type: integer, minimum: 1, maximum: 28 }
 
     BackupHistory:
       type: object
-      required: [id, type, status, performed_by, file_name, file_size, file_available, started_at, finished_at, failure_message, created_at]
+      required:
+        [
+          id,
+          type,
+          status,
+          performed_by,
+          file_name,
+          file_size,
+          file_available,
+          started_at,
+          finished_at,
+          failure_message,
+          created_at,
+        ]
       properties:
         id: { type: integer }
         type: { type: string, enum: [manual, automatic] }
         status: { type: string, enum: [pending, processing, success, failed] }
         performed_by:
-          type: [object, 'null']
+          type: [object, "null"]
           description: Backup otomatis menggunakan nama Sistem dengan id null.
           properties:
-            id: { type: [integer, 'null'] }
+            id: { type: [integer, "null"] }
             name: { type: string }
-        file_name: { type: [string, 'null'] }
-        file_size: { type: [integer, 'null'], description: Ukuran ZIP dalam byte. }
-        file_available: { type: boolean, description: Berdasarkan metadata lokasi arsip; keberadaan file di storage diverifikasi saat download. }
-        started_at: { type: [string, 'null'], format: date-time }
-        finished_at: { type: [string, 'null'], format: date-time }
-        failure_message: { type: [string, 'null'] }
+        file_name: { type: [string, "null"] }
+        file_size:
+          { type: [integer, "null"], description: Ukuran ZIP dalam byte. }
+        file_available:
+          {
+            type: boolean,
+            description: Berdasarkan metadata lokasi arsip; keberadaan file di storage diverifikasi saat download.,
+          }
+        started_at: { type: [string, "null"], format: date-time }
+        finished_at: { type: [string, "null"], format: date-time }
+        failure_message: { type: [string, "null"] }
         created_at: { type: string, format: date-time }
 
     BackupError:
@@ -1585,7 +1906,8 @@ components:
         detail_item: { type: [string, "null"], maxLength: 255 }
         location_detail: { type: [string, "null"], maxLength: 100 }
         serial_number: { type: [string, "null"] }
-        status: { type: string, enum: [Digunakan, Tidak Digunakan, Rusak, Dipinjam] }
+        status:
+          { type: string, enum: [Digunakan, Tidak Digunakan, Rusak, Dipinjam] }
         condition: { type: string, enum: [Baik, Rusak Ringan, Rusak Berat] }
         warranty_until: { type: [string, "null"], format: date }
         notes: { type: [string, "null"] }
@@ -1596,8 +1918,18 @@ components:
       type: object
       required: [id, asset_uid, status, condition]
       properties:
-        id: { type: integer, description: Primary key internal dan relasi tickets.asset_id. }
-        asset_uid: { type: string, minLength: 26, maxLength: 26, description: ULID permanen untuk identitas QR. }
+        id:
+          {
+            type: integer,
+            description: Primary key internal dan relasi tickets.asset_id.,
+          }
+        asset_uid:
+          {
+            type: string,
+            minLength: 26,
+            maxLength: 26,
+            description: ULID permanen untuk identitas QR.,
+          }
         asset_code:
           type: [object, "null"]
           properties:
@@ -1644,7 +1976,12 @@ components:
             full_code: "1/2/1/1/2026"
         is_location_change: { type: boolean, example: true }
         changed_by_name: { type: [string, "null"], example: "Super Admin" }
-        created_at: { type: string, format: date-time, example: "2026-10-20T10:00:00.000000Z" }
+        created_at:
+          {
+            type: string,
+            format: date-time,
+            example: "2026-10-20T10:00:00.000000Z",
+          }
 
     InventoryAssetResponse:
       type: object
@@ -1742,7 +2079,21 @@ components:
     DesignRequestRead:
       type: object
       additionalProperties: false
-      required: [id, request_number, title, design_type, description, needed_at, status, requester, unit, reference_file, created_at, updated_at]
+      required:
+        [
+          id,
+          request_number,
+          title,
+          design_type,
+          description,
+          needed_at,
+          status,
+          requester,
+          unit,
+          reference_file,
+          created_at,
+          updated_at,
+        ]
       properties:
         id:
           type: integer
@@ -1762,7 +2113,15 @@ components:
           format: date-time
         status:
           type: string
-          enum: [baru, ditugaskan, menunggu_persetujuan, perlu_revisi, selesai, ditolak]
+          enum:
+            [
+              baru,
+              ditugaskan,
+              menunggu_persetujuan,
+              perlu_revisi,
+              selesai,
+              ditolak,
+            ]
         requester:
           $ref: "#/components/schemas/TicketReporterSummary"
         unit:
@@ -1793,13 +2152,26 @@ components:
     DesignReportRequest:
       type: object
       additionalProperties: false
-      required: [id, request_number, title, unit, status, created_at, completed_at]
+      required:
+        [id, request_number, title, unit, status, created_at, completed_at]
       properties:
         id: { type: integer }
         request_number: { type: string, example: DGR-2026-123456 }
         title: { type: string }
         unit: { $ref: "#/components/schemas/TicketUnitSummary" }
-        status: { type: string, enum: [baru, ditugaskan, menunggu_persetujuan, perlu_revisi, selesai, ditolak] }
+        status:
+          {
+            type: string,
+            enum:
+              [
+                baru,
+                ditugaskan,
+                menunggu_persetujuan,
+                perlu_revisi,
+                selesai,
+                ditolak,
+              ],
+          }
         created_at: { type: string, format: date-time }
         completed_at: { type: [string, "null"], format: date-time }
 
@@ -1813,11 +2185,24 @@ components:
           additionalProperties: false
           required: [total, by_status, by_design_type, requests]
           properties:
-            total: { type: integer, minimum: 0, description: Jumlah request dalam periode tanpa pengaruh search atau pagination }
+            total:
+              {
+                type: integer,
+                minimum: 0,
+                description: Jumlah request dalam periode tanpa pengaruh search atau pagination,
+              }
             by_status:
               type: object
               additionalProperties: false
-              required: [baru, ditugaskan, menunggu_persetujuan, perlu_revisi, selesai, ditolak]
+              required:
+                [
+                  baru,
+                  ditugaskan,
+                  menunggu_persetujuan,
+                  perlu_revisi,
+                  selesai,
+                  ditolak,
+                ]
               properties:
                 baru: { type: integer, minimum: 0 }
                 ditugaskan: { type: integer, minimum: 0 }
@@ -1840,7 +2225,11 @@ components:
               additionalProperties: false
               required: [data, links, meta]
               properties:
-                data: { type: array, items: { $ref: "#/components/schemas/DesignReportRequest" } }
+                data:
+                  {
+                    type: array,
+                    items: { $ref: "#/components/schemas/DesignReportRequest" },
+                  }
                 links: { $ref: "#/components/schemas/PaginationLinks" }
                 meta: { $ref: "#/components/schemas/PaginationMeta" }
 
@@ -1861,7 +2250,28 @@ components:
     DesignRequestDetail:
       type: object
       additionalProperties: false
-      required: [id, request_number, title, design_type, description, needed_at, status, priority, requester, unit, assigned_officer, assigned_at, completed_at, rejection_note, reference_file, latest_draft, latest_revision, created_at, updated_at]
+      required:
+        [
+          id,
+          request_number,
+          title,
+          design_type,
+          description,
+          needed_at,
+          status,
+          priority,
+          requester,
+          unit,
+          assigned_officer,
+          assigned_at,
+          completed_at,
+          rejection_note,
+          reference_file,
+          latest_draft,
+          latest_revision,
+          created_at,
+          updated_at,
+        ]
       properties:
         id: { type: integer }
         request_number: { type: string, example: DGR-2026-123456 }
@@ -1871,7 +2281,15 @@ components:
         needed_at: { type: string, format: date-time }
         status:
           type: string
-          enum: [baru, ditugaskan, menunggu_persetujuan, perlu_revisi, selesai, ditolak]
+          enum:
+            [
+              baru,
+              ditugaskan,
+              menunggu_persetujuan,
+              perlu_revisi,
+              selesai,
+              ditolak,
+            ]
         priority:
           type: [string, "null"]
           enum: [rendah, sedang, tinggi, null]
@@ -1992,6 +2410,82 @@ components:
         data:
           $ref: "#/components/schemas/DesignRequestDetail"
 
+    DesignWorkflowDraft:
+      type: object
+      required:
+        [
+          id,
+          design_request_id,
+          file_object_key,
+          file_original_name,
+          file_mime_type,
+          file_size,
+          notes,
+          uploaded_by_id,
+          created_at,
+          updated_at,
+        ]
+      properties:
+        id: { type: integer }
+        design_request_id: { type: integer }
+        file_object_key: { type: string }
+        file_original_name: { type: string }
+        file_mime_type: { type: string }
+        file_size: { type: integer }
+        notes: { type: [string, "null"] }
+        uploaded_by_id: { type: integer }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    DesignWorkflowRevision:
+      type: object
+      required:
+        [
+          id,
+          design_request_id,
+          design_draft_id,
+          revision_note,
+          requested_by_id,
+          created_at,
+          updated_at,
+        ]
+      properties:
+        id: { type: integer }
+        design_request_id: { type: integer }
+        design_draft_id: { type: integer }
+        revision_note: { type: string }
+        requested_by_id: { type: integer }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    DesignWorkflowDraftResponse:
+      type: object
+      required: [message, data]
+      properties:
+        message: { type: string }
+        data: { $ref: "#/components/schemas/DesignWorkflowDraft" }
+
+    DesignWorkflowRevisionResponse:
+      type: object
+      required: [message, data]
+      properties:
+        message: { type: string }
+        data: { $ref: "#/components/schemas/DesignWorkflowRevision" }
+
+    DesignWorkflowApprovalResponse:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string }
+
+    DesignWorkflowFinalFileResponse:
+      type: object
+      required: [final_file_url, file]
+      properties:
+        final_file_url:
+          { type: string, format: uri, description: Temporary signed URL }
+        file: { $ref: "#/components/schemas/DesignReferenceFileMetadata" }
+
     DesignRequestCreateResponse:
       type: object
       additionalProperties: false
@@ -2063,7 +2557,16 @@ components:
           example: Komputer tidak dapat menyala.
         status:
           type: string
-          enum: [baru, diklasifikasi, diproses, eskalasi, terselesaikan, ditutup, ditolak]
+          enum:
+            [
+              baru,
+              diklasifikasi,
+              diproses,
+              eskalasi,
+              terselesaikan,
+              ditutup,
+              ditolak,
+            ]
           example: baru
         rejection_reason:
           type:

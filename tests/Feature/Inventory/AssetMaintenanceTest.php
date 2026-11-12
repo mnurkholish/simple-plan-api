@@ -414,6 +414,48 @@ test('Pembaruan jadwal ke Hari H langsung mengirimkan notifikasi pengingat insta
     );
 });
 
+test('Pembuatan jadwal dadakan jarak <= 3 hari langsung mengirimkan notifikasi instan mendesak ke petugas', function (): void {
+    Notification::fake();
+    Sanctum::actingAs($this->superAdmin);
+
+    $h2 = now()->addDays(2)->format('Y-m-d');
+    $response = $this->postJson('/api/v1/asset-maintenances', [
+        'asset_code_id' => $this->codeTik->id,
+        'assigned_officer_id' => $this->petugasTik->id,
+        'maintenance_type' => 'Perbaikan Mendesak Jaringan',
+        'period' => MaintenancePeriod::Monthly->value,
+        'next_scheduled_date' => $h2,
+    ]);
+
+    $response->assertCreated();
+
+    Notification::assertSentTo(
+        $this->petugasTik,
+        AssetMaintenanceReminderNotification::class,
+        function (AssetMaintenanceReminderNotification $notification): bool {
+            return $notification->reminderType === 'h-2' && $notification->isUrgent === true;
+        }
+    );
+});
+
+test('Pembuatan jadwal jarak > 3 hari TIDAK langsung mengirimkan notifikasi instan ke petugas', function (): void {
+    Notification::fake();
+    Sanctum::actingAs($this->superAdmin);
+
+    $h7 = now()->addDays(7)->format('Y-m-d');
+    $response = $this->postJson('/api/v1/asset-maintenances', [
+        'asset_code_id' => $this->codeTik->id,
+        'assigned_officer_id' => $this->petugasTik->id,
+        'maintenance_type' => 'Pengecekan Rutin Jauh',
+        'period' => MaintenancePeriod::Monthly->value,
+        'next_scheduled_date' => $h7,
+    ]);
+
+    $response->assertCreated();
+
+    Notification::assertNothingSent();
+});
+
 test('Petugas GAGAL membuat atau memperbarui jadwal pemeliharaan (403 Forbidden)', function (): void {
     Sanctum::actingAs($this->petugasTik);
 

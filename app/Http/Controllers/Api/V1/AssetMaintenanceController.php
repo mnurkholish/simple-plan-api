@@ -13,6 +13,7 @@ use App\Notifications\AssetMaintenanceReminderNotification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 class AssetMaintenanceController extends Controller
 {
@@ -84,7 +85,7 @@ class AssetMaintenanceController extends Controller
             'creator',
         ]);
 
-        $this->notifyOfficerIfScheduledToday($maintenance);
+        $this->notifyOfficerIfUrgent($maintenance);
 
         return response()->json([
             'data' => $maintenance,
@@ -125,7 +126,7 @@ class AssetMaintenanceController extends Controller
             'creator',
         ]);
 
-        $this->notifyOfficerIfScheduledToday($maintenance);
+        $this->notifyOfficerIfUrgent($maintenance);
 
         return response()->json([
             'data' => $maintenance,
@@ -133,21 +134,37 @@ class AssetMaintenanceController extends Controller
         ]);
     }
 
-    protected function notifyOfficerIfScheduledToday(AssetMaintenance $maintenance): void
+    protected function notifyOfficerIfUrgent(AssetMaintenance $maintenance): void
     {
         $isTerjadwal = ($maintenance->status === MaintenanceStatus::Terjadwal)
             || (($maintenance->status?->value ?? $maintenance->status) === MaintenanceStatus::Terjadwal->value);
 
-        if (
-            $maintenance->is_active &&
-            $isTerjadwal &&
-            $maintenance->next_scheduled_date?->isToday() &&
-            $maintenance->assignedOfficer
-        ) {
+        if (! $maintenance->is_active || ! $isTerjadwal || ! $maintenance->assignedOfficer || ! $maintenance->next_scheduled_date) {
+            return;
+        }
+
+        $today = today();
+        $scheduledDate = Carbon::parse($maintenance->next_scheduled_date)->startOfDay();
+        $diffDays = (int) $today->diffInDays($scheduledDate, false);
+
+        if ($diffDays >= 0 && $diffDays <= 3) {
+            $reminderType = match ($diffDays) {
+                0 => 'hari-h',
+                1 => 'h-1',
+                2 => 'h-2',
+                3 => 'h-3',
+                default => 'hari-h',
+            };
+
             $maintenance->assignedOfficer->notify(
-                new AssetMaintenanceReminderNotification($maintenance, 'hari-h')
+                new AssetMaintenanceReminderNotification($maintenance, $reminderType, isUrgent: true)
             );
         }
+    }
+
+    protected function notifyOfficerIfScheduledToday(AssetMaintenance $maintenance): void
+    {
+        $this->notifyOfficerIfUrgent($maintenance);
     }
 
     protected function resolveMaintenance(mixed $assetMaintenance): AssetMaintenance
