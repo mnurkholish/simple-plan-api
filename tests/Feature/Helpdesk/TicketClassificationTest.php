@@ -245,3 +245,197 @@ test('klasifikasi tiket yang tidak ditemukan mengembalikan 404', function (): vo
         ->assertNotFound()
         ->assertExactJson(['message' => 'Resource not found.']);
 });
+
+function actingAsTicketRejectUser(?string $roleName = null): User
+{
+    $user = User::factory()->for(Unit::factory())->create([
+        'status' => 'active',
+        'status_user' => 'Aktif',
+    ]);
+    $permission = Permission::firstOrCreate([
+        'name' => 'tickets-reject',
+        'guard_name' => 'web',
+    ]);
+
+    $user->givePermissionTo($permission);
+
+    if ($roleName !== null) {
+        $role = Role::firstOrCreate([
+            'name' => $roleName,
+            'guard_name' => 'web',
+        ]);
+        $user->assignRole($role);
+    }
+
+    Sanctum::actingAs($user);
+
+    return $user;
+}
+
+test('classification-options mengembalikan opsi aktif sesuai service yang diminta', function (): void {
+    actingAsTicketClassificationUser('super-admin');
+
+    $activeQuality = QualityCategory::create(['name' => 'Kerusakan Jaringan', 'is_active' => true]);
+    $inactiveQuality = QualityCategory::create(['name' => 'Kategori Nonaktif', 'is_active' => false]);
+    $activeTag = ItTag::create(['name' => 'Switch / Router', 'is_active' => true]);
+    $inactiveTag = ItTag::create(['name' => 'Tag Nonaktif', 'is_active' => false]);
+    $sarprasCat = SarprasCategory::create(['name' => 'Alkes', 'is_active' => true]);
+
+    // Service TIK
+    $responseTik = $this->getJson('/api/v1/tickets/classification-options?service=tik')
+        ->assertOk()
+        ->assertJsonPath('data.service', 'tik');
+
+    $qualityIds = collect($responseTik->json('data.quality_categories'))->pluck('id')->all();
+    $tagIds = collect($responseTik->json('data.it_tags'))->pluck('id')->all();
+
+    expect($qualityIds)->toContain($activeQuality->id)->not->toContain($inactiveQuality->id)
+        ->and($tagIds)->toContain($activeTag->id)->not->toContain($inactiveTag->id)
+        ->and($responseTik->json('data.sarpras_categories'))->toBeEmpty();
+
+    // Service Sarpras
+    $responseSarpras = $this->getJson('/api/v1/tickets/classification-options?service=sarpras')
+        ->assertOk()
+        ->assertJsonPath('data.service', 'sarpras')
+        ->assertJsonPath('data.quality_categories', [])
+        ->assertJsonPath('data.it_tags', []);
+
+    $sarprasIds = collect($responseSarpras->json('data.sarpras_categories'))->pluck('id')->all();
+    expect($sarprasIds)->toContain($sarprasCat->id);
+});
+
+test('classification-options memvalidasi parameter service', function (): void {
+    actingAsTicketClassificationUser('super-admin');
+
+    $this->getJson('/api/v1/tickets/classification-options')
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('service');
+
+    $this->getJson('/api/v1/tickets/classification-options?service=invalid')
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('service');
+});
+
+test('guest atau user tanpa permission tickets-verify tidak dapat mengakses classification-options', function (): void {
+    $this->getJson('/api/v1/tickets/classification-options?service=tik')
+        ->assertUnauthorized();
+
+    $user = createTicketClassificationReporter();
+    Sanctum::actingAs($user);
+
+    $this->getJson('/api/v1/tickets/classification-options?service=tik')
+        ->assertForbidden();
+});
+
+test('super admin dapat menolak tiket TIK dan Sarpras yang berstatus baru', function (): void {
+    $actor = actingAsTicketRejectUser('super-admin');
+    $tikTicket = Ticket::factory()->create([
+        'service' => TicketService::Tik,
+        'status' => TicketStatus::Baru,
+    ]);
+    $sarprasTicket = Ticket::factory()->create([
+        'service' => TicketService::Sarpras,
+        'status' => TicketStatus::Baru,
+    ]);
+
+    $this->postJson("/api/v1/tickets/{$tikTicket->id}/reject", [
+        'reason' => 'Bukan wewenang unit IT.',
+    ])
+        ->assertOk()
+        ->assertJsonPath('data.status', TicketStatus::Ditolak->value)
+        ->assertJsonPath('message', 'Tiket berhasil ditolak.');
+
+    $this->postJson("/api/v1/tickets/{$sarprasTicket->id}/reject", [
+        'reason' => 'Perlu surat pengajuan resmi.',
+    ])
+        ->assertOk()
+        ->assertJsonPath('data.status', TicketStatus::Ditolak->value);
+
+    expect($tikTicket->refresh()->status)->toBe(TicketStatus::Ditolak)
+        ->and($sarprasTicket->refresh()->status)->toBe(TicketStatus::Ditolak);
+
+    $this->assertDatabaseHas('ticket_status_histories', [
+        'ticket_id' => $tikTicket->id,
+        'from_status' => TicketStatus::Baru->value,
+        'to_status' => TicketStatus::Ditolak->value,
+        'changed_by_id' => $actor->id,
+        'notes' => 'Bukan wewenang unit IT.',
+    ]);
+});
+
+test('koordinator Sarpras dapat menolak tiket Sarpras tetapi tidak dapat menolak tiket TIK', function (): void {
+    actingAsTicketRejectUser('koordinator-sarpras');
+
+    $sarprasTicket = Ticket::factory()->create([
+        'service' => TicketService::Sarpras,
+        'status' => TicketStatus::Baru,
+    ]);
+    $tikTicket = Ticket::factory()->create([
+        'service' => TicketService::Tik,
+        'status' => TicketStatus::Baru,
+    ]);
+
+    $this->postJson("/api/v1/tickets/{$sarprasTicket->id}/reject", [
+        'reason' => 'Barang sudah tidak digaransi.',
+    ])->assertOk();
+
+    $this->postJson("/api/v1/tickets/{$tikTicket->id}/reject", [
+        'reason' => 'Menolak tiket TIK.',
+    ])->assertForbidden();
+
+    expect($sarprasTicket->refresh()->status)->toBe(TicketStatus::Ditolak)
+        ->and($tikTicket->refresh()->status)->toBe(TicketStatus::Baru);
+});
+
+test('penolakan tiket wajib menyertakan reason', function (): void {
+    actingAsTicketRejectUser('super-admin');
+
+    $ticket = Ticket::factory()->create([
+        'service' => TicketService::Tik,
+        'status' => TicketStatus::Baru,
+    ]);
+
+    $this->postJson("/api/v1/tickets/{$ticket->id}/reject", [])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('reason');
+
+    expect($ticket->refresh()->status)->toBe(TicketStatus::Baru);
+});
+
+test('tiket yang tidak berstatus baru tidak dapat ditolak', function (): void {
+    actingAsTicketRejectUser('super-admin');
+
+    $ticket = Ticket::factory()->create([
+        'service' => TicketService::Tik,
+        'status' => TicketStatus::Diklasifikasi,
+    ]);
+
+    $this->postJson("/api/v1/tickets/{$ticket->id}/reject", [
+        'reason' => 'Sudah terlambat ditolak.',
+    ])
+        ->assertConflict()
+        ->assertJsonPath(
+            'message',
+            'Status tiket tidak dapat diubah dari diklasifikasi menjadi ditolak.',
+        );
+
+    expect($ticket->refresh()->status)->toBe(TicketStatus::Diklasifikasi);
+});
+
+test('user tanpa permission tickets-reject atau role tidak berwenang tidak dapat menolak tiket', function (): void {
+    $reporter = createTicketClassificationReporter();
+    $ticket = Ticket::factory()->reportedBy($reporter)->create([
+        'service' => TicketService::Tik,
+        'status' => TicketStatus::Baru,
+    ]);
+
+    // Guest
+    $this->postJson("/api/v1/tickets/{$ticket->id}/reject", ['reason' => 'Ditolak'])
+        ->assertUnauthorized();
+
+    // User without permission
+    Sanctum::actingAs($reporter);
+
+    $this->postJson("/api/v1/tickets/{$ticket->id}/reject", ['reason' => 'Ditolak'])
+        ->assertForbidden();
+});

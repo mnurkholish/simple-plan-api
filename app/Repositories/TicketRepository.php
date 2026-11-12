@@ -53,8 +53,15 @@ class TicketRepository
                 $filters['status_sla'] ?? null,
                 function (Builder $query, string $statusSla): Builder {
                     $now = now();
+                    $isSqlite = $query->getConnection()->getDriverName() === 'sqlite';
+                    $diffRemaining = $isSqlite
+                        ? "(strftime('%s', sla_deadline) - strftime('%s', ?)) / 60"
+                        : 'TIMESTAMPDIFF(MINUTE, ?, sla_deadline)';
+                    $diffTotal = $isSqlite
+                        ? "(strftime('%s', sla_deadline) - strftime('%s', sla_started_at)) / 60"
+                        : 'TIMESTAMPDIFF(MINUTE, sla_started_at, sla_deadline)';
 
-                    return $query->where(function (Builder $q) use ($statusSla, $now): void {
+                    return $query->where(function (Builder $q) use ($statusSla, $now, $diffRemaining, $diffTotal): void {
                         $q->whereNotNull('sla_deadline')->whereNotNull('sla_started_at');
 
                         if ($statusSla === 'melewati_batas') {
@@ -67,19 +74,19 @@ class TicketRepository
                                     });
                             });
                         } elseif ($statusSla === 'tepat_waktu') {
-                            $q->where(function (Builder $sub) use ($now): void {
+                            $q->where(function (Builder $sub) use ($now, $diffRemaining, $diffTotal): void {
                                 $sub->whereNotNull('completed_at')
                                     ->whereColumn('completed_at', '<=', 'sla_deadline')
-                                    ->orWhere(function (Builder $sub2) use ($now): void {
+                                    ->orWhere(function (Builder $sub2) use ($now, $diffRemaining, $diffTotal): void {
                                         $sub2->whereNull('completed_at')
                                             ->where('sla_deadline', '>=', $now)
-                                            ->whereRaw('TIMESTAMPDIFF(MINUTE, ?, sla_deadline) > (TIMESTAMPDIFF(MINUTE, sla_started_at, sla_deadline) * 0.25)', [$now]);
+                                            ->whereRaw("{$diffRemaining} > ({$diffTotal} * 0.25)", [$now]);
                                     });
                             });
                         } elseif ($statusSla === 'mendekati_batas') {
                             $q->whereNull('completed_at')
                                 ->where('sla_deadline', '>=', $now)
-                                ->whereRaw('TIMESTAMPDIFF(MINUTE, ?, sla_deadline) <= (TIMESTAMPDIFF(MINUTE, sla_started_at, sla_deadline) * 0.25)', [$now]);
+                                ->whereRaw("{$diffRemaining} <= ({$diffTotal} * 0.25)", [$now]);
                         }
                     });
                 }

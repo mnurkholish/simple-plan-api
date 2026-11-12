@@ -205,3 +205,84 @@ test('guest tidak dapat melakukan assignment atau melihat kandidat', function ()
     $this->getJson("/api/v1/tickets/{$ticket->id}/assignee-options")
         ->assertUnauthorized();
 });
+
+test('penugasan ulang (reassignment) memperbarui petugas dan waktu penugasan tanpa mengubah SLA', function (): void {
+    actingAsTicketAssignmentUser('super-admin');
+
+    $originalOfficer = createTicketAssignmentUser('petugas-tik', ['name' => 'Petugas Pertama']);
+    $newOfficer = createTicketAssignmentUser('petugas-tik', ['name' => 'Petugas Kedua']);
+
+    $ticket = Ticket::factory()->create([
+        'service' => TicketService::Tik,
+        'status' => TicketStatus::Diproses,
+        'assigned_officer_id' => $originalOfficer->id,
+        'priority' => TicketPriority::High,
+        'assigned_at' => '2026-10-01 08:00:00',
+        'sla_started_at' => '2026-10-01 08:00:00',
+        'sla_deadline' => '2026-10-01 12:00:00',
+    ]);
+
+    // Priority dilarang saat reassignment (tiket berstatus diproses)
+    $this->postJson("/api/v1/tickets/{$ticket->id}/assign", [
+        'assigned_officer_id' => $newOfficer->id,
+        'priority' => TicketPriority::Critical->value,
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('priority');
+
+    // Reassignment yang valid tanpa field priority
+    Carbon::setTestNow('2026-10-01 09:30:00');
+
+    try {
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/assign", [
+            'assigned_officer_id' => $newOfficer->id,
+        ]);
+    } finally {
+        Carbon::setTestNow();
+    }
+
+    $response
+        ->assertOk()
+        ->assertJsonPath('message', 'Petugas berhasil ditugaskan ulang.')
+        ->assertJsonPath('data.status', TicketStatus::Diproses->value)
+        ->assertJsonPath('data.assigned_officer.id', $newOfficer->id)
+        ->assertJsonPath('data.priority', TicketPriority::High->value);
+
+    $ticket->refresh();
+
+    expect($ticket->assigned_officer_id)->toBe($newOfficer->id)
+        ->and($ticket->status)->toBe(TicketStatus::Diproses)
+        ->and($ticket->priority)->toBe(TicketPriority::High)
+        ->and($ticket->assigned_at?->format('Y-m-d H:i:s'))->toBe('2026-10-01 09:30:00')
+        ->and($ticket->sla_started_at?->format('Y-m-d H:i:s'))->toBe('2026-10-01 08:00:00')
+        ->and($ticket->sla_deadline?->format('Y-m-d H:i:s'))->toBe('2026-10-01 12:00:00');
+
+    // Transisi Diproses -> Diproses tidak membuat status history duplikat
+    expect($ticket->statusHistories()->count())->toBe(0);
+});
+
+test('pencarian kandidat petugas melalui parameter search mencocokkan nama atau jabatan', function (): void {
+    actingAsTicketAssignmentUser('super-admin');
+
+    $candidate1 = createTicketAssignmentUser('petugas-tik', ['name' => 'Ahmad Teknisi', 'jabatan' => 'Staff IT']);
+    $candidate2 = createTicketAssignmentUser('petugas-tik', ['name' => 'Budi Jaringan', 'jabatan' => 'Network Admin']);
+
+    $ticket = Ticket::factory()->create([
+        'service' => TicketService::Tik,
+        'status' => TicketStatus::Diklasifikasi,
+    ]);
+
+    // Search by name
+    $response = $this->getJson("/api/v1/tickets/{$ticket->id}/assignee-options?search=Ahmad")
+        ->assertOk();
+
+    $ids = collect($response->json('data'))->pluck('id')->all();
+    expect($ids)->toContain($candidate1->id)->not->toContain($candidate2->id);
+
+    // Search by jabatan
+    $responseJabatan = $this->getJson("/api/v1/tickets/{$ticket->id}/assignee-options?search=Network")
+        ->assertOk();
+
+    $idsJabatan = collect($responseJabatan->json('data'))->pluck('id')->all();
+    expect($idsJabatan)->toContain($candidate2->id)->not->toContain($candidate1->id);
+});
