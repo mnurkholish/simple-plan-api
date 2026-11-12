@@ -50,9 +50,9 @@ function createInventoryAuthTestAsset(string $classificationName, string $detail
     ]);
 }
 
-test('Manajemen, Koordinator Sarpras, Petugas TIK, Petugas Sarpras, dan User mendapat 403 Forbidden saat menembak endpoint Master Data Inventaris', function (string $role): void {
+test('role user mendapat 403 Forbidden saat mengakses endpoint Master Data Inventaris', function (): void {
     $user = User::factory()->create();
-    $user->assignRole($role);
+    $user->assignRole('user');
 
     Sanctum::actingAs($user);
 
@@ -67,24 +67,24 @@ test('Manajemen, Koordinator Sarpras, Petugas TIK, Petugas Sarpras, dan User men
     // Master Barang / Item
     $this->getJson('/api/v1/asset-items')->assertForbidden();
     $this->postJson('/api/v1/asset-items', ['name' => 'Barang Baru', 'asset_classification_id' => 1])->assertForbidden();
-})->with([
-    'management',
-    'koordinator-sarpras',
-    'petugas-tik',
-    'petugas-sarpras',
-    'user',
-]);
+});
 
-test('Super Admin BISA mengakses endpoint Master Data Inventaris', function (): void {
-    $superAdmin = User::factory()->create();
-    $superAdmin->assignRole('super-admin');
+test('seluruh role internal (Super Admin, Manajemen, Koordinator Sarpras, Petugas TIK, Petugas Sarpras) BISA mengakses GET Master Data Inventaris', function (string $role): void {
+    $user = User::factory()->create();
+    $user->assignRole($role);
 
-    Sanctum::actingAs($superAdmin);
+    Sanctum::actingAs($user);
 
     $this->getJson('/api/v1/asset-classifications')->assertOk();
     $this->getJson('/api/v1/asset-locations')->assertOk();
     $this->getJson('/api/v1/asset-items')->assertOk();
-});
+})->with([
+    'super-admin',
+    'management',
+    'koordinator-sarpras',
+    'petugas-tik',
+    'petugas-sarpras',
+]);
 
 test('response GET /inventories dari token Manajemen tidak mengandung data inventaris milik TIK dan Sarpras', function (): void {
     $management = User::factory()->create();

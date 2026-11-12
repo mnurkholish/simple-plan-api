@@ -86,8 +86,8 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::apiResource('assets', AssetController::class);
         Route::post('assets/{asset}', [AssetController::class, 'update'])->name('assets.update.post');
 
-        // Master Data Inventaris: HANYA Super Admin (blokir User, Petugas Sarpras, Petugas TIK, Manajemen, Koordinator Sarpras)
-        Route::middleware('role:super_admin|super-admin')->group(function (): void {
+        // Master Data Inventaris: Role internal (Super Admin, Manajemen, Petugas TIK, Petugas Sarpras, Koordinator Sarpras), blokir User
+        Route::middleware('role:super_admin|super-admin|manajemen|management|petugas_tik|petugas-tik|petugas_sarpras|petugas-sarpras|koordinator_sarpras|koordinator-sarpras')->group(function (): void {
             Route::apiResource('asset-classifications', AssetClassificationController::class)->except(['destroy']);
             Route::apiResource('asset-locations', AssetLocationController::class)->except(['destroy']);
             Route::apiResource('asset-items', AssetItemController::class)->except(['destroy']);
