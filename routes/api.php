@@ -114,22 +114,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::get('tickets', [TicketController::class, 'index'])
             ->middleware('permission:tickets-access')
             ->name('tickets.index');
-        Route::get('design-requests', [DesignRequestController::class, 'index'])
-            ->name('design-requests.index');
         Route::post('design-requests', [DesignRequestController::class, 'store'])
             ->middleware('permission:design-requests-create')
             ->name('design-requests.store');
-        Route::get('design-requests/reports', [DesignRequestController::class, 'reports'])
-            ->middleware('role:manajemen|management|super_admin|super-admin')
-            ->name('design-requests.reports');
-        Route::get('design-tasks', [DesignRequestController::class, 'tasks'])
-            ->middleware('role:petugas_tik|petugas-tik')
-            ->name('design-tasks.index');
-        Route::post('design-requests/{id}/assignments', [DesignRequestController::class, 'assign'])
-            ->middleware('role:super_admin|super-admin')
-            ->name('design-requests.assignments');
-        Route::get('design-requests/{id}', [DesignRequestController::class, 'show'])
-            ->name('design-requests.show');
         Route::post('design-requests/{id}/drafts', [DesignWorkflowController::class, 'storeDraft'])
             ->middleware('permission:design-drafts-upload')
             ->name('design-requests.drafts.store');

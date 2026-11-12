@@ -171,9 +171,11 @@ test('downloadFinal mengembalikan url file final jika status selesai untuk pemoh
     $response = $this->getJson("/api/v1/design-requests/{$designRequest->id}/final-file");
 
     $response->assertOk()
-        ->assertJsonStructure(['final_file_url']);
+        ->assertJsonPath('file.original_name', 'final.png')
+        ->assertJsonPath('file.size', $draft->file_size);
 
     expect($response->json('final_file_url'))->toContain($draft->file_path);
+    expect($response->json('final_file_url'))->toContain('expiration=');
 });
 
 test('downloadFinal dapat diakses oleh super-admin jika status selesai', function (): void {

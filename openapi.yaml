@@ -57,6 +57,87 @@ paths:
         "422":
           $ref: "#/components/responses/TicketValidationError"
 
+  /design-requests/{id}/drafts:
+    post:
+      tags: [Design Graphic]
+      summary: Unggah draft desain
+      description: Petugas TIK yang ditugaskan dapat mengunggah draft saat status ditugaskan atau perlu_revisi.
+      operationId: uploadDesignDraft
+      x-auth-required: true
+      x-required-permission: design-drafts-upload
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary, description: Maksimal 10 MB }
+                notes: { type: [string, "null"] }
+      responses:
+        "201": { description: Draft tersimpan, content: { application/json: { schema: { $ref: "#/components/schemas/DesignWorkflowDraftResponse" } } } }
+        "401": { $ref: "#/components/responses/TicketUnauthenticated" }
+        "403": { $ref: "#/components/responses/TicketForbidden" }
+        "404": { $ref: "#/components/responses/TicketNotFound" }
+        "422": { $ref: "#/components/responses/TicketValidationError" }
+
+  /design-requests/{id}/revisions:
+    post:
+      tags: [Design Graphic]
+      summary: Ajukan revisi draft terbaru
+      operationId: createDesignRevision
+      x-auth-required: true
+      x-required-permission: design-requests-revise
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision_note]
+              properties:
+                revision_note: { type: string }
+      responses:
+        "201": { description: Revisi tersimpan, content: { application/json: { schema: { $ref: "#/components/schemas/DesignWorkflowRevisionResponse" } } } }
+        "401": { $ref: "#/components/responses/TicketUnauthenticated" }
+        "403": { $ref: "#/components/responses/TicketForbidden" }
+        "404": { $ref: "#/components/responses/TicketNotFound" }
+        "422": { $ref: "#/components/responses/TicketValidationError" }
+
+  /design-requests/{id}/approvals:
+    post:
+      tags: [Design Graphic]
+      summary: Setujui draft terbaru
+      operationId: approveDesignRequest
+      x-auth-required: true
+      x-required-permission: design-requests-approve
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: Request selesai, content: { application/json: { schema: { $ref: "#/components/schemas/DesignWorkflowApprovalResponse" } } } }
+        "401": { $ref: "#/components/responses/TicketUnauthenticated" }
+        "403": { $ref: "#/components/responses/TicketForbidden" }
+        "404": { $ref: "#/components/responses/TicketNotFound" }
+
+  /design-requests/{id}/final-file:
+    get:
+      tags: [Design Graphic]
+      summary: Ambil metadata dan temporary signed URL file final
+      operationId: downloadDesignFinalFile
+      x-auth-required: true
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: File final tersedia, content: { application/json: { schema: { $ref: "#/components/schemas/DesignWorkflowFinalFileResponse" } } } }
+        "401": { $ref: "#/components/responses/TicketUnauthenticated" }
+        "403": { $ref: "#/components/responses/TicketForbidden" }
+        "404": { $ref: "#/components/responses/TicketNotFound" }
+
   /backup-settings:
     get:
       tags: [Backups]
@@ -1610,6 +1691,60 @@ components:
           type: string
         size:
           type: integer
+
+    DesignWorkflowDraft:
+      type: object
+      required: [id, design_request_id, file_object_key, file_original_name, file_mime_type, file_size, notes, uploaded_by_id, created_at, updated_at]
+      properties:
+        id: { type: integer }
+        design_request_id: { type: integer }
+        file_object_key: { type: string }
+        file_original_name: { type: string }
+        file_mime_type: { type: string }
+        file_size: { type: integer }
+        notes: { type: [string, "null"] }
+        uploaded_by_id: { type: integer }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    DesignWorkflowRevision:
+      type: object
+      required: [id, design_request_id, design_draft_id, revision_note, requested_by_id, created_at, updated_at]
+      properties:
+        id: { type: integer }
+        design_request_id: { type: integer }
+        design_draft_id: { type: integer }
+        revision_note: { type: string }
+        requested_by_id: { type: integer }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    DesignWorkflowDraftResponse:
+      type: object
+      required: [message, data]
+      properties:
+        message: { type: string }
+        data: { $ref: "#/components/schemas/DesignWorkflowDraft" }
+
+    DesignWorkflowRevisionResponse:
+      type: object
+      required: [message, data]
+      properties:
+        message: { type: string }
+        data: { $ref: "#/components/schemas/DesignWorkflowRevision" }
+
+    DesignWorkflowApprovalResponse:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string }
+
+    DesignWorkflowFinalFileResponse:
+      type: object
+      required: [final_file_url, file]
+      properties:
+        final_file_url: { type: string, format: uri, description: Temporary signed URL }
+        file: { $ref: "#/components/schemas/DesignReferenceFileMetadata" }
 
     DesignRequestCreateResponse:
       type: object

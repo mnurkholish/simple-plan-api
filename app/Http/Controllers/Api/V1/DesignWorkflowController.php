@@ -110,9 +110,15 @@ class DesignWorkflowController extends Controller
         }
 
         $url = $this->service->getFinalFileUrl($designRequest);
+        $draft = $designRequest->drafts()->latest()->firstOrFail();
 
         return response()->json([
             'final_file_url' => $url,
+            'file' => [
+                'original_name' => $draft->file_original_name,
+                'mime_type' => $draft->file_mime_type,
+                'size' => $draft->file_size,
+            ],
         ], Response::HTTP_OK);
     }
 }

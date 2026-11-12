@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Enums\DesignRequestStatus;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -66,18 +65,5 @@ class DesignRequest extends Model
     public function revisions(): HasMany
     {
         return $this->hasMany(DesignRevision::class);
-    }
-
-    public function scopeVisibleTo(Builder $query, User $user): Builder
-    {
-        if ($user->hasRole('super-admin')) {
-            return $query;
-        }
-
-        if ($user->hasRole('petugas-tik')) {
-            return $query->where('assigned_officer_id', $user->id);
-        }
-
-        return $query->where('requester_id', $user->id);
     }
 }

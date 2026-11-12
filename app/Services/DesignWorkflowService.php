@@ -89,10 +89,9 @@ class DesignWorkflowService
     {
         $draft = $request->drafts()->latest()->firstOrFail();
 
-        try {
-            return Storage::temporaryUrl($draft->file_path, now()->addMinutes(30));
-        } catch (Throwable) {
-            return Storage::url($draft->file_path);
-        }
+        return Storage::temporaryUrl(
+            $draft->file_object_key,
+            now()->addMinutes((int) config('filesystems.temporary_url_expiration_minutes', 5)),
+        );
     }
 }

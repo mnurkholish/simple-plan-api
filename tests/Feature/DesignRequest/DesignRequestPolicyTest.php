@@ -30,49 +30,6 @@ function createPolicyTestDesignRequest(array $attributes = []): DesignRequest
     ], $attributes));
 }
 
-test('viewAny mengizinkan semua authenticated user', function (): void {
-    $policy = new DesignRequestPolicy;
-    $user = User::factory()->create(['unit_id' => Unit::factory()]);
-
-    expect($policy->viewAny($user))->toBeTrue();
-});
-
-test('view mengizinkan super-admin, pemohon, dan petugas yang ditugaskan, tetapi menolak user lain', function (): void {
-    $designRequest = createPolicyTestDesignRequest();
-    $policy = new DesignRequestPolicy;
-
-    $superAdmin = User::factory()->create(['unit_id' => Unit::factory()]);
-    $superAdmin->assignRole(Role::firstOrCreate(['name' => 'super-admin', 'guard_name' => 'web']));
-
-    $requester = User::find($designRequest->requester_id);
-    $officer = User::find($designRequest->assigned_officer_id);
-    $otherUser = User::factory()->create(['unit_id' => Unit::factory()]);
-
-    expect($policy->view($superAdmin, $designRequest))->toBeTrue();
-    expect($policy->view($requester, $designRequest))->toBeTrue();
-    expect($policy->view($officer, $designRequest))->toBeTrue();
-    expect($policy->view($otherUser, $designRequest))->toBeFalse();
-});
-
-test('create mengizinkan semua authenticated user', function (): void {
-    $policy = new DesignRequestPolicy;
-    $user = User::factory()->create(['unit_id' => Unit::factory()]);
-
-    expect($policy->create($user))->toBeTrue();
-});
-
-test('assign hanya mengizinkan super-admin', function (): void {
-    $policy = new DesignRequestPolicy;
-
-    $superAdmin = User::factory()->create(['unit_id' => Unit::factory()]);
-    $superAdmin->assignRole(Role::firstOrCreate(['name' => 'super-admin', 'guard_name' => 'web']));
-
-    $regularUser = User::factory()->create(['unit_id' => Unit::factory()]);
-
-    expect($policy->assign($superAdmin))->toBeTrue();
-    expect($policy->assign($regularUser))->toBeFalse();
-});
-
 test('uploadDraft hanya mengizinkan petugas-tik yang secara spesifik ditugaskan pada request', function (): void {
     $designRequest = createPolicyTestDesignRequest();
     $policy = new DesignRequestPolicy;

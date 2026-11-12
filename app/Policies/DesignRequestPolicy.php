@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace App\Policies;
 
 use App\Models\DesignRequest;
@@ -10,46 +8,12 @@ use App\Models\User;
 class DesignRequestPolicy
 {
     /**
-     * Tentukan apakah user dapat melihat daftar request desain.
-     */
-    public function viewAny(User $user): bool
-    {
-        return true;
-    }
-
-    /**
-     * Tentukan apakah user dapat melihat detail request desain.
-     */
-    public function view(User $user, DesignRequest $request): bool
-    {
-        return $user->hasAnyRole(['super-admin', 'super_admin'])
-            || $this->isRequester($user, $request)
-            || $this->isAssignedOfficer($user, $request);
-    }
-
-    /**
-     * Tentukan apakah user dapat membuat request desain baru.
-     */
-    public function create(User $user): bool
-    {
-        return true;
-    }
-
-    /**
-     * Tentukan apakah user dapat menugaskan petugas pada request desain.
-     */
-    public function assign(User $user): bool
-    {
-        return $user->hasAnyRole(['super-admin', 'super_admin']);
-    }
-
-    /**
      * Tentukan apakah user dapat mengunggah draft desain.
      * Hanya Petugas TIK yang secara spesifik ditugaskan yang diizinkan.
      */
     public function uploadDraft(User $user, DesignRequest $request): bool
     {
-        return $user->hasAnyRole(['petugas-tik', 'petugas_tik'])
+        return $user->hasRole('petugas-tik')
             && $this->isAssignedOfficer($user, $request);
     }
 
@@ -76,22 +40,19 @@ class DesignRequestPolicy
      */
     public function downloadFinal(User $user, DesignRequest $request): bool
     {
-        return $user->hasAnyRole(['super-admin', 'super_admin'])
+        return $user->hasRole('super-admin')
             || $this->isRequester($user, $request)
             || $this->isAssignedOfficer($user, $request);
     }
 
     private function isRequester(User $user, DesignRequest $request): bool
     {
-        $requesterId = $request->requester_id ?? $request->user_id;
-
-        return $requesterId !== null && (int) $user->getKey() === (int) $requesterId;
+        return (int) $user->getKey() === (int) $request->requester_id;
     }
 
     private function isAssignedOfficer(User $user, DesignRequest $request): bool
     {
-        $officerId = $request->assigned_officer_id ?? $request->petugas_id;
-
-        return $officerId !== null && (int) $user->getKey() === (int) $officerId;
+        return $request->assigned_officer_id !== null
+            && (int) $user->getKey() === (int) $request->assigned_officer_id;
     }
 }
