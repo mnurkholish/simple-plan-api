@@ -20,6 +20,7 @@ class AssetScanResource extends JsonResource
             'detail_location' => $this->location_detail,
             'name' => $code?->item?->name,
             'detail_name' => $this->detail_item,
+            'brand' => $this->brand,
             'status' => $this->status->value,
         ];
     }

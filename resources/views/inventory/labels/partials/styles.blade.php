@@ -13,8 +13,8 @@
 
 <style>
     @page {
-        size: {{ $pageMode === 'a4' ? 'A4 portrait' : $widthMm.'mm '.$heightMm.'mm' }};
-        margin: {{ $pageMode === 'a4' ? '10mm' : '0' }};
+        size: {{ $widthMm }}mm {{ $heightMm }}mm;
+        margin: 0;
     }
 
     * { box-sizing: border-box; }
@@ -141,13 +141,11 @@
         text-align: center;
     }
 
-    @if ($pageMode === 'a4')
+    @if ($pageMode === 'bulk')
         .label-page {
-            display: grid;
-            grid-template-columns: repeat({{ $columns }}, {{ $widthMm }}mm);
-            grid-auto-rows: {{ $heightMm }}mm;
-            gap: {{ $gapMm }}mm;
-            width: 190mm;
+            width: {{ $widthMm }}mm;
+            height: {{ $heightMm }}mm;
+            overflow: hidden;
             break-after: page;
             page-break-after: always;
         }

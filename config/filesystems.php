@@ -56,7 +56,7 @@ return [
             'region' => env('AWS_DEFAULT_REGION'),
             'bucket' => env('AWS_BUCKET'),
             'url' => env('AWS_URL'),
-            'temporary_url' => env('AWS_TEMPORARY_URL'),
+            'temporary_url' => env('AWS_TEMPORARY_URL') ?: null,
             'endpoint' => env('AWS_ENDPOINT'),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
             'throw' => false,

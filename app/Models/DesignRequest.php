@@ -6,6 +6,7 @@ use App\Enums\DesignRequestStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class DesignRequest extends Model
 {
@@ -62,8 +63,18 @@ class DesignRequest extends Model
         return $this->hasMany(DesignDraft::class);
     }
 
+    public function latestDraft(): HasOne
+    {
+        return $this->hasOne(DesignDraft::class)->latestOfMany();
+    }
+
     public function revisions(): HasMany
     {
         return $this->hasMany(DesignRevision::class);
+    }
+
+    public function latestRevision(): HasOne
+    {
+        return $this->hasOne(DesignRevision::class)->latestOfMany();
     }
 }

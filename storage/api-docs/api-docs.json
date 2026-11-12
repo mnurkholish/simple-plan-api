@@ -14,9 +14,7 @@
     "paths": {
         "/auth/login": {
             "post": {
-                "tags": [
-                    "Auth"
-                ],
+                "tags": ["Auth"],
                 "summary": "Login and create Sanctum bearer token",
                 "operationId": "6312031b3d2ab2e78c76889a12ac2be3",
                 "requestBody": {
@@ -92,9 +90,7 @@
         },
         "/auth/logout": {
             "post": {
-                "tags": [
-                    "Auth"
-                ],
+                "tags": ["Auth"],
                 "summary": "Logout and revoke current token",
                 "operationId": "70b0b9a195044bbce870f42723729c8a",
                 "responses": {
@@ -121,9 +117,7 @@
         },
         "/auth/me": {
             "get": {
-                "tags": [
-                    "Auth"
-                ],
+                "tags": ["Auth"],
                 "summary": "Get authenticated user",
                 "operationId": "15d6b2a8c25fa44f2a7d72081c998140",
                 "responses": {
@@ -155,9 +149,7 @@
         },
         "/auth/register": {
             "post": {
-                "tags": [
-                    "Auth"
-                ],
+                "tags": ["Auth"],
                 "summary": "Register user",
                 "operationId": "e4992080a3aaf44a762440f58d67ed38",
                 "requestBody": {
@@ -238,9 +230,7 @@
         },
         "/auth/forgot-password": {
             "post": {
-                "tags": [
-                    "Auth"
-                ],
+                "tags": ["Auth"],
                 "summary": "Send reset password link",
                 "operationId": "9f50ba1d9005d3226d6ffbd42d3b0430",
                 "requestBody": {
@@ -248,9 +238,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "email"
-                                ],
+                                "required": ["email"],
                                 "properties": {
                                     "email": {
                                         "type": "string"
@@ -277,9 +265,7 @@
         },
         "/auth/reset-password": {
             "post": {
-                "tags": [
-                    "Auth"
-                ],
+                "tags": ["Auth"],
                 "summary": "Reset password",
                 "operationId": "117b225db11f8f5aadf4e7aef5ccbd5a",
                 "requestBody": {
@@ -328,9 +314,7 @@
         },
         "/auth/email/verification-notification": {
             "post": {
-                "tags": [
-                    "Auth"
-                ],
+                "tags": ["Auth"],
                 "summary": "Resend email verification notification",
                 "operationId": "0990c6fe1ceded2b2ebdd961d5136086",
                 "responses": {
@@ -354,9 +338,7 @@
         },
         "/auth/email/verify/{id}/{hash}": {
             "get": {
-                "tags": [
-                    "Auth"
-                ],
+                "tags": ["Auth"],
                 "summary": "Verify email with signed URL",
                 "operationId": "95d36b9e3b8c79f7df38eb7a0e6160f7",
                 "parameters": [
@@ -396,9 +378,7 @@
         },
         "/auth/confirm-password": {
             "post": {
-                "tags": [
-                    "Auth"
-                ],
+                "tags": ["Auth"],
                 "summary": "Confirm current password",
                 "operationId": "1218b461ff7e9fb151a1a70b57fabc70",
                 "requestBody": {
@@ -406,9 +386,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "password"
-                                ],
+                                "required": ["password"],
                                 "properties": {
                                     "password": {
                                         "type": "string"
@@ -440,9 +418,7 @@
         },
         "/auth/sso/config": {
             "get": {
-                "tags": [
-                    "SSO"
-                ],
+                "tags": ["SSO"],
                 "summary": "Get SSO configuration",
                 "operationId": "221306611a5c8337903e112add086d64",
                 "responses": {
@@ -482,9 +458,7 @@
         },
         "/auth/sso/login": {
             "get": {
-                "tags": [
-                    "SSO"
-                ],
+                "tags": ["SSO"],
                 "summary": "Redirect to IAM login",
                 "operationId": "891597ca78e3ce01bf63b302e908b085",
                 "responses": {
@@ -499,9 +473,7 @@
         },
         "/auth/sso/callback": {
             "get": {
-                "tags": [
-                    "SSO"
-                ],
+                "tags": ["SSO"],
                 "summary": "Receive IAM callback and create one-time exchange code",
                 "operationId": "d47603c1a569bfd2d814aeccc322b950",
                 "parameters": [
@@ -523,9 +495,7 @@
         },
         "/auth/sso/exchange": {
             "post": {
-                "tags": [
-                    "SSO"
-                ],
+                "tags": ["SSO"],
                 "summary": "Exchange one-time SSO code for Sanctum token",
                 "operationId": "ccd044b304c8bc8cc253d6370b032659",
                 "requestBody": {
@@ -533,9 +503,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "code"
-                                ],
+                                "required": ["code"],
                                 "properties": {
                                     "code": {
                                         "type": "string"
@@ -581,9 +549,7 @@
         },
         "/dashboard": {
             "get": {
-                "tags": [
-                    "Dashboard"
-                ],
+                "tags": ["Dashboard"],
                 "summary": "Get dashboard data",
                 "operationId": "61606dec7cf4b4479cb05eed70d08b0c",
                 "responses": {
@@ -600,9 +566,7 @@
         },
         "/dashboard/live-stats": {
             "get": {
-                "tags": [
-                    "Dashboard"
-                ],
+                "tags": ["Dashboard"],
                 "summary": "Get live dashboard stats",
                 "operationId": "ad43381bc86db4d930ad17c74d240ded",
                 "responses": {
@@ -619,9 +583,7 @@
         },
         "/profile": {
             "get": {
-                "tags": [
-                    "Profile"
-                ],
+                "tags": ["Profile"],
                 "summary": "Get profile",
                 "operationId": "54195ef94de4111bf84fb1109d46aa21",
                 "responses": {
@@ -648,9 +610,7 @@
                 ]
             },
             "delete": {
-                "tags": [
-                    "Profile"
-                ],
+                "tags": ["Profile"],
                 "summary": "Delete authenticated account",
                 "operationId": "ff7fba3a544146da329718442a15afeb",
                 "requestBody": {
@@ -658,9 +618,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "password"
-                                ],
+                                "required": ["password"],
                                 "properties": {
                                     "password": {
                                         "type": "string"
@@ -690,9 +648,7 @@
                 ]
             },
             "patch": {
-                "tags": [
-                    "Profile"
-                ],
+                "tags": ["Profile"],
                 "summary": "Update profile",
                 "operationId": "30bc54feb7b90b6a347e3f12866f63b0",
                 "requestBody": {
@@ -748,9 +704,7 @@
         },
         "/profile/password": {
             "put": {
-                "tags": [
-                    "Profile"
-                ],
+                "tags": ["Profile"],
                 "summary": "Update password",
                 "operationId": "0cf81f3dad3a0928c132ca3de7f2c6c1",
                 "requestBody": {
@@ -800,9 +754,7 @@
         },
         "/users": {
             "get": {
-                "tags": [
-                    "Users"
-                ],
+                "tags": ["Users"],
                 "summary": "List users",
                 "operationId": "27b08e854ba9f8bb4736a1d2d52fdd9d",
                 "parameters": [
@@ -895,9 +847,7 @@
                 ]
             },
             "post": {
-                "tags": [
-                    "Users"
-                ],
+                "tags": ["Users"],
                 "summary": "Create user",
                 "operationId": "f60f1c5b77aa8a79fc26758b039cc9d5",
                 "requestBody": {
@@ -992,9 +942,7 @@
                                         "nip": [
                                             "NIP sudah terdaftar di sistem."
                                         ],
-                                        "password": [
-                                            "Form wajib diisi"
-                                        ]
+                                        "password": ["Form wajib diisi"]
                                     }
                                 }
                             }
@@ -1010,9 +958,7 @@
         },
         "/users/options": {
             "get": {
-                "tags": [
-                    "Users"
-                ],
+                "tags": ["Users"],
                 "summary": "Get role and unit options for user forms",
                 "operationId": "a735c78b46fd3b03a6dba36ff0a24e68",
                 "responses": {
@@ -1029,9 +975,7 @@
         },
         "/users/search": {
             "get": {
-                "tags": [
-                    "Users"
-                ],
+                "tags": ["Users"],
                 "summary": "Search users by name",
                 "operationId": "searchUsersByName",
                 "parameters": [
@@ -1093,9 +1037,7 @@
         },
         "/assets/search": {
             "get": {
-                "tags": [
-                    "Assets"
-                ],
+                "tags": ["Assets"],
                 "summary": "Search assets by asset number or name",
                 "operationId": "searchAssets",
                 "parameters": [
@@ -1167,9 +1109,7 @@
         },
         "/users/{user}": {
             "get": {
-                "tags": [
-                    "Users"
-                ],
+                "tags": ["Users"],
                 "summary": "Show user",
                 "operationId": "9f1b01cceb251a4616f62279cbc46cf6",
                 "parameters": [
@@ -1206,9 +1146,7 @@
                 ]
             },
             "put": {
-                "tags": [
-                    "Users"
-                ],
+                "tags": ["Users"],
                 "summary": "Update user",
                 "operationId": "13daa11aacadd249e2f588311904baa0",
                 "parameters": [
@@ -1309,9 +1247,7 @@
                                 "example": {
                                     "message": "Format data tidak sesuai",
                                     "errors": {
-                                        "no_hp": [
-                                            "Format data tidak sesuai."
-                                        ]
+                                        "no_hp": ["Format data tidak sesuai."]
                                     }
                                 }
                             }
@@ -1327,9 +1263,7 @@
         },
         "/users/{user}/status": {
             "patch": {
-                "tags": [
-                    "Users"
-                ],
+                "tags": ["Users"],
                 "summary": "Toggle user status (Aktif/Nonaktif)",
                 "operationId": "74f8954dca0688185217a7b41540b53f",
                 "parameters": [
@@ -1351,10 +1285,7 @@
                                 "properties": {
                                     "status_user": {
                                         "type": "string",
-                                        "enum": [
-                                            "Aktif",
-                                            "Nonaktif"
-                                        ]
+                                        "enum": ["Aktif", "Nonaktif"]
                                     },
                                     "alasan_nonaktif": {
                                         "type": "string",
@@ -1434,9 +1365,7 @@
         },
         "/roles": {
             "get": {
-                "tags": [
-                    "Roles"
-                ],
+                "tags": ["Roles"],
                 "summary": "List roles",
                 "operationId": "b42d20d071730b2aefe20028eafcd619",
                 "parameters": [
@@ -1480,9 +1409,7 @@
                 ]
             },
             "post": {
-                "tags": [
-                    "Roles"
-                ],
+                "tags": ["Roles"],
                 "summary": "Create role",
                 "operationId": "f5e8f822301e4c11aa555939d11c70d7",
                 "requestBody": {
@@ -1490,10 +1417,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "name",
-                                    "permissions"
-                                ],
+                                "required": ["name", "permissions"],
                                 "properties": {
                                     "name": {
                                         "type": "string"
@@ -1536,9 +1460,7 @@
         },
         "/roles/permissions": {
             "get": {
-                "tags": [
-                    "Roles"
-                ],
+                "tags": ["Roles"],
                 "summary": "List available permissions",
                 "operationId": "12d1720479509df88d4a83f056f42762",
                 "responses": {
@@ -1570,9 +1492,7 @@
         },
         "/roles/{role}": {
             "get": {
-                "tags": [
-                    "Roles"
-                ],
+                "tags": ["Roles"],
                 "summary": "Show role",
                 "operationId": "2b08b8291014e89cce32d7447ab20620",
                 "parameters": [
@@ -1609,9 +1529,7 @@
                 ]
             },
             "put": {
-                "tags": [
-                    "Roles"
-                ],
+                "tags": ["Roles"],
                 "summary": "Update role",
                 "operationId": "a14713dda8ab05ab89a6068cfc9e605f",
                 "parameters": [
@@ -1629,10 +1547,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "name",
-                                    "permissions"
-                                ],
+                                "required": ["name", "permissions"],
                                 "properties": {
                                     "name": {
                                         "type": "string"
@@ -1675,9 +1590,7 @@
         },
         "/roles/{ids}": {
             "delete": {
-                "tags": [
-                    "Roles"
-                ],
+                "tags": ["Roles"],
                 "summary": "Delete one or many roles",
                 "operationId": "e6bd88439e133ec93ece40c0f2e3655a",
                 "parameters": [
@@ -1712,9 +1625,7 @@
         },
         "/units": {
             "get": {
-                "tags": [
-                    "Units"
-                ],
+                "tags": ["Units"],
                 "summary": "List units",
                 "operationId": "33cd41d5e8f9d492b173d1dbe337feb4",
                 "parameters": [
@@ -1758,9 +1669,7 @@
                 ]
             },
             "post": {
-                "tags": [
-                    "Units"
-                ],
+                "tags": ["Units"],
                 "summary": "Create unit",
                 "operationId": "07073dcb340891f626478bfdee702882",
                 "requestBody": {
@@ -1768,9 +1677,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "unit_name"
-                                ],
+                                "required": ["unit_name"],
                                 "properties": {
                                     "unit_name": {
                                         "type": "string"
@@ -1811,9 +1718,7 @@
         },
         "/units/search": {
             "get": {
-                "tags": [
-                    "Units"
-                ],
+                "tags": ["Units"],
                 "summary": "Search units by name",
                 "operationId": "searchUnits",
                 "parameters": [
@@ -1875,9 +1780,7 @@
         },
         "/units/users": {
             "get": {
-                "tags": [
-                    "Units"
-                ],
+                "tags": ["Units"],
                 "summary": "List users available for unit sync",
                 "operationId": "be85075280071ef3f3665a2d727be8b6",
                 "responses": {
@@ -1894,9 +1797,7 @@
         },
         "/units/{unit}": {
             "get": {
-                "tags": [
-                    "Units"
-                ],
+                "tags": ["Units"],
                 "summary": "Show unit",
                 "operationId": "bea288c1d5234ebba403b172fc4ae687",
                 "parameters": [
@@ -1933,9 +1834,7 @@
                 ]
             },
             "put": {
-                "tags": [
-                    "Units"
-                ],
+                "tags": ["Units"],
                 "summary": "Update unit",
                 "operationId": "37bf7afe857b9e5ed81b2d63e486b028",
                 "parameters": [
@@ -1953,9 +1852,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "unit_name"
-                                ],
+                                "required": ["unit_name"],
                                 "properties": {
                                     "unit_name": {
                                         "type": "string"
@@ -1994,9 +1891,7 @@
                 ]
             },
             "delete": {
-                "tags": [
-                    "Units"
-                ],
+                "tags": ["Units"],
                 "summary": "Delete unit",
                 "operationId": "9f756b32e064e2da44cf16ab03a297db",
                 "parameters": [
@@ -2030,9 +1925,7 @@
         },
         "/units/{unit}/users": {
             "post": {
-                "tags": [
-                    "Units"
-                ],
+                "tags": ["Units"],
                 "summary": "Sync unit users",
                 "operationId": "376e5b4072d49e65a8b6541cc167d268",
                 "parameters": [
@@ -2050,9 +1943,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "user_ids"
-                                ],
+                                "required": ["user_ids"],
                                 "properties": {
                                     "user_ids": {
                                         "type": "array",
@@ -2092,9 +1983,7 @@
         },
         "/backups": {
             "get": {
-                "tags": [
-                    "Backups"
-                ],
+                "tags": ["Backups"],
                 "summary": "List paginated backup history, including failed backups",
                 "operationId": "81039a5411dc4c6af25205ff47eaa313",
                 "parameters": [
@@ -2120,10 +2009,7 @@
                         "in": "query",
                         "schema": {
                             "type": "string",
-                            "enum": [
-                                "manual",
-                                "automatic"
-                            ]
+                            "enum": ["manual", "automatic"]
                         }
                     },
                     {
@@ -2174,9 +2060,7 @@
                 ]
             },
             "post": {
-                "tags": [
-                    "Backups"
-                ],
+                "tags": ["Backups"],
                 "summary": "Queue a manual MySQL and MinIO backup",
                 "operationId": "6b095efdf43ebf83ce47cfd5d6a0a40e",
                 "responses": {
@@ -2199,9 +2083,7 @@
         },
         "/backups/{id}": {
             "get": {
-                "tags": [
-                    "Backups"
-                ],
+                "tags": ["Backups"],
                 "summary": "Get backup status and details",
                 "operationId": "1c18f6f4eec3e6290366a093c1812aa6",
                 "parameters": [
@@ -2232,9 +2114,7 @@
                 ]
             },
             "delete": {
-                "tags": [
-                    "Backups"
-                ],
+                "tags": ["Backups"],
                 "summary": "Delete a successful backup ZIP while retaining its history (Super Admin)",
                 "operationId": "eee52cce09e3c0092699dbd0401214e6",
                 "parameters": [
@@ -2273,9 +2153,7 @@
         },
         "/backup-settings": {
             "get": {
-                "tags": [
-                    "Backups"
-                ],
+                "tags": ["Backups"],
                 "summary": "Get automatic backup settings (Super Admin)",
                 "operationId": "52944085562eeb33e1dd8990add17cd5",
                 "responses": {
@@ -2293,9 +2171,7 @@
                 ]
             },
             "put": {
-                "tags": [
-                    "Backups"
-                ],
+                "tags": ["Backups"],
                 "summary": "Update automatic backup settings (Super Admin)",
                 "operationId": "9ecd2e51796e80217a15bc3a5d8ee74b",
                 "requestBody": {
@@ -2314,11 +2190,7 @@
                                     },
                                     "frequency": {
                                         "type": "string",
-                                        "enum": [
-                                            "daily",
-                                            "weekly",
-                                            "monthly"
-                                        ]
+                                        "enum": ["daily", "weekly", "monthly"]
                                     },
                                     "backup_time": {
                                         "type": "string",
@@ -2360,9 +2232,7 @@
         },
         "/backups/{id}/download": {
             "get": {
-                "tags": [
-                    "Backups"
-                ],
+                "tags": ["Backups"],
                 "summary": "Stream a successful backup ZIP for Super Admin",
                 "operationId": "a0829c4e6603c02cbdfe8e38d3e6dabc",
                 "parameters": [
@@ -2401,9 +2271,7 @@
         },
         "/example-live": {
             "get": {
-                "tags": [
-                    "Example Live"
-                ],
+                "tags": ["Example Live"],
                 "summary": "Get Example Live metadata",
                 "operationId": "8547b8851ba60df2c31c55c54713ab31",
                 "responses": {
@@ -2420,9 +2288,7 @@
         },
         "/example-live/real-market": {
             "get": {
-                "tags": [
-                    "Example Live"
-                ],
+                "tags": ["Example Live"],
                 "summary": "Get market data proxy",
                 "operationId": "049fda578305799794113ad1ed23a5b9",
                 "parameters": [
@@ -2431,12 +2297,7 @@
                         "in": "query",
                         "schema": {
                             "type": "string",
-                            "enum": [
-                                "live",
-                                "1d",
-                                "7d",
-                                "30d"
-                            ]
+                            "enum": ["live", "1d", "7d", "30d"]
                         }
                     }
                 ],
@@ -2454,9 +2315,7 @@
         },
         "/example-live/start": {
             "post": {
-                "tags": [
-                    "Example Live"
-                ],
+                "tags": ["Example Live"],
                 "summary": "Start background task",
                 "operationId": "a33c2033bc8378077db7f8920cb0a081",
                 "requestBody": {
@@ -2491,9 +2350,7 @@
         },
         "/example-live/status/{taskId}": {
             "get": {
-                "tags": [
-                    "Example Live"
-                ],
+                "tags": ["Example Live"],
                 "summary": "Check background task status",
                 "operationId": "888aa06091f43f38f2240f4bc6e1969e",
                 "parameters": [
@@ -2524,9 +2381,7 @@
         },
         "/impersonation/{user}/start": {
             "post": {
-                "tags": [
-                    "Impersonation"
-                ],
+                "tags": ["Impersonation"],
                 "summary": "Start impersonating a user",
                 "operationId": "2890e9c3bf112f2432ca52941ad7a6f6",
                 "parameters": [
@@ -2559,9 +2414,7 @@
         },
         "/impersonation/stop": {
             "post": {
-                "tags": [
-                    "Impersonation"
-                ],
+                "tags": ["Impersonation"],
                 "summary": "Stop impersonation and revoke impersonation token",
                 "operationId": "1c76967798d608bcdce1ea8ddd813cf9",
                 "responses": {
@@ -2578,9 +2431,7 @@
         },
         "/impersonation/status": {
             "get": {
-                "tags": [
-                    "Impersonation"
-                ],
+                "tags": ["Impersonation"],
                 "summary": "Get impersonation status",
                 "operationId": "c2cdb2f963c801a196343464552a2ab5",
                 "responses": {
@@ -2597,9 +2448,7 @@
         },
         "/notifications": {
             "get": {
-                "tags": [
-                    "Notifications"
-                ],
+                "tags": ["Notifications"],
                 "summary": "List notifications and activity summary",
                 "operationId": "b9fc06d756a342643eb5b80259453e01",
                 "parameters": [
@@ -2684,9 +2533,7 @@
         },
         "/notifications/{id}/read": {
             "patch": {
-                "tags": [
-                    "Notifications"
-                ],
+                "tags": ["Notifications"],
                 "summary": "Mark one notification as read",
                 "operationId": "9dcc5e50c9350871d93ca9d7047967f5",
                 "parameters": [
@@ -2714,9 +2561,7 @@
         },
         "/notifications/read-all": {
             "patch": {
-                "tags": [
-                    "Notifications"
-                ],
+                "tags": ["Notifications"],
                 "summary": "Mark all notifications as read",
                 "operationId": "ea81cf47228eeaf2e2b6b9cec703993e",
                 "responses": {
@@ -2733,9 +2578,7 @@
         },
         "/tickets": {
             "get": {
-                "tags": [
-                    "Helpdesk"
-                ],
+                "tags": ["Helpdesk"],
                 "summary": "List Helpdesk tickets",
                 "description": "Returns TIK and Sarpras tickets ordered from newest to oldest. Requires the tickets-access permission.",
                 "operationId": "listTickets",
@@ -2768,10 +2611,7 @@
                         "required": false,
                         "schema": {
                             "type": "string",
-                            "enum": [
-                                "tik",
-                                "sarpras"
-                            ]
+                            "enum": ["tik", "sarpras"]
                         }
                     },
                     {
@@ -2799,12 +2639,7 @@
                         "required": false,
                         "schema": {
                             "type": "string",
-                            "enum": [
-                                "critical",
-                                "high",
-                                "medium",
-                                "low"
-                            ]
+                            "enum": ["critical", "high", "medium", "low"]
                         }
                     },
                     {
@@ -2901,9 +2736,7 @@
                 ]
             },
             "post": {
-                "tags": [
-                    "Helpdesk"
-                ],
+                "tags": ["Helpdesk"],
                 "summary": "Create a Helpdesk ticket",
                 "description": "Creates a TIK or Sarpras ticket with status baru. Reporter and unit are taken from the authenticated user or customized by super-admin role. Requires the tickets-create permission.",
                 "operationId": "createTicket",
@@ -2967,10 +2800,122 @@
             }
         },
         "/design-requests": {
-            "post": {
-                "tags": [
-                    "Design Graphic"
+            "get": {
+                "tags": ["Design Graphic"],
+                "summary": "List graphic design requests",
+                "description": "Requires design-requests-read permission. Defaults to the authenticated user's requests. Assigned shows requests assigned to the user; all is restricted to super-admin.",
+                "operationId": "listDesignRequests",
+                "parameters": [
+                    {
+                        "name": "scope",
+                        "in": "query",
+                        "description": "Visible request scope.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "mine",
+                            "enum": ["mine", "assigned", "all"]
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search by request number or title.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 255
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Design request status.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "baru",
+                                "ditugaskan",
+                                "menunggu_persetujuan",
+                                "perlu_revisi",
+                                "selesai",
+                                "ditolak"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
                 ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated design requests",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DesignRequestCollectionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing permission or all scope outside super-admin",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Invalid filters",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": ["Design Graphic"],
                 "summary": "Create a graphic design request",
                 "description": "Creates a request with status baru. Requester and unit are taken from the authenticated user. Requires design-requests-create permission.",
                 "operationId": "createDesignRequest",
@@ -3033,11 +2978,372 @@
                 ]
             }
         },
+        "/design-reports": {
+            "get": {
+                "tags": ["Design Graphic"],
+                "summary": "Get graphic design request report",
+                "description": "Requires design-reports-read permission. Date filters apply to all counts and the list. Search affects only the list; pagination does not affect the counts.",
+                "operationId": "listDesignReports",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search list by request number or title.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 255
+                        }
+                    },
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "Inclusive request creation date lower bound.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "Inclusive request creation date upper bound.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Design report",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DesignReportResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing design-reports-read permission",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Invalid filters",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/design-requests/{designRequest}": {
+            "get": {
+                "tags": ["Design Graphic"],
+                "summary": "Get graphic design request detail",
+                "description": "Visible to its requester, assigned officer, or super-admin. Requires design-requests-read permission.",
+                "operationId": "getDesignRequest",
+                "parameters": [
+                    {
+                        "name": "designRequest",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Design request detail",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DesignRequestDetailResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing permission or ownership",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Design request not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/design-requests/{designRequest}/assignment": {
+            "put": {
+                "tags": ["Design Graphic"],
+                "summary": "Assign a graphic design request",
+                "description": "Only super-admin with design-requests-assign permission may assign a request in status baru to an active petugas-tik with design-drafts-upload permission. Sets priority, assigned officer, assigned_at, and status ditugaskan.",
+                "operationId": "assignDesignRequest",
+                "parameters": [
+                    {
+                        "name": "designRequest",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DesignRequestAssignmentRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Design request assigned",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DesignRequestAssignmentResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing permission or super-admin role",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Design request not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Request is not in status baru",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Invalid priority or officer",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/design-requests/{designRequest}/rejections": {
+            "post": {
+                "tags": ["Design Graphic"],
+                "summary": "Reject a graphic design request",
+                "description": "Only super-admin with design-requests-reject permission may reject a request in status baru. Stores the rejection note and changes status to ditolak. Rejected requests cannot be assigned.",
+                "operationId": "rejectDesignRequest",
+                "parameters": [
+                    {
+                        "name": "designRequest",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DesignRequestRejectionRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Design request rejected",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DesignRequestRejectionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing permission or super-admin role",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Design request not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Request is not in status baru",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Missing or invalid rejection note",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/design-requests/{id}/drafts": {
             "post": {
-                "tags": [
-                    "Design Graphic"
-                ],
+                "tags": ["Design Graphic"],
                 "summary": "Mengunggah draft",
                 "description": "Upload a new design draft file for the design request. Requires design-drafts-upload permission.",
                 "operationId": "uploadDesignDraft",
@@ -3058,9 +3364,7 @@
                     "content": {
                         "multipart/form-data": {
                             "schema": {
-                                "required": [
-                                    "file"
-                                ],
+                                "required": ["file"],
                                 "properties": {
                                     "file": {
                                         "description": "File draft maksimal 10 MB",
@@ -3118,6 +3422,16 @@
                             }
                         }
                     },
+                    "409": {
+                        "description": "Request status changed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
                     "422": {
                         "description": "Validation error",
                         "content": {
@@ -3138,9 +3452,7 @@
         },
         "/design-requests/{id}/revisions": {
             "post": {
-                "tags": [
-                    "Design Graphic"
-                ],
+                "tags": ["Design Graphic"],
                 "summary": "Mengajukan revisi",
                 "description": "Submit a revision note for the latest design draft. Requires design-requests-revise permission.",
                 "operationId": "createDesignRevision",
@@ -3161,9 +3473,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "revision_note"
-                                ],
+                                "required": ["revision_note"],
                                 "properties": {
                                     "revision_note": {
                                         "type": "string",
@@ -3215,6 +3525,16 @@
                             }
                         }
                     },
+                    "409": {
+                        "description": "Request status changed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
                     "422": {
                         "description": "Validation error",
                         "content": {
@@ -3235,9 +3555,7 @@
         },
         "/design-requests/{id}/approvals": {
             "post": {
-                "tags": [
-                    "Design Graphic"
-                ],
+                "tags": ["Design Graphic"],
                 "summary": "Menyetujui desain",
                 "description": "Approve the design request and mark it as selesai. Requires design-requests-approve permission.",
                 "operationId": "approveDesignRequest",
@@ -3299,6 +3617,16 @@
                                 }
                             }
                         }
+                    },
+                    "409": {
+                        "description": "Request status changed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -3310,9 +3638,7 @@
         },
         "/design-requests/{id}/final-file": {
             "get": {
-                "tags": [
-                    "Design Graphic"
-                ],
+                "tags": ["Design Graphic"],
                 "summary": "Mengunduh file final",
                 "description": "Get a temporary signed URL and file metadata when the request is selesai.",
                 "operationId": "downloadDesignFinalFile",
@@ -3334,10 +3660,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "required": [
-                                        "final_file_url",
-                                        "file"
-                                    ],
+                                    "required": ["final_file_url", "file"],
                                     "properties": {
                                         "final_file_url": {
                                             "type": "string",
@@ -3393,9 +3716,7 @@
         },
         "/tickets/classification-options": {
             "get": {
-                "tags": [
-                    "Helpdesk"
-                ],
+                "tags": ["Helpdesk"],
                 "summary": "Get ticket classification options",
                 "description": "Returns active quality categories and IT tags for TIK, or active Sarpras categories for Sarpras. Requires the tickets-verify permission.",
                 "operationId": "listTicketClassificationOptions",
@@ -3408,10 +3729,7 @@
                         "schema": {
                             "type": "string",
                             "example": "tik",
-                            "enum": [
-                                "tik",
-                                "sarpras"
-                            ]
+                            "enum": ["tik", "sarpras"]
                         }
                     }
                 ],
@@ -3466,9 +3784,7 @@
         },
         "/tickets/{ticket}/classify": {
             "post": {
-                "tags": [
-                    "Helpdesk"
-                ],
+                "tags": ["Helpdesk"],
                 "summary": "Classify a new Helpdesk ticket",
                 "description": "TIK classification is limited to Super Admin. Sarpras classification is allowed for Super Admin and Koordinator Sarpras. The endpoint retains tickets-verify as its general capability permission.",
                 "operationId": "classifyTicket",
@@ -3564,9 +3880,7 @@
         },
         "/tickets/{ticket}/reject": {
             "post": {
-                "tags": [
-                    "Helpdesk"
-                ],
+                "tags": ["Helpdesk"],
                 "summary": "Reject a new Helpdesk ticket",
                 "description": "The actor must be allowed to classify the ticket service, the ticket must be new, and the tickets-reject permission is required.",
                 "operationId": "rejectTicket",
@@ -3662,9 +3976,7 @@
         },
         "/tickets/{ticket}/assignee-options": {
             "get": {
-                "tags": [
-                    "Helpdesk"
-                ],
+                "tags": ["Helpdesk"],
                 "summary": "Search eligible officers for assignment",
                 "description": "Returns active Super Admin or Petugas TIK for a TIK ticket, and active Koordinator Sarpras or Petugas Sarpras for a Sarpras ticket. Search matches name or jabatan. TIK is limited to Super Admin; Sarpras is limited to Koordinator Sarpras. Requires the tickets-assign permission.",
                 "operationId": "getTicketAssigneeOptions",
@@ -3760,9 +4072,7 @@
         },
         "/tickets/{ticket}/assign": {
             "post": {
-                "tags": [
-                    "Helpdesk"
-                ],
+                "tags": ["Helpdesk"],
                 "summary": "Assign or reassign a ticket officer",
                 "description": "TIK assignment is limited to Super Admin and accepts Super Admin or Petugas TIK as assignee. Sarpras assignment is limited to Koordinator Sarpras and accepts Koordinator Sarpras or Petugas Sarpras as assignee. Initial assignment from diklasifikasi requires priority, sets assigned_at and sla_started_at, starts the SLA deadline, and transitions directly to diproses. Reassignment from diproses updates the officer and assigned_at without resetting the first SLA start or deadline. Requires the tickets-assign permission.",
                 "operationId": "assignTicket",
@@ -3858,9 +4168,7 @@
         },
         "/tickets/{ticket}/escalate": {
             "post": {
-                "tags": [
-                    "Helpdesk"
-                ],
+                "tags": ["Helpdesk"],
                 "summary": "Escalate a processing ticket",
                 "description": "Super Admin may escalate TIK and Sarpras tickets without assignment. Koordinator Sarpras may escalate Sarpras tickets without assignment. Petugas TIK and Petugas Sarpras may only escalate assigned tickets for their respective service. Targets are Manajemen, Vendor, or Tim Terkait. Requires tickets-handle permission.",
                 "operationId": "escalateTicket",
@@ -3880,10 +4188,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "target",
-                                    "notes"
-                                ],
+                                "required": ["target", "notes"],
                                 "properties": {
                                     "target": {
                                         "type": "string",
@@ -3965,9 +4270,7 @@
         },
         "/tickets/{ticket}/de-escalate": {
             "post": {
-                "tags": [
-                    "Helpdesk"
-                ],
+                "tags": ["Helpdesk"],
                 "summary": "Menarik kembali tiket dari status eskalasi (De-escalate)",
                 "description": "Hanya petugas yang ditugaskan dengan permission tickets-handle yang dapat melakukan ini.",
                 "operationId": "deEscalateTicket",
@@ -4039,9 +4342,7 @@
         },
         "/tickets/{ticket}/handlings": {
             "post": {
-                "tags": [
-                    "Helpdesk"
-                ],
+                "tags": ["Helpdesk"],
                 "summary": "Add ticket handling history",
                 "description": "Super Admin may handle TIK and Sarpras tickets without assignment. Koordinator Sarpras may handle Sarpras tickets without assignment. Petugas TIK and Petugas Sarpras may only handle tickets currently assigned to them for their respective service. A diproses ticket can remain diproses without status history or become terselesaikan with status history. tickets.completed_at uses the manually supplied completed_at value. Handling never recalculates SLA. Requires the tickets-handle permission.",
                 "operationId": "createTicketHandling",
@@ -4137,9 +4438,7 @@
         },
         "/tickets/{ticket}/verify": {
             "post": {
-                "tags": [
-                    "Helpdesk"
-                ],
+                "tags": ["Helpdesk"],
                 "summary": "Verify a completed ticket and close it",
                 "description": "Only the ticket reporter may verify a terselesaikan ticket. Verification transitions directly to ditutup, records closed_at, and creates status history without using terverifikasi.",
                 "operationId": "verifyTicketResolution",
@@ -4159,9 +4458,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "is_approved"
-                                ],
+                                "required": ["is_approved"],
                                 "properties": {
                                     "is_approved": {
                                         "type": "boolean",
@@ -4239,9 +4536,7 @@
         },
         "/tickets/{ticket}": {
             "get": {
-                "tags": [
-                    "Helpdesk"
-                ],
+                "tags": ["Helpdesk"],
                 "summary": "Show a Helpdesk ticket",
                 "description": "Requires the tickets-access permission.",
                 "operationId": "showTicket",
@@ -4307,9 +4602,7 @@
         },
         "/asset-classifications": {
             "get": {
-                "tags": [
-                    "Inventory - Master Data"
-                ],
+                "tags": ["Inventory - Master Data"],
                 "summary": "List asset classifications",
                 "operationId": "07e1bd601d9e9aa39f9bd967d59614ea",
                 "parameters": [
@@ -4345,9 +4638,7 @@
                 ]
             },
             "post": {
-                "tags": [
-                    "Inventory - Master Data"
-                ],
+                "tags": ["Inventory - Master Data"],
                 "summary": "Create asset classification",
                 "operationId": "84f125a4d5fee6090f8be454b2b556ea",
                 "requestBody": {
@@ -4379,9 +4670,7 @@
         },
         "/asset-classifications/{id}": {
             "get": {
-                "tags": [
-                    "Inventory - Master Data"
-                ],
+                "tags": ["Inventory - Master Data"],
                 "summary": "Get asset classification",
                 "operationId": "3c15c7ae28f13e5c1291c7eab4b878fa",
                 "parameters": [
@@ -4406,9 +4695,7 @@
                 ]
             },
             "put": {
-                "tags": [
-                    "Inventory - Master Data"
-                ],
+                "tags": ["Inventory - Master Data"],
                 "summary": "Update asset classification",
                 "operationId": "a19f4456884d39fa17d52574b5d5220c",
                 "parameters": [
@@ -4450,9 +4737,7 @@
         },
         "/asset-locations": {
             "get": {
-                "tags": [
-                    "Inventory - Master Data"
-                ],
+                "tags": ["Inventory - Master Data"],
                 "summary": "List asset locations",
                 "operationId": "da6db69b6af627210189eecb4784ca66",
                 "parameters": [
@@ -4498,9 +4783,7 @@
                 ]
             },
             "post": {
-                "tags": [
-                    "Inventory - Master Data"
-                ],
+                "tags": ["Inventory - Master Data"],
                 "summary": "Create asset location",
                 "operationId": "c0240a9bbc635304c49239a0e30570c3",
                 "requestBody": {
@@ -4532,9 +4815,7 @@
         },
         "/asset-locations/{id}": {
             "get": {
-                "tags": [
-                    "Inventory - Master Data"
-                ],
+                "tags": ["Inventory - Master Data"],
                 "summary": "Get asset location",
                 "operationId": "f3c4a5051e1e0fca8939015151670ba7",
                 "parameters": [
@@ -4559,9 +4840,7 @@
                 ]
             },
             "put": {
-                "tags": [
-                    "Inventory - Master Data"
-                ],
+                "tags": ["Inventory - Master Data"],
                 "summary": "Update asset location",
                 "operationId": "8340ed8a09519d2fcd1d591627441c47",
                 "parameters": [
@@ -4603,9 +4882,7 @@
         },
         "/asset-items": {
             "get": {
-                "tags": [
-                    "Inventory - Master Data"
-                ],
+                "tags": ["Inventory - Master Data"],
                 "summary": "List asset items",
                 "operationId": "9c0a4a7d69f74fbca12fccef89e97343",
                 "parameters": [
@@ -4663,9 +4940,7 @@
                 ]
             },
             "post": {
-                "tags": [
-                    "Inventory - Master Data"
-                ],
+                "tags": ["Inventory - Master Data"],
                 "summary": "Create asset item",
                 "operationId": "e1de700e0439db03a203f79810057c14",
                 "requestBody": {
@@ -4673,10 +4948,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "asset_classification_id",
-                                    "name"
-                                ],
+                                "required": ["asset_classification_id", "name"],
                                 "properties": {
                                     "asset_classification_id": {
                                         "type": "integer",
@@ -4706,9 +4978,7 @@
         },
         "/asset-items/{id}": {
             "get": {
-                "tags": [
-                    "Inventory - Master Data"
-                ],
+                "tags": ["Inventory - Master Data"],
                 "summary": "Get asset item",
                 "operationId": "03d6dd166752c1657c64cba84cd7d36a",
                 "parameters": [
@@ -4733,9 +5003,7 @@
                 ]
             },
             "put": {
-                "tags": [
-                    "Inventory - Master Data"
-                ],
+                "tags": ["Inventory - Master Data"],
                 "summary": "Update asset item",
                 "operationId": "893267cf6cfcb070b16356d6725dec67",
                 "parameters": [
@@ -4777,9 +5045,7 @@
         },
         "/assets/generate-number": {
             "get": {
-                "tags": [
-                    "Inventory - Assets"
-                ],
+                "tags": ["Inventory - Assets"],
                 "summary": "Preview asset code generation",
                 "operationId": "b1171f18c50938d400d333a4c7b9a239",
                 "parameters": [
@@ -4831,9 +5097,7 @@
         },
         "/assets": {
             "get": {
-                "tags": [
-                    "Inventory - Assets"
-                ],
+                "tags": ["Inventory - Assets"],
                 "summary": "List assets",
                 "description": "Filters are optional and combined with AND before pagination. Assets are ordered by descending ID. A true moved_last_3_months value requires a location change in the last three months; false does not restrict results.",
                 "operationId": "9d3c28249bbce50e95d422c0b18d1ff8",
@@ -4896,11 +5160,7 @@
                         "required": false,
                         "schema": {
                             "type": "string",
-                            "enum": [
-                                "Baik",
-                                "Rusak Ringan",
-                                "Rusak Berat"
-                            ]
+                            "enum": ["Baik", "Rusak Ringan", "Rusak Berat"]
                         }
                     },
                     {
@@ -4972,9 +5232,7 @@
                 ]
             },
             "post": {
-                "tags": [
-                    "Inventory - Assets"
-                ],
+                "tags": ["Inventory - Assets"],
                 "summary": "Create asset",
                 "description": "Hanya dapat diakses oleh Super Admin dan Koordinator Sarpras.",
                 "operationId": "a30dd78a051d5d9b6912fe49d8bb4ed1",
@@ -5087,9 +5345,7 @@
         },
         "/assets/{asset}": {
             "get": {
-                "tags": [
-                    "Inventory - Assets"
-                ],
+                "tags": ["Inventory - Assets"],
                 "summary": "Get asset",
                 "operationId": "e3490b4ea99a9575d56f9d6c4c9a01df",
                 "parameters": [
@@ -5126,9 +5382,7 @@
                 ]
             },
             "post": {
-                "tags": [
-                    "Inventory - Assets"
-                ],
+                "tags": ["Inventory - Assets"],
                 "summary": "Update asset",
                 "description": "Update asset details (supports multipart/form-data and partial update). Uses POST with method spoofing _method=PUT.",
                 "operationId": "f53905473b09971f610cde46c0660253",
@@ -5152,9 +5406,7 @@
                                         "description": "Method spoofing for PUT multipart",
                                         "type": "string",
                                         "default": "PUT",
-                                        "enum": [
-                                            "PUT"
-                                        ]
+                                        "enum": ["PUT"]
                                     },
                                     "asset_classification_id": {
                                         "type": "integer",
@@ -5263,9 +5515,7 @@
                 ]
             },
             "delete": {
-                "tags": [
-                    "Inventory - Assets"
-                ],
+                "tags": ["Inventory - Assets"],
                 "summary": "Delete asset",
                 "operationId": "c55bd2ea120cf3c7f1bd62524915f873",
                 "parameters": [
@@ -5292,9 +5542,7 @@
         },
         "/assets/{asset}/qr": {
             "get": {
-                "tags": [
-                    "Inventory - QrCode Label"
-                ],
+                "tags": ["Inventory - QrCode Label"],
                 "summary": "Generate Asset QR Code",
                 "description": "Generates an SVG QR code containing only the asset's permanent asset_uid.",
                 "operationId": "getAssetQrCode",
@@ -5341,9 +5589,7 @@
         },
         "/assets/uid/{uid}": {
             "get": {
-                "tags": [
-                    "Inventory - QrCode Label"
-                ],
+                "tags": ["Inventory - QrCode Label"],
                 "summary": "Get Asset by UID After QR Scan",
                 "description": "Finds an asset by its permanent UID. Classification is TIK for Alat IT and SARPRAS otherwise. Detail location comes from assets.location_detail.",
                 "operationId": "getAssetByUid",
@@ -5377,10 +5623,7 @@
                                                 },
                                                 "classification": {
                                                     "type": "string",
-                                                    "enum": [
-                                                        "TIK",
-                                                        "SARPRAS"
-                                                    ]
+                                                    "enum": ["TIK", "SARPRAS"]
                                                 },
                                                 "asset_code": {
                                                     "type": "string",
@@ -5433,9 +5676,7 @@
         },
         "/assets/{asset}/label": {
             "get": {
-                "tags": [
-                    "Inventory - QrCode Label"
-                ],
+                "tags": ["Inventory - QrCode Label"],
                 "summary": "Get Asset Label",
                 "description": "Generates a label with the RS Citra Husada letterhead, inventory number, name (asset_items.name followed by assets.detail_item when present), location, condition, and permanent UID QR code. Supports HTML, PNG, and PDF formats.",
                 "operationId": "getAssetLabel",
@@ -5458,11 +5699,7 @@
                         "schema": {
                             "type": "string",
                             "default": "html",
-                            "enum": [
-                                "html",
-                                "png",
-                                "pdf"
-                            ]
+                            "enum": ["html", "png", "pdf"]
                         }
                     },
                     {
@@ -5539,11 +5776,9 @@
         },
         "/asset-label-exports": {
             "post": {
-                "tags": [
-                    "Inventory - QrCode Label"
-                ],
-                "summary": "Export inventory labels as an A4 PDF",
-                "description": "Generates one PDF synchronously. Selected mode follows asset_ids order; omitting selection_mode keeps legacy selected behavior. All_filtered mode reapplies list filters without pagination and orders labels by descending asset ID. Only coded Inventory assets can be printed. Each asset requires printLabel authorization. A4 pages use 10 mm margins and 2 mm gaps.",
+                "tags": ["Inventory - QrCode Label"],
+                "summary": "Export inventory labels as a PDF",
+                "description": "Generates one PDF synchronously with one label per page. Each page uses width_mm by height_mm and zero margins. Selected mode follows asset_ids order; omitting selection_mode keeps legacy selected behavior. All_filtered mode reapplies list filters without pagination and orders labels by descending asset ID. Only coded Inventory assets can be printed. Each asset requires printLabel authorization.",
                 "operationId": "exportAssetLabels",
                 "requestBody": {
                     "required": true,
@@ -5561,9 +5796,7 @@
                                             "selection_mode": {
                                                 "type": "string",
                                                 "default": "selected",
-                                                "enum": [
-                                                    "selected"
-                                                ]
+                                                "enum": ["selected"]
                                             },
                                             "asset_ids": {
                                                 "type": "array",
@@ -5571,11 +5804,7 @@
                                                     "type": "integer",
                                                     "minimum": 1
                                                 },
-                                                "example": [
-                                                    1,
-                                                    2,
-                                                    3
-                                                ],
+                                                "example": [1, 2, 3],
                                                 "minItems": 1,
                                                 "uniqueItems": true
                                             },
@@ -5606,9 +5835,7 @@
                                         "properties": {
                                             "selection_mode": {
                                                 "type": "string",
-                                                "enum": [
-                                                    "all_filtered"
-                                                ]
+                                                "enum": ["all_filtered"]
                                             },
                                             "filters": {
                                                 "description": "Same filters as GET /assets; page and per_page are accepted but ignored",
@@ -5695,7 +5922,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "A4 PDF containing the selected labels",
+                        "description": "PDF containing one selected label per page",
                         "content": {
                             "application/pdf": {
                                 "schema": {
@@ -5724,9 +5951,7 @@
         },
         "/asset-maintenances": {
             "get": {
-                "tags": [
-                    "Asset Maintenance"
-                ],
+                "tags": ["Asset Maintenance"],
                 "summary": "Retrieve a list of asset maintenance schedules.",
                 "description": "Retrieve a paginated list of asset maintenance schedules. Supports search and filtering by date range, status, and active state.",
                 "operationId": "listAssetMaintenances",
@@ -5788,11 +6013,7 @@
                         "required": false,
                         "schema": {
                             "type": "string",
-                            "enum": [
-                                "terjadwal",
-                                "selesai",
-                                "terlambat"
-                            ]
+                            "enum": ["terjadwal", "selesai", "terlambat"]
                         }
                     },
                     {
@@ -5820,9 +6041,7 @@
                 ]
             },
             "post": {
-                "tags": [
-                    "Asset Maintenance"
-                ],
+                "tags": ["Asset Maintenance"],
                 "summary": "Create a new asset maintenance schedule.",
                 "description": "Superadmin manages IT assets & assigns IT Officers. Sarpras Coordinator manages Sarpras assets & assigns Sarpras Officers.",
                 "operationId": "createAssetMaintenance",
@@ -5901,9 +6120,7 @@
         },
         "/asset-maintenances/{id}": {
             "get": {
-                "tags": [
-                    "Asset Maintenance"
-                ],
+                "tags": ["Asset Maintenance"],
                 "summary": "Retrieve details of a specific asset maintenance schedule.",
                 "description": "Retrieve details of a maintenance schedule along with relations (asset, officer, creator, and execution logs).",
                 "operationId": "showAssetMaintenance",
@@ -5936,9 +6153,7 @@
                 ]
             },
             "put": {
-                "tags": [
-                    "Asset Maintenance"
-                ],
+                "tags": ["Asset Maintenance"],
                 "summary": "Update an existing asset maintenance schedule.",
                 "description": "Update allowed fields (maintenance_type, period, next_scheduled_date, assigned_officer_id, is_active). Validates that the new assigned officer matches the asset classification.",
                 "operationId": "updateAssetMaintenance",
@@ -6024,9 +6239,7 @@
         },
         "/asset-maintenances/{id}/logs": {
             "post": {
-                "tags": [
-                    "Asset Maintenance"
-                ],
+                "tags": ["Asset Maintenance"],
                 "summary": "Submit an execution log for an asset maintenance schedule.",
                 "description": "Submit maintenance execution log by the assigned officer. Supports proof photo upload. Next scheduled date is automatically recalculated from the previous schedule date.",
                 "operationId": "submitAssetMaintenanceLog",
@@ -6186,10 +6399,7 @@
                 "type": "object"
             },
             "UserSearchUnit": {
-                "required": [
-                    "id",
-                    "unit_name"
-                ],
+                "required": ["id", "unit_name"],
                 "properties": {
                     "id": {
                         "type": "integer",
@@ -6203,11 +6413,7 @@
                 "type": "object"
             },
             "UserSearchResult": {
-                "required": [
-                    "id",
-                    "name",
-                    "unit"
-                ],
+                "required": ["id", "name", "unit"],
                 "properties": {
                     "id": {
                         "type": "integer",
@@ -6307,10 +6513,7 @@
                 "type": "object"
             },
             "UnitSearchResult": {
-                "required": [
-                    "id",
-                    "unit_name"
-                ],
+                "required": ["id", "unit_name"],
                 "properties": {
                     "id": {
                         "type": "integer",
@@ -6346,10 +6549,7 @@
                             "service": {
                                 "type": "string",
                                 "example": "tik",
-                                "enum": [
-                                    "tik",
-                                    "sarpras"
-                                ]
+                                "enum": ["tik", "sarpras"]
                             },
                             "resource_id": {
                                 "type": "integer",
@@ -6442,10 +6642,7 @@
                 "type": "object"
             },
             "TicketReporterSummary": {
-                "required": [
-                    "id",
-                    "name"
-                ],
+                "required": ["id", "name"],
                 "properties": {
                     "id": {
                         "type": "integer",
@@ -6459,10 +6656,7 @@
                 "type": "object"
             },
             "TicketUnitSummary": {
-                "required": [
-                    "id",
-                    "name"
-                ],
+                "required": ["id", "name"],
                 "properties": {
                     "id": {
                         "type": "integer",
@@ -6476,10 +6670,7 @@
                 "type": "object"
             },
             "TicketOfficerSummary": {
-                "required": [
-                    "id",
-                    "name"
-                ],
+                "required": ["id", "name"],
                 "properties": {
                     "id": {
                         "type": "integer",
@@ -6537,12 +6728,7 @@
                 "type": "object"
             },
             "Asset": {
-                "required": [
-                    "id",
-                    "asset_uid",
-                    "status",
-                    "condition"
-                ],
+                "required": ["id", "asset_uid", "status", "condition"],
                 "properties": {
                     "id": {
                         "type": "integer",
@@ -6745,11 +6931,7 @@
                 "type": "object"
             },
             "TicketFileMetadata": {
-                "required": [
-                    "original_name",
-                    "mime_type",
-                    "size"
-                ],
+                "required": ["original_name", "mime_type", "size"],
                 "properties": {
                     "original_name": {
                         "type": "string",
@@ -6852,7 +7034,15 @@
                     },
                     "status": {
                         "type": "string",
-                        "example": "baru"
+                        "example": "baru",
+                        "enum": [
+                            "baru",
+                            "ditugaskan",
+                            "menunggu_persetujuan",
+                            "perlu_revisi",
+                            "selesai",
+                            "ditolak"
+                        ]
                     },
                     "requester": {
                         "$ref": "#/components/schemas/TicketReporterSummary"
@@ -6880,11 +7070,7 @@
                 "type": "object"
             },
             "DesignReferenceFileMetadata": {
-                "required": [
-                    "original_name",
-                    "mime_type",
-                    "size"
-                ],
+                "required": ["original_name", "mime_type", "size"],
                 "properties": {
                     "original_name": {
                         "type": "string",
@@ -6901,11 +7087,430 @@
                 },
                 "type": "object"
             },
-            "DesignRequestCreateResponse": {
+            "DesignRequestCollectionResponse": {
+                "required": ["data", "links", "meta"],
+                "properties": {
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/DesignRequestRead"
+                        }
+                    },
+                    "links": {
+                        "$ref": "#/components/schemas/TicketPaginationLinks"
+                    },
+                    "meta": {
+                        "$ref": "#/components/schemas/TicketPaginationMeta"
+                    }
+                },
+                "type": "object"
+            },
+            "DesignReportRequest": {
                 "required": [
-                    "message",
-                    "data"
+                    "id",
+                    "request_number",
+                    "title",
+                    "unit",
+                    "status",
+                    "created_at",
+                    "completed_at"
                 ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "request_number": {
+                        "type": "string",
+                        "example": "DGR-2026-123456"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "unit": {
+                        "$ref": "#/components/schemas/TicketUnitSummary"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "baru",
+                            "ditugaskan",
+                            "menunggu_persetujuan",
+                            "perlu_revisi",
+                            "selesai",
+                            "ditolak"
+                        ]
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "completed_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "DesignReportResponse": {
+                "required": ["data"],
+                "properties": {
+                    "data": {
+                        "required": [
+                            "total",
+                            "by_status",
+                            "by_design_type",
+                            "requests"
+                        ],
+                        "properties": {
+                            "total": {
+                                "description": "All requests in the selected period, unaffected by search and pagination",
+                                "type": "integer",
+                                "minimum": 0
+                            },
+                            "by_status": {
+                                "required": [
+                                    "baru",
+                                    "ditugaskan",
+                                    "menunggu_persetujuan",
+                                    "perlu_revisi",
+                                    "selesai",
+                                    "ditolak"
+                                ],
+                                "properties": {
+                                    "baru": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                    },
+                                    "ditugaskan": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                    },
+                                    "menunggu_persetujuan": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                    },
+                                    "perlu_revisi": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                    },
+                                    "selesai": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                    },
+                                    "ditolak": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "by_design_type": {
+                                "description": "Dynamic design types ordered by count descending, then name ascending",
+                                "type": "array",
+                                "items": {
+                                    "required": ["design_type", "total"],
+                                    "properties": {
+                                        "design_type": {
+                                            "type": "string"
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            },
+                            "requests": {
+                                "required": ["data", "links", "meta"],
+                                "properties": {
+                                    "data": {
+                                        "type": "array",
+                                        "items": {
+                                            "$ref": "#/components/schemas/DesignReportRequest"
+                                        }
+                                    },
+                                    "links": {
+                                        "$ref": "#/components/schemas/TicketPaginationLinks"
+                                    },
+                                    "meta": {
+                                        "$ref": "#/components/schemas/TicketPaginationMeta"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "DesignRequestDetail": {
+                "required": [
+                    "id",
+                    "request_number",
+                    "title",
+                    "design_type",
+                    "description",
+                    "needed_at",
+                    "status",
+                    "priority",
+                    "requester",
+                    "unit",
+                    "assigned_officer",
+                    "assigned_at",
+                    "completed_at",
+                    "rejection_note",
+                    "reference_file",
+                    "latest_draft",
+                    "latest_revision",
+                    "created_at",
+                    "updated_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "request_number": {
+                        "type": "string",
+                        "example": "DGR-2026-123456"
+                    },
+                    "title": {
+                        "type": "string",
+                        "example": "Poster edukasi pasien"
+                    },
+                    "design_type": {
+                        "type": "string",
+                        "example": "Poster edukasi"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "needed_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "baru",
+                            "ditugaskan",
+                            "menunggu_persetujuan",
+                            "perlu_revisi",
+                            "selesai",
+                            "ditolak"
+                        ]
+                    },
+                    "priority": {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": ["rendah", "sedang", "tinggi"]
+                    },
+                    "requester": {
+                        "$ref": "#/components/schemas/TicketReporterSummary"
+                    },
+                    "unit": {
+                        "$ref": "#/components/schemas/TicketUnitSummary"
+                    },
+                    "assigned_officer": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/TicketOfficerSummary"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "assigned_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "completed_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "rejection_note": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "reference_file": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/DesignReferenceFileDetail"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "latest_draft": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/DesignDraftSummary"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "latest_revision": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/DesignRevisionSummary"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "DesignReferenceFileDetail": {
+                "required": ["original_name", "mime_type", "size", "url"],
+                "properties": {
+                    "original_name": {
+                        "type": "string"
+                    },
+                    "mime_type": {
+                        "type": "string"
+                    },
+                    "size": {
+                        "type": "integer"
+                    },
+                    "url": {
+                        "description": "Temporary signed URL from the configured filesystem disk",
+                        "type": "string",
+                        "format": "uri"
+                    }
+                },
+                "type": "object"
+            },
+            "DesignDraftSummary": {
+                "required": [
+                    "id",
+                    "notes",
+                    "file",
+                    "uploaded_by",
+                    "created_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "notes": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "file": {
+                        "$ref": "#/components/schemas/DesignReferenceFileMetadata"
+                    },
+                    "uploaded_by": {
+                        "$ref": "#/components/schemas/TicketReporterSummary"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "DesignRevisionSummary": {
+                "required": [
+                    "id",
+                    "design_draft_id",
+                    "revision_note",
+                    "requested_by",
+                    "created_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "design_draft_id": {
+                        "type": "integer"
+                    },
+                    "revision_note": {
+                        "type": "string"
+                    },
+                    "requested_by": {
+                        "$ref": "#/components/schemas/TicketReporterSummary"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "DesignRequestDetailResponse": {
+                "required": ["data"],
+                "properties": {
+                    "data": {
+                        "$ref": "#/components/schemas/DesignRequestDetail"
+                    }
+                },
+                "type": "object"
+            },
+            "DesignRequestAssignmentRequest": {
+                "required": ["priority", "assigned_officer_id"],
+                "properties": {
+                    "priority": {
+                        "type": "string",
+                        "example": "sedang",
+                        "enum": ["rendah", "sedang", "tinggi"]
+                    },
+                    "assigned_officer_id": {
+                        "description": "ID pengguna aktif dengan role petugas-tik dan permission design-drafts-upload",
+                        "type": "integer",
+                        "example": 2
+                    }
+                },
+                "type": "object"
+            },
+            "DesignRequestAssignmentResponse": {
+                "required": ["message", "data"],
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "example": "Request desain berhasil ditugaskan."
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/DesignRequestDetail"
+                    }
+                },
+                "type": "object"
+            },
+            "DesignRequestRejectionRequest": {
+                "required": ["rejection_note"],
+                "properties": {
+                    "rejection_note": {
+                        "type": "string",
+                        "example": "Informasi kebutuhan desain belum lengkap."
+                    }
+                },
+                "type": "object"
+            },
+            "DesignRequestRejectionResponse": {
+                "required": ["message", "data"],
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "example": "Request desain berhasil ditolak."
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/DesignRequestDetail"
+                    }
+                },
+                "type": "object"
+            },
+            "DesignRequestCreateResponse": {
+                "required": ["message", "data"],
                 "properties": {
                     "message": {
                         "type": "string",
@@ -7040,10 +7645,7 @@
                         "description": "Current ticket status, not a ticket_handlings column.",
                         "type": "string",
                         "example": "diproses",
-                        "enum": [
-                            "diproses",
-                            "terselesaikan"
-                        ]
+                        "enum": ["diproses", "terselesaikan"]
                     },
                     "started_at": {
                         "type": "string",
@@ -7074,10 +7676,7 @@
                 "type": "object"
             },
             "TicketNamedReference": {
-                "required": [
-                    "id",
-                    "name"
-                ],
+                "required": ["id", "name"],
                 "properties": {
                     "id": {
                         "type": "integer",
@@ -7091,9 +7690,7 @@
                 "type": "object"
             },
             "ClassificationOptionsResponse": {
-                "required": [
-                    "data"
-                ],
+                "required": ["data"],
                 "properties": {
                     "data": {
                         "required": [
@@ -7106,10 +7703,7 @@
                             "service": {
                                 "type": "string",
                                 "example": "tik",
-                                "enum": [
-                                    "tik",
-                                    "sarpras"
-                                ]
+                                "enum": ["tik", "sarpras"]
                             },
                             "quality_categories": {
                                 "type": "array",
@@ -7156,9 +7750,7 @@
                 "type": "object"
             },
             "TicketSarprasDetail": {
-                "required": [
-                    "sarpras_category"
-                ],
+                "required": ["sarpras_category"],
                 "properties": {
                     "sarpras_category": {
                         "$ref": "#/components/schemas/TicketNamedReference"
@@ -7206,10 +7798,7 @@
                     "service": {
                         "type": "string",
                         "example": "tik",
-                        "enum": [
-                            "tik",
-                            "sarpras"
-                        ]
+                        "enum": ["tik", "sarpras"]
                     },
                     "category": {
                         "description": "Compatibility label derived from the ticket detail relation.",
@@ -7260,12 +7849,7 @@
                         "type": "string",
                         "example": "high",
                         "nullable": true,
-                        "enum": [
-                            "critical",
-                            "high",
-                            "medium",
-                            "low"
-                        ]
+                        "enum": ["critical", "high", "medium", "low"]
                     },
                     "asset": {
                         "oneOf": [
@@ -7360,10 +7944,7 @@
                 "type": "object"
             },
             "CreateTicketRequest": {
-                "required": [
-                    "service",
-                    "description"
-                ],
+                "required": ["service", "description"],
                 "properties": {
                     "reporter_id": {
                         "type": "integer",
@@ -7373,10 +7954,7 @@
                     "service": {
                         "type": "string",
                         "example": "tik",
-                        "enum": [
-                            "tik",
-                            "sarpras"
-                        ]
+                        "enum": ["tik", "sarpras"]
                     },
                     "asset_id": {
                         "type": "integer",
@@ -7396,10 +7974,7 @@
                 "type": "object"
             },
             "TicketCreateResponse": {
-                "required": [
-                    "message",
-                    "data"
-                ],
+                "required": ["message", "data"],
                 "properties": {
                     "message": {
                         "type": "string",
@@ -7412,9 +7987,7 @@
                 "type": "object"
             },
             "RejectTicketRequest": {
-                "required": [
-                    "reason"
-                ],
+                "required": ["reason"],
                 "properties": {
                     "reason": {
                         "type": "string",
@@ -7435,10 +8008,7 @@
                 ]
             },
             "ClassifyTikTicketRequest": {
-                "required": [
-                    "quality_category_id",
-                    "it_tag_id"
-                ],
+                "required": ["quality_category_id", "it_tag_id"],
                 "properties": {
                     "quality_category_id": {
                         "type": "integer",
@@ -7458,9 +8028,7 @@
                 "type": "object"
             },
             "ClassifySarprasTicketRequest": {
-                "required": [
-                    "sarpras_category_id"
-                ],
+                "required": ["sarpras_category_id"],
                 "properties": {
                     "sarpras_category_id": {
                         "description": "Active Sarpras, Elektronik, or Alkes category ID.",
@@ -7471,9 +8039,7 @@
                 "type": "object"
             },
             "AssignTicketRequest": {
-                "required": [
-                    "assigned_officer_id"
-                ],
+                "required": ["assigned_officer_id"],
                 "properties": {
                     "assigned_officer_id": {
                         "type": "integer",
@@ -7483,22 +8049,13 @@
                         "description": "Required for initial assignment and prohibited for reassignment.",
                         "type": "string",
                         "example": "high",
-                        "enum": [
-                            "critical",
-                            "high",
-                            "medium",
-                            "low"
-                        ]
+                        "enum": ["critical", "high", "medium", "low"]
                     }
                 },
                 "type": "object"
             },
             "AssigneeOption": {
-                "required": [
-                    "id",
-                    "name",
-                    "jabatan"
-                ],
+                "required": ["id", "name", "jabatan"],
                 "properties": {
                     "id": {
                         "type": "integer",
@@ -7517,9 +8074,7 @@
                 "type": "object"
             },
             "AssigneeOptionCollectionResponse": {
-                "required": [
-                    "data"
-                ],
+                "required": ["data"],
                 "properties": {
                     "data": {
                         "type": "array",
@@ -7531,12 +8086,7 @@
                 "type": "object"
             },
             "CreateTicketHandlingRequest": {
-                "required": [
-                    "notes",
-                    "status",
-                    "started_at",
-                    "completed_at"
-                ],
+                "required": ["notes", "status", "started_at", "completed_at"],
                 "properties": {
                     "notes": {
                         "type": "string",
@@ -7546,10 +8096,7 @@
                         "description": "Diproses accepts diproses or terselesaikan. Stored on tickets.status, not ticket_handlings.",
                         "type": "string",
                         "example": "diproses",
-                        "enum": [
-                            "diproses",
-                            "terselesaikan"
-                        ]
+                        "enum": ["diproses", "terselesaikan"]
                     },
                     "started_at": {
                         "description": "Required repair start time, editable by the officer.",
@@ -7570,10 +8117,7 @@
                 "type": "object"
             },
             "TicketActionResponse": {
-                "required": [
-                    "message",
-                    "data"
-                ],
+                "required": ["message", "data"],
                 "properties": {
                     "message": {
                         "type": "string",
@@ -7586,12 +8130,7 @@
                 "type": "object"
             },
             "TicketPaginationLinks": {
-                "required": [
-                    "first",
-                    "last",
-                    "prev",
-                    "next"
-                ],
+                "required": ["first", "last", "prev", "next"],
                 "properties": {
                     "first": {
                         "type": "string",
@@ -7615,12 +8154,7 @@
                 "type": "object"
             },
             "TicketPaginationLinkItem": {
-                "required": [
-                    "url",
-                    "label",
-                    "page",
-                    "active"
-                ],
+                "required": ["url", "label", "page", "active"],
                 "properties": {
                     "url": {
                         "type": "string",
@@ -7692,11 +8226,7 @@
                 "type": "object"
             },
             "TicketCollectionResponse": {
-                "required": [
-                    "data",
-                    "links",
-                    "meta"
-                ],
+                "required": ["data", "links", "meta"],
                 "properties": {
                     "data": {
                         "type": "array",
@@ -7714,9 +8244,7 @@
                 "type": "object"
             },
             "TicketReadResponse": {
-                "required": [
-                    "data"
-                ],
+                "required": ["data"],
                 "properties": {
                     "data": {
                         "$ref": "#/components/schemas/TicketRead"
@@ -7725,9 +8253,7 @@
                 "type": "object"
             },
             "TicketReadError": {
-                "required": [
-                    "message"
-                ],
+                "required": ["message"],
                 "properties": {
                     "message": {
                         "type": "string",
@@ -7768,9 +8294,7 @@
                         },
                         {
                             "type": "string",
-                            "enum": [
-                                "all"
-                            ]
+                            "enum": ["all"]
                         }
                     ]
                 }

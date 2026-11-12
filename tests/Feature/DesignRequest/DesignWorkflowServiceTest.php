@@ -11,6 +11,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 uses(RefreshDatabase::class);
 
@@ -75,15 +76,14 @@ test('storeDraft menyimpan file, membuat draft, dan memperbarui status menjadi M
 
 test('storeRevision mengaitkan draft terakhir, membuat revisi, dan memperbarui status menjadi PerluRevisi', function (): void {
     $service = app(DesignWorkflowService::class);
-    $designRequest = createServiceTestDesignRequest([
-        'status' => DesignRequestStatus::MenungguPersetujuan,
-    ]);
+    $designRequest = createServiceTestDesignRequest();
 
     $requester = User::find($designRequest->requester_id);
     Sanctum::actingAs($requester);
 
     $file1 = UploadedFile::fake()->create('draft_v1.png', 500);
     $draft1 = $service->storeDraft($designRequest, $file1, 'Versi 1');
+    $service->storeRevision($designRequest, 'Revisi versi pertama');
 
     $file2 = UploadedFile::fake()->create('draft_v2.png', 600);
     $draft2 = $service->storeDraft($designRequest, $file2, 'Versi 2');
@@ -107,6 +107,42 @@ test('storeRevision mengaitkan draft terakhir, membuat revisi, dan memperbarui s
         'revision_note' => $revisionNote,
         'requested_by_id' => $requester->id,
     ]);
+});
+
+test('service menolak draft pada request selesai meski model yang diberikan masih berstatus ditugaskan', function (): void {
+    $service = app(DesignWorkflowService::class);
+    $designRequest = createServiceTestDesignRequest();
+    $designRequest->newQuery()->whereKey($designRequest->id)->update([
+        'status' => DesignRequestStatus::Selesai,
+        'completed_at' => now(),
+    ]);
+
+    expect(fn () => $service->storeDraft($designRequest, UploadedFile::fake()->create('late.png', 20)))
+        ->toThrow(ConflictHttpException::class);
+
+    $this->assertDatabaseCount('design_drafts', 0);
+    expect(Storage::disk('local')->allFiles('design_drafts/'.$designRequest->id))->toBeEmpty();
+    expect($designRequest->fresh()->status)->toBe(DesignRequestStatus::Selesai);
+});
+
+test('service menolak revisi dan approval ketika status request berubah setelah model dimuat', function (): void {
+    $service = app(DesignWorkflowService::class);
+    $designRequest = createServiceTestDesignRequest();
+    $service->storeDraft($designRequest, UploadedFile::fake()->create('draft.png', 20));
+
+    $staleRequest = $designRequest->fresh();
+    $designRequest->newQuery()->whereKey($designRequest->id)->update([
+        'status' => DesignRequestStatus::Selesai,
+        'completed_at' => now(),
+    ]);
+
+    expect(fn () => $service->storeRevision($staleRequest, 'Revisi terlambat'))
+        ->toThrow(ConflictHttpException::class);
+    expect(fn () => $service->approve($staleRequest))
+        ->toThrow(ConflictHttpException::class);
+
+    $this->assertDatabaseCount('design_revisions', 0);
+    expect($designRequest->fresh()->status)->toBe(DesignRequestStatus::Selesai);
 });
 
 test('approve memperbarui status request menjadi Selesai dan mengisi completed_at', function (): void {

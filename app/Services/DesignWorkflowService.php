@@ -10,6 +10,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Throwable;
 
 class DesignWorkflowService
@@ -27,17 +28,23 @@ class DesignWorkflowService
 
         try {
             return DB::transaction(function () use ($request, $file, $notes, $filePath): DesignDraft {
-                $draft = $request->drafts()->create([
+                $lockedRequest = DesignRequest::query()->whereKey($request->getKey())->lockForUpdate()->firstOrFail();
+
+                if (! in_array($lockedRequest->status, [DesignRequestStatus::Ditugaskan, DesignRequestStatus::PerluRevisi], true)) {
+                    throw new ConflictHttpException('Draft hanya dapat diunggah saat request berstatus ditugaskan atau perlu revisi.');
+                }
+
+                $draft = $lockedRequest->drafts()->create([
                     'file_object_key' => $filePath,
                     'file_original_name' => $file->getClientOriginalName(),
                     'file_mime_type' => $file->getMimeType() ?: $file->getClientMimeType() ?: 'application/octet-stream',
                     'file_size' => $file->getSize(),
                     'notes' => $notes,
-                    'uploaded_by_id' => auth()->id() ?? $request->assigned_officer_id ?? $request->requester_id,
+                    'uploaded_by_id' => auth()->id() ?? $lockedRequest->assigned_officer_id ?? $lockedRequest->requester_id,
                 ]);
 
-                $request->status = DesignRequestStatus::MenungguPersetujuan;
-                $request->save();
+                $lockedRequest->status = DesignRequestStatus::MenungguPersetujuan;
+                $lockedRequest->save();
 
                 return $draft;
             });
@@ -54,16 +61,22 @@ class DesignWorkflowService
     public function storeRevision(DesignRequest $request, string $note): DesignRevision
     {
         return DB::transaction(function () use ($request, $note): DesignRevision {
-            $draft = $request->drafts()->latest()->firstOrFail();
+            $lockedRequest = DesignRequest::query()->whereKey($request->getKey())->lockForUpdate()->firstOrFail();
 
-            $revision = $request->revisions()->create([
+            if ($lockedRequest->status !== DesignRequestStatus::MenungguPersetujuan) {
+                throw new ConflictHttpException('Revisi hanya dapat diajukan saat request menunggu persetujuan.');
+            }
+
+            $draft = $lockedRequest->drafts()->latest()->firstOrFail();
+
+            $revision = $lockedRequest->revisions()->create([
                 'design_draft_id' => $draft->id,
                 'revision_note' => $note,
-                'requested_by_id' => auth()->id() ?? $request->requester_id,
+                'requested_by_id' => auth()->id() ?? $lockedRequest->requester_id,
             ]);
 
-            $request->status = DesignRequestStatus::PerluRevisi;
-            $request->save();
+            $lockedRequest->status = DesignRequestStatus::PerluRevisi;
+            $lockedRequest->save();
 
             return $revision;
         });
@@ -75,10 +88,16 @@ class DesignWorkflowService
     public function approve(DesignRequest $request): bool
     {
         return DB::transaction(function () use ($request): bool {
-            $request->status = DesignRequestStatus::Selesai;
-            $request->completed_at = now();
+            $lockedRequest = DesignRequest::query()->whereKey($request->getKey())->lockForUpdate()->firstOrFail();
 
-            return $request->save();
+            if ($lockedRequest->status !== DesignRequestStatus::MenungguPersetujuan) {
+                throw new ConflictHttpException('Request hanya dapat disetujui saat menunggu persetujuan.');
+            }
+
+            $lockedRequest->status = DesignRequestStatus::Selesai;
+            $lockedRequest->completed_at = now();
+
+            return $lockedRequest->save();
         });
     }
 
