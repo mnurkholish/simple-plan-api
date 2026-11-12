@@ -10,6 +10,7 @@ use App\Models\DesignRequest;
 use App\Services\DesignWorkflowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpFoundation\Response;
 
 class DesignWorkflowController extends Controller
@@ -24,6 +25,8 @@ class DesignWorkflowController extends Controller
     public function storeDraft(StoreDesignDraftRequest $request, int|string $id): JsonResponse
     {
         $designRequest = DesignRequest::findOrFail($id);
+
+        Gate::authorize('uploadDraft', $designRequest);
 
         $draft = $this->service->storeDraft(
             $designRequest,
@@ -44,6 +47,8 @@ class DesignWorkflowController extends Controller
     {
         $designRequest = DesignRequest::findOrFail($id);
 
+        Gate::authorize('revise', $designRequest);
+
         $revision = $this->service->storeRevision(
             $designRequest,
             (string) $request->input('revision_note'),
@@ -62,15 +67,17 @@ class DesignWorkflowController extends Controller
     {
         $designRequest = DesignRequest::findOrFail($id);
 
+        Gate::authorize('approve', $designRequest);
+
         $isWaitingApproval = ($designRequest->status === DesignRequestStatus::MenungguPersetujuan)
             || in_array((string) ($designRequest->status?->value ?? $designRequest->status), [
                 'menunggu_persetujuan',
                 'MenungguPersetujuan',
             ], true);
 
-        if (! $isWaitingApproval || (int) $request->user()?->id !== (int) $designRequest->requester_id) {
+        if (! $isWaitingApproval) {
             return response()->json([
-                'message' => 'Hanya pemohon yang dapat menyetujui request desain berstatus MenungguPersetujuan.',
+                'message' => 'Hanya request desain berstatus MenungguPersetujuan yang dapat disetujui.',
             ], Response::HTTP_FORBIDDEN);
         }
 
@@ -87,6 +94,8 @@ class DesignWorkflowController extends Controller
     public function downloadFinal(Request $request, int|string $id): JsonResponse
     {
         $designRequest = DesignRequest::findOrFail($id);
+
+        Gate::authorize('downloadFinal', $designRequest);
 
         $isCompleted = ($designRequest->status === DesignRequestStatus::Selesai)
             || in_array((string) ($designRequest->status?->value ?? $designRequest->status), [

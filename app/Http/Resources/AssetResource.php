@@ -26,8 +26,8 @@ class AssetResource extends JsonResource
             'model_specification' => $this->model_specification,
             'location_detail' => $this->location_detail,
             'purchase_year' => $this->purchase_year,
-            'status' => $this->status->value,
-            'condition' => $this->condition->value,
+            'status' => $this->status?->value,
+            'condition' => $this->condition?->value,
             'warranty_until' => $this->warranty_until?->format('Y-m-d'),
             'notes' => $this->notes,
             'calibration_document' => $this->calibration_object_key === null ? null : [

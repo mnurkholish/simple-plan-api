@@ -15,17 +15,20 @@ class AssetMaintenanceReminderNotification extends Notification
         public readonly AssetMaintenance $schedule,
         public readonly string $reminderType = 'hari-h',
         public ?string $message = null,
+        public readonly bool $isUrgent = false,
     ) {
         $itemName = $schedule->assetCode?->assetItem?->name
             ?? $schedule->assetCode?->item?->name
             ?? 'Aset';
 
         if ($this->message === null) {
+            $prefix = $this->isUrgent ? 'Tugas Mendesak: ' : 'Pengingat: ';
             $this->message = match (strtolower($reminderType)) {
-                'h-3' => "Pengingat: 3 hari lagi (H-3) adalah jadwal pemeliharaan aset {$itemName}.",
-                'h-1' => "Pengingat: Besok (H-1) adalah jadwal pemeliharaan aset {$itemName}.",
-                'hari-h', 'today' => "Pengingat: Hari ini adalah jadwal pemeliharaan aset {$itemName}.",
-                default => "Pengingat: Jadwal pemeliharaan aset {$itemName} akan segera dilaksanakan ({$reminderType}).",
+                'h-3' => "{$prefix}3 hari lagi (H-3) adalah jadwal pemeliharaan aset {$itemName}.",
+                'h-2' => "{$prefix}2 hari lagi (H-2) adalah jadwal pemeliharaan aset {$itemName}.",
+                'h-1' => "{$prefix}Besok (H-1) adalah jadwal pemeliharaan aset {$itemName}.",
+                'hari-h', 'today' => "{$prefix}Hari ini adalah jadwal pemeliharaan aset {$itemName}.",
+                default => "{$prefix}Jadwal pemeliharaan aset {$itemName} akan segera dilaksanakan ({$reminderType}).",
             };
         }
     }
@@ -51,16 +54,17 @@ class AssetMaintenanceReminderNotification extends Notification
             'reminder_type' => $this->reminderType,
             'status' => $this->schedule->status->value ?? $this->schedule->status,
             'message' => $this->message,
-            'title' => 'Pengingat Pemeliharaan Aset',
+            'title' => $this->isUrgent ? 'Tugas Pemeliharaan Mendesak' : 'Pengingat Pemeliharaan Aset',
             'subtitle' => $this->message,
-            'icon' => 'IconCalendarEvent',
-            'color' => 'blue',
+            'icon' => $this->isUrgent ? 'IconAlertCircle' : 'IconCalendarEvent',
+            'color' => $this->isUrgent ? 'orange' : 'blue',
             'url' => '/inventory/asset-maintenances/'.$this->schedule->id,
             'target' => [
                 'feature' => 'inventory',
                 'subfeature' => 'maintenance',
                 'resource_id' => $this->schedule->id,
             ],
+            'is_urgent' => $this->isUrgent,
         ];
     }
 

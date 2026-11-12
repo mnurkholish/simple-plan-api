@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Models\Asset;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -21,9 +22,37 @@ class AssetRepository
     /** @param array<string, mixed> $filters */
     public function filteredQuery(array $filters): Builder
     {
+        $user = auth()->user() ?? request()?->user();
+
         $query = Asset::query()
-            ->visibleTo(auth()->user())
             ->with(['assetCode.classification', 'assetCode.location', 'assetCode.item']);
+
+        if ($user) {
+            if ($user->hasAnyRole(['manajemen', 'management'])) {
+                // Aturan Filter A: Manajemen TIDAK BISA melihat data inventaris TIK dan Sarpras
+                $query->whereDoesntHave('assetCode.classification', function (Builder $q): void {
+                    $q->where(function (Builder $sub): void {
+                        $sub->whereIn('name', ['Alat IT', 'TIK', 'IT', 'Alat Sarpras', 'Sarpras'])
+                            ->orWhere('name', 'like', '%TIK%')
+                            ->orWhere('name', 'like', '%Sarpras%')
+                            ->orWhere('name', 'like', '%Alat IT%')
+                            ->orWhere('name', 'like', '%Alat Sarpras%');
+                    });
+                });
+            } elseif ($user->hasAnyRole(['super_admin', 'super-admin'])) {
+                // Aturan Filter B: Super Admin TIDAK BISA melihat data inventaris Sarpras
+                $query->whereDoesntHave('assetCode.classification', function (Builder $q): void {
+                    $q->where(function (Builder $sub): void {
+                        $sub->whereIn('name', ['Alat Sarpras', 'Sarpras'])
+                            ->orWhere('name', 'like', '%sarpras%')
+                            ->orWhere('name', 'like', '%Alat Sarpras%');
+                    });
+                });
+            } else {
+                $query->visibleTo($user);
+            }
+        }
+
         $search = trim((string) ($filters['search'] ?? ''));
 
         if ($search !== '') {
@@ -112,5 +141,22 @@ class AssetRepository
             )
             ->orderBy('id')
             ->get();
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     */
+    public function paginate(array $filters = [], int $perPage = 15): LengthAwarePaginator
+    {
+        return $this->filteredQuery($filters)->orderByDesc('assets.id')->paginate($perPage);
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return Collection<int, Asset>
+     */
+    public function getAll(array $filters = []): Collection
+    {
+        return $this->filteredQuery($filters)->orderByDesc('assets.id')->get();
     }
 }

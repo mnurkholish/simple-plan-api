@@ -2967,6 +2967,61 @@
             }
         },
         "/design-requests": {
+            "get": {
+                "tags": [
+                    "Design Graphic"
+                ],
+                "summary": "Melihat daftar request desain",
+                "description": "Menampilkan daftar tiket menggunakan Paginasi Laravel agar frontend bisa membuat fitur Show More.",
+                "operationId": "listDesignRequests",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Nomor halaman untuk paginasi",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Jumlah data per halaman (default 10)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Daftar request desain berhasil diambil",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DesignRequestPaginationResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
             "post": {
                 "tags": [
                     "Design Graphic"
@@ -3033,10 +3088,79 @@
                 ]
             }
         },
+        "/design-requests/{id}": {
+            "get": {
+                "tags": [
+                    "Design Graphic"
+                ],
+                "summary": "Melihat detail request desain beserta riwayat draft",
+                "description": "Menampilkan detail tiket yang sudah di-eager-load beserta riwayat draft-nya untuk keperluan preview sebelum di-approve.",
+                "operationId": "showDesignRequest",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Design Request ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detail request desain berhasil diambil",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DesignRequestDetailResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/design-requests/{id}/drafts": {
             "post": {
                 "tags": [
-                    "Design Workflow"
+                    "Design Graphic"
                 ],
                 "summary": "Mengunggah draft",
                 "description": "Upload a new design draft file for the design request. Requires design-drafts-upload permission.",
@@ -3139,7 +3263,7 @@
         "/design-requests/{id}/revisions": {
             "post": {
                 "tags": [
-                    "Design Workflow"
+                    "Design Graphic"
                 ],
                 "summary": "Mengajukan revisi",
                 "description": "Submit a revision note for the latest design draft. Requires design-requests-revise permission.",
@@ -3236,7 +3360,7 @@
         "/design-requests/{id}/approvals": {
             "post": {
                 "tags": [
-                    "Design Workflow"
+                    "Design Graphic"
                 ],
                 "summary": "Menyetujui desain",
                 "description": "Approve the design request and mark it as selesai. Requires design-requests-approve permission.",
@@ -3311,7 +3435,7 @@
         "/design-requests/{id}/final-file": {
             "get": {
                 "tags": [
-                    "Design Workflow"
+                    "Design Graphic"
                 ],
                 "summary": "Mengunduh file final",
                 "description": "Get temporary or public URL for the final approved design file. Only accessible when request is selesai.",
@@ -3375,6 +3499,253 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/design-requests/{id}/assignments": {
+            "post": {
+                "tags": [
+                    "Design Graphic"
+                ],
+                "summary": "Penugasan request desain ke Petugas TIK",
+                "description": "Super Admin menugaskan request desain ke Petugas TIK dan memperbarui status menjadi Ditugaskan. Hanya request berstatus Baru yang dapat ditugaskan.",
+                "operationId": "assignDesignRequest",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Design Request ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AssignDesignRequestRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Tugas desain berhasil ditugaskan ke petugas TIK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AssignDesignResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Hanya Super Admin yang diizinkan",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Resource not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity - Validasi gagal atau status tiket bukan Baru",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/design-tasks": {
+            "get": {
+                "tags": [
+                    "Design Graphic"
+                ],
+                "summary": "Melihat daftar tugas desain Petugas TIK",
+                "description": "Menampilkan daftar tugas desain yang dibebankan kepada Petugas TIK yang sedang login menggunakan paginasi.",
+                "operationId": "listDesignTasks",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Nomor halaman untuk paginasi",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Jumlah data per halaman (default 10)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Daftar tugas desain berhasil diambil",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DesignRequestPaginationResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Hanya Petugas TIK yang diizinkan",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/design-requests/reports": {
+            "get": {
+                "tags": [
+                    "Design Graphic"
+                ],
+                "summary": "Rekapitulasi laporan request desain",
+                "description": "Menampilkan rekapitulasi analitik request desain berdasarkan rentang tanggal start_date dan end_date untuk Manajemen atau Super Admin.",
+                "operationId": "reportDesignRequests",
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "Tanggal awal periode (YYYY-MM-DD)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-01-01"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "Tanggal akhir periode (YYYY-MM-DD)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-01-31"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Laporan rekapitulasi request desain berhasil diambil",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DesignReportResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Hanya Manajemen atau Super Admin yang diizinkan",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity - Validasi rentang tanggal gagal",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
                                 }
                             }
                         }
@@ -4853,27 +5224,9 @@
                         }
                     },
                     {
-                        "name": "classification_id",
-                        "in": "query",
-                        "description": "Filter by current asset classification; alias of asset_classification_id",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
                         "name": "asset_location_id",
                         "in": "query",
                         "description": "Filter by location ID",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "location_id",
-                        "in": "query",
-                        "description": "Filter by current asset room through asset_codes.asset_location_id; alias of asset_location_id",
                         "required": false,
                         "schema": {
                             "type": "integer"
@@ -6866,10 +7219,7 @@
                     },
                     "status": {
                         "type": "string",
-                        "example": "baru",
-                        "enum": [
-                            "baru"
-                        ]
+                        "example": "baru"
                     },
                     "requester": {
                         "$ref": "#/components/schemas/TicketReporterSummary"
@@ -6930,6 +7280,230 @@
                     },
                     "data": {
                         "$ref": "#/components/schemas/DesignRequestRead"
+                    }
+                },
+                "type": "object"
+            },
+            "DesignRequestDetail": {
+                "required": [
+                    "id",
+                    "request_number",
+                    "title",
+                    "design_type",
+                    "description",
+                    "needed_at",
+                    "status",
+                    "requester",
+                    "unit",
+                    "reference_file",
+                    "created_at",
+                    "updated_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "request_number": {
+                        "type": "string",
+                        "pattern": "^DGR-[0-9]{4}-[0-9]{6}$",
+                        "example": "DGR-2026-123456"
+                    },
+                    "title": {
+                        "type": "string",
+                        "example": "Poster edukasi pasien"
+                    },
+                    "design_type": {
+                        "type": "string",
+                        "example": "Poster"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Poster edukasi untuk ruang tunggu."
+                    },
+                    "needed_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "status": {
+                        "type": "string",
+                        "example": "ditugaskan"
+                    },
+                    "requester": {
+                        "$ref": "#/components/schemas/TicketReporterSummary"
+                    },
+                    "unit": {
+                        "$ref": "#/components/schemas/TicketUnitSummary"
+                    },
+                    "reference_file": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/DesignReferenceFileMetadata"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "drafts": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/DesignDraft"
+                        }
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "DesignRequestDetailResponse": {
+                "required": [
+                    "data"
+                ],
+                "properties": {
+                    "data": {
+                        "$ref": "#/components/schemas/DesignRequestDetail"
+                    }
+                },
+                "type": "object"
+            },
+            "DesignRequestPaginationResponse": {
+                "required": [
+                    "data",
+                    "links",
+                    "meta"
+                ],
+                "properties": {
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/DesignRequestRead"
+                        }
+                    },
+                    "links": {
+                        "$ref": "#/components/schemas/TicketPaginationLinks"
+                    },
+                    "meta": {
+                        "$ref": "#/components/schemas/PaginationMeta"
+                    }
+                },
+                "type": "object"
+            },
+            "AssignDesignRequestRequest": {
+                "required": [
+                    "prioritas",
+                    "petugas_desain_id"
+                ],
+                "properties": {
+                    "prioritas": {
+                        "description": "Tingkat prioritas pengerjaan desain.",
+                        "type": "string",
+                        "example": "Tinggi",
+                        "enum": [
+                            "Rendah",
+                            "Sedang",
+                            "Tinggi"
+                        ]
+                    },
+                    "petugas_desain_id": {
+                        "description": "ID Petugas TIK yang ditugaskan.",
+                        "type": "integer",
+                        "example": 3
+                    }
+                },
+                "type": "object"
+            },
+            "AssignDesignResponse": {
+                "required": [
+                    "message",
+                    "data"
+                ],
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "example": "Tugas desain berhasil ditugaskan ke petugas TIK."
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/DesignRequestDetail"
+                    }
+                },
+                "type": "object"
+            },
+            "DesignReportPeriod": {
+                "required": [
+                    "start_date",
+                    "end_date"
+                ],
+                "properties": {
+                    "start_date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-01-01"
+                    },
+                    "end_date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-01-31"
+                    }
+                },
+                "type": "object"
+            },
+            "DesignReportData": {
+                "required": [
+                    "period",
+                    "total",
+                    "by_status",
+                    "by_design_type",
+                    "requests"
+                ],
+                "properties": {
+                    "period": {
+                        "$ref": "#/components/schemas/DesignReportPeriod"
+                    },
+                    "total": {
+                        "type": "integer",
+                        "example": 15
+                    },
+                    "by_status": {
+                        "type": "object",
+                        "example": {
+                            "baru": 2,
+                            "ditugaskan": 5,
+                            "selesai": 8
+                        }
+                    },
+                    "by_design_type": {
+                        "type": "object",
+                        "example": {
+                            "Poster": 6,
+                            "Roll Banner": 9
+                        }
+                    },
+                    "requests": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/DesignRequestRead"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "DesignReportResponse": {
+                "required": [
+                    "message",
+                    "data"
+                ],
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "example": "Laporan rekapitulasi request desain berhasil diambil."
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/DesignReportData"
                     }
                 },
                 "type": "object"
@@ -7876,11 +8450,7 @@
         },
         {
             "name": "Design Graphic",
-            "description": "Graphic design requests"
-        },
-        {
-            "name": "Design Workflow",
-            "description": "Graphic design workflow: drafts, revisions, approvals, and final file"
+            "description": "Graphic design requests and workflow"
         },
         {
             "name": "Inventory - Master Data",

@@ -51,12 +51,30 @@ class AssetCode extends Model
             return $query;
         }
 
-        if ($actor->hasRole('super-admin')) {
-            return $query->whereHas('classification', fn (Builder $q) => $q->where('name', 'Alat IT'));
+        if ($actor->hasAnyRole(['super-admin', 'super_admin'])) {
+            return $query->whereDoesntHave('classification', function (Builder $q): void {
+                $q->where(function (Builder $sub): void {
+                    $sub->whereIn('name', ['Alat Sarpras', 'Sarpras'])
+                        ->orWhere('name', 'like', '%sarpras%')
+                        ->orWhere('name', 'like', '%Alat Sarpras%');
+                });
+            });
         }
 
-        if ($actor->hasRole('koordinator-sarpras')) {
-            return $query->whereHas('classification', fn (Builder $q) => $q->where('name', '!=', 'Alat IT'));
+        if ($actor->hasAnyRole(['koordinator-sarpras', 'koordinator_sarpras'])) {
+            return $query->whereHas('classification', fn (Builder $q): Builder => $q->where('name', '!=', 'Alat IT')->where('name', 'not like', '%IT%')->where('name', 'not like', '%TIK%'));
+        }
+
+        if ($actor->hasAnyRole(['manajemen', 'management'])) {
+            return $query->whereDoesntHave('classification', function (Builder $q): void {
+                $q->where(function (Builder $sub): void {
+                    $sub->whereIn('name', ['Alat IT', 'TIK', 'IT', 'Alat Sarpras', 'Sarpras'])
+                        ->orWhere('name', 'like', '%TIK%')
+                        ->orWhere('name', 'like', '%Sarpras%')
+                        ->orWhere('name', 'like', '%Alat IT%')
+                        ->orWhere('name', 'like', '%Alat Sarpras%');
+                });
+            });
         }
 
         return $query;

@@ -86,26 +86,50 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::apiResource('assets', AssetController::class);
         Route::post('assets/{asset}', [AssetController::class, 'update'])->name('assets.update.post');
 
-        Route::apiResource('asset-classifications', AssetClassificationController::class)->except(['destroy']);
-        Route::apiResource('asset-locations', AssetLocationController::class)->except(['destroy']);
-        Route::apiResource('asset-items', AssetItemController::class)->except(['destroy']);
+        // Master Data Inventaris: HANYA Super Admin (blokir User, Petugas Sarpras, Petugas TIK, Manajemen, Koordinator Sarpras)
+        Route::middleware('role:super_admin|super-admin')->group(function (): void {
+            Route::apiResource('asset-classifications', AssetClassificationController::class)->except(['destroy']);
+            Route::apiResource('asset-locations', AssetLocationController::class)->except(['destroy']);
+            Route::apiResource('asset-items', AssetItemController::class)->except(['destroy']);
+        });
 
         Route::get('/assets/{asset}/qr', [AssetQrCodeController::class, 'show']);
         Route::get('/assets/{asset}/label', [AssetLabelController::class, 'show']);
         Route::post('asset-label-exports', [AssetLabelExportController::class, 'store'])
             ->name('asset-label-exports.store');
 
-        // Jadwal Maintenance (Induk)
-        Route::apiResource('asset-maintenances', AssetMaintenanceController::class)->except(['destroy']);
-        // Eksekusi Log Maintenance (Nested)
-        Route::post('asset-maintenances/{maintenance}/logs', [AssetMaintenanceLogController::class, 'store']);
+        // Modul Maintenance: Dilarang untuk role 'user'
+        Route::middleware('role:super_admin|super-admin|koordinator_sarpras|koordinator-sarpras|petugas_tik|petugas-tik|petugas_sarpras|petugas-sarpras|manajemen|management')->group(function (): void {
+            // Jadwal Maintenance (Induk)
+            Route::apiResource('asset-maintenances', AssetMaintenanceController::class)->except(['destroy']);
+            // Eksekusi Log Maintenance (Nested)
+            Route::post('asset-maintenances/{maintenance}/logs', [AssetMaintenanceLogController::class, 'store']);
+            Route::apiResource('maintenances', AssetMaintenanceController::class)->except(['destroy']);
+        });
+
+        // Alias untuk inventories
+        Route::get('inventories', [AssetController::class, 'index'])->name('inventories.index');
+        Route::apiResource('inventories', AssetController::class);
 
         Route::get('tickets', [TicketController::class, 'index'])
             ->middleware('permission:tickets-access')
             ->name('tickets.index');
+        Route::get('design-requests', [DesignRequestController::class, 'index'])
+            ->name('design-requests.index');
         Route::post('design-requests', [DesignRequestController::class, 'store'])
             ->middleware('permission:design-requests-create')
             ->name('design-requests.store');
+        Route::get('design-requests/reports', [DesignRequestController::class, 'reports'])
+            ->middleware('role:manajemen|management|super_admin|super-admin')
+            ->name('design-requests.reports');
+        Route::get('design-tasks', [DesignRequestController::class, 'tasks'])
+            ->middleware('role:petugas_tik|petugas-tik')
+            ->name('design-tasks.index');
+        Route::post('design-requests/{id}/assignments', [DesignRequestController::class, 'assign'])
+            ->middleware('role:super_admin|super-admin')
+            ->name('design-requests.assignments');
+        Route::get('design-requests/{id}', [DesignRequestController::class, 'show'])
+            ->name('design-requests.show');
         Route::post('design-requests/{id}/drafts', [DesignWorkflowController::class, 'storeDraft'])
             ->middleware('permission:design-drafts-upload')
             ->name('design-requests.drafts.store');
@@ -262,3 +286,5 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             ->name('units.destroy');
     });
 });
+
+Route::middleware('auth:sanctum')->get('inventories', [AssetController::class, 'index']);

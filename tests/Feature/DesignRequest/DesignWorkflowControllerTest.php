@@ -10,6 +10,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
@@ -41,6 +42,8 @@ test('storeDraft pada controller mengembalikan response 201 dan data draft', fun
     $designRequest = createWorkflowControllerTestDesignRequest();
     $officer = User::find($designRequest->assigned_officer_id);
 
+    $role = Role::firstOrCreate(['name' => 'petugas-tik', 'guard_name' => 'web']);
+    $officer->assignRole($role);
     $permission = Permission::firstOrCreate(['name' => 'design-drafts-upload', 'guard_name' => 'web']);
     $officer->givePermissionTo($permission);
     Sanctum::actingAs($officer);
@@ -59,6 +62,24 @@ test('storeDraft pada controller mengembalikan response 201 dan data draft', fun
 
     $designRequest->refresh();
     expect($designRequest->status)->toBe(DesignRequestStatus::MenungguPersetujuan);
+});
+
+test('storeDraft pada controller mengembalikan 403 jika user bukan petugas-tik', function (): void {
+    $designRequest = createWorkflowControllerTestDesignRequest();
+    $officer = User::find($designRequest->assigned_officer_id);
+
+    $permission = Permission::firstOrCreate(['name' => 'design-drafts-upload', 'guard_name' => 'web']);
+    $officer->givePermissionTo($permission);
+    Sanctum::actingAs($officer);
+
+    $file = UploadedFile::fake()->create('draft_1.png', 500, 'image/png');
+
+    $response = $this->postJson("/api/v1/design-requests/{$designRequest->id}/drafts", [
+        'file' => $file,
+        'notes' => 'Catatan draft awal',
+    ]);
+
+    $response->assertForbidden();
 });
 
 test('storeRevision pada controller mengembalikan response 201 dan data revisi', function (): void {
@@ -137,7 +158,7 @@ test('storeApproval pada controller mengembalikan 403 jika status bukan Menunggu
     $response->assertForbidden();
 });
 
-test('downloadFinal mengembalikan url file final jika status selesai', function (): void {
+test('downloadFinal mengembalikan url file final jika status selesai untuk pemohon', function (): void {
     $designRequest = createWorkflowControllerTestDesignRequest();
 
     $service = app(DesignWorkflowService::class);
@@ -153,6 +174,55 @@ test('downloadFinal mengembalikan url file final jika status selesai', function 
         ->assertJsonStructure(['final_file_url']);
 
     expect($response->json('final_file_url'))->toContain($draft->file_path);
+});
+
+test('downloadFinal dapat diakses oleh super-admin jika status selesai', function (): void {
+    $designRequest = createWorkflowControllerTestDesignRequest();
+
+    $service = app(DesignWorkflowService::class);
+    $service->storeDraft($designRequest, UploadedFile::fake()->create('final.png', 400));
+    $service->approve($designRequest);
+
+    $superAdmin = User::factory()->create(['unit_id' => Unit::factory()]);
+    $role = Role::firstOrCreate(['name' => 'super-admin', 'guard_name' => 'web']);
+    $superAdmin->assignRole($role);
+    Sanctum::actingAs($superAdmin);
+
+    $response = $this->getJson("/api/v1/design-requests/{$designRequest->id}/final-file");
+
+    $response->assertOk()
+        ->assertJsonStructure(['final_file_url']);
+});
+
+test('downloadFinal dapat diakses oleh petugas yang ditugaskan jika status selesai', function (): void {
+    $designRequest = createWorkflowControllerTestDesignRequest();
+
+    $service = app(DesignWorkflowService::class);
+    $service->storeDraft($designRequest, UploadedFile::fake()->create('final.png', 400));
+    $service->approve($designRequest);
+
+    $officer = User::find($designRequest->assigned_officer_id);
+    Sanctum::actingAs($officer);
+
+    $response = $this->getJson("/api/v1/design-requests/{$designRequest->id}/final-file");
+
+    $response->assertOk()
+        ->assertJsonStructure(['final_file_url']);
+});
+
+test('downloadFinal mengembalikan 403 jika diakses oleh user lain yang tidak berhak', function (): void {
+    $designRequest = createWorkflowControllerTestDesignRequest();
+
+    $service = app(DesignWorkflowService::class);
+    $service->storeDraft($designRequest, UploadedFile::fake()->create('final.png', 400));
+    $service->approve($designRequest);
+
+    $otherUser = User::factory()->create(['unit_id' => Unit::factory()]);
+    Sanctum::actingAs($otherUser);
+
+    $response = $this->getJson("/api/v1/design-requests/{$designRequest->id}/final-file");
+
+    $response->assertForbidden();
 });
 
 test('downloadFinal mengembalikan 403 jika request belum berstatus selesai', function (): void {

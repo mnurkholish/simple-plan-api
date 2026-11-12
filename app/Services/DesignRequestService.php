@@ -6,6 +6,8 @@ use App\Enums\DesignRequestStatus;
 use App\Models\DesignRequest;
 use App\Models\User;
 use App\Repositories\DesignRequestRepository;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -66,5 +68,55 @@ class DesignRequestService
 
             throw $exception;
         }
+    }
+
+    /**
+     * Menugaskan request desain ke Petugas TIK dan memperbarui status menjadi Ditugaskan.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function assignTask(int|string|DesignRequest $id, array $data): DesignRequest
+    {
+        $designRequest = $id instanceof DesignRequest ? $id : DesignRequest::findOrFail($id);
+
+        if ($designRequest->status !== DesignRequestStatus::Baru) {
+            throw ValidationException::withMessages([
+                'status' => ['Hanya request desain dengan status Baru yang dapat ditugaskan.'],
+            ]);
+        }
+
+        $priorityInput = (string) ($data['prioritas'] ?? $data['priority'] ?? 'Sedang');
+        $priority = ucfirst(strtolower($priorityInput));
+        $officerId = (int) ($data['petugas_desain_id'] ?? $data['assigned_officer_id']);
+
+        $designRequest->update([
+            'status' => DesignRequestStatus::Ditugaskan,
+            'priority' => $priority,
+            'assigned_officer_id' => $officerId,
+            'assigned_at' => now(),
+        ]);
+
+        return $designRequest->fresh(['requester', 'unit', 'assignedOfficer', 'drafts']);
+    }
+
+    public function getTasksByAssignee(int|string $userId, int $perPage = 10): LengthAwarePaginator
+    {
+        return $this->designRequests->getTasksByAssignee($userId, $perPage);
+    }
+
+    /**
+     * @return array{
+     *     start_date: string,
+     *     end_date: string,
+     *     period: array{start_date: string, end_date: string},
+     *     total: int,
+     *     by_status: array<string, int>,
+     *     by_design_type: array<string, int>,
+     *     requests: Collection<int, DesignRequest>
+     * }
+     */
+    public function getReportSummary(string $startDate, string $endDate): array
+    {
+        return $this->designRequests->getReportSummary($startDate, $endDate);
     }
 }

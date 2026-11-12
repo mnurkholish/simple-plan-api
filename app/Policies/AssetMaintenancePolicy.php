@@ -13,10 +13,15 @@ class AssetMaintenancePolicy
     {
         return $user->hasAnyRole([
             'super-admin',
+            'super_admin',
             'koordinator-sarpras',
+            'koordinator_sarpras',
             'petugas-tik',
+            'petugas_tik',
             'petugas-sarpras',
+            'petugas_sarpras',
             'manajemen',
+            'management',
         ]);
     }
 
@@ -29,7 +34,9 @@ class AssetMaintenancePolicy
     {
         return $user->hasAnyRole([
             'super-admin',
+            'super_admin',
             'koordinator-sarpras',
+            'koordinator_sarpras',
         ]);
     }
 
@@ -37,7 +44,9 @@ class AssetMaintenancePolicy
     {
         return $user->hasAnyRole([
             'super-admin',
+            'super_admin',
             'koordinator-sarpras',
+            'koordinator_sarpras',
         ]);
     }
 
