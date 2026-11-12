@@ -2711,6 +2711,7 @@ class ApiDocumentation
      *             @OA\Property(property="detail_location", type="string", nullable=true),
      *             @OA\Property(property="name", type="string", nullable=true),
      *             @OA\Property(property="detail_name", type="string", nullable=true),
+     *             @OA\Property(property="brand", type="string", nullable=true),
      *             @OA\Property(property="status", type="string")
      *         )
      *     )),

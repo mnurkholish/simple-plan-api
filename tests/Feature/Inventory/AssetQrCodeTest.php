@@ -49,6 +49,7 @@ test('super admin dapat mencari aset berdasarkan UID', function (): void {
     $item = AssetItem::factory()->create(['asset_classification_id' => $classification->id]);
     $asset = Asset::factory()->forInventory($classification, $location, $item)->create([
         'detail_item' => 'Komputer meja perawat',
+        'brand' => 'Lenovo',
     ]);
     $asset->refresh()->load('assetCode');
 
@@ -56,7 +57,7 @@ test('super admin dapat mencari aset berdasarkan UID', function (): void {
         ->assertOk()
         ->assertJsonStructure(['data' => [
             'id', 'uid', 'classification', 'asset_code', 'location',
-            'detail_location', 'name', 'detail_name', 'status',
+            'detail_location', 'name', 'detail_name', 'brand', 'status',
         ]])
         ->assertJsonPath('data.id', $asset->id)
         ->assertJsonPath('data.uid', $asset->asset_uid)
@@ -64,7 +65,8 @@ test('super admin dapat mencari aset berdasarkan UID', function (): void {
         ->assertJsonPath('data.asset_code', $asset->assetCode->full_code)
         ->assertJsonPath('data.location', $location->name)
         ->assertJsonPath('data.name', $item->name)
-        ->assertJsonPath('data.detail_name', 'Komputer meja perawat');
+        ->assertJsonPath('data.detail_name', 'Komputer meja perawat')
+        ->assertJsonPath('data.brand', 'Lenovo');
 });
 
 test('pencarian UID yang tidak ditemukan mengembalikan 404', function (): void {
