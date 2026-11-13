@@ -435,6 +435,7 @@ use OpenApi\Annotations as OA;
  *     schema="DesignRequestHistoryDraft",
  *     type="object",
  *     required={"type","id","created_at","file","notes","uploaded_by"},
+ *
  *     @OA\Property(property="type", type="string", enum={"draft"}),
  *     @OA\Property(property="id", type="integer"),
  *     @OA\Property(property="created_at", type="string", format="date-time"),
@@ -447,6 +448,7 @@ use OpenApi\Annotations as OA;
  *     schema="DesignRequestHistoryRevision",
  *     type="object",
  *     required={"type","id","created_at","design_draft_id","revision_note","requested_by"},
+ *
  *     @OA\Property(property="type", type="string", enum={"revision"}),
  *     @OA\Property(property="id", type="integer"),
  *     @OA\Property(property="created_at", type="string", format="date-time"),
@@ -462,11 +464,11 @@ use OpenApi\Annotations as OA;
  *         @OA\Schema(ref="#/components/schemas/DesignRequestHistoryRevision")
  *     }
  * )
- *
  * @OA\Schema(
  *     schema="DesignRequestHistoryResponse",
  *     type="object",
  *     required={"data"},
+ *
  *     @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/DesignRequestHistoryActivity"))
  * )
  *
@@ -2038,7 +2040,9 @@ class ApiDocumentation
      *     summary="Get graphic design draft and revision history",
      *     description="Returns a chronological timeline with temporary signed URLs for draft files. Requires design-requests-read permission and access as super-admin, requester, or assigned officer.",
      *     security={{"sanctum":{}}},
+     *
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *
      *     @OA\Response(response=200, description="Design request history", @OA\JsonContent(ref="#/components/schemas/DesignRequestHistoryResponse")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=403, description="Missing permission or ownership", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
