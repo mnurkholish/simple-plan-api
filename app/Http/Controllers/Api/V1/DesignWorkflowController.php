@@ -6,6 +6,7 @@ use App\Enums\DesignRequestStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreDesignDraftRequest;
 use App\Http\Requests\StoreDesignRevisionRequest;
+use App\Http\Resources\DesignRequestHistoryResource;
 use App\Models\DesignRequest;
 use App\Services\DesignWorkflowService;
 use Illuminate\Http\JsonResponse;
@@ -18,6 +19,13 @@ class DesignWorkflowController extends Controller
     public function __construct(
         private readonly DesignWorkflowService $service,
     ) {}
+
+    public function history(DesignRequest $designRequest): DesignRequestHistoryResource
+    {
+        Gate::authorize('view', $designRequest);
+
+        return new DesignRequestHistoryResource($this->service->loadHistory($designRequest));
+    }
 
     /**
      * Unggah draft desain baru untuk request terkait.

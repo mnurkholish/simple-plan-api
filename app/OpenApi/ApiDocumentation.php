@@ -432,6 +432,45 @@ use OpenApi\Annotations as OA;
  * )
  *
  * @OA\Schema(
+ *     schema="DesignRequestHistoryDraft",
+ *     type="object",
+ *     required={"type","id","created_at","file","notes","uploaded_by"},
+ *     @OA\Property(property="type", type="string", enum={"draft"}),
+ *     @OA\Property(property="id", type="integer"),
+ *     @OA\Property(property="created_at", type="string", format="date-time"),
+ *     @OA\Property(property="file", ref="#/components/schemas/DesignReferenceFileDetail"),
+ *     @OA\Property(property="notes", type="string", nullable=true),
+ *     @OA\Property(property="uploaded_by", ref="#/components/schemas/TicketReporterSummary")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="DesignRequestHistoryRevision",
+ *     type="object",
+ *     required={"type","id","created_at","design_draft_id","revision_note","requested_by"},
+ *     @OA\Property(property="type", type="string", enum={"revision"}),
+ *     @OA\Property(property="id", type="integer"),
+ *     @OA\Property(property="created_at", type="string", format="date-time"),
+ *     @OA\Property(property="design_draft_id", type="integer"),
+ *     @OA\Property(property="revision_note", type="string"),
+ *     @OA\Property(property="requested_by", ref="#/components/schemas/TicketReporterSummary")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="DesignRequestHistoryActivity",
+ *     oneOf={
+ *         @OA\Schema(ref="#/components/schemas/DesignRequestHistoryDraft"),
+ *         @OA\Schema(ref="#/components/schemas/DesignRequestHistoryRevision")
+ *     }
+ * )
+ *
+ * @OA\Schema(
+ *     schema="DesignRequestHistoryResponse",
+ *     type="object",
+ *     required={"data"},
+ *     @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/DesignRequestHistoryActivity"))
+ * )
+ *
+ * @OA\Schema(
  *     schema="DesignRequestDetailResponse",
  *     type="object",
  *     required={"data"},
@@ -1974,14 +2013,14 @@ class ApiDocumentation
 
     /**
      * @OA\Get(
-     *     path="/design-requests/{designRequest}",
+     *     path="/design-requests/{id}",
      *     operationId="getDesignRequest",
      *     tags={"Design Graphic"},
      *     summary="Get graphic design request detail",
      *     description="Visible to its requester, assigned officer, or super-admin. Requires design-requests-read permission.",
      *     security={{"sanctum":{}}},
      *
-     *     @OA\Parameter(name="designRequest", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
      *
      *     @OA\Response(response=200, description="Design request detail", @OA\JsonContent(ref="#/components/schemas/DesignRequestDetailResponse")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
@@ -1992,15 +2031,32 @@ class ApiDocumentation
     public function designRequestsShow(): void {}
 
     /**
+     * @OA\Get(
+     *     path="/design-requests/{id}/history",
+     *     operationId="getDesignRequestHistory",
+     *     tags={"Design Graphic"},
+     *     summary="Get graphic design draft and revision history",
+     *     description="Returns a chronological timeline with temporary signed URLs for draft files. Requires design-requests-read permission and access as super-admin, requester, or assigned officer.",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Design request history", @OA\JsonContent(ref="#/components/schemas/DesignRequestHistoryResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Missing permission or ownership", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=404, description="Design request not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError"))
+     * )
+     */
+    public function designRequestsHistory(): void {}
+
+    /**
      * @OA\Put(
-     *     path="/design-requests/{designRequest}/assignment",
+     *     path="/design-requests/{id}/assignment",
      *     operationId="assignDesignRequest",
      *     tags={"Design Graphic"},
      *     summary="Assign a graphic design request",
      *     description="Only super-admin with design-requests-assign permission may assign a request in status baru to an active petugas-tik with design-drafts-upload permission. Sets priority, assigned officer, assigned_at, and status ditugaskan.",
      *     security={{"sanctum":{}}},
      *
-     *     @OA\Parameter(name="designRequest", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
      *
      *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/DesignRequestAssignmentRequest")),
      *
@@ -2016,14 +2072,14 @@ class ApiDocumentation
 
     /**
      * @OA\Post(
-     *     path="/design-requests/{designRequest}/rejections",
+     *     path="/design-requests/{id}/rejections",
      *     operationId="rejectDesignRequest",
      *     tags={"Design Graphic"},
      *     summary="Reject a graphic design request",
      *     description="Only super-admin with design-requests-reject permission may reject a request in status baru. Stores the rejection note and changes status to ditolak. Rejected requests cannot be assigned.",
      *     security={{"sanctum":{}}},
      *
-     *     @OA\Parameter(name="designRequest", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
      *
      *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/DesignRequestRejectionRequest")),
      *

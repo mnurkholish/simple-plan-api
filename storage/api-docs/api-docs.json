@@ -3086,7 +3086,7 @@
                 ]
             }
         },
-        "/design-requests/{designRequest}": {
+        "/design-requests/{id}": {
             "get": {
                 "tags": ["Design Graphic"],
                 "summary": "Get graphic design request detail",
@@ -3094,7 +3094,7 @@
                 "operationId": "getDesignRequest",
                 "parameters": [
                     {
-                        "name": "designRequest",
+                        "name": "id",
                         "in": "path",
                         "required": true,
                         "schema": {
@@ -3151,7 +3151,7 @@
                 ]
             }
         },
-        "/design-requests/{designRequest}/assignment": {
+        "/design-requests/{id}/assignment": {
             "put": {
                 "tags": ["Design Graphic"],
                 "summary": "Assign a graphic design request",
@@ -3159,7 +3159,7 @@
                 "operationId": "assignDesignRequest",
                 "parameters": [
                     {
-                        "name": "designRequest",
+                        "name": "id",
                         "in": "path",
                         "required": true,
                         "schema": {
@@ -3246,7 +3246,7 @@
                 ]
             }
         },
-        "/design-requests/{designRequest}/rejections": {
+        "/design-requests/{id}/rejections": {
             "post": {
                 "tags": ["Design Graphic"],
                 "summary": "Reject a graphic design request",
@@ -3254,7 +3254,7 @@
                 "operationId": "rejectDesignRequest",
                 "parameters": [
                     {
-                        "name": "designRequest",
+                        "name": "id",
                         "in": "path",
                         "required": true,
                         "schema": {
@@ -6328,6 +6328,71 @@
                     }
                 ]
             }
+        },
+        "/design-requests/{id}/history": {
+            "get": {
+                "tags": ["Design Graphic"],
+                "summary": "Get graphic design draft and revision history",
+                "description": "Returns a chronological timeline with temporary signed URLs for draft files. Requires design-requests-read permission and access as super-admin, requester, or assigned officer.",
+                "operationId": "getDesignRequestHistory",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Design request history",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DesignRequestHistoryResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing permission or ownership",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Design request not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TicketReadError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -8271,6 +8336,84 @@
                     }
                 },
                 "type": "object"
+            },
+            "DesignRequestHistoryDraft": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["type", "id", "created_at", "file", "notes", "uploaded_by"],
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "enum": ["draft"]
+                    },
+                    "id": {
+                        "type": "integer"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "file": {
+                        "$ref": "#/components/schemas/DesignReferenceFileDetail"
+                    },
+                    "notes": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "uploaded_by": {
+                        "$ref": "#/components/schemas/TicketReporterSummary"
+                    }
+                }
+            },
+            "DesignRequestHistoryRevision": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["type", "id", "created_at", "design_draft_id", "revision_note", "requested_by"],
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "enum": ["revision"]
+                    },
+                    "id": {
+                        "type": "integer"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "design_draft_id": {
+                        "type": "integer"
+                    },
+                    "revision_note": {
+                        "type": "string"
+                    },
+                    "requested_by": {
+                        "$ref": "#/components/schemas/TicketReporterSummary"
+                    }
+                }
+            },
+            "DesignRequestHistoryResponse": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["data"],
+                "properties": {
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/DesignRequestHistoryActivity"
+                        }
+                    }
+                }
+            },
+            "DesignRequestHistoryActivity": {
+                "oneOf": [
+                    {
+                        "$ref": "#/components/schemas/DesignRequestHistoryDraft"
+                    },
+                    {
+                        "$ref": "#/components/schemas/DesignRequestHistoryRevision"
+                    }
+                ]
             }
         },
         "parameters": {
