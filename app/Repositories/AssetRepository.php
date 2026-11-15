@@ -77,6 +77,12 @@ class AssetRepository
             $query->whereHas('assetCode', fn (Builder $code): Builder => $code->where('asset_classification_id', $classificationId));
         }
 
+        if (($filters['asset_type'] ?? null) === 'TIK') {
+            $query->whereHas('assetCode.classification', fn (Builder $classification): Builder => $classification->where('name', 'Alat IT'));
+        } elseif (($filters['asset_type'] ?? null) === 'Sarpras') {
+            $query->whereDoesntHave('assetCode.classification', fn (Builder $classification): Builder => $classification->where('name', 'Alat IT'));
+        }
+
         $locationId = $filters['asset_location_id'] ?? $filters['location_id'] ?? null;
         if ($locationId !== null) {
             $query->whereHas('assetCode', fn (Builder $code): Builder => $code->where('asset_location_id', $locationId));

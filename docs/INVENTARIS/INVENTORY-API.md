@@ -220,6 +220,7 @@ Mengambil daftar aset dengan pencarian komprehensif dan penyaringan multi-kriter
   | `status` | string | Filter status (`Digunakan`, `Tidak Digunakan`, `Rusak`, `Dipinjam`). |
   | `condition` | string | Filter kondisi fisik (`Baik`, `Rusak Ringan`, `Rusak Berat`). |
   | `asset_classification_id` | integer | Filter berdasarkan ID klasifikasi. |
+  | `asset_type` | string | Filter `TIK` (klasifikasi Alat IT) atau `Sarpras` (klasifikasi lainnya). |
   | `asset_location_id` | integer | Filter berdasarkan ID lokasi. |
   | `asset_item_id` | integer | Filter berdasarkan ID jenis item. |
   | `purchase_year` | integer | Filter tahun pengadaan. |
@@ -253,6 +254,7 @@ Mengambil daftar aset dengan pencarian komprehensif dan penyaringan multi-kriter
         }
       },
       "asset_uid": "01K7A5H3YC0M7WJY3PQ8E6KD2V",
+      "asset_type": "Sarpras",
       "detail_item": "Bed Pasien",
       "brand": "Sella",
       "model_specification": "Seri A",

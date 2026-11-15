@@ -40,6 +40,7 @@ class ListAssetsRequest extends FormRequest
             $prefix.'asset_location_id' => ['sometimes', 'nullable', 'integer', 'exists:asset_locations,id'],
             $prefix.'classification_id' => ['sometimes', 'nullable', 'integer', 'exists:asset_classifications,id'],
             $prefix.'asset_classification_id' => ['sometimes', 'nullable', 'integer', 'exists:asset_classifications,id'],
+            $prefix.'asset_type' => ['sometimes', 'nullable', Rule::in(['TIK', 'Sarpras'])],
             $prefix.'asset_item_id' => ['sometimes', 'nullable', 'integer', 'exists:asset_items,id'],
             $prefix.'status' => ['sometimes', 'nullable', Rule::enum(AssetStatus::class)],
             $prefix.'condition' => ['sometimes', 'nullable', Rule::enum(AssetCondition::class)],

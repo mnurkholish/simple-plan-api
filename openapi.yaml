@@ -151,7 +151,7 @@ paths:
         "422":
           $ref: "#/components/responses/TicketValidationError"
 
-  /design-requests/{designRequest}:
+  /design-requests/{id}:
     get:
       tags: [Design Graphic]
       summary: Melihat detail request desain grafis
@@ -160,7 +160,7 @@ paths:
       x-auth-required: true
       x-required-permission: design-requests-read
       parameters:
-        - name: designRequest
+        - name: id
           in: path
           required: true
           schema:
@@ -179,7 +179,30 @@ paths:
         "404":
           $ref: "#/components/responses/TicketNotFound"
 
-  /design-requests/{designRequest}/assignment:
+  /design-requests/{id}/history:
+    get:
+      tags: [Design Graphic]
+      summary: Melihat riwayat draft dan revisi request desain
+      operationId: getDesignRequestHistory
+      description: Timeline dari aktivitas terlama ke terbaru; hanya Super Admin, pemohon, atau petugas yang ditugaskan.
+      x-auth-required: true
+      x-required-permission: design-requests-read
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Riwayat request desain.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DesignRequestHistoryResponse" }
+        "401": { $ref: "#/components/responses/TicketUnauthenticated" }
+        "403": { $ref: "#/components/responses/TicketForbidden" }
+        "404": { $ref: "#/components/responses/TicketNotFound" }
+
+  /design-requests/{id}/assignment:
     put:
       tags: [Design Graphic]
       summary: Verifikasi dan penugasan request desain grafis
@@ -189,7 +212,7 @@ paths:
       x-required-role: super-admin
       x-required-permission: design-requests-assign
       parameters:
-        - name: designRequest
+        - name: id
           in: path
           required: true
           schema:
@@ -218,7 +241,7 @@ paths:
         "422":
           $ref: "#/components/responses/TicketValidationError"
 
-  /design-requests/{designRequest}/rejections:
+  /design-requests/{id}/rejections:
     post:
       tags: [Design Graphic]
       summary: Menolak request desain grafis
@@ -228,7 +251,7 @@ paths:
       x-required-role: super-admin
       x-required-permission: design-requests-reject
       parameters:
-        - name: designRequest
+        - name: id
           in: path
           required: true
           schema:
@@ -848,6 +871,10 @@ paths:
           in: query
           description: Filter by current asset classification.
           schema: { type: integer }
+        - name: asset_type
+          in: query
+          description: TIK for Alat IT classification; Sarpras for all others.
+          schema: { type: string, enum: [TIK, Sarpras] }
         - name: asset_location_id
           in: query
           description: Legacy alias for location_id.
@@ -1916,7 +1943,7 @@ components:
 
     InventoryAsset:
       type: object
-      required: [id, asset_uid, status, condition]
+      required: [id, asset_uid, asset_type, status, condition]
       properties:
         id:
           {
@@ -1930,6 +1957,10 @@ components:
             maxLength: 26,
             description: ULID permanen untuk identitas QR.,
           }
+        asset_type:
+          type: string
+          enum: [TIK, Sarpras]
+          description: TIK jika nama klasifikasi Alat IT; Sarpras untuk klasifikasi lainnya.
         asset_code:
           type: [object, "null"]
           properties:
@@ -2356,6 +2387,42 @@ components:
         requested_by:
           $ref: "#/components/schemas/TicketReporterSummary"
         created_at: { type: string, format: date-time }
+
+    DesignRequestHistoryDraft:
+      type: object
+      additionalProperties: false
+      required: [type, id, created_at, file, notes, uploaded_by]
+      properties:
+        type: { type: string, const: draft }
+        id: { type: integer }
+        created_at: { type: string, format: date-time }
+        file: { $ref: "#/components/schemas/DesignReferenceFileDetail" }
+        notes: { type: [string, "null"] }
+        uploaded_by: { $ref: "#/components/schemas/TicketReporterSummary" }
+
+    DesignRequestHistoryRevision:
+      type: object
+      additionalProperties: false
+      required: [type, id, created_at, design_draft_id, revision_note, requested_by]
+      properties:
+        type: { type: string, const: revision }
+        id: { type: integer }
+        created_at: { type: string, format: date-time }
+        design_draft_id: { type: integer }
+        revision_note: { type: string }
+        requested_by: { $ref: "#/components/schemas/TicketReporterSummary" }
+
+    DesignRequestHistoryResponse:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            oneOf:
+              - $ref: "#/components/schemas/DesignRequestHistoryDraft"
+              - $ref: "#/components/schemas/DesignRequestHistoryRevision"
 
     DesignRequestAssignmentRequest:
       type: object

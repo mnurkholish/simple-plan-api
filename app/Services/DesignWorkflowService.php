@@ -15,6 +15,11 @@ use Throwable;
 
 class DesignWorkflowService
 {
+    public function loadHistory(DesignRequest $request): DesignRequest
+    {
+        return $request->load(['drafts.uploadedBy:id,name', 'revisions.requestedBy:id,name']);
+    }
+
     /**
      * Upload dan simpan draft desain baru.
      */

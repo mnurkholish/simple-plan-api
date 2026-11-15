@@ -209,11 +209,12 @@ use OpenApi\Annotations as OA;
  * @OA\Schema(
  *     schema="Asset",
  *     type="object",
- *     required={"id","asset_uid","status","condition"},
+ *     required={"id","asset_uid","asset_type","status","condition"},
  *
  *     @OA\Property(property="id", type="integer", example=1),
  *     @OA\Property(property="asset_uid", type="string", example="01K7A5H3YC0M7WJY3PQ8E6KD2V"),
  *     @OA\Property(property="asset_code", type="object", nullable=true),
+ *     @OA\Property(property="asset_type", type="string", enum={"TIK", "Sarpras"}, description="TIK when classification name is Alat IT; Sarpras otherwise."),
  *     @OA\Property(property="detail_item", type="string", nullable=true, example="Lab"),
  *     @OA\Property(property="serial_number", type="string", nullable=true, example="SN-2026-001"),
  *     @OA\Property(property="brand", type="string", nullable=true, example="Dell"),
@@ -429,6 +430,47 @@ use OpenApi\Annotations as OA;
  *     @OA\Property(property="revision_note", type="string"),
  *     @OA\Property(property="requested_by", ref="#/components/schemas/TicketReporterSummary"),
  *     @OA\Property(property="created_at", type="string", format="date-time")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="DesignRequestHistoryDraft",
+ *     type="object",
+ *     required={"type","id","created_at","file","notes","uploaded_by"},
+ *
+ *     @OA\Property(property="type", type="string", enum={"draft"}),
+ *     @OA\Property(property="id", type="integer"),
+ *     @OA\Property(property="created_at", type="string", format="date-time"),
+ *     @OA\Property(property="file", ref="#/components/schemas/DesignReferenceFileDetail"),
+ *     @OA\Property(property="notes", type="string", nullable=true),
+ *     @OA\Property(property="uploaded_by", ref="#/components/schemas/TicketReporterSummary")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="DesignRequestHistoryRevision",
+ *     type="object",
+ *     required={"type","id","created_at","design_draft_id","revision_note","requested_by"},
+ *
+ *     @OA\Property(property="type", type="string", enum={"revision"}),
+ *     @OA\Property(property="id", type="integer"),
+ *     @OA\Property(property="created_at", type="string", format="date-time"),
+ *     @OA\Property(property="design_draft_id", type="integer"),
+ *     @OA\Property(property="revision_note", type="string"),
+ *     @OA\Property(property="requested_by", ref="#/components/schemas/TicketReporterSummary")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="DesignRequestHistoryActivity",
+ *     oneOf={
+ *         @OA\Schema(ref="#/components/schemas/DesignRequestHistoryDraft"),
+ *         @OA\Schema(ref="#/components/schemas/DesignRequestHistoryRevision")
+ *     }
+ * )
+ * @OA\Schema(
+ *     schema="DesignRequestHistoryResponse",
+ *     type="object",
+ *     required={"data"},
+ *
+ *     @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/DesignRequestHistoryActivity"))
  * )
  *
  * @OA\Schema(
@@ -1974,14 +2016,14 @@ class ApiDocumentation
 
     /**
      * @OA\Get(
-     *     path="/design-requests/{designRequest}",
+     *     path="/design-requests/{id}",
      *     operationId="getDesignRequest",
      *     tags={"Design Graphic"},
      *     summary="Get graphic design request detail",
      *     description="Visible to its requester, assigned officer, or super-admin. Requires design-requests-read permission.",
      *     security={{"sanctum":{}}},
      *
-     *     @OA\Parameter(name="designRequest", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
      *
      *     @OA\Response(response=200, description="Design request detail", @OA\JsonContent(ref="#/components/schemas/DesignRequestDetailResponse")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
@@ -1992,15 +2034,34 @@ class ApiDocumentation
     public function designRequestsShow(): void {}
 
     /**
+     * @OA\Get(
+     *     path="/design-requests/{id}/history",
+     *     operationId="getDesignRequestHistory",
+     *     tags={"Design Graphic"},
+     *     summary="Get graphic design draft and revision history",
+     *     description="Returns a chronological timeline with temporary signed URLs for draft files. Requires design-requests-read permission and access as super-admin, requester, or assigned officer.",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *
+     *     @OA\Response(response=200, description="Design request history", @OA\JsonContent(ref="#/components/schemas/DesignRequestHistoryResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Missing permission or ownership", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=404, description="Design request not found", @OA\JsonContent(ref="#/components/schemas/TicketReadError"))
+     * )
+     */
+    public function designRequestsHistory(): void {}
+
+    /**
      * @OA\Put(
-     *     path="/design-requests/{designRequest}/assignment",
+     *     path="/design-requests/{id}/assignment",
      *     operationId="assignDesignRequest",
      *     tags={"Design Graphic"},
      *     summary="Assign a graphic design request",
      *     description="Only super-admin with design-requests-assign permission may assign a request in status baru to an active petugas-tik with design-drafts-upload permission. Sets priority, assigned officer, assigned_at, and status ditugaskan.",
      *     security={{"sanctum":{}}},
      *
-     *     @OA\Parameter(name="designRequest", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
      *
      *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/DesignRequestAssignmentRequest")),
      *
@@ -2016,14 +2077,14 @@ class ApiDocumentation
 
     /**
      * @OA\Post(
-     *     path="/design-requests/{designRequest}/rejections",
+     *     path="/design-requests/{id}/rejections",
      *     operationId="rejectDesignRequest",
      *     tags={"Design Graphic"},
      *     summary="Reject a graphic design request",
      *     description="Only super-admin with design-requests-reject permission may reject a request in status baru. Stores the rejection note and changes status to ditolak. Rejected requests cannot be assigned.",
      *     security={{"sanctum":{}}},
      *
-     *     @OA\Parameter(name="designRequest", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
      *
      *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/DesignRequestRejectionRequest")),
      *
@@ -2702,6 +2763,7 @@ class ApiDocumentation
      *
      *     @OA\Parameter(name="search", in="query", required=false, description="Live search by serial number, notes, full code, item name, asset brand, location name, or classification name", @OA\Schema(type="string")),
      *     @OA\Parameter(name="asset_classification_id", in="query", required=false, description="Filter by classification ID", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="asset_type", in="query", required=false, description="TIK for Alat IT classification; Sarpras for all others", @OA\Schema(type="string", enum={"TIK", "Sarpras"})),
      *     @OA\Parameter(name="asset_location_id", in="query", required=false, description="Filter by location ID", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="asset_item_id", in="query", required=false, description="Filter by item ID", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="status", in="query", required=false, description="Filter by asset status", @OA\Schema(type="string", enum={"Digunakan", "Tidak Digunakan", "Rusak", "Dipinjam"})),

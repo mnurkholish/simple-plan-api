@@ -5,10 +5,40 @@ use App\Models\AssetClassification;
 use App\Models\AssetCode;
 use App\Models\AssetItem;
 use App\Models\AssetLocation;
+use App\Models\User;
 use App\Repositories\AssetRepository;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
+use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
+
+test('asset index returns asset type based on classification', function (): void {
+    Role::findOrCreate('super-admin', 'web');
+    $user = User::factory()->create();
+    $user->assignRole('super-admin');
+    Sanctum::actingAs($user);
+
+    $location = AssetLocation::factory()->create();
+
+    foreach (['Alat IT' => 'TIK', 'Peralatan Medis' => 'Sarpras'] as $name => $expectedType) {
+        $classification = AssetClassification::factory()->create(['name' => $name]);
+        $item = AssetItem::factory()->create(['asset_classification_id' => $classification->id]);
+        $asset = Asset::factory()->forInventory($classification, $location, $item)->create();
+
+        $response = $this->getJson('/api/v1/assets');
+        $assetData = collect($response->json('data'))->firstWhere('id', $asset->id);
+
+        $response->assertOk();
+        expect($assetData['asset_type'])->toBe($expectedType);
+
+        $filtered = $this->getJson('/api/v1/assets?asset_type='.$expectedType);
+        $filtered->assertOk();
+        expect(collect($filtered->json('data'))->pluck('asset_type')->unique()->all())->toBe([$expectedType]);
+    }
+
+    $this->getJson('/api/v1/assets?asset_type=invalid')->assertUnprocessable();
+});
 
 test('asset repository search can find assets by code and item name', function (): void {
     $repository = app(AssetRepository::class);

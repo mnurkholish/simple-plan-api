@@ -33,7 +33,7 @@ class ExportAssetLabelsRequest extends FormRequest
             'selection_mode' => ['sometimes', 'required', Rule::in(['selected', 'all_filtered'])],
             'asset_ids' => [$selected ? 'required' : 'missing', 'array', 'min:1'],
             'asset_ids.*' => ['required', 'integer', 'distinct', Rule::exists('assets', 'id')->whereNull('deleted_at')->whereNotNull('asset_code_id')],
-            'filters' => [$selected ? 'missing' : 'present', 'array:search,location_id,asset_location_id,classification_id,asset_classification_id,asset_item_id,status,condition,purchase_year,year,moved_last_3_months,page,per_page'],
+            'filters' => [$selected ? 'missing' : 'present', 'array:search,location_id,asset_location_id,classification_id,asset_classification_id,asset_type,asset_item_id,status,condition,purchase_year,year,moved_last_3_months,page,per_page'],
             ...ListAssetsRequest::filterRules('filters.'),
             'filters.page' => ['sometimes', 'integer', 'min:1'],
             'filters.per_page' => ['sometimes', 'integer', 'min:1'],
