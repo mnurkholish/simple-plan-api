@@ -32,7 +32,7 @@ class AssignDesignRequestRequest extends FormRequest
                 function (string $attribute, mixed $value, \Closure $fail): void {
                     $officer = User::query()->find($value);
 
-                    if ($officer !== null && (! $officer->hasRole('petugas-tik') || ! $officer->can('design-drafts-upload'))) {
+                    if ($officer !== null && (! $officer->hasAnyRole(['petugas-tik', 'petugas_tik']) || ! $officer->can('design-drafts-upload'))) {
                         $fail('Petugas yang dipilih harus merupakan Petugas TIK bagian desain.');
                     }
                 },

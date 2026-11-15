@@ -3168,6 +3168,8 @@ class ApiDocumentation
      *     @OA\Parameter(name="date_from", in="query", required=false, description="Start date limit for maintenance schedule (YYYY-MM-DD)", @OA\Schema(type="string", format="date")),
      *     @OA\Parameter(name="date_to", in="query", required=false, description="End date limit for maintenance schedule (YYYY-MM-DD)", @OA\Schema(type="string", format="date")),
      *     @OA\Parameter(name="status", in="query", required=false, description="Maintenance status", @OA\Schema(type="string", enum={"terjadwal", "selesai", "terlambat"})),
+     *     @OA\Parameter(name="maintenance_type", in="query", required=false, description="Filter by maintenance type", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="assigned_officer_id", in="query", required=false, description="Filter by assigned officer ID", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="is_active", in="query", required=false, description="Filter schedule active status", @OA\Schema(type="boolean")),
      *
      *     @OA\Response(response=200, description="Asset maintenance schedules retrieved successfully"),

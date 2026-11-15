@@ -10,7 +10,7 @@ class DesignRequestPolicy
     public function viewAny(User $user, string $scope = 'mine'): bool
     {
         return $user->can('design-requests-read')
-            && ($scope !== 'all' || $user->hasRole('super-admin'));
+            && ($scope !== 'all' || $user->hasAnyRole(['super-admin', 'super_admin']));
     }
 
     public function create(User $user): bool
@@ -21,20 +21,20 @@ class DesignRequestPolicy
     public function view(User $user, DesignRequest $designRequest): bool
     {
         return $user->can('design-requests-read')
-            && ($user->hasRole('super-admin')
+            && ($user->hasAnyRole(['super-admin', 'super_admin'])
                 || (int) $designRequest->requester_id === (int) $user->getKey()
                 || (int) $designRequest->assigned_officer_id === (int) $user->getKey());
     }
 
     public function assign(User $user, DesignRequest $designRequest): bool
     {
-        return $user->hasRole('super-admin')
+        return $user->hasAnyRole(['super-admin', 'super_admin'])
             && $user->can('design-requests-assign');
     }
 
     public function reject(User $user, DesignRequest $designRequest): bool
     {
-        return $user->hasRole('super-admin')
+        return $user->hasAnyRole(['super-admin', 'super_admin'])
             && $user->can('design-requests-reject');
     }
 
@@ -43,40 +43,25 @@ class DesignRequestPolicy
         return $user->can('design-reports-read');
     }
 
-    /**
-     * Tentukan apakah user dapat mengunggah draft desain.
-     * Hanya Petugas TIK yang secara spesifik ditugaskan yang diizinkan.
-     */
     public function uploadDraft(User $user, DesignRequest $request): bool
     {
-        return $user->hasRole('petugas-tik')
+        return $user->hasAnyRole(['petugas-tik', 'petugas_tik'])
             && $this->isAssignedOfficer($user, $request);
     }
 
-    /**
-     * Tentukan apakah user dapat mengajukan revisi pada request desain.
-     * Hanya pembuat request yang diizinkan.
-     */
     public function revise(User $user, DesignRequest $request): bool
     {
         return $this->isRequester($user, $request);
     }
 
-    /**
-     * Tentukan apakah user dapat menyetujui request desain.
-     * Hanya pembuat request yang diizinkan.
-     */
     public function approve(User $user, DesignRequest $request): bool
     {
         return $this->isRequester($user, $request);
     }
 
-    /**
-     * Tentukan apakah user dapat mengunduh file final request desain.
-     */
     public function downloadFinal(User $user, DesignRequest $request): bool
     {
-        return $user->hasRole('super-admin')
+        return $user->hasAnyRole(['super-admin', 'super_admin'])
             || $this->isRequester($user, $request)
             || $this->isAssignedOfficer($user, $request);
     }

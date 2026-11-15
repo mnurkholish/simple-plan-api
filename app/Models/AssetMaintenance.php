@@ -72,15 +72,15 @@ class AssetMaintenance extends Model
             return $query;
         }
 
-        if ($actor->hasRole('super-admin')) {
+        if ($actor->hasAnyRole(['super-admin', 'super_admin'])) {
             return $query->whereHas('assetCode.classification', fn (Builder $q) => $q->where('name', 'Alat IT'));
         }
 
-        if ($actor->hasRole('koordinator-sarpras')) {
+        if ($actor->hasAnyRole(['koordinator-sarpras', 'koordinator_sarpras'])) {
             return $query->whereHas('assetCode.classification', fn (Builder $q) => $q->where('name', '!=', 'Alat IT'));
         }
 
-        if ($actor->hasAnyRole(['petugas-tik', 'petugas-sarpras'])) {
+        if ($actor->hasAnyRole(['petugas-tik', 'petugas_tik', 'petugas-sarpras', 'petugas_sarpras'])) {
             return $query->where('assigned_officer_id', $actor->id);
         }
 

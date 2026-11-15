@@ -13,7 +13,12 @@ class StoreAssetMaintenanceRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->hasAnyRole(['super-admin', 'koordinator-sarpras']) ?? false;
+        return $this->user()?->hasAnyRole([
+            'super-admin',
+            'super_admin',
+            'koordinator-sarpras',
+            'koordinator_sarpras',
+        ]) ?? false;
     }
 
     /**
@@ -61,20 +66,20 @@ class StoreAssetMaintenanceRequest extends FormRequest
                 return;
             }
 
-            if ($user->hasRole('super-admin')) {
+            if ($user->hasAnyRole(['super-admin', 'super_admin'])) {
                 if (! $isTik) {
                     $validator->errors()->add('asset_code_id', 'Superadmin hanya dapat mengatur jadwal pemeliharaan untuk aset TIK (Alat IT).');
                 }
 
-                if (! $officer->hasRole('petugas-tik')) {
+                if (! $officer->hasAnyRole(['petugas-tik', 'petugas_tik'])) {
                     $validator->errors()->add('assigned_officer_id', 'Petugas yang ditugaskan untuk aset TIK harus memiliki role petugas-tik.');
                 }
-            } elseif ($user->hasRole('koordinator-sarpras')) {
+            } elseif ($user->hasAnyRole(['koordinator-sarpras', 'koordinator_sarpras'])) {
                 if ($isTik) {
                     $validator->errors()->add('asset_code_id', 'Koordinator Sarpras hanya dapat mengatur jadwal pemeliharaan untuk aset non-TIK (Sarpras).');
                 }
 
-                if (! $officer->hasRole('petugas-sarpras')) {
+                if (! $officer->hasAnyRole(['petugas-sarpras', 'petugas_sarpras'])) {
                     $validator->errors()->add('assigned_officer_id', 'Petugas yang ditugaskan untuk aset Sarpras harus memiliki role petugas-sarpras.');
                 }
             }

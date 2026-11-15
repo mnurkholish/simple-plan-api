@@ -225,6 +225,17 @@ test('Endpoint Index berhasil memfilter jadwal berdasarkan status dan search', f
     $resSearchOfficer->assertOk();
     expect($resSearchOfficer->json('data'))->toHaveCount(1)
         ->and($resSearchOfficer->json('data.0.id'))->toBe($schedule1->id);
+
+    // 5. Filter by maintenance_type, assigned_officer_id, dan rentang tanggal (date_from & date_to)
+    $resDynamicFilters = $this->getJson('/api/v1/asset-maintenances?'.http_build_query([
+        'maintenance_type' => 'Inspeksi Jaringan',
+        'assigned_officer_id' => $this->petugasTik->id,
+        'date_from' => '2026-11-01',
+        'date_to' => '2026-11-05',
+    ]));
+    $resDynamicFilters->assertOk();
+    expect($resDynamicFilters->json('data'))->toHaveCount(1)
+        ->and($resDynamicFilters->json('data.0.id'))->toBe($schedule1->id);
 });
 
 test('Command maintenance:check-status mengubah status menjadi terlambat dan mengirim notifikasi ke pembuat', function (): void {
