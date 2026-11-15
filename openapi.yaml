@@ -871,6 +871,10 @@ paths:
           in: query
           description: Filter by current asset classification.
           schema: { type: integer }
+        - name: asset_type
+          in: query
+          description: TIK for Alat IT classification; Sarpras for all others.
+          schema: { type: string, enum: [TIK, Sarpras] }
         - name: asset_location_id
           in: query
           description: Legacy alias for location_id.
@@ -1939,7 +1943,7 @@ components:
 
     InventoryAsset:
       type: object
-      required: [id, asset_uid, status, condition]
+      required: [id, asset_uid, asset_type, status, condition]
       properties:
         id:
           {
@@ -1953,6 +1957,10 @@ components:
             maxLength: 26,
             description: ULID permanen untuk identitas QR.,
           }
+        asset_type:
+          type: string
+          enum: [TIK, Sarpras]
+          description: TIK jika nama klasifikasi Alat IT; Sarpras untuk klasifikasi lainnya.
         asset_code:
           type: [object, "null"]
           properties:

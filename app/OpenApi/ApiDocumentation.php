@@ -209,11 +209,12 @@ use OpenApi\Annotations as OA;
  * @OA\Schema(
  *     schema="Asset",
  *     type="object",
- *     required={"id","asset_uid","status","condition"},
+ *     required={"id","asset_uid","asset_type","status","condition"},
  *
  *     @OA\Property(property="id", type="integer", example=1),
  *     @OA\Property(property="asset_uid", type="string", example="01K7A5H3YC0M7WJY3PQ8E6KD2V"),
  *     @OA\Property(property="asset_code", type="object", nullable=true),
+ *     @OA\Property(property="asset_type", type="string", enum={"TIK", "Sarpras"}, description="TIK when classification name is Alat IT; Sarpras otherwise."),
  *     @OA\Property(property="detail_item", type="string", nullable=true, example="Lab"),
  *     @OA\Property(property="serial_number", type="string", nullable=true, example="SN-2026-001"),
  *     @OA\Property(property="brand", type="string", nullable=true, example="Dell"),
@@ -2762,6 +2763,7 @@ class ApiDocumentation
      *
      *     @OA\Parameter(name="search", in="query", required=false, description="Live search by serial number, notes, full code, item name, asset brand, location name, or classification name", @OA\Schema(type="string")),
      *     @OA\Parameter(name="asset_classification_id", in="query", required=false, description="Filter by classification ID", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="asset_type", in="query", required=false, description="TIK for Alat IT classification; Sarpras for all others", @OA\Schema(type="string", enum={"TIK", "Sarpras"})),
      *     @OA\Parameter(name="asset_location_id", in="query", required=false, description="Filter by location ID", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="asset_item_id", in="query", required=false, description="Filter by item ID", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="status", in="query", required=false, description="Filter by asset status", @OA\Schema(type="string", enum={"Digunakan", "Tidak Digunakan", "Rusak", "Dipinjam"})),
