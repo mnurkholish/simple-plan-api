@@ -20,9 +20,6 @@ class DesignWorkflowService
         return $request->load(['drafts.uploadedBy:id,name', 'revisions.requestedBy:id,name']);
     }
 
-    /**
-     * Upload dan simpan draft desain baru.
-     */
     public function storeDraft(DesignRequest $request, UploadedFile $file, ?string $notes = null): DesignDraft
     {
         $filePath = Storage::putFile('design_drafts/'.$request->id, $file);
@@ -60,9 +57,6 @@ class DesignWorkflowService
         }
     }
 
-    /**
-     * Ajukan revisi untuk draft desain terakhir.
-     */
     public function storeRevision(DesignRequest $request, string $note): DesignRevision
     {
         return DB::transaction(function () use ($request, $note): DesignRevision {
@@ -87,9 +81,6 @@ class DesignWorkflowService
         });
     }
 
-    /**
-     * Setujui request desain (approval).
-     */
     public function approve(DesignRequest $request): bool
     {
         return DB::transaction(function () use ($request): bool {
@@ -106,9 +97,6 @@ class DesignWorkflowService
         });
     }
 
-    /**
-     * Dapatkan URL file draft terakhir sebagai file final.
-     */
     public function getFinalFileUrl(DesignRequest $request): string
     {
         $draft = $request->drafts()->latest()->firstOrFail();

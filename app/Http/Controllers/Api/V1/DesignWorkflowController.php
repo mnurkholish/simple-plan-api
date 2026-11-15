@@ -27,9 +27,6 @@ class DesignWorkflowController extends Controller
         return new DesignRequestHistoryResource($this->service->loadHistory($designRequest));
     }
 
-    /**
-     * Unggah draft desain baru untuk request terkait.
-     */
     public function storeDraft(StoreDesignDraftRequest $request, int|string $id): JsonResponse
     {
         $designRequest = DesignRequest::findOrFail($id);
@@ -48,9 +45,6 @@ class DesignWorkflowController extends Controller
         ], Response::HTTP_CREATED);
     }
 
-    /**
-     * Ajukan catatan revisi untuk draft desain terakhir.
-     */
     public function storeRevision(StoreDesignRevisionRequest $request, int|string $id): JsonResponse
     {
         $designRequest = DesignRequest::findOrFail($id);
@@ -68,9 +62,6 @@ class DesignWorkflowController extends Controller
         ], Response::HTTP_CREATED);
     }
 
-    /**
-     * Setujui hasil desain oleh pemohon request.
-     */
     public function storeApproval(Request $request, int|string $id): JsonResponse
     {
         $designRequest = DesignRequest::findOrFail($id);
@@ -96,9 +87,6 @@ class DesignWorkflowController extends Controller
         ], Response::HTTP_OK);
     }
 
-    /**
-     * Dapatkan URL unduhan file final desain yang telah disetujui.
-     */
     public function downloadFinal(Request $request, int|string $id): JsonResponse
     {
         $designRequest = DesignRequest::findOrFail($id);
