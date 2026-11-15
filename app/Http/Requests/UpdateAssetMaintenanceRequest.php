@@ -13,7 +13,12 @@ class UpdateAssetMaintenanceRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->hasAnyRole(['super-admin', 'koordinator-sarpras']) ?? false;
+        return $this->user()?->hasAnyRole([
+            'super-admin',
+            'super_admin',
+            'koordinator-sarpras',
+            'koordinator_sarpras',
+        ]) ?? false;
     }
 
     /**
@@ -50,11 +55,11 @@ class UpdateAssetMaintenanceRequest extends FormRequest
 
             $isTik = ($maintenance->assetCode?->classification?->name === 'Alat IT');
 
-            if ($user->hasRole('super-admin')) {
+            if ($user->hasAnyRole(['super-admin', 'super_admin'])) {
                 if (! $isTik) {
                     $validator->errors()->add('maintenance', 'Superadmin hanya dapat mengelola jadwal pemeliharaan untuk aset TIK (Alat IT).');
                 }
-            } elseif ($user->hasRole('koordinator-sarpras')) {
+            } elseif ($user->hasAnyRole(['koordinator-sarpras', 'koordinator_sarpras'])) {
                 if ($isTik) {
                     $validator->errors()->add('maintenance', 'Koordinator Sarpras hanya dapat mengelola jadwal pemeliharaan untuk aset non-TIK (Sarpras).');
                 }
@@ -63,9 +68,9 @@ class UpdateAssetMaintenanceRequest extends FormRequest
             if ($this->has('assigned_officer_id') && ! $validator->errors()->has('assigned_officer_id')) {
                 $officer = User::find($this->input('assigned_officer_id'));
                 if ($officer) {
-                    if ($isTik && ! $officer->hasRole('petugas-tik')) {
+                    if ($isTik && ! $officer->hasAnyRole(['petugas-tik', 'petugas_tik'])) {
                         $validator->errors()->add('assigned_officer_id', 'Petugas yang ditugaskan untuk aset TIK harus memiliki role petugas-tik.');
-                    } elseif (! $isTik && ! $officer->hasRole('petugas-sarpras')) {
+                    } elseif (! $isTik && ! $officer->hasAnyRole(['petugas-sarpras', 'petugas_sarpras'])) {
                         $validator->errors()->add('assigned_officer_id', 'Petugas yang ditugaskan untuk aset Sarpras harus memiliki role petugas-sarpras.');
                     }
                 }

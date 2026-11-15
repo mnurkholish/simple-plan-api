@@ -44,16 +44,24 @@ class AssetMaintenanceController extends Controller
             });
         }
 
-        if ($dateFrom = $request->input('date_from')) {
+        if ($dateFrom = $request->input('date_from') ?? $request->input('start_date')) {
             $query->whereDate('next_scheduled_date', '>=', $dateFrom);
         }
 
-        if ($dateTo = $request->input('date_to')) {
+        if ($dateTo = $request->input('date_to') ?? $request->input('end_date')) {
             $query->whereDate('next_scheduled_date', '<=', $dateTo);
         }
 
         if ($status = $request->input('status')) {
             $query->where('status', $status);
+        }
+
+        if ($maintenanceType = $request->string('maintenance_type')->trim()->value()) {
+            $query->where('maintenance_type', 'like', "%{$maintenanceType}%");
+        }
+
+        if ($officerId = $request->input('assigned_officer_id') ?? $request->input('officer_id')) {
+            $query->where('assigned_officer_id', $officerId);
         }
 
         if ($request->has('is_active')) {

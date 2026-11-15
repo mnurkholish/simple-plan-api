@@ -78,7 +78,8 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::patch('notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
         Route::patch('notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
 
-        Route::get('assets/generate-number', [AssetController::class, 'previewCode']);
+        Route::get('assets/generate-number', [AssetController::class, 'previewCode'])
+            ->name('assets.generate-number');
         Route::get('assets/search', [AssetController::class, 'search'])
             ->middleware('permission:tickets-create')
             ->name('assets.search');
@@ -94,8 +95,10 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             Route::apiResource('asset-items', AssetItemController::class)->except(['destroy']);
         });
 
-        Route::get('/assets/{asset}/qr', [AssetQrCodeController::class, 'show']);
-        Route::get('/assets/{asset}/label', [AssetLabelController::class, 'show']);
+        Route::get('/assets/{asset}/qr', [AssetQrCodeController::class, 'show'])
+            ->name('assets.qr');
+        Route::get('/assets/{asset}/label', [AssetLabelController::class, 'show'])
+            ->name('assets.label');
         Route::post('asset-label-exports', [AssetLabelExportController::class, 'store'])
             ->name('asset-label-exports.store');
 
@@ -104,13 +107,16 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             // Jadwal Maintenance (Induk)
             Route::apiResource('asset-maintenances', AssetMaintenanceController::class)->except(['destroy']);
             // Eksekusi Log Maintenance (Nested)
-            Route::post('asset-maintenances/{maintenance}/logs', [AssetMaintenanceLogController::class, 'store']);
+            Route::post('asset-maintenances/{maintenance}/logs', [AssetMaintenanceLogController::class, 'store'])
+                ->name('asset-maintenances.logs.store');
             Route::apiResource('maintenances', AssetMaintenanceController::class)->except(['destroy']);
+            Route::post('maintenances/{maintenance}/logs', [AssetMaintenanceLogController::class, 'store'])
+                ->name('maintenances.logs.store');
         });
 
         // Alias untuk inventories
-        Route::get('inventories', [AssetController::class, 'index'])->name('inventories.index');
-        Route::apiResource('inventories', AssetController::class);
+        Route::apiResource('inventories', AssetController::class)
+            ->parameters(['inventories' => 'asset']);
 
         Route::get('tickets', [TicketController::class, 'index'])
             ->middleware('permission:tickets-access')
