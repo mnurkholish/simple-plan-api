@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\V1\DesignReportController;
 use App\Http\Controllers\Api\V1\DesignRequestController;
 use App\Http\Controllers\Api\V1\DesignWorkflowController;
 use App\Http\Controllers\Api\V1\ExampleLiveController;
+use App\Http\Controllers\Api\V1\HelpdeskReportController;
 use App\Http\Controllers\Api\V1\ImpersonationController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\ProfileController;
@@ -36,10 +37,12 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
     Route::post('auth/register', [ExtendedAuthController::class, 'register'])->name('auth.register');
     Route::post('auth/forgot-password', [ExtendedAuthController::class, 'forgotPassword'])->name('auth.forgot-password');
     Route::post('auth/reset-password', [ExtendedAuthController::class, 'resetPassword'])->name('auth.reset-password');
+
     Route::get('auth/sso/config', [SsoController::class, 'config'])->name('auth.sso.config');
     Route::get('auth/sso/login', [SsoController::class, 'login'])->name('auth.sso.login');
     Route::get('auth/sso/callback', [SsoController::class, 'callback'])->name('auth.sso.callback');
     Route::post('auth/sso/exchange', [SsoController::class, 'exchange'])->name('auth.sso.exchange');
+
     Route::get('auth/email/verify/{id}/{hash}', [ExtendedAuthController::class, 'verifyEmail'])
         ->middleware(['signed', 'throttle:6,1'])
         ->name('auth.email.verify');
@@ -102,6 +105,10 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::post('asset-label-exports', [AssetLabelExportController::class, 'store'])
             ->name('asset-label-exports.store');
 
+        // Alias untuk inventories
+        Route::apiResource('inventories', AssetController::class)
+            ->parameters(['inventories' => 'asset']);
+
         // Modul Maintenance: Dilarang untuk role 'user'
         Route::middleware('role:super_admin|super-admin|koordinator_sarpras|koordinator-sarpras|petugas_tik|petugas-tik|petugas_sarpras|petugas-sarpras|manajemen|management')->group(function (): void {
             // Jadwal Maintenance (Induk)
@@ -114,19 +121,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
                 ->name('maintenances.logs.store');
         });
 
-        // Alias untuk inventories
-        Route::apiResource('inventories', AssetController::class)
-            ->parameters(['inventories' => 'asset']);
-
-        Route::get('tickets', [TicketController::class, 'index'])
-            ->middleware('permission:tickets-access')
-            ->name('tickets.index');
         Route::get('design-requests', [DesignRequestController::class, 'index'])
             ->middleware('permission:design-requests-read')
             ->name('design-requests.index');
-        Route::get('design-reports', [DesignReportController::class, 'index'])
-            ->middleware('permission:design-reports-read')
-            ->name('design-reports.index');
         Route::post('design-requests', [DesignRequestController::class, 'store'])
             ->middleware('permission:design-requests-create')
             ->name('design-requests.store');
@@ -157,6 +154,18 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             ->name('design-requests.approvals.store');
         Route::get('design-requests/{id}/final-file', [DesignWorkflowController::class, 'downloadFinal'])
             ->name('design-requests.final-file');
+        Route::get('design-reports', [DesignReportController::class, 'index'])
+            ->middleware('permission:design-reports-read')
+            ->name('design-reports.index');
+
+        // Reports
+        Route::get('reports/helpdesk', [HelpdeskReportController::class, 'index'])
+            ->middleware('permission:helpdesk-reports-read')
+            ->name('reports.helpdesk.index');
+
+        Route::get('tickets', [TicketController::class, 'index'])
+            ->middleware('permission:tickets-access')
+            ->name('tickets.index');
         Route::post('tickets', [TicketController::class, 'store'])
             ->middleware('permission:tickets-create')
             ->name('tickets.store');
