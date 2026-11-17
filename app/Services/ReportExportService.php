@@ -14,8 +14,8 @@ class ReportExportService
     /**
      * Charts contain trusted, server-generated SVG markup, never raw client input.
      *
-     * @param array{title: string, filters?: array<string, scalar|null>, summary?: array<string, scalar|null>, charts?: array<int, array{title: string, svg: string}>} $report
-     * @param array{paper?: string, landscape?: bool, margins?: array{top: float, right: float, bottom: float, left: float}} $page
+     * @param  array{title: string, filters?: array<string, scalar|null>, summary?: array<string, scalar|null>, charts?: array<int, array{title: string, svg: string}>}  $report
+     * @param  array{paper?: string, landscape?: bool, margins?: array{top: float, right: float, bottom: float, left: float}}  $page
      */
     public function pdf(array $report, string $filename, array $page = []): Response
     {
@@ -35,12 +35,12 @@ class ReportExportService
     /**
      * Rows are positional and match the order of headers. Pass codes as strings.
      *
-     * @param list<string> $headers
-     * @param iterable<array<int, scalar|null>> $rows
+     * @param  list<string>  $headers
+     * @param  iterable<array<int, scalar|null>>  $rows
      */
     public function xlsx(array $headers, iterable $rows, string $filename, string $worksheet = 'Report'): Response
     {
-        $spreadsheet = new Spreadsheet();
+        $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle($worksheet);
 
