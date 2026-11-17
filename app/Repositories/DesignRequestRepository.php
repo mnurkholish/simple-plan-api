@@ -64,7 +64,7 @@ class DesignRequestRepository
     }
 
     /** @param array<string, mixed> $filters */
-    private function reportPeriodQuery(array $filters): Builder
+    public function reportPeriodQuery(array $filters): Builder
     {
         return DesignRequest::query()
             ->when(

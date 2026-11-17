@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\V1\Auth\SsoController;
 use App\Http\Controllers\Api\V1\BackupController;
 use App\Http\Controllers\Api\V1\BackupSettingController;
 use App\Http\Controllers\Api\V1\DashboardController;
+use App\Http\Controllers\Api\V1\DesignGraphicReportController;
 use App\Http\Controllers\Api\V1\DesignReportController;
 use App\Http\Controllers\Api\V1\DesignRequestController;
 use App\Http\Controllers\Api\V1\DesignWorkflowController;
@@ -162,6 +163,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::get('reports/helpdesk', [HelpdeskReportController::class, 'index'])
             ->middleware('permission:helpdesk-reports-read')
             ->name('reports.helpdesk.index');
+        Route::get('reports/design-graphic', [DesignGraphicReportController::class, 'index'])
+            ->middleware('permission:design-reports-read')
+            ->name('reports.design-graphic.index');
 
         Route::get('tickets', [TicketController::class, 'index'])
             ->middleware('permission:tickets-access')
