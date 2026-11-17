@@ -19,6 +19,8 @@ tags:
     description: Request desain grafis
   - name: Helpdesk
     description: Pengelolaan tiket Helpdesk TIK dan Sarpras
+  - name: Reports
+    description: Statistik dan laporan
   - name: Assets
     description: Pencarian asset
   - name: Units
@@ -29,6 +31,44 @@ tags:
     description: Backup MySQL dan file aplikasi di MinIO
 
 paths:
+  /reports/helpdesk:
+    get:
+      tags: [Reports]
+      summary: Laporan Helpdesk
+      operationId: getHelpdeskReport
+      description: |
+        Membutuhkan helpdesk-reports-read dan role super-admin, management, atau
+        koordinator-sarpras. Koordinator hanya melihat tiket Sarpras. Periode
+        memfilter tickets.created_at secara inklusif dan wajib dikirim client.
+        Frontend dapat mengisi awal periode enam bulan terakhir. Rata-rata durasi dalam jam;
+        SLA hanya menghitung tiket selesai dengan completed_at dan sla_deadline.
+      x-auth-required: true
+      x-required-permission: helpdesk-reports-read
+      parameters:
+        - name: periode_awal
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: periode_akhir
+          in: query
+          required: true
+          description: Inklusif dan tidak sebelum periode_awal.
+          schema: { type: string, format: date }
+        - name: jenis_layanan
+          in: query
+          required: false
+          description: Jika tidak dikirim atau semua, tampilkan semua layanan dalam cakupan role.
+          schema: { type: string, enum: [semua, tik, sarpras], default: semua }
+      responses:
+        "200":
+          description: Rekap dan grafik Helpdesk.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HelpdeskReportResponse" }
+        "401": { $ref: "#/components/responses/TicketUnauthenticated" }
+        "403": { $ref: "#/components/responses/TicketForbidden" }
+        "422": { $ref: "#/components/responses/TicketValidationError" }
+
   /design-reports:
     get:
       tags: [Design Graphic]
@@ -2205,6 +2245,81 @@ components:
           }
         created_at: { type: string, format: date-time }
         completed_at: { type: [string, "null"], format: date-time }
+
+    HelpdeskReportResponse:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [summary, charts]
+          properties:
+            summary:
+              type: object
+              additionalProperties: false
+              required: [jumlah_tiket_masuk, jumlah_tiket_selesai, jumlah_tiket_ditolak, rata_rata_waktu_penyelesaian, persentase_sla_tercapai]
+              properties:
+                jumlah_tiket_masuk: { type: integer, minimum: 0 }
+                jumlah_tiket_selesai: { type: integer, minimum: 0 }
+                jumlah_tiket_ditolak: { type: integer, minimum: 0 }
+                rata_rata_waktu_penyelesaian: { type: number, description: "Rata-rata jam, dua angka desimal." }
+                persentase_sla_tercapai: { type: number, description: "Persentase, dua angka desimal." }
+            charts:
+              type: object
+              additionalProperties: false
+              required: [tiket_per_bulan, status_tiket, tiket_per_kategori, sla]
+              properties:
+                tiket_per_bulan:
+                  type: array
+                  items:
+                    type: object
+                    required: [bulan, jumlah]
+                    properties:
+                      bulan: { type: string, pattern: '^\\d{4}-\\d{2}$' }
+                      jumlah: { type: integer, minimum: 0 }
+                status_tiket:
+                  type: object
+                  additionalProperties: false
+                  required: [baru, diklasifikasi, diproses, eskalasi, terselesaikan, ditutup, ditolak]
+                  properties:
+                    baru: { type: integer, minimum: 0 }
+                    diklasifikasi: { type: integer, minimum: 0 }
+                    diproses: { type: integer, minimum: 0 }
+                    eskalasi: { type: integer, minimum: 0 }
+                    terselesaikan: { type: integer, minimum: 0 }
+                    ditutup: { type: integer, minimum: 0 }
+                    ditolak: { type: integer, minimum: 0 }
+                tiket_per_kategori:
+                  type: object
+                  additionalProperties: false
+                  description: Kategori Sarpras dan IT Tag terpisah, masing-masing diurutkan dari jumlah terbanyak. Layanan yang tidak termasuk filter menghasilkan daftar kosong.
+                  required: [sarpras, tik]
+                  properties:
+                    sarpras:
+                      type: array
+                      items:
+                        type: object
+                        required: [kategori, jumlah]
+                        properties:
+                          kategori: { type: string }
+                          jumlah: { type: integer, minimum: 0 }
+                    tik:
+                      type: array
+                      items:
+                        type: object
+                        required: [kategori, jumlah]
+                        properties:
+                          kategori: { type: string }
+                          jumlah: { type: integer, minimum: 0 }
+                sla:
+                  type: object
+                  additionalProperties: false
+                  required: [tercapai, terlambat]
+                  properties:
+                    tercapai: { type: integer, minimum: 0 }
+                    terlambat: { type: integer, minimum: 0 }
 
     DesignReportResponse:
       type: object

@@ -37,6 +37,7 @@ use OpenApi\Annotations as OA;
  * @OA\Tag(name="Assets", description="Asset lookup")
  * @OA\Tag(name="Asset Maintenance", description="API for asset maintenance scheduling and execution")
  * @OA\Tag(name="Helpdesk", description="Helpdesk TIK and Sarpras tickets")
+ * @OA\Tag(name="Reports", description="Statistik dan laporan")
  * @OA\Tag(name="Design Graphic", description="Graphic design requests and workflow")
  *
  * @OA\Schema(
@@ -367,6 +368,32 @@ use OpenApi\Annotations as OA;
  *             @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/DesignReportRequest")),
  *             @OA\Property(property="links", ref="#/components/schemas/TicketPaginationLinks"),
  *             @OA\Property(property="meta", ref="#/components/schemas/TicketPaginationMeta")
+ *         )
+ *     )
+ * )
+ *
+ * @OA\Schema(
+ *     schema="HelpdeskReportResponse",
+ *     type="object",
+ *     required={"data"},
+ *     @OA\Property(property="data", type="object", required={"summary","charts"},
+ *         @OA\Property(property="summary", type="object", required={"jumlah_tiket_masuk","jumlah_tiket_selesai","jumlah_tiket_ditolak","rata_rata_waktu_penyelesaian","persentase_sla_tercapai"},
+ *             @OA\Property(property="jumlah_tiket_masuk", type="integer", minimum=0),
+ *             @OA\Property(property="jumlah_tiket_selesai", type="integer", minimum=0),
+ *             @OA\Property(property="jumlah_tiket_ditolak", type="integer", minimum=0),
+ *             @OA\Property(property="rata_rata_waktu_penyelesaian", type="number", format="float", description="Jam, dua angka desimal"),
+ *             @OA\Property(property="persentase_sla_tercapai", type="number", format="float", description="Persen, dua angka desimal")
+ *         ),
+ *         @OA\Property(property="charts", type="object", required={"tiket_per_bulan","status_tiket","tiket_per_kategori","sla"},
+ *             @OA\Property(property="tiket_per_bulan", type="array", @OA\Items(type="object", required={"bulan","jumlah"}, @OA\Property(property="bulan", type="string", example="2026-01"), @OA\Property(property="jumlah", type="integer"))),
+ *             @OA\Property(property="status_tiket", type="object", required={"baru","diklasifikasi","diproses","eskalasi","terselesaikan","ditutup","ditolak"},
+ *                 @OA\Property(property="baru", type="integer"), @OA\Property(property="diklasifikasi", type="integer"), @OA\Property(property="diproses", type="integer"), @OA\Property(property="eskalasi", type="integer"), @OA\Property(property="terselesaikan", type="integer"), @OA\Property(property="ditutup", type="integer"), @OA\Property(property="ditolak", type="integer")
+ *             ),
+ *             @OA\Property(property="tiket_per_kategori", type="object", required={"sarpras","tik"}, description="Kategori Sarpras dan IT Tag terpisah; masing-masing diurutkan dari jumlah terbanyak.",
+ *                 @OA\Property(property="sarpras", type="array", @OA\Items(type="object", required={"kategori","jumlah"}, @OA\Property(property="kategori", type="string"), @OA\Property(property="jumlah", type="integer"))),
+ *                 @OA\Property(property="tik", type="array", @OA\Items(type="object", required={"kategori","jumlah"}, @OA\Property(property="kategori", type="string"), @OA\Property(property="jumlah", type="integer")))
+ *             ),
+ *             @OA\Property(property="sla", type="object", required={"tercapai","terlambat"}, @OA\Property(property="tercapai", type="integer"), @OA\Property(property="terlambat", type="integer"))
  *         )
  *     )
  * )
@@ -2013,6 +2040,25 @@ class ApiDocumentation
      * )
      */
     public function designReportsIndex(): void {}
+
+    /**
+     * @OA\Get(
+     *     path="/reports/helpdesk",
+     *     operationId="getHelpdeskReport",
+     *     tags={"Reports"},
+     *     summary="Get Helpdesk report",
+     *     description="Requires helpdesk-reports-read. Super admin and management see all services; koordinator-sarpras is restricted to Sarpras. Dates filter tickets.created_at inclusively and must be supplied by the client; the frontend may initially select the last six months. Completion time is in hours; SLA uses only completed tickets with both completed_at and sla_deadline.",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="periode_awal", in="query", required=true, @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="periode_akhir", in="query", required=true, description="Inclusive end date; must be on or after periode_awal.", @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="jenis_layanan", in="query", required=false, description="Defaults to semua within the actor's service scope.", @OA\Schema(type="string", enum={"semua","tik","sarpras"}, default="semua")),
+     *     @OA\Response(response=200, description="Helpdesk summary and charts", @OA\JsonContent(ref="#/components/schemas/HelpdeskReportResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Role or permission denied", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=422, description="Invalid filters", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
+     * )
+     */
+    public function helpdeskReportIndex(): void {}
 
     /**
      * @OA\Get(
