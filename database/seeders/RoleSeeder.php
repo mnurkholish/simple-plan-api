@@ -20,6 +20,12 @@ class RoleSeeder extends Seeder
             'design-requests-approve',
         ];
 
+        $reportPermissions = [];
+        foreach (['helpdesk', 'inventory', 'maintenance'] as $report) {
+            $reportPermissions[] = $report.'-reports-read';
+            $reportPermissions[] = $report.'-reports-export';
+        }
+
         $rolePermissions = [
             'koordinator-sarpras' => [
                 'tickets-access',
@@ -58,9 +64,10 @@ class RoleSeeder extends Seeder
             $role->givePermissionTo(array_merge(
                 $permissions,
                 $designRequestPermissions,
+                in_array($roleName, ['management', 'koordinator-sarpras'], true) ? $reportPermissions : [],
                 match ($roleName) {
                     'petugas-tik' => ['design-drafts-upload'],
-                    'management' => ['design-reports-read'],
+                    'management' => ['design-reports-read', 'design-reports-export'],
                     default => [],
                 },
             ));

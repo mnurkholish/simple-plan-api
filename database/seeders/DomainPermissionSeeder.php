@@ -33,5 +33,11 @@ class DomainPermissionSeeder extends Seeder
         $create('design-requests-revise');
         $create('design-requests-approve');
         $create('design-reports-read');
+        $create('design-reports-export');
+
+        foreach (['helpdesk', 'inventory', 'maintenance'] as $report) {
+            $create($report.'-reports-read');
+            $create($report.'-reports-export');
+        }
     }
 }
