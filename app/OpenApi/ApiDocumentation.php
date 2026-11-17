@@ -376,6 +376,7 @@ use OpenApi\Annotations as OA;
  *     schema="HelpdeskReportResponse",
  *     type="object",
  *     required={"data"},
+ *
  *     @OA\Property(property="data", type="object", required={"summary","charts"},
  *         @OA\Property(property="summary", type="object", required={"jumlah_tiket_masuk","jumlah_tiket_selesai","jumlah_tiket_ditolak","rata_rata_waktu_penyelesaian","persentase_sla_tercapai"},
  *             @OA\Property(property="jumlah_tiket_masuk", type="integer", minimum=0),
@@ -2049,9 +2050,11 @@ class ApiDocumentation
      *     summary="Get Helpdesk report",
      *     description="Requires helpdesk-reports-read. Super admin and management see all services; koordinator-sarpras is restricted to Sarpras. Dates filter tickets.created_at inclusively and must be supplied by the client; the frontend may initially select the last six months. Completion time is in hours; SLA uses only completed tickets with both completed_at and sla_deadline.",
      *     security={{"sanctum":{}}},
+     *
      *     @OA\Parameter(name="periode_awal", in="query", required=true, @OA\Schema(type="string", format="date")),
      *     @OA\Parameter(name="periode_akhir", in="query", required=true, description="Inclusive end date; must be on or after periode_awal.", @OA\Schema(type="string", format="date")),
      *     @OA\Parameter(name="jenis_layanan", in="query", required=false, description="Defaults to semua within the actor's service scope.", @OA\Schema(type="string", enum={"semua","tik","sarpras"}, default="semua")),
+     *
      *     @OA\Response(response=200, description="Helpdesk summary and charts", @OA\JsonContent(ref="#/components/schemas/HelpdeskReportResponse")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=403, description="Role or permission denied", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),

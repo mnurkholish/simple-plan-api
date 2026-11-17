@@ -15,7 +15,7 @@ class HelpdeskReportService
     /**
      * Shared scope for report aggregates and a future export.
      *
-     * @param array{periode_awal: string, periode_akhir: string, jenis_layanan?: string|null} $filters
+     * @param  array{periode_awal: string, periode_akhir: string, jenis_layanan?: string|null}  $filters
      */
     public function query(array $filters, User $actor): Builder
     {
