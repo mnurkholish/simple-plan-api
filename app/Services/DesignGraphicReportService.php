@@ -16,7 +16,7 @@ class DesignGraphicReportService
     /**
      * Shared period scope for the report and a future export.
      *
-     * @param array{periode_awal: string, periode_akhir: string} $filters
+     * @param  array{periode_awal: string, periode_akhir: string}  $filters
      */
     public function query(array $filters, User $actor): Builder
     {

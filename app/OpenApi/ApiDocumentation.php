@@ -403,6 +403,7 @@ use OpenApi\Annotations as OA;
  *     schema="DesignGraphicReportResponse",
  *     type="object",
  *     required={"data"},
+ *
  *     @OA\Property(property="data", type="object", required={"summary","charts"},
  *         @OA\Property(property="summary", type="object", required={"jumlah_request_masuk","jumlah_request_selesai","jumlah_request_ditolak","rata_rata_waktu_penyelesaian"},
  *             @OA\Property(property="jumlah_request_masuk", type="integer", minimum=0),
@@ -2092,8 +2093,10 @@ class ApiDocumentation
      *     summary="Get graphic design report",
      *     description="Requires design-reports-read and super-admin or management role. Required dates filter design_requests.created_at inclusively. Average completion time uses completed_at and is measured in days. Design types are grouped without case and excess whitespace differences.",
      *     security={{"sanctum":{}}},
+     *
      *     @OA\Parameter(name="periode_awal", in="query", required=true, @OA\Schema(type="string", format="date")),
      *     @OA\Parameter(name="periode_akhir", in="query", required=true, description="Inclusive end date; must be on or after periode_awal.", @OA\Schema(type="string", format="date")),
+     *
      *     @OA\Response(response=200, description="Design graphic summary and charts", @OA\JsonContent(ref="#/components/schemas/DesignGraphicReportResponse")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=403, description="Role or permission denied", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
