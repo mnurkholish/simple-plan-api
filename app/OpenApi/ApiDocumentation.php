@@ -400,6 +400,27 @@ use OpenApi\Annotations as OA;
  * )
  *
  * @OA\Schema(
+ *     schema="DesignGraphicReportResponse",
+ *     type="object",
+ *     required={"data"},
+ *     @OA\Property(property="data", type="object", required={"summary","charts"},
+ *         @OA\Property(property="summary", type="object", required={"jumlah_request_masuk","jumlah_request_selesai","jumlah_request_ditolak","rata_rata_waktu_penyelesaian"},
+ *             @OA\Property(property="jumlah_request_masuk", type="integer", minimum=0),
+ *             @OA\Property(property="jumlah_request_selesai", type="integer", minimum=0),
+ *             @OA\Property(property="jumlah_request_ditolak", type="integer", minimum=0),
+ *             @OA\Property(property="rata_rata_waktu_penyelesaian", type="number", format="float", description="Hari, dua angka desimal")
+ *         ),
+ *         @OA\Property(property="charts", type="object", required={"request_per_bulan","status_request","request_per_jenis_desain"},
+ *             @OA\Property(property="request_per_bulan", type="array", description="Termasuk bulan tanpa request, urut kronologis", @OA\Items(type="object", required={"bulan","jumlah"}, @OA\Property(property="bulan", type="string", example="2026-01"), @OA\Property(property="jumlah", type="integer"))),
+ *             @OA\Property(property="status_request", type="object", required={"baru","ditugaskan","menunggu_persetujuan","perlu_revisi","selesai","ditolak"},
+ *                 @OA\Property(property="baru", type="integer"), @OA\Property(property="ditugaskan", type="integer"), @OA\Property(property="menunggu_persetujuan", type="integer"), @OA\Property(property="perlu_revisi", type="integer"), @OA\Property(property="selesai", type="integer"), @OA\Property(property="ditolak", type="integer")
+ *             ),
+ *             @OA\Property(property="request_per_jenis_desain", type="array", description="Diurutkan dari jumlah terbanyak; label memakai ejaan pertama setelah spasi dinormalisasi", @OA\Items(type="object", required={"jenis_desain","jumlah"}, @OA\Property(property="jenis_desain", type="string"), @OA\Property(property="jumlah", type="integer")))
+ *         )
+ *     )
+ * )
+ *
+ * @OA\Schema(
  *     schema="DesignRequestDetail",
  *     type="object",
  *     required={"id","request_number","title","design_type","description","needed_at","status","priority","requester","unit","assigned_officer","assigned_at","completed_at","rejection_note","reference_file","latest_draft","latest_revision","created_at","updated_at"},
@@ -2062,6 +2083,24 @@ class ApiDocumentation
      * )
      */
     public function helpdeskReportIndex(): void {}
+
+    /**
+     * @OA\Get(
+     *     path="/reports/design-graphic",
+     *     operationId="getDesignGraphicReport",
+     *     tags={"Reports"},
+     *     summary="Get graphic design report",
+     *     description="Requires design-reports-read and super-admin or management role. Required dates filter design_requests.created_at inclusively. Average completion time uses completed_at and is measured in days. Design types are grouped without case and excess whitespace differences.",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="periode_awal", in="query", required=true, @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="periode_akhir", in="query", required=true, description="Inclusive end date; must be on or after periode_awal.", @OA\Schema(type="string", format="date")),
+     *     @OA\Response(response=200, description="Design graphic summary and charts", @OA\JsonContent(ref="#/components/schemas/DesignGraphicReportResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Role or permission denied", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=422, description="Invalid period", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
+     * )
+     */
+    public function designGraphicReportIndex(): void {}
 
     /**
      * @OA\Get(

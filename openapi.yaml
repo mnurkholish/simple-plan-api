@@ -31,6 +31,39 @@ tags:
     description: Backup MySQL dan file aplikasi di MinIO
 
 paths:
+  /reports/design-graphic:
+    get:
+      tags: [Reports]
+      summary: Laporan Desain Grafis
+      operationId: getDesignGraphicReport
+      description: |
+        Membutuhkan design-reports-read dan role super-admin atau management.
+        Periode wajib dikirim client dan memfilter design_requests.created_at
+        secara inklusif. Durasi penyelesaian dihitung dari completed_at dalam
+        hari, termasuk pecahan hari. Jenis desain dikelompokkan tanpa membedakan
+        huruf besar/kecil dan spasi berlebih; data asli tidak diubah.
+      x-auth-required: true
+      x-required-permission: design-reports-read
+      parameters:
+        - name: periode_awal
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: periode_akhir
+          in: query
+          required: true
+          description: Inklusif dan tidak sebelum periode_awal.
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: Rekap dan grafik Desain Grafis.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DesignGraphicReportResponse" }
+        "401": { $ref: "#/components/responses/TicketUnauthenticated" }
+        "403": { $ref: "#/components/responses/TicketForbidden" }
+        "422": { $ref: "#/components/responses/TicketValidationError" }
+
   /reports/helpdesk:
     get:
       tags: [Reports]
@@ -2320,6 +2353,60 @@ components:
                   properties:
                     tercapai: { type: integer, minimum: 0 }
                     terlambat: { type: integer, minimum: 0 }
+
+    DesignGraphicReportResponse:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [summary, charts]
+          properties:
+            summary:
+              type: object
+              additionalProperties: false
+              required: [jumlah_request_masuk, jumlah_request_selesai, jumlah_request_ditolak, rata_rata_waktu_penyelesaian]
+              properties:
+                jumlah_request_masuk: { type: integer, minimum: 0 }
+                jumlah_request_selesai: { type: integer, minimum: 0 }
+                jumlah_request_ditolak: { type: integer, minimum: 0 }
+                rata_rata_waktu_penyelesaian: { type: number, description: "Rata-rata hari, dua angka desimal." }
+            charts:
+              type: object
+              additionalProperties: false
+              required: [request_per_bulan, status_request, request_per_jenis_desain]
+              properties:
+                request_per_bulan:
+                  type: array
+                  description: Termasuk bulan kosong, urut kronologis.
+                  items:
+                    type: object
+                    required: [bulan, jumlah]
+                    properties:
+                      bulan: { type: string, pattern: '^\\d{4}-\\d{2}$' }
+                      jumlah: { type: integer, minimum: 0 }
+                status_request:
+                  type: object
+                  additionalProperties: false
+                  required: [baru, ditugaskan, menunggu_persetujuan, perlu_revisi, selesai, ditolak]
+                  properties:
+                    baru: { type: integer, minimum: 0 }
+                    ditugaskan: { type: integer, minimum: 0 }
+                    menunggu_persetujuan: { type: integer, minimum: 0 }
+                    perlu_revisi: { type: integer, minimum: 0 }
+                    selesai: { type: integer, minimum: 0 }
+                    ditolak: { type: integer, minimum: 0 }
+                request_per_jenis_desain:
+                  type: array
+                  description: Diurutkan dari jumlah terbanyak. Label menggunakan ejaan pertama setelah spasi dinormalisasi.
+                  items:
+                    type: object
+                    required: [jenis_desain, jumlah]
+                    properties:
+                      jenis_desain: { type: string }
+                      jumlah: { type: integer, minimum: 0 }
 
     DesignReportResponse:
       type: object
