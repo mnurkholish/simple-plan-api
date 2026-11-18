@@ -31,6 +31,105 @@ tags:
     description: Backup MySQL dan file aplikasi di MinIO
 
 paths:
+  /reports/inventory:
+    get:
+      tags: [Reports]
+      summary: Laporan Inventaris
+      operationId: getInventoryReport
+      description: |
+        Membutuhkan inventory-reports-read dan role super-admin, management, atau
+        koordinator-sarpras. Super admin dan management dapat mengakses seluruh
+        klasifikasi; koordinator-sarpras mengecualikan klasifikasi Alat IT di
+        level query backend. Tidak menggunakan filter periode.
+      x-auth-required: true
+      x-required-permission: inventory-reports-read
+      parameters:
+        - name: classification_id
+          in: query
+          required: false
+          description: Filter berdasarkan ID master klasifikasi (asset_classifications.id).
+          schema: { type: integer }
+        - name: klasifikasi
+          in: query
+          required: false
+          description: Alias untuk classification_id.
+          schema: { type: integer }
+        - name: status
+          in: query
+          required: false
+          description: Filter berdasarkan status aset.
+          schema: { type: string, enum: [Digunakan, Tidak Digunakan, Rusak, Dipinjam] }
+        - name: location_id
+          in: query
+          required: false
+          description: Filter berdasarkan ID master lokasi ruangan (asset_locations.id).
+          schema: { type: integer }
+        - name: lokasi_ruangan
+          in: query
+          required: false
+          description: Alias untuk location_id.
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Rekap dan grafik Inventaris.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InventoryReportResponse" }
+        "401": { $ref: "#/components/responses/TicketUnauthenticated" }
+        "403": { $ref: "#/components/responses/TicketForbidden" }
+        "422": { $ref: "#/components/responses/TicketValidationError" }
+
+  /reports/inventory/export:
+    get:
+      tags: [Reports]
+      summary: Ekspor Laporan Inventaris (PDF / XLSX)
+      operationId: exportInventoryReport
+      description: |
+        Membutuhkan inventory-reports-export dan role super-admin, management, atau
+        koordinator-sarpras. Menggunakan query dan pembatasan role yang sama dengan
+        GET /reports/inventory. Format PDF memuat rekap dan grafik SVG server-side;
+        format XLSX memuat baris detail aset dengan No. Inventaris dan Kode Aset
+        bertipe teks.
+      x-auth-required: true
+      x-required-permission: inventory-reports-export
+      parameters:
+        - name: format
+          in: query
+          required: true
+          description: Format file ekspor.
+          schema: { type: string, enum: [pdf, xlsx] }
+        - name: classification_id
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: klasifikasi
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: status
+          in: query
+          required: false
+          schema: { type: string, enum: [Digunakan, Tidak Digunakan, Rusak, Dipinjam] }
+        - name: location_id
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: lokasi_ruangan
+          in: query
+          required: false
+          schema: { type: integer }
+      responses:
+        "200":
+          description: File unduhan laporan inventaris (PDF atau XLSX).
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema: { type: string, format: binary }
+        "401": { $ref: "#/components/responses/TicketUnauthenticated" }
+        "403": { $ref: "#/components/responses/TicketForbidden" }
+        "422": { $ref: "#/components/responses/TicketValidationError" }
+
   /reports/design-graphic:
     get:
       tags: [Reports]
@@ -2406,6 +2505,56 @@ components:
                     required: [jenis_desain, jumlah]
                     properties:
                       jenis_desain: { type: string }
+                      jumlah: { type: integer, minimum: 0 }
+
+    InventoryReportResponse:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [summary, charts]
+          properties:
+            summary:
+              type: object
+              additionalProperties: false
+              required: [total_aset, total_rusak, total_dipinjam]
+              properties:
+                total_aset: { type: integer, minimum: 0 }
+                total_rusak: { type: integer, minimum: 0 }
+                total_dipinjam: { type: integer, minimum: 0 }
+            charts:
+              type: object
+              additionalProperties: false
+              required: [per_klasifikasi, per_kondisi, per_lokasi]
+              properties:
+                per_klasifikasi:
+                  type: array
+                  description: Jumlah aset per klasifikasi, diurutkan dari jumlah terbanyak.
+                  items:
+                    type: object
+                    required: [klasifikasi, jumlah]
+                    properties:
+                      klasifikasi: { type: string }
+                      jumlah: { type: integer, minimum: 0 }
+                per_kondisi:
+                  type: object
+                  additionalProperties: false
+                  required: [Baik, Rusak Ringan, Rusak Berat]
+                  properties:
+                    Baik: { type: integer, minimum: 0 }
+                    Rusak Ringan: { type: integer, minimum: 0 }
+                    Rusak Berat: { type: integer, minimum: 0 }
+                per_lokasi:
+                  type: array
+                  description: Top 10 lokasi ruangan dengan jumlah aset terbanyak.
+                  items:
+                    type: object
+                    required: [lokasi, jumlah]
+                    properties:
+                      lokasi: { type: string }
                       jumlah: { type: integer, minimum: 0 }
 
     DesignReportResponse:
