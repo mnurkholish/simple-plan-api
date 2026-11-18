@@ -2093,10 +2093,12 @@ class ApiDocumentation
      *     summary="Export Helpdesk report",
      *     description="Requires helpdesk-reports-export. The selected period is inclusive. Koordinator-sarpras is restricted to Sarpras, including when jenis_layanan is manipulated. PDF contains summary and charts; XLSX contains six worksheets with ticket details and report aggregates.",
      *     security={{"sanctum":{}}},
+     *
      *     @OA\Parameter(name="format", in="query", required=true, @OA\Schema(type="string", enum={"pdf","xlsx"})),
      *     @OA\Parameter(name="periode_awal", in="query", required=true, @OA\Schema(type="string", format="date")),
      *     @OA\Parameter(name="periode_akhir", in="query", required=true, description="Inclusive end date; must be on or after periode_awal.", @OA\Schema(type="string", format="date")),
      *     @OA\Parameter(name="jenis_layanan", in="query", required=false, @OA\Schema(type="string", enum={"semua","tik","sarpras"}, default="semua")),
+     *
      *     @OA\Response(response=200, description="PDF or XLSX attachment", @OA\MediaType(mediaType="application/pdf"), @OA\MediaType(mediaType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=403, description="Role or permission denied", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
