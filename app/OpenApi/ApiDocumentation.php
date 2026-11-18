@@ -2161,9 +2161,11 @@ class ApiDocumentation
      *     summary="Export graphic design report",
      *     description="Requires design-reports-export and super-admin or management role. Required dates filter design_requests.created_at inclusively. PDF contains summary and charts; XLSX contains five worksheets with request details and report aggregates.",
      *     security={{"sanctum":{}}},
+     *
      *     @OA\Parameter(name="format", in="query", required=true, @OA\Schema(type="string", enum={"pdf","xlsx"})),
      *     @OA\Parameter(name="periode_awal", in="query", required=true, @OA\Schema(type="string", format="date")),
      *     @OA\Parameter(name="periode_akhir", in="query", required=true, description="Inclusive end date; must be on or after periode_awal.", @OA\Schema(type="string", format="date")),
+     *
      *     @OA\Response(response=200, description="PDF or XLSX attachment", @OA\MediaType(mediaType="application/pdf"), @OA\MediaType(mediaType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=403, description="Role or permission denied", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
