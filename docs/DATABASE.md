@@ -221,6 +221,22 @@ di kedua tabel harus merujuk request yang sama saat revisi dibuat; layanan aplik
 nantinya menegakkan aturan ini. File final berasal dari draft terakhir yang
 disetujui saat request berstatus `selesai`, tanpa kolom atau tabel file final.
 
+## Pelacakan Kejadian Jadwal Maintenance
+
+`asset_maintenance_occurrences` mencatat setiap siklus/kejadian dari master jadwal
+`asset_maintenances`. Setiap baris menyimpan `asset_maintenance_id`, `asset_code_id`,
+`period`, `scheduled_date`, `status` (`terjadwal`, `selesai`, `terlambat`),
+referensi opsional `asset_maintenance_log_id`, waktu realisasi `realized_at`, dan
+penanda keterlambatan realisasi `is_late`.
+
+Kombinasi (`asset_maintenance_id`, `scheduled_date`) bersifat unik agar sinkronisasi
+penjadwalan berjalan idempoten tanpa duplikasi, dan `asset_maintenance_log_id`
+bersifat unik untuk memastikan satu log realisasi terhubung ke paling banyak satu
+kejadian jadwal. Saat log eksekusi dicatat melalui `AssetMaintenanceService`,
+kejadian jadwal pada siklus tersebut berubah menjadi `selesai` dengan `realized_at`
+dan `is_late` dihitung dari perbandingan tanggal realisasi terhadap `scheduled_date`,
+serta kejadian siklus berikutnya otomatis dibuat jika jadwal masih aktif.
+
 ---
 
 ## 9. Audit and History

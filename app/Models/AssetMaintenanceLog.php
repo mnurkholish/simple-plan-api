@@ -6,6 +6,7 @@ use App\Enums\AssetCondition;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class AssetMaintenanceLog extends Model
 {
@@ -41,5 +42,10 @@ class AssetMaintenanceLog extends Model
     public function maintenance(): BelongsTo
     {
         return $this->belongsTo(AssetMaintenance::class, 'asset_maintenance_id');
+    }
+
+    public function occurrence(): HasOne
+    {
+        return $this->hasOne(AssetMaintenanceOccurrence::class, 'asset_maintenance_log_id');
     }
 }

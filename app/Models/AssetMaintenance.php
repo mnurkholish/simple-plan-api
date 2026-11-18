@@ -66,6 +66,11 @@ class AssetMaintenance extends Model
         return $this->hasMany(AssetMaintenanceLog::class, 'asset_maintenance_id');
     }
 
+    public function occurrences(): HasMany
+    {
+        return $this->hasMany(AssetMaintenanceOccurrence::class, 'asset_maintenance_id');
+    }
+
     public function scopeVisibleTo(Builder $query, ?User $actor = null): Builder
     {
         if (! $actor) {

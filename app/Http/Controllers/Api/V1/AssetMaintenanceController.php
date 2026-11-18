@@ -10,6 +10,7 @@ use App\Http\Requests\StoreAssetMaintenanceRequest;
 use App\Http\Requests\UpdateAssetMaintenanceRequest;
 use App\Models\AssetMaintenance;
 use App\Notifications\AssetMaintenanceReminderNotification;
+use App\Services\AssetMaintenanceService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,6 +18,10 @@ use Illuminate\Support\Carbon;
 
 class AssetMaintenanceController extends Controller
 {
+    public function __construct(
+        protected AssetMaintenanceService $maintenanceService
+    ) {}
+
     public function index(Request $request): JsonResponse
     {
         $this->authorize('viewAny', AssetMaintenance::class);
@@ -84,7 +89,7 @@ class AssetMaintenanceController extends Controller
         $validated['status'] = $validated['status'] ?? MaintenanceStatus::Terjadwal->value;
         $validated['is_active'] = $validated['is_active'] ?? true;
 
-        $maintenance = AssetMaintenance::create($validated);
+        $maintenance = $this->maintenanceService->createSchedule($validated);
         $maintenance->load([
             'assetCode.assetItem',
             'assetCode.classification',
@@ -125,7 +130,7 @@ class AssetMaintenanceController extends Controller
         $maintenance = $this->resolveMaintenance($assetMaintenance);
         $this->authorize('update', $maintenance);
 
-        $maintenance->update($request->validated());
+        $maintenance = $this->maintenanceService->updateSchedule($maintenance, $request->validated());
         $maintenance->load([
             'assetCode.assetItem',
             'assetCode.classification',
