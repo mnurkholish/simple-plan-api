@@ -71,10 +71,8 @@ class InventoryReportService
      *
      * @param  array{
      *     classification_id?: int|string|null,
-     *     klasifikasi?: int|string|null,
      *     status?: string|null,
-     *     location_id?: int|string|null,
-     *     lokasi_ruangan?: int|string|null
+     *     location_id?: int|string|null
      * }  $filters
      */
     public function query(array $filters, User $actor): Builder
@@ -109,10 +107,8 @@ class InventoryReportService
     /**
      * @param  array{
      *     classification_id?: int|string|null,
-     *     klasifikasi?: int|string|null,
      *     status?: string|null,
-     *     location_id?: int|string|null,
-     *     lokasi_ruangan?: int|string|null
+     *     location_id?: int|string|null
      * }  $filters
      * @return array{
      *     summary: array{total_aset: int, total_rusak: int, total_dipinjam: int},
@@ -184,10 +180,8 @@ class InventoryReportService
     /**
      * @param  array{
      *     classification_id?: int|string|null,
-     *     klasifikasi?: int|string|null,
      *     status?: string|null,
-     *     location_id?: int|string|null,
-     *     lokasi_ruangan?: int|string|null
+     *     location_id?: int|string|null
      * }  $filters
      */
     public function export(array $filters, User $actor, string $format): Response
@@ -217,10 +211,8 @@ class InventoryReportService
     /**
      * @param  array{
      *     classification_id?: int|string|null,
-     *     klasifikasi?: int|string|null,
      *     status?: string|null,
-     *     location_id?: int|string|null,
-     *     lokasi_ruangan?: int|string|null
+     *     location_id?: int|string|null
      * }  $filters
      * @param  array{
      *     summary: array{total_aset: int, total_rusak: int, total_dipinjam: int},
@@ -483,7 +475,7 @@ class InventoryReportService
     /** @param array<string, mixed> $filters */
     private function resolveClassificationId(array $filters): ?int
     {
-        $value = $filters['classification_id'] ?? $filters['klasifikasi'] ?? null;
+        $value = $filters['classification_id'] ?? null;
 
         return $value !== null ? (int) $value : null;
     }
@@ -491,7 +483,7 @@ class InventoryReportService
     /** @param array<string, mixed> $filters */
     private function resolveLocationId(array $filters): ?int
     {
-        $value = $filters['location_id'] ?? $filters['lokasi_ruangan'] ?? null;
+        $value = $filters['location_id'] ?? null;
 
         return $value !== null ? (int) $value : null;
     }

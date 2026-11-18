@@ -201,14 +201,6 @@
             <span class="meta-label">Periode:</span> {{ $filters['Periode'] ?? 'Semua' }}
             <span class="meta-sep">|</span>
             <span class="meta-label">Klasifikasi:</span> {{ $filters['Klasifikasi'] ?? 'Semua' }}
-            @if (!empty($filters['Status']))
-                <span class="meta-sep">|</span>
-                <span class="meta-label">Status:</span> {{ $filters['Status'] }}
-            @endif
-            @if (!empty($filters['Lokasi ruangan']))
-                <span class="meta-sep">|</span>
-                <span class="meta-label">Lokasi ruangan:</span> {{ $filters['Lokasi ruangan'] }}
-            @endif
         </div>
         <div class="meta-row">
             <span class="meta-label">Diunduh:</span> {{ $downloaded_at ?? '-' }}

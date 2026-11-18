@@ -2,10 +2,8 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\MaintenanceStatus;
 use App\Services\MaintenanceReportService;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class MaintenanceReportRequest extends FormRequest
 {
@@ -17,28 +15,16 @@ class MaintenanceReportRequest extends FormRequest
     /** @return array<string, mixed> */
     public function rules(): array
     {
-        $startKey = $this->filled('start_date')
-            ? 'start_date'
-            : ($this->filled('periode_awal') ? 'periode_awal' : null);
+        $periodeAkhirRules = ['nullable', 'date', 'date_format:Y-m-d'];
 
-        $endDateRules = ['nullable', 'date_format:Y-m-d'];
-        $periodeAkhirRules = ['nullable', 'date_format:Y-m-d'];
-
-        if ($startKey !== null) {
-            $endDateRules[] = 'after_or_equal:'.$startKey;
-            $periodeAkhirRules[] = 'after_or_equal:'.$startKey;
+        if ($this->filled('periode_awal')) {
+            $periodeAkhirRules[] = 'after_or_equal:periode_awal';
         }
 
         return [
-            'start_date' => ['nullable', 'date_format:Y-m-d'],
-            'end_date' => $endDateRules,
-            'periode_awal' => ['nullable', 'date_format:Y-m-d'],
+            'periode_awal' => ['nullable', 'date', 'date_format:Y-m-d'],
             'periode_akhir' => $periodeAkhirRules,
-            'status' => ['nullable', Rule::enum(MaintenanceStatus::class)],
-            'classification_id' => ['nullable', 'integer', 'exists:asset_classifications,id'],
             'klasifikasi' => ['nullable', 'integer', 'exists:asset_classifications,id'],
-            'location_id' => ['nullable', 'integer', 'exists:asset_locations,id'],
-            'lokasi_ruangan' => ['nullable', 'integer', 'exists:asset_locations,id'],
         ];
     }
 }

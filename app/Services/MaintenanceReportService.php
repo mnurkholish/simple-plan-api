@@ -6,7 +6,6 @@ use App\Enums\AssetCondition;
 use App\Enums\MaintenancePeriod;
 use App\Enums\MaintenanceStatus;
 use App\Models\AssetClassification;
-use App\Models\AssetLocation;
 use App\Models\AssetMaintenanceOccurrence;
 use App\Models\User;
 use Carbon\CarbonImmutable;
@@ -85,15 +84,9 @@ class MaintenanceReportService
      * Shared base query for report aggregates and PDF/XLSX exports without JOIN row duplication.
      *
      * @param  array{
-     *     start_date?: string|null,
-     *     end_date?: string|null,
      *     periode_awal?: string|null,
      *     periode_akhir?: string|null,
-     *     status?: string|null,
-     *     classification_id?: int|string|null,
-     *     klasifikasi?: int|string|null,
-     *     location_id?: int|string|null,
-     *     lokasi_ruangan?: int|string|null
+     *     klasifikasi?: int|string|null
      * }  $filters
      */
     public function query(array $filters, User $actor): Builder
@@ -118,40 +111,14 @@ class MaintenanceReportService
             $query->forClassification($classificationId);
         }
 
-        $locationId = $this->resolveLocationId($filters);
-        if ($locationId !== null) {
-            $query->forLocation($locationId);
-        }
-
-        $status = $filters['status'] ?? null;
-        if ($status === MaintenanceStatus::Selesai->value) {
-            $query->where(function (Builder $builder): void {
-                $builder->where('asset_maintenance_occurrences.status', MaintenanceStatus::Selesai->value)
-                    ->orWhereNotNull('asset_maintenance_occurrences.realized_at')
-                    ->orWhereNotNull('asset_maintenance_occurrences.asset_maintenance_log_id');
-            });
-        } elseif ($status === MaintenanceStatus::Terlambat->value) {
-            $query->overdue();
-        } elseif ($status === MaintenanceStatus::Terjadwal->value) {
-            $query->pending()
-                ->where('asset_maintenance_occurrences.status', '!=', MaintenanceStatus::Terlambat->value)
-                ->whereDate('asset_maintenance_occurrences.scheduled_date', '>=', today()->toDateString());
-        }
-
         return $query;
     }
 
     /**
      * @param  array{
-     *     start_date?: string|null,
-     *     end_date?: string|null,
      *     periode_awal?: string|null,
      *     periode_akhir?: string|null,
-     *     status?: string|null,
-     *     classification_id?: int|string|null,
-     *     klasifikasi?: int|string|null,
-     *     location_id?: int|string|null,
-     *     lokasi_ruangan?: int|string|null
+     *     klasifikasi?: int|string|null
      * }  $filters
      * @return array{
      *     summary: array{
@@ -252,15 +219,9 @@ class MaintenanceReportService
 
     /**
      * @param  array{
-     *     start_date?: string|null,
-     *     end_date?: string|null,
      *     periode_awal?: string|null,
      *     periode_akhir?: string|null,
-     *     status?: string|null,
-     *     classification_id?: int|string|null,
-     *     klasifikasi?: int|string|null,
-     *     location_id?: int|string|null,
-     *     lokasi_ruangan?: int|string|null
+     *     klasifikasi?: int|string|null
      * }  $filters
      */
     public function export(array $filters, User $actor, string $format): Response
@@ -289,15 +250,9 @@ class MaintenanceReportService
 
     /**
      * @param  array{
-     *     start_date?: string|null,
-     *     end_date?: string|null,
      *     periode_awal?: string|null,
      *     periode_akhir?: string|null,
-     *     status?: string|null,
-     *     classification_id?: int|string|null,
-     *     klasifikasi?: int|string|null,
-     *     location_id?: int|string|null,
-     *     lokasi_ruangan?: int|string|null
+     *     klasifikasi?: int|string|null
      * }  $filters
      * @param  array{
      *     summary: array{
@@ -316,17 +271,9 @@ class MaintenanceReportService
     private function buildPdfPayload(array $filters, User $actor, array $report): array
     {
         $classificationId = $this->resolveClassificationId($filters);
-        $locationId = $this->resolveLocationId($filters);
 
         $classificationName = $classificationId !== null
             ? AssetClassification::query()->find($classificationId)?->name
-            : null;
-        $locationName = $locationId !== null
-            ? AssetLocation::query()->find($locationId)?->name
-            : null;
-
-        $statusFilter = isset($filters['status'])
-            ? (MaintenanceStatus::tryFrom((string) $filters['status'])?->label() ?? (string) $filters['status'])
             : null;
 
         $conditionLegend = [];
@@ -353,8 +300,6 @@ class MaintenanceReportService
             'filters' => [
                 'Periode' => $this->formatPeriodFilter($filters) ?? 'Semua',
                 'Klasifikasi' => $classificationName ?? ($this->isSarprasCoordinatorOnly($actor) ? 'Semua (kecuali Alat IT)' : 'Semua'),
-                'Status' => $statusFilter,
-                'Lokasi ruangan' => $locationName,
             ],
             'summary' => [
                 'jumlah_jadwal' => $report['summary']['jumlah_jadwal'],
@@ -772,7 +717,7 @@ class MaintenanceReportService
     /** @param array<string, mixed> $filters */
     private function resolveStartDate(array $filters): ?string
     {
-        $value = $filters['start_date'] ?? $filters['periode_awal'] ?? null;
+        $value = $filters['periode_awal'] ?? null;
 
         return is_string($value) && $value !== '' ? $value : null;
     }
@@ -780,7 +725,7 @@ class MaintenanceReportService
     /** @param array<string, mixed> $filters */
     private function resolveEndDate(array $filters): ?string
     {
-        $value = $filters['end_date'] ?? $filters['periode_akhir'] ?? null;
+        $value = $filters['periode_akhir'] ?? null;
 
         return is_string($value) && $value !== '' ? $value : null;
     }
@@ -788,15 +733,7 @@ class MaintenanceReportService
     /** @param array<string, mixed> $filters */
     private function resolveClassificationId(array $filters): ?int
     {
-        $value = $filters['classification_id'] ?? $filters['klasifikasi'] ?? null;
-
-        return $value !== null ? (int) $value : null;
-    }
-
-    /** @param array<string, mixed> $filters */
-    private function resolveLocationId(array $filters): ?int
-    {
-        $value = $filters['location_id'] ?? $filters['lokasi_ruangan'] ?? null;
+        $value = $filters['klasifikasi'] ?? null;
 
         return $value !== null ? (int) $value : null;
     }

@@ -204,7 +204,7 @@ test('laporan inventaris menghitung rekap, grafik klasifikasi, kondisi, dan selu
         ->and($perLokasi[11])->toBe(['lokasi' => 'Ruang 12', 'jumlah' => 1]);
 });
 
-test('filter gabungan klasifikasi, status, dan lokasi ruangan bekerja dengan alias serta menolak input tidak valid', function (): void {
+test('filter gabungan classification_id, status, dan location_id bekerja serta menolak input tidak valid', function (): void {
     actAsInventoryReportRole('management');
 
     $alatIt = AssetClassification::factory()->create(['name' => 'Alat IT']);
@@ -243,10 +243,10 @@ test('filter gabungan klasifikasi, status, dan lokasi ruangan bekerja dengan ali
             'Rusak Berat' => 1,
         ]);
 
-    // Filter menggunakan alias klasifikasi dan lokasi_ruangan
+    // Filter klasifikasi Alat Medis + lokasi IGD
     $this->getJson(inventoryReportUrl([
-        'klasifikasi' => $alatMedis->id,
-        'lokasi_ruangan' => $igd->id,
+        'classification_id' => $alatMedis->id,
+        'location_id' => $igd->id,
         'status' => AssetStatus::Damaged->value,
     ]))->assertOk()
         ->assertJsonPath('data.summary.total_aset', 1)
@@ -257,9 +257,9 @@ test('filter gabungan klasifikasi, status, dan lokasi ruangan bekerja dengan ali
     // Validasi filter tidak valid mengembalikan 422
     foreach ([
         '?classification_id=999999',
-        '?klasifikasi=bukan-angka',
+        '?classification_id=bukan-angka',
         '?location_id=999999',
-        '?lokasi_ruangan=bukan-angka',
+        '?location_id=bukan-angka',
         '?status=StatusTidakAda',
     ] as $query) {
         $this->getJson('/api/v1/reports/inventory'.$query)->assertUnprocessable();
