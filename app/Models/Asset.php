@@ -63,6 +63,11 @@ class Asset extends Model
         return $this->hasMany(AssetHistory::class)->latest('id');
     }
 
+    public function maintenanceOccurrences(): HasMany
+    {
+        return $this->hasMany(AssetMaintenanceOccurrence::class, 'asset_code_id', 'asset_code_id');
+    }
+
     public function scopeVisibleTo(Builder $query, ?User $actor = null): Builder
     {
         if (! $actor) {

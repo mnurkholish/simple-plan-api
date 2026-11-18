@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class AssetCode extends Model
@@ -43,6 +44,16 @@ class AssetCode extends Model
     public function asset(): HasOne
     {
         return $this->hasOne(Asset::class);
+    }
+
+    public function maintenances(): HasMany
+    {
+        return $this->hasMany(AssetMaintenance::class, 'asset_code_id');
+    }
+
+    public function maintenanceOccurrences(): HasMany
+    {
+        return $this->hasMany(AssetMaintenanceOccurrence::class, 'asset_code_id');
     }
 
     public function scopeVisibleTo(Builder $query, ?User $actor = null): Builder

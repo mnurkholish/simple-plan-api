@@ -8,6 +8,7 @@ use App\Enums\MaintenanceStatus;
 use App\Models\AssetMaintenance;
 use App\Notifications\AssetMaintenanceOverdueNotification;
 use App\Notifications\AssetMaintenanceReminderNotification;
+use App\Services\AssetMaintenanceService;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -17,7 +18,7 @@ class CheckMaintenanceStatus extends Command
 
     protected $description = 'Periksa status jadwal pemeliharaan aset (overdue & reminder notifikasi)';
 
-    public function handle(): int
+    public function handle(AssetMaintenanceService $maintenanceService): int
     {
         $today = today()->toDateString();
         $h1 = today()->addDay()->toDateString();
@@ -51,6 +52,8 @@ class CheckMaintenanceStatus extends Command
             $overdueCount++;
         }
 
+        $occurrenceSync = $maintenanceService->syncAllOccurrences($today);
+
         $reminderSchedules = AssetMaintenance::query()
             ->where('is_active', true)
             ->where('status', MaintenanceStatus::Terjadwal)
@@ -80,7 +83,11 @@ class CheckMaintenanceStatus extends Command
             }
         }
 
-        $this->info("Pemeriksaan jadwal pemeliharaan selesai: {$completedToScheduledCount} jadwal selesai dikembalikan ke terjadwal, {$overdueCount} jadwal diperbarui menjadi terlambat, {$reminderCount} pengingat terkirim.");
+        $this->info(
+            "Pemeriksaan jadwal pemeliharaan selesai: {$completedToScheduledCount} jadwal selesai dikembalikan ke terjadwal, "
+            ."{$overdueCount} jadwal diperbarui menjadi terlambat, {$occurrenceSync['overdue_occurrences']} occurrence diperbarui menjadi terlambat, "
+            ."{$reminderCount} pengingat terkirim."
+        );
 
         return self::SUCCESS;
     }
