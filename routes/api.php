@@ -170,6 +170,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::get('reports/design-graphic', [DesignGraphicReportController::class, 'index'])
             ->middleware('permission:design-reports-read')
             ->name('reports.design-graphic.index');
+        Route::get('reports/design-graphic/export', [DesignGraphicReportController::class, 'export'])
+            ->middleware('permission:design-reports-export')
+            ->name('reports.design-graphic.export');
         Route::get('reports/inventory', [InventoryReportController::class, 'index'])
             ->middleware('permission:inventory-reports-read')
             ->name('reports.inventory.index');
