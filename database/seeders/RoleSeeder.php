@@ -28,6 +28,7 @@ class RoleSeeder extends Seeder
 
         $rolePermissions = [
             'koordinator-sarpras' => [
+                'users-access',
                 'tickets-access',
                 'tickets-create',
                 'tickets-verify',
