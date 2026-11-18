@@ -16,6 +16,7 @@ use App\Models\Unit;
 use App\Models\User;
 use App\Services\ReportExportService;
 use Carbon\Carbon;
+use Database\Seeders\CorePermissionSeeder;
 use Database\Seeders\DomainPermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -30,7 +31,7 @@ uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     Carbon::setTestNow(Carbon::parse('2026-11-18 10:00:00'));
-    $this->seed([DomainPermissionSeeder::class, RoleSeeder::class]);
+    $this->seed([CorePermissionSeeder::class, DomainPermissionSeeder::class, RoleSeeder::class]);
 });
 
 afterEach(function (): void {
@@ -692,10 +693,10 @@ test('export pdf menggunakan template khusus reports.maintenance.pdf dengan graf
             private mixed &$page,
         ) {}
 
-        public function pdf(array $report, string $filename, array $page = [], string $view = 'reports.pdf'): Response
+        public function pdf(array $report, string $filename, array $page = [], ?string $view = null): Response
         {
             $this->payload = $report;
-            $this->view = $view;
+            $this->view = $view ?? $page['view'] ?? 'reports.pdf';
             $this->page = $page;
 
             return parent::pdf($report, $filename, $page, $view);

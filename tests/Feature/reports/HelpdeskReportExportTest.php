@@ -9,6 +9,7 @@ use App\Models\SarprasCategory;
 use App\Models\Ticket;
 use App\Models\Unit;
 use App\Models\User;
+use Database\Seeders\CorePermissionSeeder;
 use Database\Seeders\DomainPermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -20,7 +21,7 @@ use Spatie\Permission\Models\Role;
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
-    $this->seed([DomainPermissionSeeder::class, RoleSeeder::class]);
+    $this->seed([CorePermissionSeeder::class, DomainPermissionSeeder::class, RoleSeeder::class]);
     $this->reporter = User::factory()->for(Unit::factory())->create();
 });
 

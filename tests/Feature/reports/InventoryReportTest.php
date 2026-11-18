@@ -10,6 +10,7 @@ use App\Models\AssetLocation;
 use App\Models\Unit;
 use App\Models\User;
 use App\Services\ReportExportService;
+use Database\Seeders\CorePermissionSeeder;
 use Database\Seeders\DomainPermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -23,7 +24,7 @@ use Spatie\Permission\Models\Role;
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
-    $this->seed([DomainPermissionSeeder::class, RoleSeeder::class]);
+    $this->seed([CorePermissionSeeder::class, DomainPermissionSeeder::class, RoleSeeder::class]);
 });
 
 function inventoryReportUrl(array $filters = []): string
@@ -477,10 +478,10 @@ test('export pdf menggunakan template khusus reports.inventory.pdf dengan donut 
             private mixed &$page,
         ) {}
 
-        public function pdf(array $report, string $filename, array $page = [], string $view = 'reports.pdf'): Response
+        public function pdf(array $report, string $filename, array $page = [], ?string $view = null): Response
         {
             $this->payload = $report;
-            $this->view = $view;
+            $this->view = $view ?? $page['view'] ?? 'reports.pdf';
             $this->page = $page;
 
             return parent::pdf($report, $filename, $page, $view);
