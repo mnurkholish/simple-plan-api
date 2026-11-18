@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\V1\DesignWorkflowController;
 use App\Http\Controllers\Api\V1\ExampleLiveController;
 use App\Http\Controllers\Api\V1\HelpdeskReportController;
 use App\Http\Controllers\Api\V1\ImpersonationController;
+use App\Http\Controllers\Api\V1\InventoryReportController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\RoleController;
@@ -166,6 +167,12 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::get('reports/design-graphic', [DesignGraphicReportController::class, 'index'])
             ->middleware('permission:design-reports-read')
             ->name('reports.design-graphic.index');
+        Route::get('reports/inventory', [InventoryReportController::class, 'index'])
+            ->middleware('permission:inventory-reports-read')
+            ->name('reports.inventory.index');
+        Route::get('reports/inventory/export', [InventoryReportController::class, 'export'])
+            ->middleware('permission:inventory-reports-export')
+            ->name('reports.inventory.export');
 
         Route::get('tickets', [TicketController::class, 'index'])
             ->middleware('permission:tickets-access')

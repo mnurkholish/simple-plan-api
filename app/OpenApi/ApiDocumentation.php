@@ -422,6 +422,29 @@ use OpenApi\Annotations as OA;
  * )
  *
  * @OA\Schema(
+ *     schema="InventoryReportResponse",
+ *     type="object",
+ *     required={"data"},
+ *
+ *     @OA\Property(property="data", type="object", required={"summary","charts"},
+ *         @OA\Property(property="summary", type="object", required={"total_aset","total_rusak","total_dipinjam"},
+ *             @OA\Property(property="total_aset", type="integer", minimum=0),
+ *             @OA\Property(property="total_rusak", type="integer", minimum=0),
+ *             @OA\Property(property="total_dipinjam", type="integer", minimum=0)
+ *         ),
+ *         @OA\Property(property="charts", type="object", required={"per_klasifikasi","per_kondisi","per_lokasi"},
+ *             @OA\Property(property="per_klasifikasi", type="array", description="Jumlah aset per klasifikasi, diurutkan dari jumlah terbanyak", @OA\Items(type="object", required={"klasifikasi","jumlah"}, @OA\Property(property="klasifikasi", type="string"), @OA\Property(property="jumlah", type="integer", minimum=0))),
+ *             @OA\Property(property="per_kondisi", type="object", required={"Baik","Rusak Ringan","Rusak Berat"},
+ *                 @OA\Property(property="Baik", type="integer", minimum=0),
+ *                 @OA\Property(property="Rusak Ringan", type="integer", minimum=0),
+ *                 @OA\Property(property="Rusak Berat", type="integer", minimum=0)
+ *             ),
+ *             @OA\Property(property="per_lokasi", type="array", description="Top 10 lokasi ruangan dengan jumlah aset terbanyak", @OA\Items(type="object", required={"lokasi","jumlah"}, @OA\Property(property="lokasi", type="string"), @OA\Property(property="jumlah", type="integer", minimum=0)))
+ *         )
+ *     )
+ * )
+ *
+ * @OA\Schema(
  *     schema="DesignRequestDetail",
  *     type="object",
  *     required={"id","request_number","title","design_type","description","needed_at","status","priority","requester","unit","assigned_officer","assigned_at","completed_at","rejection_note","reference_file","latest_draft","latest_revision","created_at","updated_at"},
@@ -2104,6 +2127,60 @@ class ApiDocumentation
      * )
      */
     public function designGraphicReportIndex(): void {}
+
+    /**
+     * @OA\Get(
+     *     path="/reports/inventory",
+     *     operationId="getInventoryReport",
+     *     tags={"Reports"},
+     *     summary="Get inventory report",
+     *     description="Requires inventory-reports-read and super-admin, management, or koordinator-sarpras role. Super admin and management can access all asset classifications; koordinator-sarpras excludes Alat IT at query level. Does not use a date period filter.",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="classification_id", in="query", required=false, description="Filter by asset_classifications.id.", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="klasifikasi", in="query", required=false, description="Alias for classification_id.", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="status", in="query", required=false, description="Filter by asset status.", @OA\Schema(type="string", enum={"Digunakan","Tidak Digunakan","Rusak","Dipinjam"})),
+     *     @OA\Parameter(name="location_id", in="query", required=false, description="Filter by asset_locations.id.", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="lokasi_ruangan", in="query", required=false, description="Alias for location_id.", @OA\Schema(type="integer")),
+     *
+     *     @OA\Response(response=200, description="Inventory summary and charts", @OA\JsonContent(ref="#/components/schemas/InventoryReportResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Role or permission denied", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=422, description="Invalid filters", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
+     * )
+     */
+    public function inventoryReportIndex(): void {}
+
+    /**
+     * @OA\Get(
+     *     path="/reports/inventory/export",
+     *     operationId="exportInventoryReport",
+     *     tags={"Reports"},
+     *     summary="Export inventory report as PDF or XLSX",
+     *     description="Requires inventory-reports-export and super-admin, management, or koordinator-sarpras role. Uses the same base filters and role scope as GET /reports/inventory. PDF contains summary and server-generated SVG charts; XLSX contains detail rows with No. Inventaris and Kode Aset stored as text strings.",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="format", in="query", required=true, description="Export file format.", @OA\Schema(type="string", enum={"pdf","xlsx"})),
+     *     @OA\Parameter(name="classification_id", in="query", required=false, description="Filter by asset_classifications.id.", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="klasifikasi", in="query", required=false, description="Alias for classification_id.", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="status", in="query", required=false, description="Filter by asset status.", @OA\Schema(type="string", enum={"Digunakan","Tidak Digunakan","Rusak","Dipinjam"})),
+     *     @OA\Parameter(name="location_id", in="query", required=false, description="Filter by asset_locations.id.", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="lokasi_ruangan", in="query", required=false, description="Alias for location_id.", @OA\Schema(type="integer")),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Inventory report binary file download",
+     *
+     *         @OA\MediaType(mediaType="application/pdf", @OA\Schema(type="string", format="binary")),
+     *         @OA\MediaType(mediaType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", @OA\Schema(type="string", format="binary"))
+     *     ),
+     *
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Role or permission denied", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=422, description="Invalid filters or export format", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
+     * )
+     */
+    public function inventoryReportExport(): void {}
 
     /**
      * @OA\Get(
