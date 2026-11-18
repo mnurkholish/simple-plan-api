@@ -201,6 +201,47 @@ paths:
         "403": { $ref: "#/components/responses/TicketForbidden" }
         "422": { $ref: "#/components/responses/TicketValidationError" }
 
+  /reports/helpdesk/export:
+    get:
+      tags: [Reports]
+      summary: Export laporan Helpdesk
+      operationId: exportHelpdeskReport
+      description: |
+        Membutuhkan helpdesk-reports-export. Periode memfilter tickets.created_at
+        secara inklusif. Koordinator Sarpras hanya dapat mengekspor tiket Sarpras.
+        PDF berisi rekap dan grafik; XLSX berisi enam worksheet rincian dan statistik.
+      x-auth-required: true
+      x-required-permission: helpdesk-reports-export
+      parameters:
+        - name: format
+          in: query
+          required: true
+          schema: { type: string, enum: [pdf, xlsx] }
+        - name: periode_awal
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: periode_akhir
+          in: query
+          required: true
+          description: Inklusif dan tidak sebelum periode_awal.
+          schema: { type: string, format: date }
+        - name: jenis_layanan
+          in: query
+          required: false
+          schema: { type: string, enum: [semua, tik, sarpras], default: semua }
+      responses:
+        "200":
+          description: Berkas PDF atau XLSX sebagai attachment.
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema: { type: string, format: binary }
+        "401": { $ref: "#/components/responses/TicketUnauthenticated" }
+        "403": { $ref: "#/components/responses/TicketForbidden" }
+        "422": { $ref: "#/components/responses/TicketValidationError" }
+
   /design-reports:
     get:
       tags: [Design Graphic]

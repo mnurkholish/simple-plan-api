@@ -15,19 +15,26 @@ class ReportExportService
      * Charts contain trusted, server-generated SVG markup, never raw client input.
      *
      * @param  array{title: string, filters?: array<string, scalar|null>, summary?: array<string, scalar|null>, charts?: array<int, array{title: string, svg: string}>}  $report
-     * @param  array{paper?: string, landscape?: bool, margins?: array{top: float, right: float, bottom: float, left: float}}  $page
+     * @param  array{paper?: string, landscape?: bool, margins?: array{top: float, right: float, bottom: float, left: float}, view?: string, footer?: string}  $page
      */
     public function pdf(array $report, string $filename, array $page = []): Response
     {
-        $html = view('reports.pdf', $report)->render();
+        $html = view($page['view'] ?? 'reports.pdf', $report)->render();
         $margins = $page['margins'] ?? ['top' => 15, 'right' => 15, 'bottom' => 15, 'left' => 15];
 
-        $pdf = ConfiguredBrowsershot::html($html)
+        $browsershot = ConfiguredBrowsershot::html($html)
             ->format($page['paper'] ?? 'A4')
             ->landscape($page['landscape'] ?? false)
             ->margins($margins['top'], $margins['right'], $margins['bottom'], $margins['left'])
-            ->showBackground()
-            ->pdf();
+            ->showBackground();
+
+        if (isset($page['footer'])) {
+            $browsershot->showBrowserHeaderAndFooter()
+                ->headerHtml('<span></span>')
+                ->footerHtml($page['footer']);
+        }
+
+        $pdf = $browsershot->pdf();
 
         return $this->download($pdf, $filename, 'pdf', 'application/pdf');
     }
@@ -40,37 +47,55 @@ class ReportExportService
      */
     public function xlsx(array $headers, iterable $rows, string $filename, string $worksheet = 'Report'): Response
     {
+        return $this->xlsxMultiSheet([[
+            'name' => $worksheet,
+            'headers' => $headers,
+            'rows' => $rows,
+        ]], $filename);
+    }
+
+    /**
+     * @param  list<array{name: string, headers: list<string>, rows: iterable<array<int, scalar|null>>}>  $sheets
+     */
+    public function xlsxMultiSheet(array $sheets, string $filename): Response
+    {
+        if ($sheets === []) {
+            throw new \InvalidArgumentException('At least one worksheet is required.');
+        }
+
         $spreadsheet = new Spreadsheet;
-        $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle($worksheet);
+        foreach ($sheets as $index => $definition) {
+            $sheet = $index === 0 ? $spreadsheet->getActiveSheet() : $spreadsheet->createSheet();
+            $sheet->setTitle($definition['name']);
 
-        foreach ($headers as $index => $header) {
-            $column = Coordinate::stringFromColumnIndex($index + 1);
-            $sheet->setCellValueExplicit($column.'1', $header, DataType::TYPE_STRING);
-            $sheet->getColumnDimension($column)->setAutoSize(true);
-        }
-
-        if ($headers !== []) {
-            $lastColumn = Coordinate::stringFromColumnIndex(count($headers));
-            $sheet->getStyle('A1:'.$lastColumn.'1')->applyFromArray([
-                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1F4E78']],
-            ]);
-            $sheet->freezePane('A2');
-            $sheet->setAutoFilter('A1:'.$lastColumn.'1');
-        }
-
-        $rowNumber = 2;
-        foreach ($rows as $row) {
-            foreach (array_values($row) as $index => $value) {
-                $cell = Coordinate::stringFromColumnIndex($index + 1).$rowNumber;
-                if (is_int($value) || is_float($value)) {
-                    $sheet->setCellValueExplicit($cell, $value, DataType::TYPE_NUMERIC);
-                } elseif ($value !== null) {
-                    $sheet->setCellValueExplicit($cell, (string) $value, DataType::TYPE_STRING);
-                }
+            foreach ($definition['headers'] as $columnIndex => $header) {
+                $column = Coordinate::stringFromColumnIndex($columnIndex + 1);
+                $sheet->setCellValueExplicit($column.'1', $header, DataType::TYPE_STRING);
+                $sheet->getColumnDimension($column)->setAutoSize(true);
             }
-            $rowNumber++;
+
+            if ($definition['headers'] !== []) {
+                $lastColumn = Coordinate::stringFromColumnIndex(count($definition['headers']));
+                $sheet->getStyle('A1:'.$lastColumn.'1')->applyFromArray([
+                    'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1F4E78']],
+                ]);
+                $sheet->freezePane('A2');
+                $sheet->setAutoFilter('A1:'.$lastColumn.'1');
+            }
+
+            $rowNumber = 2;
+            foreach ($definition['rows'] as $row) {
+                foreach (array_values($row) as $columnIndex => $value) {
+                    $cell = Coordinate::stringFromColumnIndex($columnIndex + 1).$rowNumber;
+                    if (is_int($value) || is_float($value)) {
+                        $sheet->setCellValueExplicit($cell, $value, DataType::TYPE_NUMERIC);
+                    } elseif ($value !== null) {
+                        $sheet->setCellValueExplicit($cell, (string) $value, DataType::TYPE_STRING);
+                    }
+                }
+                $rowNumber++;
+            }
         }
 
         $stream = fopen('php://temp', 'w+b');
