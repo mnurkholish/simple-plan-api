@@ -422,29 +422,6 @@ use OpenApi\Annotations as OA;
  * )
  *
  * @OA\Schema(
- *     schema="InventoryReportResponse",
- *     type="object",
- *     required={"data"},
- *
- *     @OA\Property(property="data", type="object", required={"summary","charts"},
- *         @OA\Property(property="summary", type="object", required={"total_aset","total_rusak","total_dipinjam"},
- *             @OA\Property(property="total_aset", type="integer", minimum=0),
- *             @OA\Property(property="total_rusak", type="integer", minimum=0),
- *             @OA\Property(property="total_dipinjam", type="integer", minimum=0)
- *         ),
- *         @OA\Property(property="charts", type="object", required={"per_klasifikasi","per_kondisi","per_lokasi"},
- *             @OA\Property(property="per_klasifikasi", type="array", description="Jumlah aset per klasifikasi, diurutkan dari jumlah terbanyak", @OA\Items(type="object", required={"klasifikasi","jumlah"}, @OA\Property(property="klasifikasi", type="string"), @OA\Property(property="jumlah", type="integer", minimum=0))),
- *             @OA\Property(property="per_kondisi", type="object", required={"Baik","Rusak Ringan","Rusak Berat"},
- *                 @OA\Property(property="Baik", type="integer", minimum=0),
- *                 @OA\Property(property="Rusak Ringan", type="integer", minimum=0),
- *                 @OA\Property(property="Rusak Berat", type="integer", minimum=0)
- *             ),
- *             @OA\Property(property="per_lokasi", type="array", description="Top 10 lokasi ruangan dengan jumlah aset terbanyak", @OA\Items(type="object", required={"lokasi","jumlah"}, @OA\Property(property="lokasi", type="string"), @OA\Property(property="jumlah", type="integer", minimum=0)))
- *         )
- *     )
- * )
- *
- * @OA\Schema(
  *     schema="DesignRequestDetail",
  *     type="object",
  *     required={"id","request_number","title","design_type","description","needed_at","status","priority","requester","unit","assigned_officer","assigned_at","completed_at","rejection_note","reference_file","latest_draft","latest_revision","created_at","updated_at"},
@@ -2151,6 +2128,32 @@ class ApiDocumentation
     public function designGraphicReportIndex(): void {}
 
     /**
+     * @OA\Schema(
+     *     schema="InventoryReportResponse",
+     *     type="object",
+     *     required={"data"},
+     *
+     *     @OA\Property(property="data", type="object", required={"summary","charts"},
+     *         @OA\Property(property="summary", type="object", required={"total_aset","total_rusak","total_dipinjam"},
+     *             @OA\Property(property="total_aset", type="integer", minimum=0),
+     *             @OA\Property(property="total_rusak", type="integer", minimum=0),
+     *             @OA\Property(property="total_dipinjam", type="integer", minimum=0)
+     *         ),
+     *         @OA\Property(property="charts", type="object", required={"per_klasifikasi","per_kondisi","per_lokasi"},
+     *             @OA\Property(property="per_klasifikasi", type="array", description="Jumlah aset per klasifikasi, diurutkan dari jumlah terbanyak", @OA\Items(type="object", required={"klasifikasi","jumlah"}, @OA\Property(property="klasifikasi", type="string"), @OA\Property(property="jumlah", type="integer", minimum=0))),
+     *             @OA\Property(property="per_kondisi", type="object", required={"Baik","Rusak Ringan","Rusak Berat"},
+     *                 @OA\Property(property="Baik", type="integer", minimum=0),
+     *                 @OA\Property(property="Rusak Ringan", type="integer", minimum=0),
+     *                 @OA\Property(property="Rusak Berat", type="integer", minimum=0)
+     *             ),
+     *             @OA\Property(property="per_lokasi", type="array", description="Seluruh lokasi ruangan dengan jumlah aset, diurutkan dari jumlah terbanyak (tanpa limit)", @OA\Items(type="object", required={"lokasi","jumlah"}, @OA\Property(property="lokasi", type="string"), @OA\Property(property="jumlah", type="integer", minimum=0)))
+     *         )
+     *     )
+     * )
+     */
+    public function inventoryReportSchema(): void {}
+
+    /**
      * @OA\Get(
      *     path="/reports/design-graphic/export",
      *     operationId="exportDesignGraphicReport",
@@ -2158,9 +2161,11 @@ class ApiDocumentation
      *     summary="Export graphic design report",
      *     description="Requires design-reports-export and super-admin or management role. Required dates filter design_requests.created_at inclusively. PDF contains summary and charts; XLSX contains five worksheets with request details and report aggregates.",
      *     security={{"sanctum":{}}},
+     *
      *     @OA\Parameter(name="format", in="query", required=true, @OA\Schema(type="string", enum={"pdf","xlsx"})),
      *     @OA\Parameter(name="periode_awal", in="query", required=true, @OA\Schema(type="string", format="date")),
      *     @OA\Parameter(name="periode_akhir", in="query", required=true, description="Inclusive end date; must be on or after periode_awal.", @OA\Schema(type="string", format="date")),
+     *
      *     @OA\Response(response=200, description="PDF or XLSX attachment", @OA\MediaType(mediaType="application/pdf"), @OA\MediaType(mediaType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
      *     @OA\Response(response=403, description="Role or permission denied", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
@@ -2198,7 +2203,7 @@ class ApiDocumentation
      *     operationId="exportInventoryReport",
      *     tags={"Reports"},
      *     summary="Export inventory report as PDF or XLSX",
-     *     description="Requires inventory-reports-export and super-admin, management, or koordinator-sarpras role. Uses the same base filters and role scope as GET /reports/inventory. PDF contains summary and server-generated SVG charts; XLSX contains detail rows with No. Inventaris and Kode Aset stored as text strings.",
+     *     description="Requires inventory-reports-export and super-admin, management, or koordinator-sarpras role. Uses the same base filters and role scope as GET /reports/inventory. PDF uses dedicated layout (reports.inventory.pdf) with summary cards, donut chart SVG, horizontal condition/location bars, and page footer; XLSX is multi-sheet (Sheet 1 'Semua Data' + per-classification sheets) with table headers directly on row 1 and No. Inventaris/Kode Aset stored as text strings.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(name="format", in="query", required=true, description="Export file format.", @OA\Schema(type="string", enum={"pdf","xlsx"})),
@@ -2222,6 +2227,94 @@ class ApiDocumentation
      * )
      */
     public function inventoryReportExport(): void {}
+
+    /**
+     * @OA\Schema(
+     *     schema="MaintenanceReportResponse",
+     *     type="object",
+     *     required={"data"},
+     *
+     *     @OA\Property(property="data", type="object", required={"summary","charts"},
+     *         @OA\Property(property="summary", type="object", required={"jumlah_jadwal","jadwal_selesai","presentase_jadwal_selesai"},
+     *             @OA\Property(property="jumlah_jadwal", type="integer", minimum=0, description="Total seluruh jadwal occurrence maintenance pada cakupan filter"),
+     *             @OA\Property(property="jadwal_selesai", type="integer", minimum=0, description="Total occurrence berstatus selesai"),
+     *             @OA\Property(property="presentase_jadwal_selesai", type="number", format="float", minimum=0, maximum=100, description="Persentase penyelesaian: round((jadwal_selesai / jumlah_jadwal) * 100, 2), bernilai 0 jika jumlah_jadwal = 0")
+     *         ),
+     *         @OA\Property(property="charts", type="object", required={"per_bulan","kondisi_pasca_pemeliharaan","per_petugas"},
+     *             @OA\Property(property="per_bulan", type="array", description="Selalu 12 bulan berurutan Jan..Des berdasarkan scheduled_date (bernilai 0 jika kosong)", @OA\Items(type="object", required={"bulan","jumlah"}, @OA\Property(property="bulan", type="string", enum={"Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"}), @OA\Property(property="jumlah", type="integer", minimum=0))),
+     *             @OA\Property(property="kondisi_pasca_pemeliharaan", type="object", required={"Baik","Rusak Ringan","Rusak Berat"}, description="Distribusi kondisi pasca pemeliharaan khusus dari occurrence berstatus selesai",
+     *                 @OA\Property(property="Baik", type="integer", minimum=0),
+     *                 @OA\Property(property="Rusak Ringan", type="integer", minimum=0),
+     *                 @OA\Property(property="Rusak Berat", type="integer", minimum=0)
+     *             ),
+     *             @OA\Property(property="per_petugas", type="array", description="Jumlah occurrence selesai per petugas pelaksana, diurutkan terbanyak ke terkecil (tanpa limit)", @OA\Items(type="object", required={"petugas","jumlah"}, @OA\Property(property="petugas", type="string"), @OA\Property(property="jumlah", type="integer", minimum=0)))
+     *         )
+     *     )
+     * )
+     */
+    public function maintenanceReportSchema(): void {}
+
+    /**
+     * @OA\Get(
+     *     path="/reports/maintenance",
+     *     operationId="getMaintenanceReport",
+     *     tags={"Reports"},
+     *     summary="Get maintenance report",
+     *     description="Requires maintenance-reports-read and super-admin, management, or koordinator-sarpras role. Super admin and management can access all asset classifications; koordinator-sarpras excludes Alat IT at query level. Date range (start_date/periode_awal, end_date/periode_akhir) filters scheduled_date inclusively. Completion percentage is round((jadwal_selesai / jumlah_jadwal) * 100, 2).",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="start_date", in="query", required=false, description="Start date filter for scheduled_date (YYYY-MM-DD).", @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="periode_awal", in="query", required=false, description="Alias for start_date (YYYY-MM-DD).", @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="end_date", in="query", required=false, description="End date filter for scheduled_date (YYYY-MM-DD, >= start_date when both provided).", @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="periode_akhir", in="query", required=false, description="Alias for end_date (YYYY-MM-DD).", @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="status", in="query", required=false, description="Filter by effective maintenance occurrence status.", @OA\Schema(type="string", enum={"terjadwal","selesai","terlambat"})),
+     *     @OA\Parameter(name="classification_id", in="query", required=false, description="Filter by asset_classifications.id.", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="klasifikasi", in="query", required=false, description="Alias for classification_id.", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="location_id", in="query", required=false, description="Filter by asset_locations.id.", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="lokasi_ruangan", in="query", required=false, description="Alias for location_id.", @OA\Schema(type="integer")),
+     *
+     *     @OA\Response(response=200, description="Maintenance summary and charts", @OA\JsonContent(ref="#/components/schemas/MaintenanceReportResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Role or permission denied", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=422, description="Invalid filters", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
+     * )
+     */
+    public function maintenanceReportIndex(): void {}
+
+    /**
+     * @OA\Get(
+     *     path="/reports/maintenance/export",
+     *     operationId="exportMaintenanceReport",
+     *     tags={"Reports"},
+     *     summary="Export maintenance report as PDF or XLSX",
+     *     description="Requires maintenance-reports-export and super-admin, management, or koordinator-sarpras role. Uses the same base query, filters, and role scope as GET /reports/maintenance. PDF uses dedicated layout (reports.maintenance.pdf) with summary cards, 12-month vertical bar chart SVG, post-maintenance condition donut chart SVG, horizontal officer bars, and page footer; XLSX is multi-sheet (Sheet 1 'Semua Data' + per-classification sheets) with table headers directly on row 1 and No. Inventaris/Kode Aset stored as text strings.",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="format", in="query", required=true, description="Export file format.", @OA\Schema(type="string", enum={"pdf","xlsx"})),
+     *     @OA\Parameter(name="start_date", in="query", required=false, description="Start date filter for scheduled_date (YYYY-MM-DD).", @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="periode_awal", in="query", required=false, description="Alias for start_date (YYYY-MM-DD).", @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="end_date", in="query", required=false, description="End date filter for scheduled_date (YYYY-MM-DD, >= start_date when both provided).", @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="periode_akhir", in="query", required=false, description="Alias for end_date (YYYY-MM-DD).", @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="status", in="query", required=false, description="Filter by effective maintenance occurrence status.", @OA\Schema(type="string", enum={"terjadwal","selesai","terlambat"})),
+     *     @OA\Parameter(name="classification_id", in="query", required=false, description="Filter by asset_classifications.id.", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="klasifikasi", in="query", required=false, description="Alias for classification_id.", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="location_id", in="query", required=false, description="Filter by asset_locations.id.", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="lokasi_ruangan", in="query", required=false, description="Alias for location_id.", @OA\Schema(type="integer")),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Maintenance report binary file download",
+     *
+     *         @OA\MediaType(mediaType="application/pdf", @OA\Schema(type="string", format="binary")),
+     *         @OA\MediaType(mediaType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", @OA\Schema(type="string", format="binary"))
+     *     ),
+     *
+     *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=403, description="Role or permission denied", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
+     *     @OA\Response(response=422, description="Invalid filters or export format", @OA\JsonContent(ref="#/components/schemas/ValidationError"))
+     * )
+     */
+    public function maintenanceReportExport(): void {}
 
     /**
      * @OA\Get(

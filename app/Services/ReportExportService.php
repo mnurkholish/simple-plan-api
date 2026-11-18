@@ -7,6 +7,7 @@ use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class ReportExportService
@@ -14,12 +15,21 @@ class ReportExportService
     /**
      * Charts contain trusted, server-generated SVG markup, never raw client input.
      *
-     * @param  array{title: string, filters?: array<string, scalar|null>, summary?: array<string, scalar|null>, charts?: array<int, array{title: string, svg: string}>}  $report
-     * @param  array{paper?: string, landscape?: bool, margins?: array{top: float, right: float, bottom: float, left: float}, view?: string, footer?: string}  $page
+     * @param  array<string, mixed>  $report
+     * @param  array{
+     *     paper?: string,
+     *     landscape?: bool,
+     *     margins?: array{top: float, right: float, bottom: float, left: float},
+     *     view?: string,
+     *     footer?: string,
+     *     header_html?: string,
+     *     footer_html?: string
+     * }  $page
      */
-    public function pdf(array $report, string $filename, array $page = []): Response
+    public function pdf(array $report, string $filename, array $page = [], ?string $view = null): Response
     {
-        $html = view($page['view'] ?? 'reports.pdf', $report)->render();
+        $resolvedView = $view ?? $page['view'] ?? 'reports.pdf';
+        $html = view($resolvedView, $report)->render();
         $margins = $page['margins'] ?? ['top' => 15, 'right' => 15, 'bottom' => 15, 'left' => 15];
 
         $browsershot = ConfiguredBrowsershot::html($html)
@@ -28,10 +38,14 @@ class ReportExportService
             ->margins($margins['top'], $margins['right'], $margins['bottom'], $margins['left'])
             ->showBackground();
 
-        if (isset($page['footer'])) {
-            $browsershot->showBrowserHeaderAndFooter()
-                ->headerHtml('<span></span>')
-                ->footerHtml($page['footer']);
+        $footerHtml = $page['footer_html'] ?? $page['footer'] ?? null;
+        $headerHtml = $page['header_html'] ?? null;
+
+        if (! empty($footerHtml) || ! empty($headerHtml)) {
+            $browsershot
+                ->showBrowserHeaderAndFooter()
+                ->headerHtml($headerHtml ?? '<span></span>')
+                ->footerHtml($footerHtml ?? '<span></span>');
         }
 
         $pdf = $browsershot->pdf();
@@ -47,15 +61,20 @@ class ReportExportService
      */
     public function xlsx(array $headers, iterable $rows, string $filename, string $worksheet = 'Report'): Response
     {
-        return $this->xlsxMultiSheet([[
-            'name' => $worksheet,
-            'headers' => $headers,
-            'rows' => $rows,
-        ]], $filename);
+        return $this->xlsxMultiSheet([
+            [
+                'title' => $worksheet,
+                'headers' => $headers,
+                'rows' => $rows,
+            ],
+        ], $filename);
     }
 
     /**
-     * @param  list<array{name: string, headers: list<string>, rows: iterable<array<int, scalar|null>>}>  $sheets
+     * Build a multi-sheet XLSX workbook where Row 1 on every sheet is directly the table header
+     * (dark blue background, bold white text, frozen header row, AutoFilter) and Row 2+ are data rows.
+     *
+     * @param  list<array{title?: string, name?: string, headers: list<string>, rows: iterable<array<int, scalar|null>>}>  $sheets
      */
     public function xlsxMultiSheet(array $sheets, string $filename): Response
     {
@@ -64,39 +83,24 @@ class ReportExportService
         }
 
         $spreadsheet = new Spreadsheet;
-        foreach ($sheets as $index => $definition) {
-            $sheet = $index === 0 ? $spreadsheet->getActiveSheet() : $spreadsheet->createSheet();
-            $sheet->setTitle($definition['name']);
+        $usedTitles = [];
 
-            foreach ($definition['headers'] as $columnIndex => $header) {
-                $column = Coordinate::stringFromColumnIndex($columnIndex + 1);
-                $sheet->setCellValueExplicit($column.'1', $header, DataType::TYPE_STRING);
-                $sheet->getColumnDimension($column)->setAutoSize(true);
-            }
+        foreach ($sheets as $sheetIndex => $definition) {
+            $sheet = $sheetIndex === 0
+                ? $spreadsheet->getActiveSheet()
+                : $spreadsheet->createSheet();
 
-            if ($definition['headers'] !== []) {
-                $lastColumn = Coordinate::stringFromColumnIndex(count($definition['headers']));
-                $sheet->getStyle('A1:'.$lastColumn.'1')->applyFromArray([
-                    'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1F4E78']],
-                ]);
-                $sheet->freezePane('A2');
-                $sheet->setAutoFilter('A1:'.$lastColumn.'1');
-            }
+            $rawTitle = $definition['title'] ?? $definition['name'] ?? 'Sheet';
 
-            $rowNumber = 2;
-            foreach ($definition['rows'] as $row) {
-                foreach (array_values($row) as $columnIndex => $value) {
-                    $cell = Coordinate::stringFromColumnIndex($columnIndex + 1).$rowNumber;
-                    if (is_int($value) || is_float($value)) {
-                        $sheet->setCellValueExplicit($cell, $value, DataType::TYPE_NUMERIC);
-                    } elseif ($value !== null) {
-                        $sheet->setCellValueExplicit($cell, (string) $value, DataType::TYPE_STRING);
-                    }
-                }
-                $rowNumber++;
-            }
+            $this->populateWorksheet(
+                $sheet,
+                $this->sanitizeSheetTitle($rawTitle, $usedTitles),
+                $definition['headers'],
+                $definition['rows'],
+            );
         }
+
+        $spreadsheet->setActiveSheetIndex(0);
 
         $stream = fopen('php://temp', 'w+b');
         if ($stream === false) {
@@ -116,6 +120,74 @@ class ReportExportService
         }
 
         return $this->download($content, $filename, 'xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    }
+
+    /**
+     * @param  list<string>  $headers
+     * @param  iterable<array<int, scalar|null>>  $rows
+     */
+    private function populateWorksheet(Worksheet $sheet, string $title, array $headers, iterable $rows): void
+    {
+        $sheet->setTitle($title);
+
+        foreach ($headers as $columnIndex => $header) {
+            $column = Coordinate::stringFromColumnIndex($columnIndex + 1);
+            $sheet->setCellValueExplicit($column.'1', $header, DataType::TYPE_STRING);
+            $sheet->getColumnDimension($column)->setAutoSize(true);
+        }
+
+        if ($headers !== []) {
+            $lastColumn = Coordinate::stringFromColumnIndex(count($headers));
+            $sheet->getStyle('A1:'.$lastColumn.'1')->applyFromArray([
+                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '00338D']],
+            ]);
+            $sheet->freezePane('A2');
+            $sheet->setAutoFilter('A1:'.$lastColumn.'1');
+        }
+
+        $rowNumber = 2;
+        foreach ($rows as $row) {
+            foreach (array_values($row) as $columnIndex => $value) {
+                $cell = Coordinate::stringFromColumnIndex($columnIndex + 1).$rowNumber;
+                if (is_int($value) || is_float($value)) {
+                    $sheet->setCellValueExplicit($cell, $value, DataType::TYPE_NUMERIC);
+                } elseif ($value !== null) {
+                    $sheet->setCellValueExplicit($cell, (string) $value, DataType::TYPE_STRING);
+                }
+            }
+            $rowNumber++;
+        }
+    }
+
+    /**
+     * Sanitize an Excel worksheet title (max 31 chars, no : \ / ? * [ ], unique case-insensitively).
+     *
+     * @param  array<string, true>  $usedTitles
+     */
+    private function sanitizeSheetTitle(string $title, array &$usedTitles): string
+    {
+        $cleaned = preg_replace('/[:\\\\\/\?\*\[\]]+/', ' ', $title) ?? '';
+        $cleaned = trim(preg_replace('/\s+/u', ' ', $cleaned) ?? '', " \t\n\r\0\x0B'");
+
+        if ($cleaned === '') {
+            $cleaned = 'Sheet';
+        }
+
+        $base = mb_substr($cleaned, 0, 31, 'UTF-8');
+        $candidate = $base;
+        $counter = 2;
+
+        while (isset($usedTitles[mb_strtolower($candidate, 'UTF-8')])) {
+            $suffix = ' ('.$counter.')';
+            $maxBaseLength = max(1, 31 - mb_strlen($suffix, 'UTF-8'));
+            $candidate = rtrim(mb_substr($cleaned, 0, $maxBaseLength, 'UTF-8')).$suffix;
+            $counter++;
+        }
+
+        $usedTitles[mb_strtolower($candidate, 'UTF-8')] = true;
+
+        return $candidate;
     }
 
     private function download(string $content, string $filename, string $extension, string $mime): Response

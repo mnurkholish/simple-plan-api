@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\V1\ExampleLiveController;
 use App\Http\Controllers\Api\V1\HelpdeskReportController;
 use App\Http\Controllers\Api\V1\ImpersonationController;
 use App\Http\Controllers\Api\V1\InventoryReportController;
+use App\Http\Controllers\Api\V1\MaintenanceReportController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\RoleController;
@@ -179,6 +180,12 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::get('reports/inventory/export', [InventoryReportController::class, 'export'])
             ->middleware('permission:inventory-reports-export')
             ->name('reports.inventory.export');
+        Route::get('reports/maintenance', [MaintenanceReportController::class, 'index'])
+            ->middleware('permission:maintenance-reports-read')
+            ->name('reports.maintenance.index');
+        Route::get('reports/maintenance/export', [MaintenanceReportController::class, 'export'])
+            ->middleware('permission:maintenance-reports-export')
+            ->name('reports.maintenance.export');
 
         Route::get('tickets', [TicketController::class, 'index'])
             ->middleware('permission:tickets-access')
