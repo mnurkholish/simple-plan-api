@@ -2184,10 +2184,8 @@ class ApiDocumentation
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(name="classification_id", in="query", required=false, description="Filter by asset_classifications.id.", @OA\Schema(type="integer")),
-     *     @OA\Parameter(name="klasifikasi", in="query", required=false, description="Alias for classification_id.", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="status", in="query", required=false, description="Filter by asset status.", @OA\Schema(type="string", enum={"Digunakan","Tidak Digunakan","Rusak","Dipinjam"})),
      *     @OA\Parameter(name="location_id", in="query", required=false, description="Filter by asset_locations.id.", @OA\Schema(type="integer")),
-     *     @OA\Parameter(name="lokasi_ruangan", in="query", required=false, description="Alias for location_id.", @OA\Schema(type="integer")),
      *
      *     @OA\Response(response=200, description="Inventory summary and charts", @OA\JsonContent(ref="#/components/schemas/InventoryReportResponse")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
@@ -2208,10 +2206,8 @@ class ApiDocumentation
      *
      *     @OA\Parameter(name="format", in="query", required=true, description="Export file format.", @OA\Schema(type="string", enum={"pdf","xlsx"})),
      *     @OA\Parameter(name="classification_id", in="query", required=false, description="Filter by asset_classifications.id.", @OA\Schema(type="integer")),
-     *     @OA\Parameter(name="klasifikasi", in="query", required=false, description="Alias for classification_id.", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="status", in="query", required=false, description="Filter by asset status.", @OA\Schema(type="string", enum={"Digunakan","Tidak Digunakan","Rusak","Dipinjam"})),
      *     @OA\Parameter(name="location_id", in="query", required=false, description="Filter by asset_locations.id.", @OA\Schema(type="integer")),
-     *     @OA\Parameter(name="lokasi_ruangan", in="query", required=false, description="Alias for location_id.", @OA\Schema(type="integer")),
      *
      *     @OA\Response(
      *         response=200,
@@ -2260,18 +2256,12 @@ class ApiDocumentation
      *     operationId="getMaintenanceReport",
      *     tags={"Reports"},
      *     summary="Get maintenance report",
-     *     description="Requires maintenance-reports-read and super-admin, management, or koordinator-sarpras role. Super admin and management can access all asset classifications; koordinator-sarpras excludes Alat IT at query level. Date range (start_date/periode_awal, end_date/periode_akhir) filters scheduled_date inclusively. Completion percentage is round((jadwal_selesai / jumlah_jadwal) * 100, 2).",
+     *     description="Requires maintenance-reports-read and super-admin, management, or koordinator-sarpras role. Super admin and management can access all asset classifications; koordinator-sarpras excludes Alat IT at query level. Date range (periode_awal, periode_akhir) filters scheduled_date inclusively. Completion percentage is round((jadwal_selesai / jumlah_jadwal) * 100, 2).",
      *     security={{"sanctum":{}}},
      *
-     *     @OA\Parameter(name="start_date", in="query", required=false, description="Start date filter for scheduled_date (YYYY-MM-DD).", @OA\Schema(type="string", format="date")),
-     *     @OA\Parameter(name="periode_awal", in="query", required=false, description="Alias for start_date (YYYY-MM-DD).", @OA\Schema(type="string", format="date")),
-     *     @OA\Parameter(name="end_date", in="query", required=false, description="End date filter for scheduled_date (YYYY-MM-DD, >= start_date when both provided).", @OA\Schema(type="string", format="date")),
-     *     @OA\Parameter(name="periode_akhir", in="query", required=false, description="Alias for end_date (YYYY-MM-DD).", @OA\Schema(type="string", format="date")),
-     *     @OA\Parameter(name="status", in="query", required=false, description="Filter by effective maintenance occurrence status.", @OA\Schema(type="string", enum={"terjadwal","selesai","terlambat"})),
-     *     @OA\Parameter(name="classification_id", in="query", required=false, description="Filter by asset_classifications.id.", @OA\Schema(type="integer")),
-     *     @OA\Parameter(name="klasifikasi", in="query", required=false, description="Alias for classification_id.", @OA\Schema(type="integer")),
-     *     @OA\Parameter(name="location_id", in="query", required=false, description="Filter by asset_locations.id.", @OA\Schema(type="integer")),
-     *     @OA\Parameter(name="lokasi_ruangan", in="query", required=false, description="Alias for location_id.", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="periode_awal", in="query", required=false, description="Start date filter for scheduled_date (YYYY-MM-DD).", @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="periode_akhir", in="query", required=false, description="End date filter for scheduled_date (YYYY-MM-DD, >= periode_awal when both provided).", @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="klasifikasi", in="query", required=false, description="Filter by asset_classifications.id.", @OA\Schema(type="integer")),
      *
      *     @OA\Response(response=200, description="Maintenance summary and charts", @OA\JsonContent(ref="#/components/schemas/MaintenanceReportResponse")),
      *     @OA\Response(response=401, description="Unauthenticated", @OA\JsonContent(ref="#/components/schemas/TicketReadError")),
@@ -2291,15 +2281,9 @@ class ApiDocumentation
      *     security={{"sanctum":{}}},
      *
      *     @OA\Parameter(name="format", in="query", required=true, description="Export file format.", @OA\Schema(type="string", enum={"pdf","xlsx"})),
-     *     @OA\Parameter(name="start_date", in="query", required=false, description="Start date filter for scheduled_date (YYYY-MM-DD).", @OA\Schema(type="string", format="date")),
-     *     @OA\Parameter(name="periode_awal", in="query", required=false, description="Alias for start_date (YYYY-MM-DD).", @OA\Schema(type="string", format="date")),
-     *     @OA\Parameter(name="end_date", in="query", required=false, description="End date filter for scheduled_date (YYYY-MM-DD, >= start_date when both provided).", @OA\Schema(type="string", format="date")),
-     *     @OA\Parameter(name="periode_akhir", in="query", required=false, description="Alias for end_date (YYYY-MM-DD).", @OA\Schema(type="string", format="date")),
-     *     @OA\Parameter(name="status", in="query", required=false, description="Filter by effective maintenance occurrence status.", @OA\Schema(type="string", enum={"terjadwal","selesai","terlambat"})),
-     *     @OA\Parameter(name="classification_id", in="query", required=false, description="Filter by asset_classifications.id.", @OA\Schema(type="integer")),
-     *     @OA\Parameter(name="klasifikasi", in="query", required=false, description="Alias for classification_id.", @OA\Schema(type="integer")),
-     *     @OA\Parameter(name="location_id", in="query", required=false, description="Filter by asset_locations.id.", @OA\Schema(type="integer")),
-     *     @OA\Parameter(name="lokasi_ruangan", in="query", required=false, description="Alias for location_id.", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="periode_awal", in="query", required=false, description="Start date filter for scheduled_date (YYYY-MM-DD).", @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="periode_akhir", in="query", required=false, description="End date filter for scheduled_date (YYYY-MM-DD, >= periode_awal when both provided).", @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="klasifikasi", in="query", required=false, description="Filter by asset_classifications.id.", @OA\Schema(type="integer")),
      *
      *     @OA\Response(
      *         response=200,

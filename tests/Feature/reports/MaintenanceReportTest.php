@@ -323,7 +323,7 @@ test('laporan maintenance menghasilkan struktur JSON sesuai UI dengan 12 bulan J
         ->and($perPetugas[11])->toBe(['petugas' => 'Petugas 12', 'jumlah' => 1]);
 });
 
-test('filter gabungan dengan alias periode_awal, periode_akhir, klasifikasi, status, dan lokasi bekerja serta menolak input tidak valid', function (): void {
+test('filter gabungan periode_awal, periode_akhir, dan klasifikasi bekerja serta menolak input tidak valid', function (): void {
     $manager = actAsMaintenanceReportRole('management');
     $officerA = User::factory()->for(Unit::factory())->create(['name' => 'Hendra Wijaya']);
     $officerB = User::factory()->for(Unit::factory())->create(['name' => 'Rina Kusuma']);
@@ -344,7 +344,7 @@ test('filter gabungan dengan alias periode_awal, periode_akhir, klasifikasi, sta
         'post_maintenance_condition' => AssetCondition::Good,
         'with_log' => true,
     ]);
-    // Oktober - Alat IT - IGD - Selesai
+    // Oktober - Alat IT - Selesai
     createMaintenanceReportOccurrence($alatIt, $igd, $server, $officerA, $manager, [
         'scheduled_date' => '2026-10-12',
         'status' => MaintenanceStatus::Selesai,
@@ -352,17 +352,17 @@ test('filter gabungan dengan alias periode_awal, periode_akhir, klasifikasi, sta
         'post_maintenance_condition' => AssetCondition::LightDamage,
         'with_log' => true,
     ]);
-    // November - Alat IT - IGD - Terlambat
+    // November - Alat IT - Terlambat
     createMaintenanceReportOccurrence($alatIt, $igd, $server, $officerA, $manager, [
         'scheduled_date' => '2026-11-10',
         'status' => MaintenanceStatus::Terlambat,
     ]);
-    // November - Alat IT - ICU - Terjadwal
+    // November - Alat IT - Terjadwal
     createMaintenanceReportOccurrence($alatIt, $icu, $server, $officerB, $manager, [
         'scheduled_date' => '2026-11-28',
         'status' => MaintenanceStatus::Terjadwal,
     ]);
-    // November - Alat Medis - IGD - Selesai
+    // November - Alat Medis - Selesai
     createMaintenanceReportOccurrence($alatMedis, $igd, $monitor, $officerB, $manager, [
         'scheduled_date' => '2026-11-15',
         'status' => MaintenanceStatus::Selesai,
@@ -371,17 +371,16 @@ test('filter gabungan dengan alias periode_awal, periode_akhir, klasifikasi, sta
         'with_log' => true,
     ]);
 
-    // Filter menggunakan start_date, end_date, classification_id, location_id
+    // Filter menggunakan periode_awal, periode_akhir, dan klasifikasi (Alat IT)
     $this->getJson(maintenanceReportUrl([
-        'start_date' => '2026-10-01',
-        'end_date' => '2026-11-30',
-        'classification_id' => $alatIt->id,
-        'location_id' => $igd->id,
+        'periode_awal' => '2026-10-01',
+        'periode_akhir' => '2026-11-30',
+        'klasifikasi' => $alatIt->id,
     ]))->assertOk()
         ->assertJsonPath('data.summary', [
-            'jumlah_jadwal' => 2,
+            'jumlah_jadwal' => 3,
             'jadwal_selesai' => 1,
-            'presentase_jadwal_selesai' => 50,
+            'presentase_jadwal_selesai' => 33.33,
         ])
         ->assertJsonPath('data.charts.kondisi_pasca_pemeliharaan', [
             'Baik' => 0,
@@ -392,13 +391,11 @@ test('filter gabungan dengan alias periode_awal, periode_akhir, klasifikasi, sta
             ['petugas' => 'Hendra Wijaya', 'jumlah' => 1],
         ]);
 
-    // Filter menggunakan alias periode_awal, periode_akhir, klasifikasi, lokasi_ruangan, status
+    // Filter menggunakan periode_awal, periode_akhir, dan klasifikasi (Alat Medis)
     $this->getJson(maintenanceReportUrl([
         'periode_awal' => '2026-11-01',
         'periode_akhir' => '2026-11-30',
         'klasifikasi' => $alatMedis->id,
-        'lokasi_ruangan' => $igd->id,
-        'status' => MaintenanceStatus::Selesai->value,
     ]))->assertOk()
         ->assertJsonPath('data.summary', [
             'jumlah_jadwal' => 1,
@@ -417,15 +414,12 @@ test('filter gabungan dengan alias periode_awal, periode_akhir, klasifikasi, sta
 
     // Validasi filter tidak valid -> 422
     foreach ([
-        '?start_date=2026/10/01',
+        '?periode_awal=2026/10/01',
         '?periode_awal=bukan-tanggal',
-        '?start_date=2026-11-20&end_date=2026-11-10',
+        '?periode_akhir=bukan-tanggal',
         '?periode_awal=2026-11-20&periode_akhir=2026-11-10',
-        '?status=status_tidak_valid',
-        '?classification_id=999999',
+        '?klasifikasi=999999',
         '?klasifikasi=bukan-angka',
-        '?location_id=999999',
-        '?lokasi_ruangan=bukan-angka',
     ] as $query) {
         $this->getJson('/api/v1/reports/maintenance'.$query)->assertUnprocessable();
     }
@@ -506,8 +500,8 @@ test('super-admin dan management memiliki akses penuh sedangkan koordinator-sarp
             ['petugas' => 'Teknisi Sarpras', 'jumlah' => 1],
         ]);
 
-    // Sekalipun memaksa filter classification_id=Alat IT, tetap menghasilkan 0
-    $this->getJson(maintenanceReportUrl(['classification_id' => $alatIt->id]))->assertOk()
+    // Sekalipun memaksa filter klasifikasi=Alat IT, tetap menghasilkan 0
+    $this->getJson(maintenanceReportUrl(['klasifikasi' => $alatIt->id]))->assertOk()
         ->assertJsonPath('data.summary', [
             'jumlah_jadwal' => 0,
             'jadwal_selesai' => 0,
@@ -574,8 +568,8 @@ test('export xlsx menghasilkan multi-sheet dengan baris 1 langsung header tabel,
 
     $response = $this->get(maintenanceReportExportUrl([
         'format' => 'xlsx',
-        'start_date' => '2026-11-01',
-        'end_date' => '2026-11-30',
+        'periode_awal' => '2026-11-01',
+        'periode_akhir' => '2026-11-30',
     ]));
 
     $response->assertOk()
@@ -706,9 +700,9 @@ test('export pdf menggunakan template khusus reports.maintenance.pdf dengan graf
 
     $response = $this->get(maintenanceReportExportUrl([
         'format' => 'pdf',
-        'start_date' => '2026-11-01',
-        'end_date' => '2026-11-30',
-        'classification_id' => $classification->id,
+        'periode_awal' => '2026-11-01',
+        'periode_akhir' => '2026-11-30',
+        'klasifikasi' => $classification->id,
     ]));
 
     $response->assertOk()

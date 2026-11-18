@@ -49,11 +49,6 @@ paths:
           required: false
           description: Filter berdasarkan ID master klasifikasi (asset_classifications.id).
           schema: { type: integer }
-        - name: klasifikasi
-          in: query
-          required: false
-          description: Alias untuk classification_id.
-          schema: { type: integer }
         - name: status
           in: query
           required: false
@@ -63,11 +58,6 @@ paths:
           in: query
           required: false
           description: Filter berdasarkan ID master lokasi ruangan (asset_locations.id).
-          schema: { type: integer }
-        - name: lokasi_ruangan
-          in: query
-          required: false
-          description: Alias untuk location_id.
           schema: { type: integer }
       responses:
         "200":
@@ -104,19 +94,11 @@ paths:
           in: query
           required: false
           schema: { type: integer }
-        - name: klasifikasi
-          in: query
-          required: false
-          schema: { type: integer }
         - name: status
           in: query
           required: false
           schema: { type: string, enum: [Digunakan, Tidak Digunakan, Rusak, Dipinjam] }
         - name: location_id
-          in: query
-          required: false
-          schema: { type: integer }
-        - name: lokasi_ruangan
           in: query
           required: false
           schema: { type: integer }
@@ -141,56 +123,26 @@ paths:
         Membutuhkan maintenance-reports-read dan role super-admin, management, atau
         koordinator-sarpras. Super admin dan management dapat melihat seluruh
         klasifikasi aset; koordinator-sarpras otomatis mengecualikan klasifikasi
-        Alat IT pada level query. Rentang tanggal (start_date/periode_awal,
-        end_date/periode_akhir) memfilter scheduled_date secara inklusif.
+        Alat IT pada level query. Rentang tanggal (periode_awal, periode_akhir)
+        memfilter scheduled_date secara inklusif.
         presentase_jadwal_selesai = round((jadwal_selesai / jumlah_jadwal) * 100, 2).
       x-auth-required: true
       x-required-permission: maintenance-reports-read
       parameters:
-        - name: start_date
+        - name: periode_awal
           in: query
           required: false
           description: Tanggal awal filter scheduled_date (YYYY-MM-DD).
           schema: { type: string, format: date }
-        - name: periode_awal
-          in: query
-          required: false
-          description: Alias untuk start_date (YYYY-MM-DD).
-          schema: { type: string, format: date }
-        - name: end_date
+        - name: periode_akhir
           in: query
           required: false
           description: Tanggal akhir filter scheduled_date (YYYY-MM-DD).
           schema: { type: string, format: date }
-        - name: periode_akhir
-          in: query
-          required: false
-          description: Alias untuk end_date (YYYY-MM-DD).
-          schema: { type: string, format: date }
-        - name: status
-          in: query
-          required: false
-          description: Filter status efektif occurrence maintenance.
-          schema: { type: string, enum: [terjadwal, selesai, terlambat] }
-        - name: classification_id
-          in: query
-          required: false
-          description: Filter berdasarkan asset_classifications.id.
-          schema: { type: integer }
         - name: klasifikasi
           in: query
           required: false
-          description: Alias untuk classification_id.
-          schema: { type: integer }
-        - name: location_id
-          in: query
-          required: false
-          description: Filter berdasarkan asset_locations.id.
-          schema: { type: integer }
-        - name: lokasi_ruangan
-          in: query
-          required: false
-          description: Alias untuk location_id.
+          description: Filter berdasarkan asset_classifications.id.
           schema: { type: integer }
       responses:
         "200":
@@ -223,15 +175,7 @@ paths:
           required: true
           description: Format file ekspor.
           schema: { type: string, enum: [pdf, xlsx] }
-        - name: start_date
-          in: query
-          required: false
-          schema: { type: string, format: date }
         - name: periode_awal
-          in: query
-          required: false
-          schema: { type: string, format: date }
-        - name: end_date
           in: query
           required: false
           schema: { type: string, format: date }
@@ -239,23 +183,7 @@ paths:
           in: query
           required: false
           schema: { type: string, format: date }
-        - name: status
-          in: query
-          required: false
-          schema: { type: string, enum: [terjadwal, selesai, terlambat] }
-        - name: classification_id
-          in: query
-          required: false
-          schema: { type: integer }
         - name: klasifikasi
-          in: query
-          required: false
-          schema: { type: integer }
-        - name: location_id
-          in: query
-          required: false
-          schema: { type: integer }
-        - name: lokasi_ruangan
           in: query
           required: false
           schema: { type: integer }

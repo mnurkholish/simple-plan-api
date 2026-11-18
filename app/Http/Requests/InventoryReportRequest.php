@@ -19,10 +19,8 @@ class InventoryReportRequest extends FormRequest
     {
         return [
             'classification_id' => ['nullable', 'integer', 'exists:asset_classifications,id'],
-            'klasifikasi' => ['nullable', 'integer', 'exists:asset_classifications,id'],
             'status' => ['nullable', Rule::enum(AssetStatus::class)],
             'location_id' => ['nullable', 'integer', 'exists:asset_locations,id'],
-            'lokasi_ruangan' => ['nullable', 'integer', 'exists:asset_locations,id'],
         ];
     }
 }
