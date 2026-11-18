@@ -165,9 +165,15 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::get('reports/helpdesk', [HelpdeskReportController::class, 'index'])
             ->middleware('permission:helpdesk-reports-read')
             ->name('reports.helpdesk.index');
+        Route::get('reports/helpdesk/export', [HelpdeskReportController::class, 'export'])
+            ->middleware('permission:helpdesk-reports-export')
+            ->name('reports.helpdesk.export');
         Route::get('reports/design-graphic', [DesignGraphicReportController::class, 'index'])
             ->middleware('permission:design-reports-read')
             ->name('reports.design-graphic.index');
+        Route::get('reports/design-graphic/export', [DesignGraphicReportController::class, 'export'])
+            ->middleware('permission:design-reports-export')
+            ->name('reports.design-graphic.export');
         Route::get('reports/inventory', [InventoryReportController::class, 'index'])
             ->middleware('permission:inventory-reports-read')
             ->name('reports.inventory.index');

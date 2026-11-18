@@ -91,4 +91,36 @@ class DesignGraphicReportService
             ],
         ];
     }
+
+    /**
+     * Export details use the same period scope as the JSON report. Eager loading
+     * keeps each request as one row without joining its related records.
+     *
+     * @param  array{periode_awal: string, periode_akhir: string}  $filters
+     * @return list<array<int, string>>
+     */
+    public function detailRows(array $filters, User $actor): array
+    {
+        $rows = [];
+        $this->query($filters, $actor)
+            ->with(['requester:id,name', 'unit:id,unit_name', 'assignedOfficer:id,name'])
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->chunk(500, function (Collection $requests) use (&$rows): void {
+                foreach ($requests as $request) {
+                    $rows[] = [
+                        $request->request_number,
+                        $request->created_at->format('Y-m-d H:i:s'),
+                        $request->requester?->name ?? '-',
+                        $request->unit?->unit_name ?? '-',
+                        $request->design_type,
+                        $request->assignedOfficer?->name ?? '-',
+                        ucwords(str_replace('_', ' ', $request->status->value)),
+                        $request->completed_at?->format('Y-m-d H:i:s') ?? '-',
+                    ];
+                }
+            });
+
+        return $rows;
+    }
 }

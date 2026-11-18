@@ -20,13 +20,16 @@ class ReportExportService
      *     paper?: string,
      *     landscape?: bool,
      *     margins?: array{top: float, right: float, bottom: float, left: float},
+     *     view?: string,
+     *     footer?: string,
      *     header_html?: string,
      *     footer_html?: string
      * }  $page
      */
-    public function pdf(array $report, string $filename, array $page = [], string $view = 'reports.pdf'): Response
+    public function pdf(array $report, string $filename, array $page = [], ?string $view = null): Response
     {
-        $html = view($view, $report)->render();
+        $resolvedView = $view ?? $page['view'] ?? 'reports.pdf';
+        $html = view($resolvedView, $report)->render();
         $margins = $page['margins'] ?? ['top' => 15, 'right' => 15, 'bottom' => 15, 'left' => 15];
 
         $browsershot = ConfiguredBrowsershot::html($html)
@@ -35,11 +38,14 @@ class ReportExportService
             ->margins($margins['top'], $margins['right'], $margins['bottom'], $margins['left'])
             ->showBackground();
 
-        if (! empty($page['footer_html']) || ! empty($page['header_html'])) {
+        $footerHtml = $page['footer_html'] ?? $page['footer'] ?? null;
+        $headerHtml = $page['header_html'] ?? null;
+
+        if (! empty($footerHtml) || ! empty($headerHtml)) {
             $browsershot
                 ->showBrowserHeaderAndFooter()
-                ->headerHtml($page['header_html'] ?? '<div></div>')
-                ->footerHtml($page['footer_html'] ?? '<div></div>');
+                ->headerHtml($headerHtml ?? '<span></span>')
+                ->footerHtml($footerHtml ?? '<span></span>');
         }
 
         $pdf = $browsershot->pdf();
@@ -68,25 +74,27 @@ class ReportExportService
      * Build a multi-sheet XLSX workbook where Row 1 on every sheet is directly the table header
      * (dark blue background, bold white text, frozen header row, AutoFilter) and Row 2+ are data rows.
      *
-     * @param  list<array{title: string, headers: list<string>, rows: iterable<array<int, scalar|null>>}>  $sheets
+     * @param  list<array{title?: string, name?: string, headers: list<string>, rows: iterable<array<int, scalar|null>>}>  $sheets
      */
     public function xlsxMultiSheet(array $sheets, string $filename): Response
     {
+        if ($sheets === []) {
+            throw new \InvalidArgumentException('At least one worksheet is required.');
+        }
+
         $spreadsheet = new Spreadsheet;
         $usedTitles = [];
-
-        if ($sheets === []) {
-            $sheets = [['title' => 'Semua Data', 'headers' => [], 'rows' => []]];
-        }
 
         foreach ($sheets as $sheetIndex => $definition) {
             $sheet = $sheetIndex === 0
                 ? $spreadsheet->getActiveSheet()
                 : $spreadsheet->createSheet();
 
+            $rawTitle = $definition['title'] ?? $definition['name'] ?? 'Sheet';
+
             $this->populateWorksheet(
                 $sheet,
-                $this->sanitizeSheetTitle($definition['title'], $usedTitles),
+                $this->sanitizeSheetTitle($rawTitle, $usedTitles),
                 $definition['headers'],
                 $definition['rows'],
             );
@@ -122,8 +130,8 @@ class ReportExportService
     {
         $sheet->setTitle($title);
 
-        foreach ($headers as $index => $header) {
-            $column = Coordinate::stringFromColumnIndex($index + 1);
+        foreach ($headers as $columnIndex => $header) {
+            $column = Coordinate::stringFromColumnIndex($columnIndex + 1);
             $sheet->setCellValueExplicit($column.'1', $header, DataType::TYPE_STRING);
             $sheet->getColumnDimension($column)->setAutoSize(true);
         }
@@ -140,8 +148,8 @@ class ReportExportService
 
         $rowNumber = 2;
         foreach ($rows as $row) {
-            foreach (array_values($row) as $index => $value) {
-                $cell = Coordinate::stringFromColumnIndex($index + 1).$rowNumber;
+            foreach (array_values($row) as $columnIndex => $value) {
+                $cell = Coordinate::stringFromColumnIndex($columnIndex + 1).$rowNumber;
                 if (is_int($value) || is_float($value)) {
                     $sheet->setCellValueExplicit($cell, $value, DataType::TYPE_NUMERIC);
                 } elseif ($value !== null) {

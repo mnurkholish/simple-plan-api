@@ -121,6 +121,54 @@ class HelpdeskReportService
         ];
     }
 
+    /**
+     * Detail rows use the same ticket scope as the JSON report. Relationships are
+     * eager loaded rather than joined, so each ticket appears exactly once.
+     *
+     * @param  array{periode_awal: string, periode_akhir: string, jenis_layanan?: string|null}  $filters
+     * @return list<array<int, int|string|null>>
+     */
+    public function detailRows(array $filters, User $actor): array
+    {
+        $rows = [];
+        $this->query($filters, $actor)
+            ->with(['asset.assetCode.item', 'assignedOfficer:id,name', 'tikDetail.itTag:id,name', 'sarprasDetail.sarprasCategory:id,name'])
+            ->orderByDesc('tickets.created_at')
+            ->orderByDesc('tickets.id')
+            ->chunk(500, function (Collection $tickets) use (&$rows): void {
+                foreach ($tickets as $ticket) {
+                    $category = $ticket->service === TicketService::Tik
+                        ? $ticket->tikDetail?->itTag?->name
+                        : $ticket->sarprasDetail?->sarprasCategory?->name;
+
+                    $sla = match (true) {
+                        $ticket->status === TicketStatus::Ditolak => 'Tidak berlaku',
+                        ! in_array($ticket->status, [TicketStatus::Terselesaikan, TicketStatus::Ditutup], true) => 'Belum selesai',
+                        $ticket->completed_at === null || $ticket->sla_deadline === null => 'Tidak dapat dihitung',
+                        $ticket->completed_at <= $ticket->sla_deadline => 'Tercapai',
+                        default => 'Terlambat',
+                    };
+
+                    $rows[] = [
+                        $ticket->ticket_number,
+                        $ticket->service === TicketService::Tik ? 'TIK' : 'Sarpras',
+                        $ticket->created_at->format('Y-m-d H:i:s'),
+                        $ticket->asset?->assetCode?->full_code ?? '—',
+                        $ticket->asset?->detail_item ?: ($ticket->asset?->assetCode?->item?->name ?? '—'),
+                        $category ?? 'Belum diklasifikasi',
+                        ucfirst($ticket->priority?->value ?? '—'),
+                        $ticket->assignedOfficer?->name ?? '—',
+                        ucfirst($ticket->status->value),
+                        $ticket->sla_deadline?->format('Y-m-d H:i:s') ?? '—',
+                        $ticket->completed_at?->format('Y-m-d H:i:s') ?? '—',
+                        $sla,
+                    ];
+                }
+            });
+
+        return $rows;
+    }
+
     /** @param array<string, int> $counts */
     private function categoryRows(array $counts): array
     {
