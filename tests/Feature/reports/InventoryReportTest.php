@@ -79,8 +79,18 @@ function createInventoryReportAsset(
     ]);
 }
 
-/** @return array{headers: list<mixed>, rows: list<array<int, mixed>>, types: list<array<int, string>>} */
-function parseXlsxContent(string $binary): array
+/**
+ * @return array{
+ *     sheet_names: list<string>,
+ *     sheets: array<string, array{
+ *         headers: list<mixed>,
+ *         rows: list<array<int, mixed>>,
+ *         types: list<array<int, string>>,
+ *         auto_filter: string
+ *     }>
+ * }
+ */
+function parseInventoryXlsxWorkbook(string $binary): array
 {
     $tempPath = tempnam(sys_get_temp_dir(), 'inv-report-');
     expect($tempPath)->not->toBeFalse();
@@ -88,39 +98,53 @@ function parseXlsxContent(string $binary): array
 
     try {
         $spreadsheet = IOFactory::load($tempPath);
-        $sheet = $spreadsheet->getActiveSheet();
-        $highestRow = $sheet->getHighestRow();
-        $highestColIndex = Coordinate::columnIndexFromString($sheet->getHighestColumn());
+        $sheetNames = [];
+        $sheets = [];
 
-        $headers = [];
-        for ($col = 1; $col <= $highestColIndex; $col++) {
-            $cell = $sheet->getCell(Coordinate::stringFromColumnIndex($col).'1');
-            $headers[] = $cell->getValue();
-        }
+        foreach ($spreadsheet->getAllSheets() as $sheet) {
+            $title = $sheet->getTitle();
+            $sheetNames[] = $title;
 
-        $rows = [];
-        $types = [];
-        for ($row = 2; $row <= $highestRow; $row++) {
-            $rowData = [];
-            $rowTypes = [];
+            $highestRow = $sheet->getHighestRow();
+            $highestColIndex = Coordinate::columnIndexFromString($sheet->getHighestColumn());
+
+            $headers = [];
             for ($col = 1; $col <= $highestColIndex; $col++) {
-                $cell = $sheet->getCell(Coordinate::stringFromColumnIndex($col).$row);
-                $rowData[] = $cell->getValue();
-                $rowTypes[] = $cell->getDataType();
+                $cell = $sheet->getCell(Coordinate::stringFromColumnIndex($col).'1');
+                $headers[] = $cell->getValue();
             }
-            $rows[] = $rowData;
-            $types[] = $rowTypes;
+
+            $rows = [];
+            $types = [];
+            for ($row = 2; $row <= $highestRow; $row++) {
+                $rowData = [];
+                $rowTypes = [];
+                for ($col = 1; $col <= $highestColIndex; $col++) {
+                    $cell = $sheet->getCell(Coordinate::stringFromColumnIndex($col).$row);
+                    $rowData[] = $cell->getValue();
+                    $rowTypes[] = $cell->getDataType();
+                }
+                $rows[] = $rowData;
+                $types[] = $rowTypes;
+            }
+
+            $sheets[$title] = [
+                'headers' => $headers,
+                'rows' => $rows,
+                'types' => $types,
+                'auto_filter' => (string) $sheet->getAutoFilter()->getRange(),
+            ];
         }
 
         $spreadsheet->disconnectWorksheets();
 
-        return ['headers' => $headers, 'rows' => $rows, 'types' => $types];
+        return ['sheet_names' => $sheetNames, 'sheets' => $sheets];
     } finally {
         @unlink($tempPath);
     }
 }
 
-test('laporan inventaris menghitung rekap, grafik klasifikasi, kondisi, dan top 10 lokasi tanpa duplikasi', function (): void {
+test('laporan inventaris menghitung rekap, grafik klasifikasi, kondisi, dan seluruh lokasi tanpa limit', function (): void {
     actAsInventoryReportRole('super-admin');
 
     $alatIt = AssetClassification::factory()->create(['name' => 'Alat IT']);
@@ -131,7 +155,7 @@ test('laporan inventaris menghitung rekap, grafik klasifikasi, kondisi, dan top 
     $itemMedis = AssetItem::factory()->create(['asset_classification_id' => $alatMedis->id, 'name' => 'Monitor Pasien']);
     $itemSarpras = AssetItem::factory()->create(['asset_classification_id' => $alatSarpras->id, 'name' => 'AC']);
 
-    // Buat 12 lokasi untuk menguji pembatasan Top 10 lokasi
+    // Buat 12 lokasi untuk memastikan tidak ada limit 10 (mendukung "Show more" di UI)
     $locations = [];
     for ($i = 1; $i <= 12; $i++) {
         $locations[$i] = AssetLocation::factory()->create(['name' => sprintf('Ruang %02d', $i)]);
@@ -173,10 +197,10 @@ test('laporan inventaris menghitung rekap, grafik klasifikasi, kondisi, dan top 
         ]);
 
     $perLokasi = $response->json('data.charts.per_lokasi');
-    expect($perLokasi)->toHaveCount(10)
+    expect($perLokasi)->toHaveCount(12)
         ->and($perLokasi[0])->toBe(['lokasi' => 'Ruang 01', 'jumlah' => 3])
         ->and($perLokasi[1])->toBe(['lokasi' => 'Ruang 02', 'jumlah' => 2])
-        ->and($perLokasi[9])->toBe(['lokasi' => 'Ruang 10', 'jumlah' => 1]);
+        ->and($perLokasi[11])->toBe(['lokasi' => 'Ruang 12', 'jumlah' => 1]);
 });
 
 test('filter gabungan klasifikasi, status, dan lokasi ruangan bekerja dengan alias serta menolak input tidak valid', function (): void {
@@ -272,7 +296,7 @@ test('super-admin dan management dapat mengakses seluruh klasifikasi termasuk Al
     }
 });
 
-test('koordinator-sarpras dan koordinator_sarpras mengecualikan klasifikasi Alat IT pada laporan JSON dan export', function (): void {
+test('koordinator-sarpras dan koordinator_sarpras mengecualikan klasifikasi Alat IT pada laporan JSON, PDF, dan seluruh sheet XLSX', function (): void {
     $alatIt = AssetClassification::factory()->create(['name' => 'Alat IT']);
     $alatSarpras = AssetClassification::factory()->create(['name' => 'Alat Sarpras']);
     $alatMedis = AssetClassification::factory()->create(['name' => 'Alat Medis']);
@@ -320,12 +344,16 @@ test('koordinator-sarpras dan koordinator_sarpras mengecualikan klasifikasi Alat
         ->assertJsonPath('data.charts.per_klasifikasi', [])
         ->assertJsonPath('data.charts.per_lokasi', []);
 
-    // Export XLSX untuk koordinator-sarpras juga mengecualikan Alat IT
+    // Export XLSX untuk koordinator-sarpras: Sheet 1 Semua Data + Sheet Alat Medis + Sheet Alat Sarpras (tanpa Alat IT)
     $xlsxResponse = $this->get(inventoryReportExportUrl(['format' => 'xlsx']))->assertOk();
-    $parsed = parseXlsxContent($xlsxResponse->getContent());
-    expect($parsed['rows'])->toHaveCount(2);
-    expect(array_column($parsed['rows'], 3))->not->toContain('Alat IT')
-        ->toContain('Alat Sarpras', 'Alat Medis');
+    $workbook = parseInventoryXlsxWorkbook($xlsxResponse->getContent());
+
+    expect($workbook['sheet_names'])->toBe(['Semua Data', 'Alat Medis', 'Alat Sarpras'])
+        ->and($workbook['sheets']['Semua Data']['rows'])->toHaveCount(2)
+        ->and(array_column($workbook['sheets']['Semua Data']['rows'], 3))->not->toContain('Alat IT')
+        ->toContain('Alat Sarpras', 'Alat Medis')
+        ->and($workbook['sheets']['Alat Medis']['rows'])->toHaveCount(1)
+        ->and($workbook['sheets']['Alat Sarpras']['rows'])->toHaveCount(1);
 
     // Uji alias role snake_case koordinator_sarpras
     $snakeRole = Role::firstOrCreate(['name' => 'koordinator_sarpras', 'guard_name' => 'web']);
@@ -336,12 +364,14 @@ test('koordinator-sarpras dan koordinator_sarpras mengecualikan klasifikasi Alat
         ->assertJsonPath('data.summary.total_aset', 2);
 });
 
-test('export xlsx menghasilkan kolom yang benar dengan No. Inventaris dan Kode Aset bertipe string', function (): void {
+test('export xlsx menghasilkan multi-sheet dengan baris 1 langsung header tabel, AutoFilter, dan kode bertipe string', function (): void {
     actAsInventoryReportRole('super-admin');
 
     $alatIt = AssetClassification::factory()->create(['name' => 'Alat IT']);
+    $alatKhusus = AssetClassification::factory()->create(['name' => 'Alat: Medis / Lab? *Khusus* [RSCH] Panjang Sekali']);
     $ruangIt = AssetLocation::factory()->create(['name' => 'Ruang IT']);
     $laptop = AssetItem::factory()->create(['asset_classification_id' => $alatIt->id, 'name' => 'Laptop']);
+    $analyzer = AssetItem::factory()->create(['asset_classification_id' => $alatKhusus->id, 'name' => 'Analyzer']);
 
     createInventoryReportAsset($alatIt, $ruangIt, $laptop, [
         'detail_item' => 'ThinkPad X1',
@@ -349,20 +379,21 @@ test('export xlsx menghasilkan kolom yang benar dengan No. Inventaris dan Kode A
         'condition' => AssetCondition::HeavyDamage,
     ], '0602010001');
 
-    $response = $this->get(inventoryReportExportUrl([
-        'format' => 'xlsx',
-        'classification_id' => $alatIt->id,
-        'location_id' => $ruangIt->id,
-        'status' => AssetStatus::Damaged->value,
-    ]));
+    createInventoryReportAsset($alatKhusus, $ruangIt, $analyzer, [
+        'detail_item' => 'Hematology',
+        'status' => AssetStatus::InUse,
+        'condition' => AssetCondition::Good,
+    ], '0402010002');
+
+    $response = $this->get(inventoryReportExportUrl(['format' => 'xlsx']));
 
     $response->assertOk()
         ->assertHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
         ->assertHeader('Content-Disposition', 'attachment; filename="laporan-inventaris.xlsx"');
 
-    $parsed = parseXlsxContent($response->getContent());
+    $workbook = parseInventoryXlsxWorkbook($response->getContent());
 
-    expect($parsed['headers'])->toBe([
+    $expectedHeaders = [
         'No. Inventaris',
         'Kode Aset',
         'Nama Aset',
@@ -370,25 +401,60 @@ test('export xlsx menghasilkan kolom yang benar dengan No. Inventaris dan Kode A
         'Lokasi Ruangan',
         'Status',
         'Kondisi',
+    ];
+
+    expect($workbook['sheet_names'])->toHaveCount(3)
+        ->and($workbook['sheet_names'][0])->toBe('Semua Data')
+        ->and($workbook['sheet_names'])->toContain('Alat IT');
+
+    // Nama sheet klasifikasi khusus harus ter-sanitasi (<= 31 karakter dan bebas karakter terlarang)
+    $otherSheets = array_values(array_diff($workbook['sheet_names'], ['Semua Data', 'Alat IT']));
+    expect($otherSheets)->toHaveCount(1);
+    $sanitizedSheetName = $otherSheets[0];
+    expect(mb_strlen($sanitizedSheetName, 'UTF-8'))->toBeLessThanOrEqual(31)
+        ->and($sanitizedSheetName)->not->toMatch('/[:\\\\\/\?\*\[\]]/');
+
+    // Row 1 di semua sheet langsung header tabel + AutoFilter A1:G1
+    foreach ($workbook['sheet_names'] as $sheetName) {
+        expect($workbook['sheets'][$sheetName]['headers'])->toBe($expectedHeaders)
+            ->and($workbook['sheets'][$sheetName]['auto_filter'])->toBe('A1:G1');
+    }
+
+    // Sheet 1 (Semua Data) memuat gabungan semua baris
+    expect($workbook['sheets']['Semua Data']['rows'])->toBe([
+        [
+            '0602010001',
+            '0602010001',
+            'Laptop ThinkPad X1',
+            'Alat IT',
+            'Ruang IT',
+            'Rusak',
+            'Rusak Berat',
+        ],
+        [
+            '0402010002',
+            '0402010002',
+            'Analyzer Hematology',
+            'Alat: Medis / Lab? *Khusus* [RSCH] Panjang Sekali',
+            'Ruang IT',
+            'Digunakan',
+            'Baik',
+        ],
     ]);
 
-    expect($parsed['rows'])->toBe([[
-        '0602010001',
-        '0602010001',
-        'Laptop ThinkPad X1',
-        'Alat IT',
-        'Ruang IT',
-        'Rusak',
-        'Rusak Berat',
-    ]]);
+    // Sheet per klasifikasi hanya memuat baris klasifikasi terkait
+    expect($workbook['sheets']['Alat IT']['rows'])->toHaveCount(1)
+        ->and($workbook['sheets'][$sanitizedSheetName]['rows'])->toHaveCount(1);
 
-    // Pastikan No. Inventaris (kolom 0) dan Kode Aset (kolom 1) tersimpan sebagai string di Excel
-    expect($parsed['types'][0][0])->toBe(DataType::TYPE_STRING)
-        ->and($parsed['types'][0][1])->toBe(DataType::TYPE_STRING);
+    // Pastikan No. Inventaris (kolom 0) dan Kode Aset (kolom 1) bertipe string di Excel
+    expect($workbook['sheets']['Semua Data']['types'][0][0])->toBe(DataType::TYPE_STRING)
+        ->and($workbook['sheets']['Semua Data']['types'][0][1])->toBe(DataType::TYPE_STRING)
+        ->and($workbook['sheets']['Alat IT']['types'][0][0])->toBe(DataType::TYPE_STRING)
+        ->and($workbook['sheets']['Alat IT']['types'][0][1])->toBe(DataType::TYPE_STRING);
 });
 
-test('export pdf menghasilkan file PDF valid dengan payload rekap dan SVG grafik yang aman', function (): void {
-    actAsInventoryReportRole('super-admin');
+test('export pdf menggunakan template khusus reports.inventory.pdf dengan donut SVG, metadata pengunduh, dan file PDF valid', function (): void {
+    $admin = actAsInventoryReportRole('super-admin');
 
     $classification = AssetClassification::factory()->create(['name' => 'Alat <script>alert(1)</script> & Medis']);
     $location = AssetLocation::factory()->create(['name' => 'IGD & ICU "Utama"']);
@@ -400,15 +466,24 @@ test('export pdf menghasilkan file PDF valid dengan payload rekap dan SVG grafik
     ]);
 
     $capturedPayload = null;
-    $spyExporter = new class($capturedPayload) extends ReportExportService
+    $capturedView = null;
+    $capturedPage = null;
+
+    $spyExporter = new class($capturedPayload, $capturedView, $capturedPage) extends ReportExportService
     {
-        public function __construct(private mixed &$captured) {}
+        public function __construct(
+            private mixed &$payload,
+            private mixed &$view,
+            private mixed &$page,
+        ) {}
 
-        public function pdf(array $report, string $filename, array $page = []): Response
+        public function pdf(array $report, string $filename, array $page = [], string $view = 'reports.pdf'): Response
         {
-            $this->captured = $report;
+            $this->payload = $report;
+            $this->view = $view;
+            $this->page = $page;
 
-            return parent::pdf($report, $filename, $page);
+            return parent::pdf($report, $filename, $page, $view);
         }
     };
     app()->instance(ReportExportService::class, $spyExporter);
@@ -426,20 +501,20 @@ test('export pdf menghasilkan file PDF valid dengan payload rekap dan SVG grafik
     expect($pdf)->toMatch('/^%PDF-\d\.\d/')
         ->toContain('startxref', '%%EOF');
 
-    expect($capturedPayload)->toBeArray()
-        ->toHaveKeys(['title', 'filters', 'summary', 'charts'])
+    expect($capturedView)->toBe('reports.inventory.pdf')
+        ->and($capturedPage['footer_html'] ?? '')->toContain('Halaman', 'pageNumber', 'totalPages')
+        ->and($capturedPayload)->toBeArray()
+        ->toHaveKeys(['title', 'subtitle', 'downloaded_at', 'filters', 'summary', 'charts'])
         ->and($capturedPayload['title'])->toBe('Laporan Inventaris')
+        ->and($capturedPayload['subtitle'])->toBe('RS Citra Husada Jember')
+        ->and($capturedPayload['downloaded_at'])->toContain($admin->name, 'Super Admin')
         ->and($capturedPayload['summary'])->toBe([
-            'Total Aset' => 1,
-            'Total Rusak' => 1,
-            'Total Dipinjam' => 0,
+            'total_aset' => 1,
+            'total_rusak' => 1,
+            'total_dipinjam' => 0,
         ])
-        ->and($capturedPayload['charts'])->toHaveCount(3);
-
-    foreach ($capturedPayload['charts'] as $chart) {
-        expect($chart['svg'])->toContain('<svg', '</svg>')
-            ->not->toContain('<script>');
-    }
+        ->and($capturedPayload['charts']['per_klasifikasi_donut_svg'])->toContain('<svg', '</svg>', 'Aset')
+        ->not->toContain('<script>');
 });
 
 test('laporan dan export dengan data kosong mengembalikan nol, grafik kosong, dan file valid', function (): void {
@@ -462,16 +537,17 @@ test('laporan dan export dengan data kosong mengembalikan nol, grafik kosong, da
         ]);
 
     $xlsxResponse = $this->get(inventoryReportExportUrl(['format' => 'xlsx']))->assertOk();
-    $parsed = parseXlsxContent($xlsxResponse->getContent());
-    expect($parsed['headers'])->toBe([
-        'No. Inventaris',
-        'Kode Aset',
-        'Nama Aset',
-        'Klasifikasi',
-        'Lokasi Ruangan',
-        'Status',
-        'Kondisi',
-    ])->and($parsed['rows'])->toBe([]);
+    $workbook = parseInventoryXlsxWorkbook($xlsxResponse->getContent());
+    expect($workbook['sheet_names'])->toBe(['Semua Data'])
+        ->and($workbook['sheets']['Semua Data']['headers'])->toBe([
+            'No. Inventaris',
+            'Kode Aset',
+            'Nama Aset',
+            'Klasifikasi',
+            'Lokasi Ruangan',
+            'Status',
+            'Kondisi',
+        ])->and($workbook['sheets']['Semua Data']['rows'])->toBe([]);
 
     $pdfResponse = $this->get(inventoryReportExportUrl(['format' => 'pdf']))->assertOk()
         ->assertHeader('Content-Type', 'application/pdf');

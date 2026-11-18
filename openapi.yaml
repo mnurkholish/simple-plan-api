@@ -87,9 +87,11 @@ paths:
       description: |
         Membutuhkan inventory-reports-export dan role super-admin, management, atau
         koordinator-sarpras. Menggunakan query dan pembatasan role yang sama dengan
-        GET /reports/inventory. Format PDF memuat rekap dan grafik SVG server-side;
-        format XLSX memuat baris detail aset dengan No. Inventaris dan Kode Aset
-        bertipe teks.
+        GET /reports/inventory. Format PDF memakai template khusus
+        reports/inventory/pdf.blade.php (rekap, donut SVG klasifikasi, bar kondisi &
+        lokasi, footer halaman); format XLSX multi-sheet (Sheet 1 'Semua Data' +
+        sheet per klasifikasi) dengan baris 1 langsung header tabel dan No.
+        Inventaris/Kode Aset bertipe teks.
       x-auth-required: true
       x-required-permission: inventory-reports-export
       parameters:
@@ -121,6 +123,145 @@ paths:
       responses:
         "200":
           description: File unduhan laporan inventaris (PDF atau XLSX).
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema: { type: string, format: binary }
+        "401": { $ref: "#/components/responses/TicketUnauthenticated" }
+        "403": { $ref: "#/components/responses/TicketForbidden" }
+        "422": { $ref: "#/components/responses/TicketValidationError" }
+
+  /reports/maintenance:
+    get:
+      tags: [Reports]
+      summary: Laporan Maintenance
+      operationId: getMaintenanceReport
+      description: |
+        Membutuhkan maintenance-reports-read dan role super-admin, management, atau
+        koordinator-sarpras. Super admin dan management dapat melihat seluruh
+        klasifikasi aset; koordinator-sarpras otomatis mengecualikan klasifikasi
+        Alat IT pada level query. Rentang tanggal (start_date/periode_awal,
+        end_date/periode_akhir) memfilter scheduled_date secara inklusif.
+        presentase_jadwal_selesai = round((jadwal_selesai / jumlah_jadwal) * 100, 2).
+      x-auth-required: true
+      x-required-permission: maintenance-reports-read
+      parameters:
+        - name: start_date
+          in: query
+          required: false
+          description: Tanggal awal filter scheduled_date (YYYY-MM-DD).
+          schema: { type: string, format: date }
+        - name: periode_awal
+          in: query
+          required: false
+          description: Alias untuk start_date (YYYY-MM-DD).
+          schema: { type: string, format: date }
+        - name: end_date
+          in: query
+          required: false
+          description: Tanggal akhir filter scheduled_date (YYYY-MM-DD).
+          schema: { type: string, format: date }
+        - name: periode_akhir
+          in: query
+          required: false
+          description: Alias untuk end_date (YYYY-MM-DD).
+          schema: { type: string, format: date }
+        - name: status
+          in: query
+          required: false
+          description: Filter status efektif occurrence maintenance.
+          schema: { type: string, enum: [terjadwal, selesai, terlambat] }
+        - name: classification_id
+          in: query
+          required: false
+          description: Filter berdasarkan asset_classifications.id.
+          schema: { type: integer }
+        - name: klasifikasi
+          in: query
+          required: false
+          description: Alias untuk classification_id.
+          schema: { type: integer }
+        - name: location_id
+          in: query
+          required: false
+          description: Filter berdasarkan asset_locations.id.
+          schema: { type: integer }
+        - name: lokasi_ruangan
+          in: query
+          required: false
+          description: Alias untuk location_id.
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Rekap dan grafik Maintenance.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MaintenanceReportResponse" }
+        "401": { $ref: "#/components/responses/TicketUnauthenticated" }
+        "403": { $ref: "#/components/responses/TicketForbidden" }
+        "422": { $ref: "#/components/responses/TicketValidationError" }
+
+  /reports/maintenance/export:
+    get:
+      tags: [Reports]
+      summary: Ekspor Laporan Maintenance (PDF / XLSX)
+      operationId: exportMaintenanceReport
+      description: |
+        Membutuhkan maintenance-reports-export dan role super-admin, management,
+        atau koordinator-sarpras. Menggunakan query dan pembatasan role yang sama
+        dengan GET /reports/maintenance. Format PDF memakai template khusus
+        reports/maintenance/pdf.blade.php (rekap, bar vertikal 12 bulan, donut SVG
+        kondisi pasca pemeliharaan, bar petugas, footer halaman); format XLSX
+        multi-sheet (Sheet 1 'Semua Data' + sheet per klasifikasi) dengan baris 1
+        langsung header tabel dan No. Inventaris/Kode Aset bertipe teks.
+      x-auth-required: true
+      x-required-permission: maintenance-reports-export
+      parameters:
+        - name: format
+          in: query
+          required: true
+          description: Format file ekspor.
+          schema: { type: string, enum: [pdf, xlsx] }
+        - name: start_date
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: periode_awal
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: end_date
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: periode_akhir
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: status
+          in: query
+          required: false
+          schema: { type: string, enum: [terjadwal, selesai, terlambat] }
+        - name: classification_id
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: klasifikasi
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: location_id
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: lokasi_ruangan
+          in: query
+          required: false
+          schema: { type: integer }
+      responses:
+        "200":
+          description: File unduhan laporan maintenance (PDF atau XLSX).
           content:
             application/pdf:
               schema: { type: string, format: binary }
@@ -2549,12 +2690,65 @@ components:
                     Rusak Berat: { type: integer, minimum: 0 }
                 per_lokasi:
                   type: array
-                  description: Top 10 lokasi ruangan dengan jumlah aset terbanyak.
+                  description: Seluruh lokasi ruangan dengan jumlah aset, diurutkan dari jumlah terbanyak (tanpa limit).
                   items:
                     type: object
                     required: [lokasi, jumlah]
                     properties:
                       lokasi: { type: string }
+                      jumlah: { type: integer, minimum: 0 }
+
+    MaintenanceReportResponse:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [summary, charts]
+          properties:
+            summary:
+              type: object
+              additionalProperties: false
+              required: [jumlah_jadwal, jadwal_selesai, presentase_jadwal_selesai]
+              properties:
+                jumlah_jadwal: { type: integer, minimum: 0 }
+                jadwal_selesai: { type: integer, minimum: 0 }
+                presentase_jadwal_selesai: { type: number, format: float, minimum: 0, maximum: 100 }
+            charts:
+              type: object
+              additionalProperties: false
+              required: [per_bulan, kondisi_pasca_pemeliharaan, per_petugas]
+              properties:
+                per_bulan:
+                  type: array
+                  description: Selalu 12 bulan berurutan Jan..Des berdasarkan scheduled_date (0 jika kosong).
+                  items:
+                    type: object
+                    required: [bulan, jumlah]
+                    properties:
+                      bulan:
+                        type: string
+                        enum: [Jan, Feb, Mar, Apr, Mei, Jun, Jul, Agu, Sep, Okt, Nov, Des]
+                      jumlah: { type: integer, minimum: 0 }
+                kondisi_pasca_pemeliharaan:
+                  type: object
+                  additionalProperties: false
+                  description: Distribusi kondisi pasca pemeliharaan khusus dari occurrence berstatus selesai.
+                  required: [Baik, Rusak Ringan, Rusak Berat]
+                  properties:
+                    Baik: { type: integer, minimum: 0 }
+                    Rusak Ringan: { type: integer, minimum: 0 }
+                    Rusak Berat: { type: integer, minimum: 0 }
+                per_petugas:
+                  type: array
+                  description: Jumlah occurrence selesai per petugas pelaksana, diurutkan terbanyak ke terkecil (tanpa limit).
+                  items:
+                    type: object
+                    required: [petugas, jumlah]
+                    properties:
+                      petugas: { type: string }
                       jumlah: { type: integer, minimum: 0 }
 
     DesignReportResponse:

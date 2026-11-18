@@ -8,7 +8,6 @@ use App\Models\Asset;
 use App\Models\AssetClassification;
 use App\Models\AssetLocation;
 use App\Models\User;
-use Generator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Response;
@@ -48,6 +47,21 @@ class InventoryReportService
         'Lokasi Ruangan',
         'Status',
         'Kondisi',
+    ];
+
+    /** @var list<string> */
+    private const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+    /** @var list<string> */
+    private const CLASSIFICATION_COLORS = [
+        '#00338D',
+        '#10B981',
+        '#EA580C',
+        '#0284C7',
+        '#7C3AED',
+        '#D97706',
+        '#0D9488',
+        '#DB2777',
     ];
 
     public function __construct(private readonly ReportExportService $exporter) {}
@@ -162,7 +176,7 @@ class InventoryReportService
             'charts' => [
                 'per_klasifikasi' => $this->sortChartRows($classifications, 'klasifikasi'),
                 'per_kondisi' => $conditions,
-                'per_lokasi' => array_slice($this->sortChartRows($locations, 'lokasi'), 0, 10),
+                'per_lokasi' => $this->sortChartRows($locations, 'lokasi'),
             ],
         ];
     }
@@ -184,16 +198,19 @@ class InventoryReportService
             return $this->exporter->pdf(
                 $this->buildPdfPayload($filters, $actor, $report),
                 'laporan-inventaris',
+                [
+                    'margins' => ['top' => 14, 'right' => 15, 'bottom' => 18, 'left' => 15],
+                    'footer_html' => $this->buildFooterHtml(),
+                ],
+                'reports.inventory.pdf',
             );
         }
 
         $query = $this->query($filters, $actor);
 
-        return $this->exporter->xlsx(
-            self::XLSX_HEADERS,
-            $this->exportRows($query),
+        return $this->exporter->xlsxMultiSheet(
+            $this->buildXlsxSheets($query),
             'laporan-inventaris',
-            'Laporan Inventaris',
         );
     }
 
@@ -213,12 +230,7 @@ class InventoryReportService
      *         per_lokasi: list<array{lokasi: string, jumlah: int}>
      *     }
      * }  $report
-     * @return array{
-     *     title: string,
-     *     filters: array<string, scalar|null>,
-     *     summary: array<string, scalar|null>,
-     *     charts: list<array{title: string, svg: string}>
-     * }
+     * @return array<string, mixed>
      */
     private function buildPdfPayload(array $filters, User $actor, array $report): array
     {
@@ -232,57 +244,56 @@ class InventoryReportService
             ? AssetLocation::query()->find($locationId)?->name
             : null;
 
+        $classificationLegend = [];
+        foreach ($report['charts']['per_klasifikasi'] as $index => $row) {
+            $classificationLegend[] = [
+                'label' => $row['klasifikasi'],
+                'count' => $row['jumlah'],
+                'color' => self::CLASSIFICATION_COLORS[$index % count(self::CLASSIFICATION_COLORS)],
+            ];
+        }
+
         $conditionItems = [];
         foreach ($report['charts']['per_kondisi'] as $label => $count) {
             $conditionItems[] = ['label' => $label, 'count' => $count];
         }
 
+        $locationItems = array_map(
+            fn (array $row): array => ['label' => $row['lokasi'], 'count' => $row['jumlah']],
+            $report['charts']['per_lokasi'],
+        );
+
         return [
             'title' => 'Laporan Inventaris',
+            'subtitle' => 'RS Citra Husada Jember',
+            'downloaded_at' => $this->formatDownloadedAt($actor),
             'filters' => [
-                'Klasifikasi' => $classificationName ?? ($this->isSarprasCoordinatorOnly($actor) ? 'Semua (kecuali Alat IT)' : null),
-                'Status' => $filters['status'] ?? null,
-                'Lokasi Ruangan' => $locationName,
+                'Klasifikasi' => $classificationName ?? ($this->isSarprasCoordinatorOnly($actor) ? 'Semua (kecuali Alat IT)' : 'Semua'),
+                'Status' => $filters['status'] ?? 'Semua',
+                'Lokasi ruangan' => $locationName ?? 'Semua',
             ],
-            'summary' => [
-                'Total Aset' => $report['summary']['total_aset'],
-                'Total Rusak' => $report['summary']['total_rusak'],
-                'Total Dipinjam' => $report['summary']['total_dipinjam'],
-            ],
+            'summary' => $report['summary'],
             'charts' => [
-                [
-                    'title' => 'Aset per Klasifikasi',
-                    'svg' => $this->renderBarChartSvg(
-                        array_map(
-                            fn (array $row): array => ['label' => $row['klasifikasi'], 'count' => $row['jumlah']],
-                            $report['charts']['per_klasifikasi'],
-                        ),
-                        '#1f4e78',
-                    ),
-                ],
-                [
-                    'title' => 'Aset per Kondisi',
-                    'svg' => $this->renderBarChartSvg($conditionItems, '#2b6cb0'),
-                ],
-                [
-                    'title' => 'Top 10 Lokasi dengan Aset Terbanyak',
-                    'svg' => $this->renderBarChartSvg(
-                        array_map(
-                            fn (array $row): array => ['label' => $row['lokasi'], 'count' => $row['jumlah']],
-                            $report['charts']['per_lokasi'],
-                        ),
-                        '#2c7a7b',
-                    ),
-                ],
+                'per_klasifikasi_donut_svg' => $this->renderDonutChartSvg(
+                    $classificationLegend,
+                    $report['summary']['total_aset'],
+                    'Aset',
+                ),
+                'per_klasifikasi_legend' => $classificationLegend,
+                'per_kondisi' => $conditionItems,
+                'per_lokasi' => $locationItems,
             ],
         ];
     }
 
     /**
-     * @return Generator<int, array<int, string>>
+     * @return list<array{title: string, headers: list<string>, rows: list<array<int, string>>}>
      */
-    private function exportRows(Builder $query): Generator
+    private function buildXlsxSheets(Builder $query): array
     {
+        $allRows = [];
+        $rowsByClassification = [];
+
         $assets = $query
             ->select(['assets.id', 'assets.asset_code_id', 'assets.detail_item', 'assets.status', 'assets.condition'])
             ->with([
@@ -296,92 +307,152 @@ class InventoryReportService
         foreach ($assets as $asset) {
             $fullCode = (string) ($asset->assetCode?->full_code ?? '');
             $itemName = trim(($asset->assetCode?->item?->name ?? '').' '.($asset->detail_item ?? ''));
+            $classificationName = (string) ($asset->assetCode?->classification?->name ?? '');
 
-            yield [
+            $row = [
                 $fullCode,
                 $fullCode,
                 $itemName,
-                (string) ($asset->assetCode?->classification?->name ?? ''),
+                $classificationName,
                 (string) ($asset->assetCode?->location?->name ?? ''),
                 $asset->status instanceof AssetStatus ? $asset->status->value : (string) ($asset->status ?? ''),
                 $asset->condition instanceof AssetCondition ? $asset->condition->value : (string) ($asset->condition ?? ''),
             ];
+
+            $allRows[] = $row;
+            $sheetKey = $classificationName !== '' ? $classificationName : 'Belum diklasifikasi';
+            $rowsByClassification[$sheetKey][] = $row;
         }
+
+        ksort($rowsByClassification, SORT_NATURAL | SORT_FLAG_CASE);
+
+        $sheets = [
+            [
+                'title' => 'Semua Data',
+                'headers' => self::XLSX_HEADERS,
+                'rows' => $allRows,
+            ],
+        ];
+
+        foreach ($rowsByClassification as $classificationName => $rows) {
+            $sheets[] = [
+                'title' => $classificationName,
+                'headers' => self::XLSX_HEADERS,
+                'rows' => $rows,
+            ];
+        }
+
+        return $sheets;
     }
 
     /**
-     * @param  list<array{label: string, count: int}>  $items
+     * @param  list<array{label: string, count: int, color: string}>  $slices
      */
-    private function renderBarChartSvg(array $items, string $barColor): string
+    private function renderDonutChartSvg(array $slices, int $total, string $subtext): string
     {
-        $width = 640;
+        $size = 180;
+        $cx = 90;
+        $cy = 90;
+        $radius = 64;
+        $strokeWidth = 24;
+        $circumference = 2 * M_PI * $radius;
 
-        if ($items === []) {
-            return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 60" width="640" height="60" role="img">'
-                .'<rect x="0" y="0" width="640" height="60" fill="#f8fafc" stroke="#dce4ea" rx="4"/>'
-                .'<text x="320" y="34" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#64748b">Tidak ada data</text>'
-                .'</svg>';
-        }
-
-        $rowHeight = 28;
-        $paddingY = 12;
-        $labelWidth = 200;
-        $barX = 212;
-        $maxBarWidth = 360;
-        $barHeight = 16;
-        $height = ($paddingY * 2) + (count($items) * $rowHeight);
-        $maxValue = max(1, ...array_map(fn (array $item): int => max(0, (int) $item['count']), $items));
-
-        $elements = [
-            sprintf('<rect x="0" y="0" width="%d" height="%d" fill="#ffffff" stroke="#dce4ea" rx="4"/>', $width, $height),
+        $segments = [
+            sprintf(
+                '<circle cx="%d" cy="%d" r="%d" fill="none" stroke="#E2E8F0" stroke-width="%d"/>',
+                $cx,
+                $cy,
+                $radius,
+                $strokeWidth,
+            ),
         ];
 
-        foreach ($items as $index => $item) {
-            $y = $paddingY + ($index * $rowHeight);
-            $count = max(0, (int) $item['count']);
-            $barWidth = $count > 0 ? max(2, (int) round(($count / $maxValue) * $maxBarWidth)) : 0;
-            $labelText = mb_strimwidth($item['label'], 0, 28, '...', 'UTF-8');
-            $escapedLabel = htmlspecialchars($labelText, ENT_QUOTES | ENT_XML1, 'UTF-8');
+        if ($total > 0) {
+            $accumulated = 0.0;
+            foreach ($slices as $slice) {
+                $count = max(0, (int) $slice['count']);
+                if ($count === 0) {
+                    continue;
+                }
 
-            $elements[] = sprintf(
-                '<text x="%d" y="%d" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#243447">%s</text>',
-                $labelWidth,
-                $y + 12,
-                $escapedLabel,
-            );
-            $elements[] = sprintf(
-                '<rect x="%d" y="%d" width="%d" height="%d" fill="#edf3f7" rx="3"/>',
-                $barX,
-                $y,
-                $maxBarWidth,
-                $barHeight,
-            );
-            if ($barWidth > 0) {
-                $elements[] = sprintf(
-                    '<rect x="%d" y="%d" width="%d" height="%d" fill="%s" rx="3"/>',
-                    $barX,
-                    $y,
-                    $barWidth,
-                    $barHeight,
-                    $barColor,
+                $dashLength = ($count / $total) * $circumference;
+                $color = htmlspecialchars($slice['color'], ENT_QUOTES | ENT_XML1, 'UTF-8');
+
+                $segments[] = sprintf(
+                    '<circle cx="%d" cy="%d" r="%d" fill="none" stroke="%s" stroke-width="%d" stroke-dasharray="%.4f %.4f" stroke-dashoffset="%.4f" transform="rotate(-90 %d %d)"/>',
+                    $cx,
+                    $cy,
+                    $radius,
+                    $color,
+                    $strokeWidth,
+                    $dashLength,
+                    $circumference,
+                    -$accumulated,
+                    $cx,
+                    $cy,
                 );
+
+                $accumulated += $dashLength;
             }
-            $elements[] = sprintf(
-                '<text x="%d" y="%d" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#173b5e">%d</text>',
-                $barX + $maxBarWidth + 10,
-                $y + 12,
-                $count,
-            );
         }
+
+        $formattedTotal = htmlspecialchars(number_format($total, 0, ',', '.'), ENT_QUOTES | ENT_XML1, 'UTF-8');
+        $escapedSubtext = htmlspecialchars($subtext, ENT_QUOTES | ENT_XML1, 'UTF-8');
+
+        $segments[] = sprintf(
+            '<text x="%d" y="%d" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" fill="#0F172A">%s</text>',
+            $cx,
+            $cy - 2,
+            $formattedTotal,
+        );
+        $segments[] = sprintf(
+            '<text x="%d" y="%d" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#64748B">%s</text>',
+            $cx,
+            $cy + 16,
+            $escapedSubtext,
+        );
 
         return sprintf(
             '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" width="%d" height="%d" role="img">%s</svg>',
-            $width,
-            $height,
-            $width,
-            $height,
-            implode('', $elements),
+            $size,
+            $size,
+            $size,
+            $size,
+            implode('', $segments),
         );
+    }
+
+    private function buildFooterHtml(): string
+    {
+        return '<div style="width:100%;font-family:Arial,Helvetica,sans-serif;font-size:9px;color:#64748B;padding:0 15mm;box-sizing:border-box;">'
+            .'<div style="border-top:1px solid #CBD5E1;padding-top:6px;text-align:right;">'
+            .'Halaman <span class="pageNumber"></span> dari <span class="totalPages"></span>'
+            .'</div>'
+            .'</div>';
+    }
+
+    private function formatDownloadedAt(User $actor): string
+    {
+        $now = now();
+        $monthLabel = self::MONTH_LABELS[$now->month - 1] ?? $now->format('M');
+        $dateText = sprintf('%02d %s %04d', $now->day, $monthLabel, $now->year);
+
+        $roleName = $actor->getRoleNames()->first();
+        $roleLabel = is_string($roleName) && $roleName !== ''
+            ? match ($roleName) {
+                'super-admin', 'super_admin' => 'Super Admin',
+                'management', 'manajemen' => 'Manajemen',
+                'koordinator-sarpras', 'koordinator_sarpras' => 'Koordinator Sarpras',
+                default => $roleName,
+            }
+        : null;
+
+        $name = trim((string) ($actor->name ?? ''));
+        if ($name !== '' && $roleLabel !== null) {
+            return "{$dateText}, {$name} ({$roleLabel})";
+        }
+
+        return $dateText.', '.($name !== '' ? $name : ($roleLabel ?? 'Pengguna'));
     }
 
     /**
