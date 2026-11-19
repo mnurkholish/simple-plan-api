@@ -25,7 +25,7 @@ use OpenApi\Annotations as OA;
  *
  * @OA\Tag(name="Auth", description="Authentication and account recovery")
  * @OA\Tag(name="SSO", description="IAM/SSO bridge")
- * @OA\Tag(name="Dashboard", description="Dashboard data and live stats")
+ * @OA\Tag(name="Dashboard", description="Statistik dan grafik Dashboard berdasarkan role")
  * @OA\Tag(name="Profile", description="Authenticated user profile")
  * @OA\Tag(name="Users", description="User management")
  * @OA\Tag(name="Roles", description="Role and permission management")
@@ -39,6 +39,41 @@ use OpenApi\Annotations as OA;
  * @OA\Tag(name="Helpdesk", description="Helpdesk TIK and Sarpras tickets")
  * @OA\Tag(name="Reports", description="Statistik dan laporan")
  * @OA\Tag(name="Design Graphic", description="Graphic design requests and workflow")
+ *
+ * @OA\Schema(
+ *     schema="DashboardResponse",
+ *     type="object",
+ *     required={"data"},
+ *
+ *     @OA\Property(property="data", type="object", required={"variant","summary"},
+ *         @OA\Property(property="variant", type="string", enum={"super-admin","management","koordinator-sarpras","petugas-tik","petugas-sarpras","user"}),
+ *         @OA\Property(property="summary", type="object", description="Kartu sesuai variant. Field yang tidak berlaku untuk role tidak dikirim.",
+ *             @OA\Property(property="jumlah_tiket_baru", type="integer", example=4),
+ *             @OA\Property(property="jumlah_tiket_sarpras_baru", type="integer", example=2),
+ *             @OA\Property(property="jumlah_tiket_sarpras_diproses", type="integer", example=3),
+ *             @OA\Property(property="jumlah_tiket_ditugaskan", type="integer", example=2),
+ *             @OA\Property(property="jumlah_tiket_aktif", type="integer", example=1),
+ *             @OA\Property(property="jumlah_tiket_diproses", type="integer", example=3),
+ *             @OA\Property(property="jumlah_tiket_menunggu_verifikasi", type="integer", example=1),
+ *             @OA\Property(property="jumlah_request_desain_baru", type="integer", example=1),
+ *             @OA\Property(property="jumlah_request_menunggu_persetujuan", type="integer", example=1),
+ *             @OA\Property(property="jumlah_tugas_desain_aktif", type="integer", example=2),
+ *             @OA\Property(property="jumlah_aset_rusak", type="integer", example=2),
+ *             @OA\Property(property="jumlah_aset_sarpras_rusak", type="integer", example=1),
+ *             @OA\Property(property="jumlah_jadwal_maintenance_minggu_ini", type="integer", example=2),
+ *             @OA\Property(property="jumlah_jadwal_maintenance_mendatang", type="integer", example=1)
+ *         ),
+ *         @OA\Property(property="charts", type="object", description="Hanya untuk super-admin, management, dan koordinator-sarpras.",
+ *             @OA\Property(property="tren_tiket_per_bulan", type="object", description="Enam bulan YYYY-MM berurutan, termasuk bulan berjalan dan bulan bernilai 0.", @OA\AdditionalProperties(type="integer")),
+ *             @OA\Property(property="komposisi_status_aset", type="object",
+ *                 @OA\Property(property="Digunakan", type="integer"),
+ *                 @OA\Property(property="Tidak Digunakan", type="integer"),
+ *                 @OA\Property(property="Rusak", type="integer"),
+ *                 @OA\Property(property="Dipinjam", type="integer")
+ *             )
+ *         )
+ *     )
+ * )
  *
  * @OA\Schema(
  *     schema="User",
@@ -1129,10 +1164,12 @@ class ApiDocumentation
      * @OA\Get(
      *     path="/dashboard",
      *     tags={"Dashboard"},
-     *     summary="Get dashboard data",
+     *     summary="Dashboard berdasarkan role",
+     *     description="Statistik kartu dan grafik sesuai role pengguna login. Super Admin dan Management melihat seluruh sistem; Koordinator Sarpras hanya data Sarpras; petugas hanya tugas yang ditugaskan kepadanya; User hanya aktivitasnya. Tren enam bulan dan minggu Maintenance memakai zona Asia/Jakarta. Kalender dan notifikasi diambil dari API terpisah.",
      *     security={{"sanctum":{}}},
      *
-     *     @OA\Response(response=200, description="Dashboard data")
+     *     @OA\Response(response=200, description="Statistik dan grafik Dashboard", @OA\JsonContent(ref="#/components/schemas/DashboardResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated")
      * )
      */
     public function dashboard(): void {}
