@@ -2219,13 +2219,12 @@ components:
         variant: { type: string, const: koordinator-sarpras }
         summary:
           type: object
-          required: [jumlah_tiket_sarpras_baru, jumlah_tiket_sarpras_diproses, jumlah_aset_sarpras_rusak, jumlah_jadwal_maintenance_minggu_ini, waktu_backup_terakhir]
+          required: [jumlah_tiket_sarpras_baru, jumlah_tiket_sarpras_diproses, jumlah_aset_sarpras_rusak, jumlah_jadwal_maintenance_minggu_ini]
           properties:
             jumlah_tiket_sarpras_baru: { type: integer, minimum: 0 }
             jumlah_tiket_sarpras_diproses: { type: integer, minimum: 0 }
             jumlah_aset_sarpras_rusak: { type: integer, minimum: 0 }
             jumlah_jadwal_maintenance_minggu_ini: { type: integer, minimum: 0 }
-            waktu_backup_terakhir: { type: [string, "null"], format: date-time }
         charts: { $ref: "#/components/schemas/DashboardCharts" }
     DashboardTikOfficerData:
       type: object

@@ -8,7 +8,6 @@ use App\Enums\TicketService;
 use App\Enums\TicketStatus;
 use App\Models\Asset;
 use App\Models\AssetMaintenanceOccurrence;
-use App\Models\BackupHistory;
 use App\Models\DesignRequest;
 use App\Models\Ticket;
 use App\Models\User;
@@ -60,18 +59,14 @@ class DashboardService
         ];
     }
 
-    /** @return array<string, int|string|null> */
+    /** @return array<string, int> */
     private function coordinatorSummary(CarbonImmutable $today): array
     {
-        $lastBackup = BackupHistory::query()->where('status', 'success')
-            ->whereNotNull('finished_at')->orderByDesc('finished_at')->first(['finished_at']);
-
         return [
             'jumlah_tiket_sarpras_baru' => $this->tickets(TicketService::Sarpras)->where('status', TicketStatus::Baru->value)->count(),
             'jumlah_tiket_sarpras_diproses' => $this->tickets(TicketService::Sarpras)->where('status', TicketStatus::Diproses->value)->count(),
             'jumlah_aset_sarpras_rusak' => $this->assets(true)->where('status', AssetStatus::Damaged->value)->count(),
             'jumlah_jadwal_maintenance_minggu_ini' => $this->weeklyMaintenanceCount($today, true),
-            'waktu_backup_terakhir' => $lastBackup?->finished_at?->timezone(config('app.operational_timezone', 'Asia/Jakarta'))->toIso8601String(),
         ];
     }
 

@@ -12,7 +12,6 @@ use App\Models\AssetItem;
 use App\Models\AssetLocation;
 use App\Models\AssetMaintenance;
 use App\Models\AssetMaintenanceOccurrence;
-use App\Models\BackupHistory;
 use App\Models\DesignRequest;
 use App\Models\Ticket;
 use App\Models\Unit;
@@ -111,8 +110,7 @@ test('guest ditolak dan dashboard kosong tetap konsisten', function (): void {
 
     Sanctum::actingAs(dashboardActor('koordinator-sarpras'));
     $data = $this->getJson('/api/v1/dashboard')->assertOk()->json('data');
-    expect($data['summary']['waktu_backup_terakhir'])->toBeNull()
-        ->and(array_values(array_diff_key($data['summary'], ['waktu_backup_terakhir' => null])))->each->toBe(0);
+    expect(array_values($data['summary']))->each->toBe(0);
     expect(array_values($data['charts']['tren_tiket_per_bulan']))->toHaveCount(6)->each->toBe(0);
 });
 
@@ -156,7 +154,7 @@ test('super admin dan management memperoleh statistik seluruh sistem dan grafik 
         ->and($management['charts'])->toBe($admin['charts']);
 });
 
-test('koordinator hanya melihat Sarpras dan backup berhasil terbaru', function (): void {
+test('koordinator hanya melihat statistik dan grafik Sarpras', function (): void {
     $reporter = dashboardActor('user');
     $officer = dashboardActor('petugas-sarpras');
     dashboardTicket($reporter, TicketService::Sarpras, TicketStatus::Baru, createdAt: '2026-11-02 03:00:00');
@@ -166,9 +164,6 @@ test('koordinator hanya melihat Sarpras dan backup berhasil terbaru', function (
     $it = dashboardAsset('Alat IT', AssetStatus::Damaged);
     dashboardOccurrence($sarpras, $officer, '2026-11-19');
     dashboardOccurrence($it, $officer, '2026-11-19');
-    BackupHistory::create(['type' => 'manual', 'status' => 'success', 'finished_at' => '2026-11-15 02:00:00']);
-    BackupHistory::create(['type' => 'manual', 'status' => 'success', 'finished_at' => '2026-11-18 02:00:00']);
-    BackupHistory::create(['type' => 'manual', 'status' => 'failed', 'finished_at' => '2026-11-19 02:00:00']);
 
     Sanctum::actingAs(dashboardActor('koordinator-sarpras'));
     $data = $this->getJson('/api/v1/dashboard')->assertOk()->json('data');
@@ -177,7 +172,6 @@ test('koordinator hanya melihat Sarpras dan backup berhasil terbaru', function (
         'jumlah_tiket_sarpras_diproses' => 1,
         'jumlah_aset_sarpras_rusak' => 1,
         'jumlah_jadwal_maintenance_minggu_ini' => 1,
-        'waktu_backup_terakhir' => '2026-11-18T09:00:00+07:00',
     ]);
     expect($data['charts']['tren_tiket_per_bulan'])->toBe([
         '2026-06' => 0, '2026-07' => 0, '2026-08' => 0,

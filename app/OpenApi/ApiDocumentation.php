@@ -60,8 +60,7 @@ use OpenApi\Annotations as OA;
  *             @OA\Property(property="jumlah_aset_rusak", type="integer", example=2),
  *             @OA\Property(property="jumlah_aset_sarpras_rusak", type="integer", example=1),
  *             @OA\Property(property="jumlah_jadwal_maintenance_minggu_ini", type="integer", example=2),
- *             @OA\Property(property="jumlah_jadwal_maintenance_mendatang", type="integer", example=1),
- *             @OA\Property(property="waktu_backup_terakhir", type="string", format="date-time", nullable=true, example="2026-11-18T09:00:00+07:00")
+ *             @OA\Property(property="jumlah_jadwal_maintenance_mendatang", type="integer", example=1)
  *         ),
  *         @OA\Property(property="charts", type="object", description="Hanya untuk super-admin, management, dan koordinator-sarpras.",
  *             @OA\Property(property="tren_tiket_per_bulan", type="object", description="Enam bulan YYYY-MM berurutan, termasuk bulan berjalan dan bulan bernilai 0.", @OA\AdditionalProperties(type="integer")),
