@@ -44,6 +44,7 @@ use OpenApi\Annotations as OA;
  *     schema="DashboardResponse",
  *     type="object",
  *     required={"data"},
+ *
  *     @OA\Property(property="data", type="object", required={"variant","summary"},
  *         @OA\Property(property="variant", type="string", enum={"super-admin","management","koordinator-sarpras","petugas-tik","petugas-sarpras","user"}),
  *         @OA\Property(property="summary", type="object", description="Kartu sesuai variant. Field yang tidak berlaku untuk role tidak dikirim.",
