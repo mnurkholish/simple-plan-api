@@ -15,6 +15,8 @@ servers:
     description: Current API version
 
 tags:
+  - name: Dashboard
+    description: Statistik kartu dan grafik sesuai role pengguna
   - name: Design Graphic
     description: Request desain grafis
   - name: Helpdesk
@@ -31,6 +33,29 @@ tags:
     description: Backup MySQL dan file aplikasi di MinIO
 
 paths:
+  /dashboard:
+    get:
+      tags: [Dashboard]
+      summary: Dashboard berdasarkan role
+      operationId: getDashboard
+      description: |
+        Membutuhkan autentikasi. Variant super-admin dan management memakai data
+        seluruh sistem. Koordinator Sarpras hanya menghitung tiket Sarpras serta
+        aset dan kejadian Maintenance selain klasifikasi Alat IT. Petugas hanya
+        melihat tugas yang ditugaskan kepadanya; user hanya melihat aktivitasnya.
+        Charts tersedia untuk super-admin, management, dan koordinator-sarpras.
+        Kalender dan notifikasi diambil melalui API Maintenance dan Notifications.
+        Tren berisi enam bulan kalender termasuk bulan berjalan dalam zona
+        Asia/Jakarta; minggu Maintenance berlangsung Senin sampai Minggu.
+      x-auth-required: true
+      responses:
+        "200":
+          description: Statistik kartu dan grafik untuk role pengguna.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DashboardResponse" }
+        "401": { $ref: "#/components/responses/TicketUnauthenticated" }
+
   /reports/inventory:
     get:
       tags: [Reports]
@@ -2145,6 +2170,100 @@ components:
         default: 15
 
   schemas:
+    DashboardResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          oneOf:
+            - $ref: "#/components/schemas/DashboardSystemData"
+            - $ref: "#/components/schemas/DashboardCoordinatorData"
+            - $ref: "#/components/schemas/DashboardTikOfficerData"
+            - $ref: "#/components/schemas/DashboardSarprasOfficerData"
+            - $ref: "#/components/schemas/DashboardUserData"
+    DashboardCharts:
+      type: object
+      required: [tren_tiket_per_bulan, komposisi_status_aset]
+      properties:
+        tren_tiket_per_bulan:
+          type: object
+          description: Enam pasangan YYYY-MM dan jumlah tiket, urut kronologis; bulan kosong bernilai nol.
+          additionalProperties: { type: integer, minimum: 0 }
+        komposisi_status_aset:
+          type: object
+          required: [Digunakan, Tidak Digunakan, Rusak, Dipinjam]
+          properties:
+            Digunakan: { type: integer, minimum: 0 }
+            Tidak Digunakan: { type: integer, minimum: 0 }
+            Rusak: { type: integer, minimum: 0 }
+            Dipinjam: { type: integer, minimum: 0 }
+    DashboardSystemData:
+      type: object
+      required: [variant, summary, charts]
+      properties:
+        variant: { type: string, enum: [super-admin, management] }
+        summary:
+          type: object
+          required: [jumlah_tiket_baru, jumlah_tiket_diproses, jumlah_request_desain_baru, jumlah_aset_rusak, jumlah_jadwal_maintenance_minggu_ini]
+          properties:
+            jumlah_tiket_baru: { type: integer, minimum: 0 }
+            jumlah_tiket_diproses: { type: integer, minimum: 0 }
+            jumlah_request_desain_baru: { type: integer, minimum: 0 }
+            jumlah_aset_rusak: { type: integer, minimum: 0 }
+            jumlah_jadwal_maintenance_minggu_ini: { type: integer, minimum: 0 }
+        charts: { $ref: "#/components/schemas/DashboardCharts" }
+    DashboardCoordinatorData:
+      type: object
+      required: [variant, summary, charts]
+      properties:
+        variant: { type: string, const: koordinator-sarpras }
+        summary:
+          type: object
+          required: [jumlah_tiket_sarpras_baru, jumlah_tiket_sarpras_diproses, jumlah_aset_sarpras_rusak, jumlah_jadwal_maintenance_minggu_ini, waktu_backup_terakhir]
+          properties:
+            jumlah_tiket_sarpras_baru: { type: integer, minimum: 0 }
+            jumlah_tiket_sarpras_diproses: { type: integer, minimum: 0 }
+            jumlah_aset_sarpras_rusak: { type: integer, minimum: 0 }
+            jumlah_jadwal_maintenance_minggu_ini: { type: integer, minimum: 0 }
+            waktu_backup_terakhir: { type: [string, "null"], format: date-time }
+        charts: { $ref: "#/components/schemas/DashboardCharts" }
+    DashboardTikOfficerData:
+      type: object
+      required: [variant, summary]
+      properties:
+        variant: { type: string, const: petugas-tik }
+        summary:
+          type: object
+          required: [jumlah_tiket_ditugaskan, jumlah_tiket_diproses, jumlah_tugas_desain_aktif, jumlah_jadwal_maintenance_mendatang]
+          properties:
+            jumlah_tiket_ditugaskan: { type: integer, minimum: 0 }
+            jumlah_tiket_diproses: { type: integer, minimum: 0 }
+            jumlah_tugas_desain_aktif: { type: integer, minimum: 0 }
+            jumlah_jadwal_maintenance_mendatang: { type: integer, minimum: 0 }
+    DashboardSarprasOfficerData:
+      type: object
+      required: [variant, summary]
+      properties:
+        variant: { type: string, const: petugas-sarpras }
+        summary:
+          type: object
+          required: [jumlah_tiket_ditugaskan, jumlah_tiket_diproses, jumlah_jadwal_maintenance_mendatang]
+          properties:
+            jumlah_tiket_ditugaskan: { type: integer, minimum: 0 }
+            jumlah_tiket_diproses: { type: integer, minimum: 0 }
+            jumlah_jadwal_maintenance_mendatang: { type: integer, minimum: 0 }
+    DashboardUserData:
+      type: object
+      required: [variant, summary]
+      properties:
+        variant: { type: string, const: user }
+        summary:
+          type: object
+          required: [jumlah_tiket_aktif, jumlah_tiket_menunggu_verifikasi, jumlah_request_menunggu_persetujuan]
+          properties:
+            jumlah_tiket_aktif: { type: integer, minimum: 0 }
+            jumlah_tiket_menunggu_verifikasi: { type: integer, minimum: 0 }
+            jumlah_request_menunggu_persetujuan: { type: integer, minimum: 0 }
     BackupSetting:
       type: object
       required: [is_active, frequency, backup_time, day_of_week, day_of_month]
