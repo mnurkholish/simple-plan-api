@@ -106,6 +106,9 @@ class AssetController extends Controller
             'assetCode.location',
             'assetCode.item',
             'histories' => fn ($query) => $query->latest('id')->with(['changedBy', 'changer']),
+            'maintenanceLogs' => fn ($query) => $query->with([
+                'maintenance' => fn ($maintenanceQuery) => $maintenanceQuery->withTrashed()->with('assignedOfficer'),
+            ]),
         ]);
 
         return new AssetResource($asset);

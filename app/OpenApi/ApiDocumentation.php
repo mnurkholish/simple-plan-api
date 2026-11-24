@@ -264,7 +264,24 @@ use OpenApi\Annotations as OA;
  *     @OA\Property(property="calibration_document", type="object", nullable=true),
  *     @OA\Property(property="created_at", type="string", format="date-time", nullable=true),
  *     @OA\Property(property="updated_at", type="string", format="date-time", nullable=true),
- *     @OA\Property(property="histories", type="array", @OA\Items(ref="#/components/schemas/AssetHistory"), nullable=true)
+ *     @OA\Property(property="histories", type="array", @OA\Items(ref="#/components/schemas/AssetHistory"), nullable=true),
+ *     @OA\Property(property="maintenance_histories", type="array", @OA\Items(ref="#/components/schemas/AssetMaintenanceHistory"), nullable=true)
+ * )
+ *
+ * @OA\Schema(
+ *     schema="AssetMaintenanceHistory",
+ *     type="object",
+ *     required={"id","asset_maintenance_id","post_maintenance_condition"},
+ *
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="asset_maintenance_id", type="integer", example=3),
+ *     @OA\Property(property="period", type="string", enum={"weekly","monthly","quarterly","semiannually","yearly"}, nullable=true, example="monthly"),
+ *     @OA\Property(property="executed_at", type="string", format="date-time", nullable=true, example="2026-11-01T10:15:00.000000Z"),
+ *     @OA\Property(property="executor_name", type="string", nullable=true, example="Haris Arifin, S.Kom"),
+ *     @OA\Property(property="work_description", type="string", nullable=true, example="Pembersihan debu kipas dan pergantian thermal paste"),
+ *     @OA\Property(property="maintenance_result", type="string", nullable=true, example="Suhu laptop kembali dingin dan stabil"),
+ *     @OA\Property(property="post_maintenance_condition", type="string", enum={"Baik","Rusak Ringan","Rusak Berat"}, nullable=true, example="Baik"),
+ *     @OA\Property(property="photo_url", type="string", format="uri", nullable=true, example="http://localhost:8000/storage/maintenance_photos/bukti.jpg")
  * )
  *
  * @OA\Schema(

@@ -39,6 +39,7 @@ class AssetResource extends JsonResource
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'histories' => AssetHistoryResource::collection($this->whenLoaded('histories')),
+            'maintenance_histories' => AssetMaintenanceHistoryResource::collection($this->whenLoaded('maintenanceLogs')),
         ];
     }
 }
