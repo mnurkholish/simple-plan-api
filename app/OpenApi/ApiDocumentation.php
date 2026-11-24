@@ -3524,7 +3524,7 @@ class ApiDocumentation
      *     operationId="createAssetMaintenance",
      *     tags={"Asset Maintenance"},
      *     summary="Create a new asset maintenance schedule.",
-     *     description="Superadmin manages IT assets & assigns IT Officers. Sarpras Coordinator manages Sarpras assets & assigns Sarpras Officers.",
+     *     description="Superadmin manages IT and Sarpras assets & assigns matching officers (petugas-tik for Alat IT, petugas-sarpras for Sarpras). Sarpras Coordinator manages Sarpras assets & assigns Sarpras Officers.",
      *     security={{"sanctum":{}}},
      *
      *     @OA\RequestBody(required=true, @OA\JsonContent(

@@ -21,17 +21,15 @@ class AssetPolicy
             return Response::deny('Anda tidak memiliki izin untuk melihat detail aset ini.');
         }
 
+        if ($user->hasAnyRole(['super-admin', 'super_admin'])) {
+            return Response::allow();
+        }
+
         $asset->loadMissing('assetCode.classification');
         $classificationName = $asset->assetCode?->classification?->name;
 
         if ($user->hasAnyRole(['manajemen', 'management'])) {
             if ($this->isTikOrSarpras($classificationName)) {
-                return Response::deny('Anda tidak memiliki izin untuk melihat detail aset ini.');
-            }
-        }
-
-        if ($user->hasAnyRole(['super-admin', 'super_admin'])) {
-            if ($this->isSarpras($classificationName)) {
                 return Response::deny('Anda tidak memiliki izin untuk melihat detail aset ini.');
             }
         }
@@ -59,23 +57,29 @@ class AssetPolicy
 
     public function update(User $user, Asset $asset): Response
     {
-        return $this->canManageAsset($user)
-            ? Response::allow()
-            : Response::deny('Anda tidak memiliki izin untuk memperbarui data inventaris.');
+        if (! $this->canManageAsset($user) || $this->isRestrictedTikForSarprasCoordinator($user, $asset)) {
+            return Response::deny('Anda tidak memiliki izin untuk memperbarui data inventaris.');
+        }
+
+        return Response::allow();
     }
 
     public function delete(User $user, Asset $asset): Response
     {
-        return $this->canManageAsset($user)
-            ? Response::allow()
-            : Response::deny('Anda tidak memiliki izin untuk menghapus data inventaris.');
+        if (! $this->canManageAsset($user) || $this->isRestrictedTikForSarprasCoordinator($user, $asset)) {
+            return Response::deny('Anda tidak memiliki izin untuk menghapus data inventaris.');
+        }
+
+        return Response::allow();
     }
 
     public function printLabel(User $user, Asset $asset): Response
     {
-        return $this->canManageAsset($user)
-            ? Response::allow()
-            : Response::deny('Anda tidak memiliki izin untuk mencetak label aset.');
+        if (! $this->canManageAsset($user) || $this->isRestrictedTikForSarprasCoordinator($user, $asset)) {
+            return Response::deny('Anda tidak memiliki izin untuk mencetak label aset.');
+        }
+
+        return Response::allow();
     }
 
     private function canViewAny(User $user): bool
@@ -129,6 +133,18 @@ class AssetPolicy
         return in_array($name, ['Alat Sarpras', 'Sarpras'], true)
             || str_contains(strtolower($name), 'sarpras')
             || str_contains(strtolower($name), 'alat sarpras');
+    }
+
+    private function isRestrictedTikForSarprasCoordinator(User $user, Asset $asset): bool
+    {
+        if ($user->hasAnyRole(['super-admin', 'super_admin'])
+            || ! $user->hasAnyRole(['koordinator-sarpras', 'koordinator_sarpras'])) {
+            return false;
+        }
+
+        $asset->loadMissing('assetCode.classification');
+
+        return $this->isTik($asset->assetCode?->classification?->name);
     }
 
     private function isTikOrSarpras(?string $name): bool

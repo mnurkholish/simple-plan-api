@@ -96,14 +96,10 @@ class UpdateAssetMaintenanceRequest extends FormRequest
 
             $isTik = ($maintenance->assetCode?->classification?->name === 'Alat IT');
 
-            if ($user->hasAnyRole(['super-admin', 'super_admin'])) {
-                if (! $isTik) {
-                    $validator->errors()->add('maintenance', 'Superadmin hanya dapat mengelola jadwal pemeliharaan untuk aset TIK (Alat IT).');
-                }
-            } elseif ($user->hasAnyRole(['koordinator-sarpras', 'koordinator_sarpras'])) {
-                if ($isTik) {
-                    $validator->errors()->add('maintenance', 'Koordinator Sarpras hanya dapat mengelola jadwal pemeliharaan untuk aset non-TIK (Sarpras).');
-                }
+            if (! $user->hasAnyRole(['super-admin', 'super_admin'])
+                && $user->hasAnyRole(['koordinator-sarpras', 'koordinator_sarpras'])
+                && $isTik) {
+                $validator->errors()->add('maintenance', 'Koordinator Sarpras hanya dapat mengelola jadwal pemeliharaan untuk aset non-TIK (Sarpras).');
             }
 
             if ($this->has('assigned_officer_id') && ! $validator->errors()->has('assigned_officer_id')) {

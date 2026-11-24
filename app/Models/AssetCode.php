@@ -63,13 +63,7 @@ class AssetCode extends Model
         }
 
         if ($actor->hasAnyRole(['super-admin', 'super_admin'])) {
-            return $query->whereDoesntHave('classification', function (Builder $q): void {
-                $q->where(function (Builder $sub): void {
-                    $sub->whereIn('name', ['Alat Sarpras', 'Sarpras'])
-                        ->orWhere('name', 'like', '%sarpras%')
-                        ->orWhere('name', 'like', '%Alat Sarpras%');
-                });
-            });
+            return $query;
         }
 
         if ($actor->hasAnyRole(['koordinator-sarpras', 'koordinator_sarpras'])) {

@@ -78,7 +78,7 @@ class AssetMaintenance extends Model
         }
 
         if ($actor->hasAnyRole(['super-admin', 'super_admin'])) {
-            return $query->whereHas('assetCode.classification', fn (Builder $q) => $q->where('name', 'Alat IT'));
+            return $query;
         }
 
         if ($actor->hasAnyRole(['koordinator-sarpras', 'koordinator_sarpras'])) {

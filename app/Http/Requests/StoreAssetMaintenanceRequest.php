@@ -110,12 +110,10 @@ class StoreAssetMaintenanceRequest extends FormRequest
             }
 
             if ($user->hasAnyRole(['super-admin', 'super_admin'])) {
-                if (! $isTik) {
-                    $validator->errors()->add('asset_code_id', 'Superadmin hanya dapat mengatur jadwal pemeliharaan untuk aset TIK (Alat IT).');
-                }
-
-                if (! $this->isValidTikOfficer($officer)) {
+                if ($isTik && ! $this->isValidTikOfficer($officer)) {
                     $validator->errors()->add('assigned_officer_id', 'Petugas yang ditugaskan untuk aset TIK harus memiliki role petugas-tik.');
+                } elseif (! $isTik && ! $this->isValidSarprasOfficer($officer)) {
+                    $validator->errors()->add('assigned_officer_id', 'Petugas yang ditugaskan untuk aset Sarpras harus memiliki role petugas-sarpras.');
                 }
             } elseif ($user->hasAnyRole(['koordinator-sarpras', 'koordinator_sarpras'])) {
                 if ($isTik) {

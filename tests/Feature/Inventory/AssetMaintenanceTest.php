@@ -99,33 +99,143 @@ test('Super Admin BERHASIL membuat jadwal untuk aset TIK dengan petugas TIK', fu
     ]);
 });
 
-test('Super Admin GAGAL membuat jadwal untuk aset Sarpras atau memakai petugas Sarpras', function (): void {
+test('Super Admin BERHASIL membuat jadwal maintenance untuk aset Sarpras dengan petugas Sarpras', function (): void {
+    Sanctum::actingAs($this->superAdmin);
+
+    $nextDate = now()->addDays(5)->format('Y-m-d');
+
+    $response = $this->postJson('/api/v1/asset-maintenances', [
+        'asset_code_id' => $this->codeSarpras->id,
+        'assigned_officer_id' => $this->petugasSarpras->id,
+        'maintenance_type' => 'Perawatan Berkala Genset',
+        'period' => MaintenancePeriod::Monthly->value,
+        'next_scheduled_date' => $nextDate,
+    ]);
+
+    $response->assertCreated()
+        ->assertJsonPath('data.asset_code_id', $this->codeSarpras->id)
+        ->assertJsonPath('data.assigned_officer_id', $this->petugasSarpras->id)
+        ->assertJsonPath('data.creator_id', $this->superAdmin->id)
+        ->assertJsonPath('data.status', 'terjadwal')
+        ->assertJsonPath('data.is_active', true);
+
+    $this->assertDatabaseHas('asset_maintenances', [
+        'asset_code_id' => $this->codeSarpras->id,
+        'assigned_officer_id' => $this->petugasSarpras->id,
+        'creator_id' => $this->superAdmin->id,
+    ]);
+});
+
+test('Super Admin BERHASIL memperbarui jadwal maintenance untuk aset Sarpras maupun IT', function (): void {
+    Sanctum::actingAs($this->superAdmin);
+
+    $petugasSarprasBaru = createMaintenanceTestUser('petugas-sarpras');
+    $petugasTikBaru = createMaintenanceTestUser('petugas-tik');
+
+    $scheduleSarpras = AssetMaintenance::create([
+        'asset_code_id' => $this->codeSarpras->id,
+        'assigned_officer_id' => $this->petugasSarpras->id,
+        'creator_id' => $this->koordSarpras->id,
+        'maintenance_type' => 'Servis Genset Awal',
+        'period' => MaintenancePeriod::Monthly,
+        'next_scheduled_date' => now()->addDays(4)->format('Y-m-d'),
+        'status' => MaintenanceStatus::Terjadwal,
+        'is_active' => true,
+    ]);
+
+    $scheduleTik = AssetMaintenance::create([
+        'asset_code_id' => $this->codeTik->id,
+        'assigned_officer_id' => $this->petugasTik->id,
+        'creator_id' => $this->superAdmin->id,
+        'maintenance_type' => 'Servis Server Awal',
+        'period' => MaintenancePeriod::Monthly,
+        'next_scheduled_date' => now()->addDays(4)->format('Y-m-d'),
+        'status' => MaintenanceStatus::Terjadwal,
+        'is_active' => true,
+    ]);
+
+    $this->putJson("/api/v1/asset-maintenances/{$scheduleSarpras->id}", [
+        'assigned_officer_id' => $petugasSarprasBaru->id,
+        'maintenance_type' => 'Servis Genset Lanjutan',
+    ])
+        ->assertOk()
+        ->assertJsonPath('data.assigned_officer_id', $petugasSarprasBaru->id)
+        ->assertJsonPath('data.maintenance_type', 'Servis Genset Lanjutan');
+
+    $this->putJson("/api/v1/asset-maintenances/{$scheduleTik->id}", [
+        'assigned_officer_id' => $petugasTikBaru->id,
+        'maintenance_type' => 'Servis Server Lanjutan',
+    ])
+        ->assertOk()
+        ->assertJsonPath('data.assigned_officer_id', $petugasTikBaru->id)
+        ->assertJsonPath('data.maintenance_type', 'Servis Server Lanjutan');
+});
+
+test('Super Admin GAGAL membuat atau memperbarui jadwal jika petugas tidak sesuai klasifikasi aset dengan pesan Bahasa Indonesia', function (): void {
     Sanctum::actingAs($this->superAdmin);
     $nextDate = now()->addDays(5)->format('Y-m-d');
 
-    // Super Admin mencoba mendaftarkan aset Sarpras
-    $responseSarprasAsset = $this->postJson('/api/v1/asset-maintenances', [
+    // Create: Aset Sarpras + Petugas TIK -> ditolak 422
+    $this->postJson('/api/v1/asset-maintenances', [
         'asset_code_id' => $this->codeSarpras->id,
         'assigned_officer_id' => $this->petugasTik->id,
         'maintenance_type' => 'Perbaikan Genset',
         'period' => MaintenancePeriod::Monthly->value,
         'next_scheduled_date' => $nextDate,
-    ]);
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['assigned_officer_id'])
+        ->assertJsonPath('errors.assigned_officer_id.0', 'Petugas yang ditugaskan untuk aset Sarpras harus memiliki role petugas-sarpras.');
 
-    $responseSarprasAsset->assertUnprocessable()
-        ->assertJsonValidationErrors(['asset_code_id']);
-
-    // Super Admin mencoba menugaskan Petugas Sarpras untuk aset TIK
-    $responseSarprasOfficer = $this->postJson('/api/v1/asset-maintenances', [
+    // Create: Aset IT + Petugas Sarpras -> ditolak 422
+    $this->postJson('/api/v1/asset-maintenances', [
         'asset_code_id' => $this->codeTik->id,
         'assigned_officer_id' => $this->petugasSarpras->id,
         'maintenance_type' => 'Pembersihan Server',
         'period' => MaintenancePeriod::Monthly->value,
         'next_scheduled_date' => $nextDate,
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['assigned_officer_id'])
+        ->assertJsonPath('errors.assigned_officer_id.0', 'Petugas yang ditugaskan untuk aset TIK harus memiliki role petugas-tik.');
+
+    $scheduleSarpras = AssetMaintenance::create([
+        'asset_code_id' => $this->codeSarpras->id,
+        'assigned_officer_id' => $this->petugasSarpras->id,
+        'creator_id' => $this->superAdmin->id,
+        'maintenance_type' => 'Servis Genset',
+        'period' => MaintenancePeriod::Monthly,
+        'next_scheduled_date' => $nextDate,
+        'status' => MaintenanceStatus::Terjadwal,
+        'is_active' => true,
     ]);
 
-    $responseSarprasOfficer->assertUnprocessable()
-        ->assertJsonValidationErrors(['assigned_officer_id']);
+    $scheduleTik = AssetMaintenance::create([
+        'asset_code_id' => $this->codeTik->id,
+        'assigned_officer_id' => $this->petugasTik->id,
+        'creator_id' => $this->superAdmin->id,
+        'maintenance_type' => 'Servis Server',
+        'period' => MaintenancePeriod::Monthly,
+        'next_scheduled_date' => $nextDate,
+        'status' => MaintenanceStatus::Terjadwal,
+        'is_active' => true,
+    ]);
+
+    // Update: Aset Sarpras + Petugas TIK -> ditolak 422
+    $this->putJson("/api/v1/asset-maintenances/{$scheduleSarpras->id}", [
+        'assigned_officer_id' => $this->petugasTik->id,
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['assigned_officer_id'])
+        ->assertJsonPath('errors.assigned_officer_id.0', 'Petugas yang ditugaskan untuk aset Sarpras harus memiliki role petugas-sarpras.');
+
+    // Update: Aset IT + Petugas Sarpras -> ditolak 422
+    $this->putJson("/api/v1/asset-maintenances/{$scheduleTik->id}", [
+        'assigned_officer_id' => $this->petugasSarpras->id,
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['assigned_officer_id'])
+        ->assertJsonPath('errors.assigned_officer_id.0', 'Petugas yang ditugaskan untuk aset TIK harus memiliki role petugas-tik.');
 });
 
 test('Koordinator Sarpras BERHASIL membuat jadwal untuk aset Sarpras dengan petugas Sarpras', function (): void {
@@ -313,11 +423,12 @@ test('Endpoint Index berhasil memfilter jadwal berdasarkan status dan search', f
     expect($resSearchItem->json('data'))->toHaveCount(1)
         ->and($resSearchItem->json('data.0.id'))->toBe($schedule2->id);
 
-    // Super Admin tidak dapat melihat aset Sarpras karena dibatasi Domain Isolation
+    // Super Admin dapat melihat jadwal aset Sarpras maupun IT
     Sanctum::actingAs($this->superAdmin);
     $this->getJson('/api/v1/asset-maintenances?search=Genset')
         ->assertOk()
-        ->assertJsonCount(0, 'data');
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', $schedule2->id);
 
     // 4. Filter search by nama petugas
     $resSearchOfficer = $this->getJson('/api/v1/asset-maintenances?search='.$this->petugasTik->name);
@@ -651,19 +762,38 @@ test('Query scope visibleTo mengisolasi data jadwal sesuai role Super Admin, Sar
         'is_active' => true,
     ]);
 
-    // 1. Super Admin hanya melihat TIK
+    // 1. Super Admin melihat semua jadwal (TIK dan Sarpras) pada list maupun detail
     Sanctum::actingAs($this->superAdmin);
-    $resTik = $this->getJson('/api/v1/asset-maintenances');
-    $idsTik = collect($resTik->json('data'))->pluck('id');
-    expect($idsTik)->toContain($scheduleTik->id)
-        ->and($idsTik)->not->toContain($scheduleSarpras->id);
+    $resSuperAdmin = $this->getJson('/api/v1/asset-maintenances');
+    $idsSuperAdmin = collect($resSuperAdmin->json('data'))->pluck('id');
+    expect($idsSuperAdmin)->toContain($scheduleTik->id)
+        ->and($idsSuperAdmin)->toContain($scheduleSarpras->id);
 
-    // 2. Koordinator Sarpras hanya melihat Non-TIK (Sarpras)
+    $this->getJson("/api/v1/asset-maintenances/{$scheduleTik->id}")->assertOk();
+    $this->getJson("/api/v1/asset-maintenances/{$scheduleSarpras->id}")->assertOk();
+
+    // Super Admin tetap ditolak mengisi log jika bukan assigned_officer_id
+    $this->postJson("/api/v1/asset-maintenances/{$scheduleSarpras->id}/logs", [
+        'work_description' => 'Eksekusi tanpa penugasan',
+        'maintenance_result' => 'Ditolak',
+        'post_maintenance_condition' => 'Baik',
+        'started_at' => now()->format('Y-m-d 08:00:00'),
+        'completed_at' => now()->format('Y-m-d 09:00:00'),
+    ])->assertForbidden();
+
+    // 2. Koordinator Sarpras hanya melihat dan mengakses Non-TIK (Sarpras), tidak bocor ke IT
     Sanctum::actingAs($this->koordSarpras);
     $resSarpras = $this->getJson('/api/v1/asset-maintenances');
     $idsSarpras = collect($resSarpras->json('data'))->pluck('id');
     expect($idsSarpras)->toContain($scheduleSarpras->id)
         ->and($idsSarpras)->not->toContain($scheduleTik->id);
+
+    $this->getJson("/api/v1/asset-maintenances/{$scheduleSarpras->id}")->assertOk();
+    $this->getJson("/api/v1/asset-maintenances/{$scheduleTik->id}")->assertForbidden();
+    $this->putJson("/api/v1/asset-maintenances/{$scheduleTik->id}", [
+        'maintenance_type' => 'Mencoba Ubah IT',
+    ])->assertUnprocessable()
+        ->assertJsonValidationErrors(['maintenance']);
 
     // 3. Petugas TIK hanya melihat jadwal yang ditugaskan kepadanya
     Sanctum::actingAs($this->petugasTik);
