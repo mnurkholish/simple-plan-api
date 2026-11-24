@@ -33,6 +33,7 @@ class RunBackup implements ShouldQueue
         $history = BackupHistory::findOrFail($this->historyId);
         $lock = null;
         $locked = false;
+        $objectKey = null;
 
         try {
             $this->assertConfiguration();
@@ -47,6 +48,8 @@ class RunBackup implements ShouldQueue
             $staging->setHistoryId($history->id);
 
             $filename = 'backup-'.$history->id.'-'.now()->format('Y-m-d-H-i-s').'.zip';
+            $objectKey = trim((string) config('backup.backup.name'), '/').'/'
+                .config('backup.backup.destination.filename_prefix', '').$filename;
             $exitCode = Artisan::call('backup:run', [
                 '--filename' => $filename,
                 '--only-to-disk' => 'backup',
@@ -58,8 +61,6 @@ class RunBackup implements ShouldQueue
             }
 
             $disk = Storage::disk('backup');
-            $objectKey = trim((string) config('backup.backup.name'), '/').'/'
-                .config('backup.backup.destination.filename_prefix', '').$filename;
 
             if (! $disk->exists($objectKey)) {
                 throw new RuntimeException('Arsip backup tidak ditemukan pada bucket backup.');
@@ -80,6 +81,17 @@ class RunBackup implements ShouldQueue
                 'failure_message' => null,
             ]);
         } catch (Throwable $exception) {
+            if ($objectKey !== null) {
+                try {
+                    $disk = Storage::disk('backup');
+                    if ($disk->exists($objectKey) && ! $disk->delete($objectKey)) {
+                        throw new RuntimeException('Gagal membersihkan arsip backup yang belum tercatat.');
+                    }
+                } catch (Throwable $cleanupException) {
+                    report($cleanupException);
+                }
+            }
+
             $history->update([
                 'status' => 'failed',
                 'finished_at' => now(),

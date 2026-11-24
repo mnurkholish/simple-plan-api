@@ -55,7 +55,8 @@ beforeEach(function (): void {
 });
 
 test('Petugas yang DITUNJUK berhasil submit log beserta upload foto bukti', function (): void {
-    Storage::fake('public');
+    Storage::fake('s3');
+    config()->set('filesystems.default', 's3');
     Sanctum::actingAs($this->petugasTik);
 
     $schedule = AssetMaintenance::create([
@@ -95,7 +96,7 @@ test('Petugas yang DITUNJUK berhasil submit log beserta upload foto bukti', func
         'proof_photo_original_name' => 'bukti_maintenance.jpg',
     ]);
 
-    Storage::disk('public')->assertExists($log->proof_photo_object_key);
+    Storage::disk('s3')->assertExists($log->proof_photo_object_key);
 });
 
 test('Petugas LAIN gagal submit log (403 Forbidden)', function (): void {

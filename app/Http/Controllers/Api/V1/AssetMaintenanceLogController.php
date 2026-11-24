@@ -9,6 +9,9 @@ use App\Http\Requests\StoreAssetMaintenanceLogRequest;
 use App\Models\AssetMaintenance;
 use App\Services\AssetMaintenanceService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Storage;
+use RuntimeException;
+use Throwable;
 
 class AssetMaintenanceLogController extends Controller
 {
@@ -25,21 +28,41 @@ class AssetMaintenanceLogController extends Controller
         }
 
         $photoData = [];
+        $photoPath = null;
+        $disk = config('filesystems.default') === 's3' ? 's3' : 'public';
         if ($request->hasFile('photo')) {
             $file = $request->file('photo');
+            $photoPath = $file->store('maintenance_photos', $disk);
+            if ($photoPath === false) {
+                throw new RuntimeException('Maintenance photo could not be stored.');
+            }
             $photoData = [
-                'proof_photo_object_key' => $file->store('maintenance_photos', 'public'),
+                'proof_photo_object_key' => $photoPath,
                 'proof_photo_original_name' => $file->getClientOriginalName(),
-                'proof_photo_mime_type' => $file->getClientMimeType(),
+                'proof_photo_mime_type' => $file->getMimeType(),
                 'proof_photo_size' => $file->getSize(),
             ];
         }
 
-        $log = $this->maintenanceService->executeMaintenance(
-            $maintenance,
-            $request->validated(),
-            $photoData
-        );
+        try {
+            $log = $this->maintenanceService->executeMaintenance(
+                $maintenance,
+                $request->validated(),
+                $photoData
+            );
+        } catch (Throwable $exception) {
+            if (is_string($photoPath)) {
+                try {
+                    if (! Storage::disk($disk)->delete($photoPath)) {
+                        report(new RuntimeException('Failed maintenance photo could not be cleaned up.'));
+                    }
+                } catch (Throwable $cleanupException) {
+                    report($cleanupException);
+                }
+            }
+
+            throw $exception;
+        }
 
         return response()->json([
             'data' => $log,

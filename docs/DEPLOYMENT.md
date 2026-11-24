@@ -280,7 +280,7 @@ yang tersimpan pada disk default tidak diam-diam terlewat.
 Job backup memakai Spatie untuk membuat satu ZIP yang berisi dump MySQL,
 `backup-metadata.json`, seluruh objek bucket aplikasi di bawah path
 `minio/{object_key}`, serta file lokal disk `public` di bawah
-`storage/app/public/` (termasuk avatar). `backup-metadata.json` mencatat jumlah
+`storage/app/public/` (termasuk avatar lama). `backup-metadata.json` mencatat jumlah
 file lokal dan objek MinIO; `file_count` adalah jumlah keduanya. File MinIO
 dipindahkan dengan stream ke direktori temporary sebelum ZIP dibuat. Hasil
 proses dicatat di `backup_histories`.

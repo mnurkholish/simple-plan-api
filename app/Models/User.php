@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Traits\HasRoles;
@@ -91,6 +92,10 @@ class User extends Authenticatable implements MustVerifyEmail
                     || str_starts_with($value, '/storage/')
                 ) {
                     return $value;
+                }
+
+                if (! Storage::disk('public')->exists($value) && config('filesystems.default') === 's3') {
+                    return Storage::disk('s3')->url($value);
                 }
 
                 return asset('storage/'.ltrim($value, '/'));
