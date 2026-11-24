@@ -31,15 +31,44 @@ class AssetResource extends JsonResource
             'condition' => $this->condition?->value,
             'warranty_until' => $this->warranty_until?->format('Y-m-d'),
             'notes' => $this->notes,
-            'calibration_document' => $this->calibration_object_key === null ? null : [
-                'original_name' => $this->calibration_original_name,
-                'mime_type' => $this->calibration_mime_type,
-                'size' => $this->calibration_size,
-            ],
+            'calibration_document' => $this->formatDocumentMetadata(
+                $this->calibration_object_key,
+                $this->calibration_original_name,
+                $this->calibration_mime_type,
+                $this->calibration_size
+            ),
+            'invoice_document' => $this->formatDocumentMetadata(
+                $this->invoice_object_key,
+                $this->invoice_original_name,
+                $this->invoice_mime_type,
+                $this->invoice_size
+            ),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'histories' => AssetHistoryResource::collection($this->whenLoaded('histories')),
             'maintenance_histories' => AssetMaintenanceHistoryResource::collection($this->whenLoaded('maintenanceLogs')),
+        ];
+    }
+
+    /**
+     * Format uploaded asset document metadata consistently.
+     *
+     * @return array{original_name: string|null, mime_type: string|null, size: int|null}|null
+     */
+    private function formatDocumentMetadata(
+        ?string $objectKey,
+        ?string $originalName,
+        ?string $mimeType,
+        ?int $size
+    ): ?array {
+        if ($objectKey === null) {
+            return null;
+        }
+
+        return [
+            'original_name' => $originalName,
+            'mime_type' => $mimeType,
+            'size' => $size,
         ];
     }
 }

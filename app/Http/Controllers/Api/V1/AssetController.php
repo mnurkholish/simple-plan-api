@@ -88,7 +88,8 @@ class AssetController extends Controller
 
         $asset = $this->assetService->create(
             $request->validated(),
-            $request->file('calibration_document')
+            $request->file('calibration_document'),
+            $request->file('invoice_document')
         );
         $asset->load(['assetCode.classification', 'assetCode.location', 'assetCode.item']);
 
@@ -130,7 +131,8 @@ class AssetController extends Controller
             $asset,
             $request->validated(),
             $request->file('calibration_document'),
-            $request->user()?->id
+            $request->user()?->id,
+            $request->file('invoice_document')
         );
         $asset->load(['assetCode.classification', 'assetCode.location', 'assetCode.item']);
 

@@ -46,12 +46,18 @@ class Asset extends Model
         'calibration_original_name',
         'calibration_mime_type',
         'calibration_size',
+        'invoice_object_key',
+        'invoice_original_name',
+        'invoice_mime_type',
+        'invoice_size',
     ];
 
     protected $casts = [
         'status' => AssetStatus::class,
         'condition' => AssetCondition::class,
         'warranty_until' => 'date',
+        'calibration_size' => 'integer',
+        'invoice_size' => 'integer',
     ];
 
     public function assetCode(): BelongsTo

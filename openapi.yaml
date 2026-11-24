@@ -2377,6 +2377,7 @@ components:
         notes: { type: [string, "null"] }
         photo: { type: string, format: binary }
         calibration_document: { type: string, format: binary }
+        invoice_document: { type: [string, "null"], format: binary }
 
     InventoryAsset:
       type: object
@@ -2419,6 +2420,7 @@ components:
         notes: { type: [string, "null"] }
         photo: { type: [object, "null"] }
         calibration_document: { type: [object, "null"] }
+        invoice_document: { type: [object, "null"] }
         histories:
           type: array
           items:

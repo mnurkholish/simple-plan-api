@@ -262,6 +262,7 @@ use OpenApi\Annotations as OA;
  *     @OA\Property(property="warranty_until", type="string", format="date", nullable=true, example="2028-12-31"),
  *     @OA\Property(property="notes", type="string", nullable=true, example="Kondisi baik."),
  *     @OA\Property(property="calibration_document", type="object", nullable=true),
+ *     @OA\Property(property="invoice_document", type="object", nullable=true),
  *     @OA\Property(property="created_at", type="string", format="date-time", nullable=true),
  *     @OA\Property(property="updated_at", type="string", format="date-time", nullable=true),
  *     @OA\Property(property="histories", type="array", @OA\Items(ref="#/components/schemas/AssetHistory"), nullable=true),
@@ -3145,7 +3146,8 @@ class ApiDocumentation
      *         @OA\Property(property="condition", type="string", enum={"Baik", "Rusak Ringan", "Rusak Berat"}),
      *         @OA\Property(property="warranty_until", type="string", format="date", nullable=true),
      *         @OA\Property(property="notes", type="string", nullable=true),
-     *         @OA\Property(property="calibration_document", type="string", format="binary", nullable=true)
+     *         @OA\Property(property="calibration_document", type="string", format="binary", nullable=true),
+     *         @OA\Property(property="invoice_document", type="string", format="binary", nullable=true)
      *     ))),
      *
      *     @OA\Response(
@@ -3210,7 +3212,8 @@ class ApiDocumentation
      *         @OA\Property(property="condition", type="string", enum={"Baik", "Rusak Ringan", "Rusak Berat"}, nullable=true),
      *         @OA\Property(property="warranty_until", type="string", format="date", nullable=true),
      *         @OA\Property(property="notes", type="string", nullable=true),
-     *         @OA\Property(property="calibration_document", type="string", format="binary", nullable=true)
+     *         @OA\Property(property="calibration_document", type="string", format="binary", nullable=true),
+     *         @OA\Property(property="invoice_document", type="string", format="binary", nullable=true)
      *     ))),
      *
      *     @OA\Response(

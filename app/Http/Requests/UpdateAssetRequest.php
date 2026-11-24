@@ -32,6 +32,7 @@ class UpdateAssetRequest extends FormRequest
             'warranty_until' => ['sometimes', 'nullable', 'date'],
             'notes' => ['sometimes', 'nullable', 'string'],
             'calibration_document' => ['sometimes', 'nullable', 'file', 'mimes:pdf', 'max:5120'],
+            'invoice_document' => ['sometimes', 'nullable', 'file', 'mimes:pdf', 'max:5120'],
         ];
     }
 
@@ -56,6 +57,7 @@ class UpdateAssetRequest extends FormRequest
             'warranty_until' => 'masa berlaku garansi',
             'notes' => 'catatan',
             'calibration_document' => 'dokumen kalibrasi',
+            'invoice_document' => 'dokumen invoice',
         ];
     }
 
@@ -98,6 +100,10 @@ class UpdateAssetRequest extends FormRequest
             'calibration_document.mimes' => 'Dokumen kalibrasi harus berformat PDF.',
             'calibration_document.max' => 'Ukuran dokumen kalibrasi tidak boleh lebih dari 5 MB.',
             'calibration_document.uploaded' => 'Dokumen kalibrasi gagal diunggah.',
+            'invoice_document.file' => 'Dokumen invoice harus berupa berkas yang valid.',
+            'invoice_document.mimes' => 'Dokumen invoice harus berformat PDF.',
+            'invoice_document.max' => 'Ukuran dokumen invoice tidak boleh lebih dari 5 MB.',
+            'invoice_document.uploaded' => 'Dokumen invoice gagal diunggah.',
         ];
     }
 }

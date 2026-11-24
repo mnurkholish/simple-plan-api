@@ -28,11 +28,11 @@ class AssetService
         return $this->assetRepository->search($locationId, $search);
     }
 
-    public function create(array $data, ?UploadedFile $calibration = null): Asset
+    public function create(array $data, ?UploadedFile $calibration = null, ?UploadedFile $invoice = null): Asset
     {
         $storedKeys = [];
         try {
-            return DB::transaction(function () use ($data, $calibration, &$storedKeys): Asset {
+            return DB::transaction(function () use ($data, $calibration, $invoice, &$storedKeys): Asset {
                 $codeData = $this->assetCodeService->generate(
                     (int) $data['asset_classification_id'],
                     (int) $data['asset_location_id'],
@@ -53,7 +53,11 @@ class AssetService
                     'status', 'condition', 'warranty_until', 'notes',
                 ]));
                 $assetData['asset_code_id'] = $assetCode->id;
-                $assetData = array_merge($assetData, $this->storeFile($calibration, 'assets/calibrations', 'calibration', $storedKeys));
+                $assetData = array_merge(
+                    $assetData,
+                    $this->storeFile($calibration, 'assets/calibrations', 'calibration', $storedKeys),
+                    $this->storeFile($invoice, 'assets/invoices', 'invoice', $storedKeys)
+                );
 
                 return Asset::create($assetData);
             });
@@ -65,11 +69,16 @@ class AssetService
         }
     }
 
-    public function update(Asset $asset, array $data, ?UploadedFile $calibration = null, ?int $actorId = null): Asset
-    {
+    public function update(
+        Asset $asset,
+        array $data,
+        ?UploadedFile $calibration = null,
+        ?int $actorId = null,
+        ?UploadedFile $invoice = null
+    ): Asset {
         $storedKeys = [];
         try {
-            return DB::transaction(function () use ($asset, $data, $calibration, $actorId, &$storedKeys): Asset {
+            return DB::transaction(function () use ($asset, $data, $calibration, $actorId, $invoice, &$storedKeys): Asset {
                 $asset = Asset::query()->whereKey($asset->id)->lockForUpdate()->firstOrFail();
                 $assetCode = $asset->asset_code_id === null ? null
                     : AssetCode::query()->whereKey($asset->asset_code_id)->lockForUpdate()->firstOrFail();
@@ -124,13 +133,11 @@ class AssetService
                     'serial_number', 'purchase_year', 'brand', 'model_specification', 'detail_item', 'location_detail',
                     'status', 'condition', 'warranty_until', 'notes',
                 ]));
-                if ($calibration !== null) {
-                    if ($asset->calibration_object_key) {
-                        $oldKey = $asset->calibration_object_key;
-                        DB::afterCommit(fn () => Storage::delete($oldKey));
-                    }
-                    $assetData = array_merge($assetData, $this->storeFile($calibration, 'assets/calibrations', 'calibration', $storedKeys));
-                }
+                $assetData = array_merge(
+                    $assetData,
+                    $this->replaceFile($calibration, $asset->calibration_object_key, 'assets/calibrations', 'calibration', $storedKeys),
+                    $this->replaceFile($invoice, $asset->invoice_object_key, 'assets/invoices', 'invoice', $storedKeys)
+                );
 
                 $asset->fill($assetData);
                 foreach ($asset->getDirty() as $field => $value) {
@@ -157,6 +164,30 @@ class AssetService
             }
             throw $exception;
         }
+    }
+
+    /**
+     * Replace an existing asset file on storage when a new file is uploaded.
+     *
+     * @param  array<int, string>  $storedKeys
+     * @return array<string, mixed>
+     */
+    private function replaceFile(
+        ?UploadedFile $file,
+        ?string $existingKey,
+        string $directory,
+        string $prefix,
+        array &$storedKeys
+    ): array {
+        if ($file === null) {
+            return [];
+        }
+
+        if ($existingKey) {
+            DB::afterCommit(fn () => Storage::delete($existingKey));
+        }
+
+        return $this->storeFile($file, $directory, $prefix, $storedKeys);
     }
 
     private function storeFile(?UploadedFile $file, string $directory, string $prefix, array &$storedKeys): array
