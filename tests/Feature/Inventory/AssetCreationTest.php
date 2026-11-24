@@ -46,7 +46,7 @@ test('super-admin and koordinator-sarpras can create asset', function (string $r
     $response = $this->postJson('/api/v1/assets', $payload);
 
     $response->assertCreated()
-        ->assertJsonPath('message', 'Asset created successfully.')
+        ->assertJsonPath('message', 'Aset berhasil ditambahkan.')
         ->assertJsonPath('data.serial_number', 'SN-TEST-001')
         ->assertJsonPath('data.detail_item', 'Meja Lab');
 
@@ -148,5 +148,63 @@ test('detail_item validation rejects string longer than 255 characters', functio
 
     $this->postJson('/api/v1/assets', $payload)
         ->assertUnprocessable()
-        ->assertJsonValidationErrors('detail_item');
+        ->assertJsonValidationErrors('detail_item')
+        ->assertJsonPath('errors.detail_item.0', 'Detail barang tidak boleh lebih dari 255 karakter.');
+});
+
+test('purchase_year > 2100 returns 422 with Indonesian validation message on create and update', function (): void {
+    Role::findOrCreate('super-admin', 'web');
+    $user = User::factory()->create();
+    $user->assignRole('super-admin');
+    Sanctum::actingAs($user);
+
+    $classification = AssetClassification::factory()->create();
+    $location = AssetLocation::factory()->create();
+    $item = AssetItem::factory()->create(['asset_classification_id' => $classification->id]);
+
+    $payload = validAssetPayload($classification, $location, $item);
+    $payload['purchase_year'] = 2101;
+
+    $this->postJson('/api/v1/assets', $payload)
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('purchase_year')
+        ->assertJsonPath('message', 'Tahun pembelian tidak boleh lebih dari 2100.')
+        ->assertJsonPath('errors.purchase_year.0', 'Tahun pembelian tidak boleh lebih dari 2100.');
+
+    $asset = Asset::factory()->forInventory($classification, $location, $item)->create();
+
+    $this->putJson("/api/v1/assets/{$asset->id}", [
+        'purchase_year' => 2105,
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('purchase_year')
+        ->assertJsonPath('message', 'Tahun pembelian tidak boleh lebih dari 2100.')
+        ->assertJsonPath('errors.purchase_year.0', 'Tahun pembelian tidak boleh lebih dari 2100.');
+});
+
+test('inventory validation messages are fully localized to Indonesian', function (): void {
+    Role::findOrCreate('super-admin', 'web');
+    $user = User::factory()->create();
+    $user->assignRole('super-admin');
+    Sanctum::actingAs($user);
+
+    $response = $this->postJson('/api/v1/assets', []);
+
+    $response->assertUnprocessable()
+        ->assertJsonValidationErrors([
+            'asset_classification_id',
+            'asset_location_id',
+            'asset_item_id',
+            'purchase_year',
+            'status',
+            'condition',
+        ])
+        ->assertJsonPath('errors.asset_classification_id.0', 'Klasifikasi aset wajib dipilih.')
+        ->assertJsonPath('errors.asset_location_id.0', 'Lokasi aset wajib dipilih.')
+        ->assertJsonPath('errors.asset_item_id.0', 'Nama barang wajib dipilih.')
+        ->assertJsonPath('errors.purchase_year.0', 'Tahun pembelian wajib diisi.')
+        ->assertJsonPath('errors.status.0', 'Status aset wajib dipilih.')
+        ->assertJsonPath('errors.condition.0', 'Kondisi aset wajib dipilih.');
+
+    expect($response->json('message'))->toContain('Klasifikasi aset wajib dipilih.');
 });

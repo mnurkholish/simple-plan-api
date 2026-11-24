@@ -20,4 +20,21 @@ class ListAssetItemsRequest extends FormRequest
             'location_id' => ['sometimes', 'nullable', 'integer', 'exists:asset_locations,id'],
         ];
     }
+
+    /** @return array<string, string> */
+    public function attributes(): array
+    {
+        return [
+            'location_id' => 'lokasi aset',
+        ];
+    }
+
+    /** @return array<string, string> */
+    public function messages(): array
+    {
+        return [
+            'location_id.integer' => 'Lokasi aset tidak valid.',
+            'location_id.exists' => 'Lokasi aset yang dipilih tidak ditemukan.',
+        ];
+    }
 }

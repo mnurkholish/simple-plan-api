@@ -19,6 +19,8 @@ class UserService
 
     public function getAllUsers(int $perPage = 15): LengthAwarePaginator
     {
+        $perPage = min(max((int) request()->integer('per_page', $perPage), 1), 500);
+
         return $this->userRepository->getPaginatedUsers($perPage);
     }
 

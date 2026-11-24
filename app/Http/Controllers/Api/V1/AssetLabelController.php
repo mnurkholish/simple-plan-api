@@ -43,6 +43,19 @@ class AssetLabelController extends Controller
             ],
             'width_mm' => ['sometimes', 'numeric', 'min:50', 'max:150'],
             'height_mm' => ['sometimes', 'numeric', 'min:25', 'max:100'],
+        ], [
+            'format.string' => 'Format label harus berupa teks.',
+            'format.in' => 'Format label harus berupa html, png, atau pdf.',
+            'width_mm.numeric' => 'Lebar label (mm) harus berupa angka.',
+            'width_mm.min' => 'Lebar label tidak boleh kurang dari :min mm.',
+            'width_mm.max' => 'Lebar label tidak boleh lebih dari :max mm.',
+            'height_mm.numeric' => 'Tinggi label (mm) harus berupa angka.',
+            'height_mm.min' => 'Tinggi label tidak boleh kurang dari :min mm.',
+            'height_mm.max' => 'Tinggi label tidak boleh lebih dari :max mm.',
+        ], [
+            'format' => 'format label',
+            'width_mm' => 'lebar label (mm)',
+            'height_mm' => 'tinggi label (mm)',
         ]);
 
         $format = $validated['format'] ?? 'html';

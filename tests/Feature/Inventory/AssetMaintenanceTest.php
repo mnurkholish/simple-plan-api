@@ -154,7 +154,46 @@ test('Koordinator Sarpras BERHASIL membuat jadwal untuk aset Sarpras dengan petu
     ]);
 });
 
-test('Koordinator Sarpras GAGAL membuat jadwal untuk aset TIK', function (): void {
+test('Koordinator Sarpras BERHASIL memperbarui jadwal maintenance untuk petugas Sarpras', function (): void {
+    Sanctum::actingAs($this->koordSarpras);
+
+    $petugasSarprasBaru = createMaintenanceTestUser('petugas-sarpras');
+
+    $schedule = AssetMaintenance::create([
+        'asset_code_id' => $this->codeSarpras->id,
+        'assigned_officer_id' => $this->petugasSarpras->id,
+        'creator_id' => $this->koordSarpras->id,
+        'maintenance_type' => 'Pengecekan Oli Genset',
+        'period' => MaintenancePeriod::Quarterly,
+        'next_scheduled_date' => now()->addWeek()->format('Y-m-d'),
+        'status' => MaintenanceStatus::Terjadwal,
+        'is_active' => true,
+    ]);
+
+    $newDate = now()->addDays(10)->format('Y-m-d');
+
+    $response = $this->putJson("/api/v1/asset-maintenances/{$schedule->id}", [
+        'assigned_officer_id' => $petugasSarprasBaru->id,
+        'maintenance_type' => 'Penggantian Filter & Oli Genset',
+        'period' => MaintenancePeriod::Semiannually->value,
+        'next_scheduled_date' => $newDate,
+    ]);
+
+    $response->assertOk()
+        ->assertJsonPath('message', 'Jadwal pemeliharaan aset berhasil diperbarui.')
+        ->assertJsonPath('data.id', $schedule->id)
+        ->assertJsonPath('data.assigned_officer_id', $petugasSarprasBaru->id)
+        ->assertJsonPath('data.maintenance_type', 'Penggantian Filter & Oli Genset')
+        ->assertJsonPath('data.period', MaintenancePeriod::Semiannually->value);
+
+    $this->assertDatabaseHas('asset_maintenances', [
+        'id' => $schedule->id,
+        'assigned_officer_id' => $petugasSarprasBaru->id,
+        'maintenance_type' => 'Penggantian Filter & Oli Genset',
+    ]);
+});
+
+test('Koordinator Sarpras GAGAL membuat jadwal untuk aset TIK atau petugas yang tidak sesuai dengan pesan Bahasa Indonesia', function (): void {
     Sanctum::actingAs($this->koordSarpras);
     $nextDate = now()->addDays(3)->format('Y-m-d');
 
@@ -167,7 +206,67 @@ test('Koordinator Sarpras GAGAL membuat jadwal untuk aset TIK', function (): voi
     ]);
 
     $response->assertUnprocessable()
-        ->assertJsonValidationErrors(['asset_code_id']);
+        ->assertJsonValidationErrors(['asset_code_id'])
+        ->assertJsonPath('errors.asset_code_id.0', 'Koordinator Sarpras hanya dapat mengatur jadwal pemeliharaan untuk aset non-TIK (Sarpras).');
+
+    $responseWrongOfficer = $this->postJson('/api/v1/asset-maintenances', [
+        'asset_code_id' => $this->codeSarpras->id,
+        'assigned_officer_id' => $this->petugasTik->id,
+        'maintenance_type' => 'Pengecekan Genset',
+        'period' => MaintenancePeriod::Weekly->value,
+        'next_scheduled_date' => $nextDate,
+    ]);
+
+    $responseWrongOfficer->assertUnprocessable()
+        ->assertJsonValidationErrors(['assigned_officer_id'])
+        ->assertJsonPath('errors.assigned_officer_id.0', 'Petugas yang ditugaskan untuk aset Sarpras harus memiliki role petugas-sarpras.');
+});
+
+test('Validasi assigned_officer_id tidak valid mengembalikan 422 berbahasa Indonesia pada tambah dan ubah jadwal maintenance', function (): void {
+    Sanctum::actingAs($this->koordSarpras);
+    $nextDate = now()->addDays(3)->format('Y-m-d');
+
+    $resNotFound = $this->postJson('/api/v1/asset-maintenances', [
+        'asset_code_id' => $this->codeSarpras->id,
+        'assigned_officer_id' => 999999,
+        'maintenance_type' => 'Pengecekan Genset',
+        'period' => MaintenancePeriod::Monthly->value,
+        'next_scheduled_date' => $nextDate,
+    ]);
+
+    $resNotFound->assertUnprocessable()
+        ->assertJsonValidationErrors(['assigned_officer_id'])
+        ->assertJsonPath('message', 'Petugas yang dipilih tidak ditemukan atau tidak valid.')
+        ->assertJsonPath('errors.assigned_officer_id.0', 'Petugas yang dipilih tidak ditemukan atau tidak valid.');
+
+    $schedule = AssetMaintenance::create([
+        'asset_code_id' => $this->codeSarpras->id,
+        'assigned_officer_id' => $this->petugasSarpras->id,
+        'creator_id' => $this->koordSarpras->id,
+        'maintenance_type' => 'Pengecekan Genset',
+        'period' => MaintenancePeriod::Monthly,
+        'next_scheduled_date' => $nextDate,
+        'status' => MaintenanceStatus::Terjadwal,
+        'is_active' => true,
+    ]);
+
+    $resUpdateNotFound = $this->putJson("/api/v1/asset-maintenances/{$schedule->id}", [
+        'assigned_officer_id' => 999999,
+    ]);
+
+    $resUpdateNotFound->assertUnprocessable()
+        ->assertJsonValidationErrors(['assigned_officer_id'])
+        ->assertJsonPath('message', 'Petugas yang dipilih tidak ditemukan atau tidak valid.')
+        ->assertJsonPath('errors.assigned_officer_id.0', 'Petugas yang dipilih tidak ditemukan atau tidak valid.');
+
+    $resUpdateWrongRole = $this->putJson("/api/v1/asset-maintenances/{$schedule->id}", [
+        'assigned_officer_id' => $this->petugasTik->id,
+    ]);
+
+    $resUpdateWrongRole->assertUnprocessable()
+        ->assertJsonValidationErrors(['assigned_officer_id'])
+        ->assertJsonPath('message', 'Petugas yang ditugaskan untuk aset Sarpras harus memiliki role petugas-sarpras.')
+        ->assertJsonPath('errors.assigned_officer_id.0', 'Petugas yang ditugaskan untuk aset Sarpras harus memiliki role petugas-sarpras.');
 });
 
 test('Endpoint Index berhasil memfilter jadwal berdasarkan status dan search', function (): void {

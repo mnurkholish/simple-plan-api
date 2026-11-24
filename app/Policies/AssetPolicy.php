@@ -4,10 +4,81 @@ namespace App\Policies;
 
 use App\Models\Asset;
 use App\Models\User;
+use Illuminate\Auth\Access\Response;
 
 class AssetPolicy
 {
-    public function viewAny(User $user): bool
+    public function viewAny(User $user): Response
+    {
+        return $this->canViewAny($user)
+            ? Response::allow()
+            : Response::deny('Anda tidak memiliki izin untuk melihat daftar inventaris.');
+    }
+
+    public function view(User $user, Asset $asset): Response
+    {
+        if (! $this->canViewAny($user)) {
+            return Response::deny('Anda tidak memiliki izin untuk melihat detail aset ini.');
+        }
+
+        $asset->loadMissing('assetCode.classification');
+        $classificationName = $asset->assetCode?->classification?->name;
+
+        if ($user->hasAnyRole(['manajemen', 'management'])) {
+            if ($this->isTikOrSarpras($classificationName)) {
+                return Response::deny('Anda tidak memiliki izin untuk melihat detail aset ini.');
+            }
+        }
+
+        if ($user->hasAnyRole(['super-admin', 'super_admin'])) {
+            if ($this->isSarpras($classificationName)) {
+                return Response::deny('Anda tidak memiliki izin untuk melihat detail aset ini.');
+            }
+        }
+
+        if ($user->hasAnyRole(['koordinator-sarpras', 'koordinator_sarpras'])) {
+            if ($this->isTik($classificationName)) {
+                return Response::deny('Anda tidak memiliki izin untuk melihat detail aset ini.');
+            }
+        }
+
+        return Response::allow();
+    }
+
+    public function create(User $user): Response
+    {
+        return $user->hasAnyRole([
+            'super-admin',
+            'super_admin',
+            'koordinator-sarpras',
+            'koordinator_sarpras',
+        ])
+            ? Response::allow()
+            : Response::deny('Anda tidak memiliki izin untuk menambahkan data inventaris.');
+    }
+
+    public function update(User $user, Asset $asset): Response
+    {
+        return $this->canManageAsset($user)
+            ? Response::allow()
+            : Response::deny('Anda tidak memiliki izin untuk memperbarui data inventaris.');
+    }
+
+    public function delete(User $user, Asset $asset): Response
+    {
+        return $this->canManageAsset($user)
+            ? Response::allow()
+            : Response::deny('Anda tidak memiliki izin untuk menghapus data inventaris.');
+    }
+
+    public function printLabel(User $user, Asset $asset): Response
+    {
+        return $this->canManageAsset($user)
+            ? Response::allow()
+            : Response::deny('Anda tidak memiliki izin untuk mencetak label aset.');
+    }
+
+    private function canViewAny(User $user): bool
     {
         return $user->hasAnyRole([
             'super-admin',
@@ -24,47 +95,7 @@ class AssetPolicy
         ]);
     }
 
-    public function view(User $user, Asset $asset): bool
-    {
-        if (! $this->viewAny($user)) {
-            return false;
-        }
-
-        $asset->loadMissing('assetCode.classification');
-        $classificationName = $asset->assetCode?->classification?->name;
-
-        if ($user->hasAnyRole(['manajemen', 'management'])) {
-            if ($this->isTikOrSarpras($classificationName)) {
-                return false;
-            }
-        }
-
-        if ($user->hasAnyRole(['super-admin', 'super_admin'])) {
-            if ($this->isSarpras($classificationName)) {
-                return false;
-            }
-        }
-
-        if ($user->hasAnyRole(['koordinator-sarpras', 'koordinator_sarpras'])) {
-            if ($this->isTik($classificationName)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    public function create(User $user): bool
-    {
-        return $user->hasAnyRole([
-            'super-admin',
-            'super_admin',
-            'koordinator-sarpras',
-            'koordinator_sarpras',
-        ]);
-    }
-
-    public function update(User $user, Asset $asset): bool
+    private function canManageAsset(User $user): bool
     {
         return $user->hasAnyRole([
             'super-admin',
@@ -76,16 +107,6 @@ class AssetPolicy
             'petugas-sarpras',
             'petugas_sarpras',
         ]);
-    }
-
-    public function delete(User $user, Asset $asset): bool
-    {
-        return $this->update($user, $asset);
-    }
-
-    public function printLabel(User $user, Asset $asset): bool
-    {
-        return $this->update($user, $asset);
     }
 
     private function isTik(?string $name): bool

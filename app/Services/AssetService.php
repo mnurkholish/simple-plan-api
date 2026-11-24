@@ -166,7 +166,7 @@ class AssetService
         }
         $key = $file->store($directory);
         if ($key === false) {
-            throw new \RuntimeException('Asset file could not be stored.');
+            throw new \RuntimeException('Berkas aset gagal disimpan.');
         }
         $storedKeys[] = $key;
 

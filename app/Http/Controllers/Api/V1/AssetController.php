@@ -47,6 +47,25 @@ class AssetController extends Controller
             'asset_location_id' => 'required|integer|exists:asset_locations,id',
             'asset_item_id' => 'required|integer|exists:asset_items,id',
             'year' => 'required|integer|min:1900|max:2100',
+        ], [
+            'asset_classification_id.required' => 'Klasifikasi aset wajib dipilih.',
+            'asset_classification_id.integer' => 'Klasifikasi aset tidak valid.',
+            'asset_classification_id.exists' => 'Klasifikasi aset yang dipilih tidak ditemukan.',
+            'asset_location_id.required' => 'Lokasi aset wajib dipilih.',
+            'asset_location_id.integer' => 'Lokasi aset tidak valid.',
+            'asset_location_id.exists' => 'Lokasi aset yang dipilih tidak ditemukan.',
+            'asset_item_id.required' => 'Nama barang wajib dipilih.',
+            'asset_item_id.integer' => 'Nama barang tidak valid.',
+            'asset_item_id.exists' => 'Nama barang yang dipilih tidak ditemukan.',
+            'year.required' => 'Tahun pembelian wajib diisi.',
+            'year.integer' => 'Tahun pembelian harus berupa angka tahun yang valid.',
+            'year.min' => 'Tahun pembelian tidak boleh kurang dari :min.',
+            'year.max' => 'Tahun pembelian tidak boleh lebih dari :max.',
+        ], [
+            'asset_classification_id' => 'klasifikasi aset',
+            'asset_location_id' => 'lokasi aset',
+            'asset_item_id' => 'nama barang',
+            'year' => 'tahun pembelian',
         ]);
 
         $codeData = $this->assetCodeService->generate(
@@ -75,7 +94,7 @@ class AssetController extends Controller
 
         return response()->json([
             'data' => new AssetResource($asset),
-            'message' => 'Asset created successfully.',
+            'message' => 'Aset berhasil ditambahkan.',
         ], 201);
     }
 
@@ -114,7 +133,7 @@ class AssetController extends Controller
 
         return response()->json([
             'data' => new AssetResource($asset),
-            'message' => 'Asset updated successfully.',
+            'message' => 'Aset berhasil diperbarui.',
         ]);
     }
 
@@ -127,7 +146,7 @@ class AssetController extends Controller
         });
 
         return response()->json([
-            'message' => 'Asset deleted successfully.',
+            'message' => 'Aset berhasil dihapus.',
         ]);
     }
 
