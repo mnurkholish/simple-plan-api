@@ -17,4 +17,25 @@ class UpdateAssetLocationRequest extends FormRequest
             'name' => ['required', 'string'],
         ];
     }
+
+    /**
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        return [
+            'name' => 'nama lokasi aset',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'Nama lokasi aset wajib diisi.',
+            'name.string' => 'Nama lokasi aset harus berupa teks.',
+        ];
+    }
 }

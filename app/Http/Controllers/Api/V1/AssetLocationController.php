@@ -42,7 +42,7 @@ class AssetLocationController extends Controller
 
         return response()->json([
             'data' => $location,
-            'message' => 'Asset location created successfully.',
+            'message' => 'Lokasi aset berhasil ditambahkan.',
         ], 201);
     }
 
@@ -64,7 +64,7 @@ class AssetLocationController extends Controller
 
         return response()->json([
             'data' => $location,
-            'message' => 'Asset location updated successfully.',
+            'message' => 'Lokasi aset berhasil diperbarui.',
         ]);
     }
 }

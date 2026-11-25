@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
@@ -45,12 +46,18 @@ class Asset extends Model
         'calibration_original_name',
         'calibration_mime_type',
         'calibration_size',
+        'invoice_object_key',
+        'invoice_original_name',
+        'invoice_mime_type',
+        'invoice_size',
     ];
 
     protected $casts = [
         'status' => AssetStatus::class,
         'condition' => AssetCondition::class,
         'warranty_until' => 'date',
+        'calibration_size' => 'integer',
+        'invoice_size' => 'integer',
     ];
 
     public function assetCode(): BelongsTo
@@ -66,6 +73,20 @@ class Asset extends Model
     public function maintenanceOccurrences(): HasMany
     {
         return $this->hasMany(AssetMaintenanceOccurrence::class, 'asset_code_id', 'asset_code_id');
+    }
+
+    public function maintenanceLogs(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            AssetMaintenanceLog::class,
+            AssetMaintenance::class,
+            'asset_code_id',
+            'asset_maintenance_id',
+            'asset_code_id',
+            'id'
+        )
+            ->latest('asset_maintenance_logs.completed_at')
+            ->latest('asset_maintenance_logs.id');
     }
 
     public function scopeVisibleTo(Builder $query, ?User $actor = null): Builder

@@ -48,7 +48,7 @@ class AssetItemController extends Controller
 
         return response()->json([
             'data' => $item,
-            'message' => 'Asset item created successfully.',
+            'message' => 'Master barang berhasil ditambahkan.',
         ], 201);
     }
 
@@ -70,7 +70,7 @@ class AssetItemController extends Controller
 
         return response()->json([
             'data' => $item,
-            'message' => 'Asset item updated successfully.',
+            'message' => 'Master barang berhasil diperbarui.',
         ]);
     }
 }

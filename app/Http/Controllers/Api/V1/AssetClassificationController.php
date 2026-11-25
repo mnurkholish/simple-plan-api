@@ -42,7 +42,7 @@ class AssetClassificationController extends Controller
 
         return response()->json([
             'data' => $classification,
-            'message' => 'Asset classification created successfully.',
+            'message' => 'Klasifikasi aset berhasil ditambahkan.',
         ], 201);
     }
 
@@ -64,7 +64,7 @@ class AssetClassificationController extends Controller
 
         return response()->json([
             'data' => $classification,
-            'message' => 'Asset classification updated successfully.',
+            'message' => 'Klasifikasi aset berhasil diperbarui.',
         ]);
     }
 }

@@ -38,7 +38,8 @@ class AssetMaintenanceLogController extends Controller
         $log = $this->maintenanceService->executeMaintenance(
             $maintenance,
             $request->validated(),
-            $photoData
+            $photoData,
+            $request->user()?->id
         );
 
         return response()->json([

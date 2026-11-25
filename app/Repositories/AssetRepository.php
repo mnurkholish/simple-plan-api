@@ -28,7 +28,9 @@ class AssetRepository
             ->with(['assetCode.classification', 'assetCode.location', 'assetCode.item']);
 
         if ($user) {
-            if ($user->hasAnyRole(['manajemen', 'management'])) {
+            if ($user->hasAnyRole(['super_admin', 'super-admin'])) {
+                // Super Admin memiliki akses penuh lintas domain (TIK, Sarpras, dan lainnya)
+            } elseif ($user->hasAnyRole(['manajemen', 'management'])) {
                 // Aturan Filter A: Manajemen TIDAK BISA melihat data inventaris TIK dan Sarpras
                 $query->whereDoesntHave('assetCode.classification', function (Builder $q): void {
                     $q->where(function (Builder $sub): void {
@@ -36,15 +38,6 @@ class AssetRepository
                             ->orWhere('name', 'like', '%TIK%')
                             ->orWhere('name', 'like', '%Sarpras%')
                             ->orWhere('name', 'like', '%Alat IT%')
-                            ->orWhere('name', 'like', '%Alat Sarpras%');
-                    });
-                });
-            } elseif ($user->hasAnyRole(['super_admin', 'super-admin'])) {
-                // Aturan Filter B: Super Admin TIDAK BISA melihat data inventaris Sarpras
-                $query->whereDoesntHave('assetCode.classification', function (Builder $q): void {
-                    $q->where(function (Builder $sub): void {
-                        $sub->whereIn('name', ['Alat Sarpras', 'Sarpras'])
-                            ->orWhere('name', 'like', '%sarpras%')
                             ->orWhere('name', 'like', '%Alat Sarpras%');
                     });
                 });
