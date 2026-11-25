@@ -532,7 +532,7 @@ test('Query scope AssetMaintenanceOccurrence memfilter rentang tanggal, status, 
 
     // Role visibility isolation
     expect(AssetMaintenanceOccurrence::visibleTo($this->superAdmin)->pluck('id')->all())
-        ->toEqualCanonicalizing([$occScheduled->id, $occCompletedLate->id])
+        ->toEqualCanonicalizing([$occScheduled->id, $occOverdue->id, $occCompletedLate->id])
         ->and(AssetMaintenanceOccurrence::visibleTo($this->koordSarpras)->pluck('id')->all())
         ->toBe([$occOverdue->id])
         ->and(AssetMaintenanceOccurrence::visibleTo($this->petugasTik)->pluck('id')->all())

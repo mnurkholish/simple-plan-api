@@ -41,4 +41,53 @@ class ExportAssetLabelsRequest extends FormRequest
             'height_mm' => ['required', 'numeric', 'min:25', 'max:100'],
         ];
     }
+
+    /** @return array<string, string> */
+    public function attributes(): array
+    {
+        return [
+            'selection_mode' => 'mode pemilihan aset',
+            'asset_ids' => 'daftar aset',
+            'asset_ids.*' => 'aset',
+            'filters' => 'filter aset',
+            ...ListAssetsRequest::filterAttributes('filters.'),
+            'filters.page' => 'halaman',
+            'filters.per_page' => 'jumlah data per halaman',
+            'width_mm' => 'lebar label (mm)',
+            'height_mm' => 'tinggi label (mm)',
+        ];
+    }
+
+    /** @return array<string, string> */
+    public function messages(): array
+    {
+        return [
+            'selection_mode.required' => 'Mode pemilihan aset wajib diisi.',
+            'selection_mode.in' => 'Mode pemilihan aset tidak valid.',
+            'asset_ids.required' => 'Daftar aset yang akan dicetak wajib dipilih.',
+            'asset_ids.missing' => 'Daftar aset tidak boleh dikirim saat memilih semua aset sesuai filter.',
+            'asset_ids.array' => 'Daftar aset harus berupa daftar pilihan yang valid.',
+            'asset_ids.min' => 'Minimal harus memilih :min aset untuk dicetak.',
+            'asset_ids.*.required' => 'ID aset wajib diisi.',
+            'asset_ids.*.integer' => 'ID aset harus berupa angka yang valid.',
+            'asset_ids.*.distinct' => 'ID aset tidak boleh duplikat.',
+            'asset_ids.*.exists' => 'Aset yang dipilih tidak ditemukan atau tidak valid.',
+            'filters.present' => 'Filter aset wajib disertakan saat memilih semua aset sesuai filter.',
+            'filters.missing' => 'Filter aset tidak boleh dikirim saat memilih aset secara manual.',
+            'filters.array' => 'Format filter aset tidak valid.',
+            ...ListAssetsRequest::filterMessages('filters.'),
+            'filters.page.integer' => 'Nomor halaman harus berupa angka.',
+            'filters.page.min' => 'Nomor halaman minimal :min.',
+            'filters.per_page.integer' => 'Jumlah data per halaman harus berupa angka.',
+            'filters.per_page.min' => 'Jumlah data per halaman minimal :min.',
+            'width_mm.required' => 'Lebar label (mm) wajib diisi.',
+            'width_mm.numeric' => 'Lebar label (mm) harus berupa angka.',
+            'width_mm.min' => 'Lebar label tidak boleh kurang dari :min mm.',
+            'width_mm.max' => 'Lebar label tidak boleh lebih dari :max mm.',
+            'height_mm.required' => 'Tinggi label (mm) wajib diisi.',
+            'height_mm.numeric' => 'Tinggi label (mm) harus berupa angka.',
+            'height_mm.min' => 'Tinggi label tidak boleh kurang dari :min mm.',
+            'height_mm.max' => 'Tinggi label tidak boleh lebih dari :max mm.',
+        ];
+    }
 }

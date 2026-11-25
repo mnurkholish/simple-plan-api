@@ -77,7 +77,7 @@ class InventoryReportService
      */
     public function query(array $filters, User $actor): Builder
     {
-        abort_unless($actor->hasAnyRole(self::ALLOWED_ROLES), 403);
+        abort_unless($actor->hasAnyRole(self::ALLOWED_ROLES), 403, 'Anda tidak memiliki izin untuk mengakses laporan inventaris.');
 
         $query = Asset::query();
 

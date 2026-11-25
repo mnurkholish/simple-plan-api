@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\AssetCondition;
 use App\Enums\MaintenancePeriod;
 use App\Enums\MaintenanceStatus;
+use App\Models\Asset;
 use App\Models\AssetMaintenance;
 use App\Models\AssetMaintenanceLog;
 use App\Models\AssetMaintenanceOccurrence;
@@ -85,18 +87,20 @@ class AssetMaintenanceService
     public function executeMaintenance(
         AssetMaintenance $schedule,
         array $data,
-        array $photoData = []
+        array $photoData = [],
+        ?int $actorId = null
     ): AssetMaintenanceLog {
-        return DB::transaction(function () use ($schedule, $data, $photoData): AssetMaintenanceLog {
+        return DB::transaction(function () use ($schedule, $data, $photoData, $actorId): AssetMaintenanceLog {
             $oldScheduledDate = $this->normalizeDateString($schedule->next_scheduled_date)
                 ?? today()->toDateString();
+            $postCondition = $this->resolvePostMaintenanceCondition($data['post_maintenance_condition'] ?? null);
 
             /** @var AssetMaintenanceLog $log */
             $log = $schedule->logs()->create([
                 'scheduled_date' => $oldScheduledDate,
                 'work_description' => $data['work_description'] ?? null,
                 'maintenance_result' => $data['maintenance_result'] ?? null,
-                'post_maintenance_condition' => $data['post_maintenance_condition'] ?? null,
+                'post_maintenance_condition' => $postCondition?->value,
                 'started_at' => $data['started_at'] ?? null,
                 'completed_at' => $data['completed_at'] ?? null,
                 'proof_photo_object_key' => $photoData['proof_photo_object_key'] ?? $data['proof_photo_object_key'] ?? null,
@@ -104,6 +108,8 @@ class AssetMaintenanceService
                 'proof_photo_mime_type' => $photoData['proof_photo_mime_type'] ?? $data['proof_photo_mime_type'] ?? null,
                 'proof_photo_size' => $photoData['proof_photo_size'] ?? $data['proof_photo_size'] ?? null,
             ]);
+
+            $this->syncAssetCondition($schedule, $postCondition, $actorId);
 
             $this->recordOccurrenceRealization($schedule, $log);
 
@@ -370,6 +376,60 @@ class AssetMaintenanceService
             : Carbon::parse($realizedAt)->startOfDay();
 
         return $realized->gt($scheduled);
+    }
+
+    protected function resolvePostMaintenanceCondition(AssetCondition|string|null $condition): ?AssetCondition
+    {
+        if ($condition === null || $condition === '') {
+            return null;
+        }
+
+        if ($condition instanceof AssetCondition) {
+            return $condition;
+        }
+
+        return AssetCondition::tryFrom($condition)
+            ?? throw new \InvalidArgumentException("Kondisi pasca pemeliharaan tidak valid: {$condition}");
+    }
+
+    protected function syncAssetCondition(
+        AssetMaintenance $schedule,
+        ?AssetCondition $newCondition,
+        ?int $actorId = null
+    ): void {
+        if ($newCondition === null || $schedule->asset_code_id === null) {
+            return;
+        }
+
+        $asset = Asset::query()
+            ->where('asset_code_id', $schedule->asset_code_id)
+            ->lockForUpdate()
+            ->first();
+
+        if ($asset === null) {
+            return;
+        }
+
+        $oldCondition = $asset->condition instanceof AssetCondition
+            ? $asset->condition->value
+            : ($asset->condition !== null ? (string) $asset->condition : null);
+
+        if ($oldCondition === $newCondition->value) {
+            return;
+        }
+
+        $asset->update([
+            'condition' => $newCondition->value,
+        ]);
+
+        $asset->histories()->create([
+            'event_type' => 'updated',
+            'old_values' => ['condition' => $oldCondition],
+            'new_values' => ['condition' => $newCondition->value],
+            'is_location_change' => false,
+            'changed_by' => $actorId ?? auth()->id() ?? $schedule->assigned_officer_id,
+            'created_at' => now(),
+        ]);
     }
 
     protected function normalizeDateString(mixed $date): ?string

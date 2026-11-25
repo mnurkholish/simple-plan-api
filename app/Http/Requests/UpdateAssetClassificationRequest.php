@@ -17,4 +17,25 @@ class UpdateAssetClassificationRequest extends FormRequest
             'name' => ['required', 'string'],
         ];
     }
+
+    /**
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        return [
+            'name' => 'nama klasifikasi aset',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'Nama klasifikasi aset wajib diisi.',
+            'name.string' => 'Nama klasifikasi aset harus berupa teks.',
+        ];
+    }
 }

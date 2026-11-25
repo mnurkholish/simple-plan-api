@@ -6,6 +6,7 @@ use App\Enums\MaintenanceStatus;
 use App\Models\Asset;
 use App\Models\AssetClassification;
 use App\Models\AssetCode;
+use App\Models\AssetHistory;
 use App\Models\AssetItem;
 use App\Models\AssetLocation;
 use App\Models\AssetMaintenance;
@@ -199,4 +200,80 @@ test('Command maintenance:check-status mengubah status Selesai menjadi Terjadwal
 
     expect($scheduleRecent->status)->toBe(MaintenanceStatus::Selesai);
     expect($schedulePast24h->status)->toBe(MaintenanceStatus::Terjadwal);
+});
+
+test('Eksekusi maintenance dengan post_maintenance_condition berbeda memperbarui assets.condition dan mencatat asset_histories', function (): void {
+    Sanctum::actingAs($this->petugasTik);
+
+    $this->asset->update(['condition' => AssetCondition::Good]);
+
+    $schedule = AssetMaintenance::create([
+        'asset_code_id' => $this->code->id,
+        'assigned_officer_id' => $this->petugasTik->id,
+        'creator_id' => $this->superAdmin->id,
+        'maintenance_type' => 'Pengecekan Hardware',
+        'period' => MaintenancePeriod::Monthly,
+        'next_scheduled_date' => '2026-11-01',
+        'status' => MaintenanceStatus::Terjadwal,
+        'is_active' => true,
+    ]);
+
+    $this->postJson("/api/v1/asset-maintenances/{$schedule->id}/logs", [
+        'work_description' => 'Pemeriksaan fisik kipas dan port',
+        'maintenance_result' => 'Kipas berisik dan salah satu port longgar',
+        'post_maintenance_condition' => AssetCondition::LightDamage->value,
+        'started_at' => '2026-11-01 09:00:00',
+        'completed_at' => '2026-11-01 10:00:00',
+    ])->assertCreated();
+
+    $this->asset->refresh();
+    expect($this->asset->condition)->toBe(AssetCondition::LightDamage);
+
+    $history = AssetHistory::query()->where('asset_id', $this->asset->id)->latest('id')->first();
+    expect($history)->not->toBeNull()
+        ->and($history->event_type)->toBe('updated')
+        ->and($history->old_values)->toBe(['condition' => AssetCondition::Good->value])
+        ->and($history->new_values)->toBe(['condition' => AssetCondition::LightDamage->value])
+        ->and($history->is_location_change)->toBeFalse()
+        ->and($history->changed_by)->toBe($this->petugasTik->id);
+
+    Sanctum::actingAs($this->superAdmin);
+    $this->getJson("/api/v1/assets/{$this->asset->id}")
+        ->assertOk()
+        ->assertJsonPath('data.condition', AssetCondition::LightDamage->value)
+        ->assertJsonPath('data.histories.0.event_type', 'updated')
+        ->assertJsonPath('data.histories.0.old_values.condition', AssetCondition::Good->value)
+        ->assertJsonPath('data.histories.0.new_values.condition', AssetCondition::LightDamage->value)
+        ->assertJsonPath('data.histories.0.is_location_change', false)
+        ->assertJsonPath('data.histories.0.changed_by_name', $this->petugasTik->name)
+        ->assertJsonCount(1, 'data.maintenance_histories');
+});
+
+test('Eksekusi maintenance dengan post_maintenance_condition sama tidak membuat entri asset_histories baru', function (): void {
+    Sanctum::actingAs($this->petugasTik);
+
+    $this->asset->update(['condition' => AssetCondition::Good]);
+
+    $schedule = AssetMaintenance::create([
+        'asset_code_id' => $this->code->id,
+        'assigned_officer_id' => $this->petugasTik->id,
+        'creator_id' => $this->superAdmin->id,
+        'maintenance_type' => 'Pengecekan Rutin',
+        'period' => MaintenancePeriod::Monthly,
+        'next_scheduled_date' => '2026-11-01',
+        'status' => MaintenanceStatus::Terjadwal,
+        'is_active' => true,
+    ]);
+
+    $this->postJson("/api/v1/asset-maintenances/{$schedule->id}/logs", [
+        'work_description' => 'Pembersihan debu',
+        'maintenance_result' => 'Kondisi tetap prima',
+        'post_maintenance_condition' => AssetCondition::Good->value,
+        'started_at' => '2026-11-01 09:00:00',
+        'completed_at' => '2026-11-01 10:00:00',
+    ])->assertCreated();
+
+    $this->asset->refresh();
+    expect($this->asset->condition)->toBe(AssetCondition::Good)
+        ->and(AssetHistory::query()->where('asset_id', $this->asset->id)->count())->toBe(0);
 });

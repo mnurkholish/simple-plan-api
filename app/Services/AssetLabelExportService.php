@@ -28,7 +28,7 @@ class AssetLabelExportService
 
         if ($assets->isEmpty()) {
             throw ValidationException::withMessages([
-                $allFiltered ? 'filters' : 'asset_ids' => 'No printable assets match this selection.',
+                $allFiltered ? 'filters' : 'asset_ids' => 'Tidak ada aset yang dapat dicetak sesuai pilihan ini.',
             ]);
         }
 

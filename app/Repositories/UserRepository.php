@@ -56,6 +56,20 @@ class UserRepository
         return QueryBuilder::for(User::with(['unit', 'roles']))
             ->allowedFilters(...[
                 AllowedFilter::exact('status_user'),
+                AllowedFilter::callback('role', function (Builder $query, $value): void {
+                    $roles = is_array($value)
+                        ? $value
+                        : array_filter(array_map('trim', explode(',', (string) $value)));
+
+                    $normalizedRoles = [];
+                    foreach ($roles as $role) {
+                        $normalizedRoles[] = (string) $role;
+                        $normalizedRoles[] = str_replace('_', '-', (string) $role);
+                        $normalizedRoles[] = str_replace('-', '_', (string) $role);
+                    }
+
+                    $query->whereHas('roles', fn (Builder $q): Builder => $q->whereIn('name', array_values(array_unique($normalizedRoles))));
+                }),
                 AllowedFilter::callback('search', function (Builder $query, $value): void {
                     $query->where(function (Builder $q) use ($value): void {
                         $q->where('name', 'like', "%{$value}%")
