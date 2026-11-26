@@ -20,10 +20,10 @@ class BackupService
     public function histories(array $filters, int $perPage): LengthAwarePaginator
     {
         $from = isset($filters['date_from'])
-            ? CarbonImmutable::parse($filters['date_from'], 'Asia/Jakarta')->startOfDay()->utc()
+            ? CarbonImmutable::parse($filters['date_from'], config('app.operational_timezone'))->startOfDay()->utc()
             : null;
         $to = isset($filters['date_to'])
-            ? CarbonImmutable::parse($filters['date_to'], 'Asia/Jakarta')->addDay()->startOfDay()->utc()
+            ? CarbonImmutable::parse($filters['date_to'], config('app.operational_timezone'))->addDay()->startOfDay()->utc()
             : null;
 
         return BackupHistory::query()

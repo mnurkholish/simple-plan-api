@@ -70,13 +70,13 @@ class DesignRequestRepository
             ->when(
                 $filters['start_date'] ?? null,
                 fn (Builder $query, string $date): Builder => $query->where(
-                    'created_at', '>=', CarbonImmutable::createFromFormat('!Y-m-d', $date),
+                    'created_at', '>=', CarbonImmutable::parse($date, config('app.operational_timezone'))->startOfDay()->utc(),
                 ),
             )
             ->when(
                 $filters['end_date'] ?? null,
                 fn (Builder $query, string $date): Builder => $query->where(
-                    'created_at', '<', CarbonImmutable::createFromFormat('!Y-m-d', $date)->addDay(),
+                    'created_at', '<', CarbonImmutable::parse($date, config('app.operational_timezone'))->addDay()->startOfDay()->utc(),
                 ),
             );
     }

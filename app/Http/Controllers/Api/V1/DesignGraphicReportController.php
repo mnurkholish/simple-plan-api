@@ -31,7 +31,7 @@ class DesignGraphicReportController extends Controller
                 'summary' => $report['summary'],
                 'charts' => $report['charts'],
                 'period' => $filters['periode_awal'].' – '.$filters['periode_akhir'],
-                'downloadedAt' => now()->format('d M Y, H:i'),
+                'downloadedAt' => now(config('app.operational_timezone'))->format('d M Y, H:i').' WIB',
                 'downloadedBy' => $request->user()->name,
             ], $filename.'.pdf', [
                 'view' => 'reports.design-graphic.pdf',

@@ -156,7 +156,7 @@ class AssetMaintenanceController extends Controller
             return;
         }
 
-        $today = today();
+        $today = today(config('app.operational_timezone'));
         $scheduledDate = Carbon::parse($maintenance->next_scheduled_date)->startOfDay();
         $diffDays = (int) $today->diffInDays($scheduledDate, false);
 

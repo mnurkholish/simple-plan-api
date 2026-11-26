@@ -77,8 +77,8 @@ test('Petugas yang DITUNJUK berhasil submit log beserta upload foto bukti', func
         'work_description' => 'Pembersihan debu kipas dan pergantian thermal paste',
         'maintenance_result' => 'Suhu laptop kembali dingin dan kipas berputar hening',
         'post_maintenance_condition' => AssetCondition::Good->value,
-        'started_at' => '2026-11-01 09:00:00',
-        'completed_at' => '2026-11-01 10:15:00',
+        'started_at' => '2026-11-01T09:00:00+07:00',
+        'completed_at' => '2026-11-01T10:15:00+07:00',
         'photo' => $photo,
     ]);
 
@@ -90,7 +90,8 @@ test('Petugas yang DITUNJUK berhasil submit log beserta upload foto bukti', func
     $log = AssetMaintenanceLog::where('asset_maintenance_id', $schedule->id)->first();
     expect($log)->not->toBeNull()
         ->and($log->proof_photo_object_key)->not->toBeNull()
-        ->and($log->proof_photo_original_name)->toBe('bukti_maintenance.jpg');
+        ->and($log->proof_photo_original_name)->toBe('bukti_maintenance.jpg')
+        ->and($log->started_at->format('Y-m-d H:i:s'))->toBe('2026-11-01 02:00:00');
 
     $this->assertDatabaseHas('asset_maintenance_logs', [
         'asset_maintenance_id' => $schedule->id,
@@ -118,8 +119,8 @@ test('Petugas LAIN gagal submit log (403 Forbidden)', function (): void {
         'work_description' => 'Mencoba mengisi pekerjaan orang lain',
         'maintenance_result' => 'Tidak diizinkan',
         'post_maintenance_condition' => AssetCondition::Good->value,
-        'started_at' => '2026-11-01 09:00:00',
-        'completed_at' => '2026-11-01 10:00:00',
+        'started_at' => '2026-11-01T09:00:00+07:00',
+        'completed_at' => '2026-11-01T10:00:00+07:00',
     ]);
 
     $response->assertForbidden();
@@ -144,8 +145,8 @@ test('Setelah log disubmit, status Jadwal Induk menjadi Selesai selama 24 jam da
         'work_description' => 'Pemeriksaan rutin kelayakan hardware',
         'maintenance_result' => 'Semua komponen berfungsi optimal',
         'post_maintenance_condition' => AssetCondition::Good->value,
-        'started_at' => '2026-11-05 08:30:00',
-        'completed_at' => '2026-11-05 09:30:00',
+        'started_at' => '2026-11-05T08:30:00+07:00',
+        'completed_at' => '2026-11-05T09:30:00+07:00',
     ]);
 
     $response->assertCreated();
@@ -222,8 +223,8 @@ test('Eksekusi maintenance dengan post_maintenance_condition berbeda memperbarui
         'work_description' => 'Pemeriksaan fisik kipas dan port',
         'maintenance_result' => 'Kipas berisik dan salah satu port longgar',
         'post_maintenance_condition' => AssetCondition::LightDamage->value,
-        'started_at' => '2026-11-01 09:00:00',
-        'completed_at' => '2026-11-01 10:00:00',
+        'started_at' => '2026-11-01T09:00:00+07:00',
+        'completed_at' => '2026-11-01T10:00:00+07:00',
     ])->assertCreated();
 
     $this->asset->refresh();
@@ -269,8 +270,8 @@ test('Eksekusi maintenance dengan post_maintenance_condition sama tidak membuat 
         'work_description' => 'Pembersihan debu',
         'maintenance_result' => 'Kondisi tetap prima',
         'post_maintenance_condition' => AssetCondition::Good->value,
-        'started_at' => '2026-11-01 09:00:00',
-        'completed_at' => '2026-11-01 10:00:00',
+        'started_at' => '2026-11-01T09:00:00+07:00',
+        'completed_at' => '2026-11-01T10:00:00+07:00',
     ])->assertCreated();
 
     $this->asset->refresh();

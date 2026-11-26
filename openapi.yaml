@@ -5,6 +5,9 @@ info:
   version: 0.1.0
   description: |
     Kontrak API backend SIMPLE-PLAN RS Citra Husada.
+    Timestamp menggunakan ISO 8601 UTC pada response. Input waktu menerima ISO 8601
+    dengan offset; waktu tanpa offset ditolak.
+    Filter tanggal YYYY-MM-DD memakai hari Asia/Jakarta.
 
     File ini dikembangkan bertahap mengikuti SRS dan kebutuhan Sprint.
     Hanya endpoint dan struktur data yang sudah disepakati yang sebaiknya
@@ -3776,12 +3779,12 @@ components:
         started_at:
           type: string
           format: date-time
-          description: Waktu mulai perbaikan; wajib dan dapat ditentukan petugas.
+          description: Waktu mulai perbaikan; wajib ISO 8601 dengan offset.
         completed_at:
           type: string
           format: date-time
           description: >-
-            Waktu selesai perbaikan; wajib dan harus sama atau setelah started_at.
+            Waktu selesai perbaikan; wajib ISO 8601 dengan offset dan sama atau setelah started_at.
         result_photo:
           type:
             - string

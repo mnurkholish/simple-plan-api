@@ -41,12 +41,12 @@ class NotificationService
 
     public function recordLogin(User $user): void
     {
-        $this->notify($user, 'Login berhasil', 'Ada sesi login baru pada '.now()->format('d M Y H:i').'.', 'IconLogin', 'emerald');
+        $this->notify($user, 'Login berhasil', 'Ada sesi login baru pada '.now(config('app.operational_timezone'))->format('d M Y H:i').'.', 'IconLogin', 'emerald');
     }
 
     public function recordLogout(User $user): void
     {
-        $this->notify($user, 'Logout berhasil', 'Sesi Anda berakhir pada '.now()->format('d M Y H:i').'.', 'IconLogout', 'slate');
+        $this->notify($user, 'Logout berhasil', 'Sesi Anda berakhir pada '.now(config('app.operational_timezone'))->format('d M Y H:i').'.', 'IconLogout', 'slate');
     }
 
     /**
@@ -54,7 +54,7 @@ class NotificationService
      */
     public function activitySummary(): array
     {
-        $today = now()->format('Y-m-d');
+        $today = now(config('app.operational_timezone'))->format('Y-m-d');
 
         return [
             [

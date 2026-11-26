@@ -58,9 +58,9 @@ test('laporan menghitung rekap, waktu penyelesaian, SLA, dan tiket per bulan ses
         'completed_at' => '2026-01-15 10:00:00',
         'sla_deadline' => '2026-01-15 10:00:00',
     ]);
-    createHelpdeskReportTicket($this->reporter, TicketService::Sarpras, TicketStatus::Ditutup, '2026-01-31 23:59:59', [
-        'completed_at' => '2026-02-01 03:59:59',
-        'sla_deadline' => '2026-02-01 03:00:00',
+    createHelpdeskReportTicket($this->reporter, TicketService::Sarpras, TicketStatus::Ditutup, '2026-01-31 16:59:59', [
+        'completed_at' => '2026-01-31 20:59:59',
+        'sla_deadline' => '2026-01-31 20:00:00',
     ]);
     createHelpdeskReportTicket($this->reporter, TicketService::Tik, TicketStatus::Terselesaikan, '2026-03-10 09:00:00', [
         'sla_deadline' => '2026-03-10 10:00:00',
@@ -69,7 +69,7 @@ test('laporan menghitung rekap, waktu penyelesaian, SLA, dan tiket per bulan ses
         'completed_at' => '2026-03-11 15:00:00',
     ]);
     createHelpdeskReportTicket($this->reporter, TicketService::Tik, TicketStatus::Ditolak, '2026-03-12 09:00:00');
-    createHelpdeskReportTicket($this->reporter, TicketService::Tik, TicketStatus::Baru, '2026-04-01 00:00:00');
+    createHelpdeskReportTicket($this->reporter, TicketService::Tik, TicketStatus::Baru, '2026-03-31 17:00:00');
 
     $this->getJson(reportUrl())->assertOk()
         ->assertJsonPath('data.summary', [
@@ -118,10 +118,10 @@ test('laporan menghitung IT Tag dan kategori Sarpras tanpa menghitung tiket gand
 
 test('filter periode dan layanan membatasi tiket serta menolak input yang tidak valid', function (): void {
     actAsHelpdeskReportRole('super-admin');
-    createHelpdeskReportTicket($this->reporter, TicketService::Tik, TicketStatus::Baru, '2026-01-09 23:59:59');
-    createHelpdeskReportTicket($this->reporter, TicketService::Tik, TicketStatus::Baru, '2026-01-10 00:00:00');
-    createHelpdeskReportTicket($this->reporter, TicketService::Sarpras, TicketStatus::Baru, '2026-01-12 23:59:59');
-    createHelpdeskReportTicket($this->reporter, TicketService::Tik, TicketStatus::Baru, '2026-01-13 00:00:00');
+    createHelpdeskReportTicket($this->reporter, TicketService::Tik, TicketStatus::Baru, '2026-01-09 16:59:59');
+    createHelpdeskReportTicket($this->reporter, TicketService::Tik, TicketStatus::Baru, '2026-01-09 17:00:00');
+    createHelpdeskReportTicket($this->reporter, TicketService::Sarpras, TicketStatus::Baru, '2026-01-12 16:59:59');
+    createHelpdeskReportTicket($this->reporter, TicketService::Tik, TicketStatus::Baru, '2026-01-12 17:00:00');
 
     $filters = ['periode_awal' => '2026-01-10', 'periode_akhir' => '2026-01-12'];
     $this->getJson(reportUrl($filters))->assertOk()->assertJsonPath('data.summary.jumlah_tiket_masuk', 2);

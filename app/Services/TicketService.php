@@ -12,6 +12,7 @@ use App\Models\Ticket;
 use App\Models\User;
 use App\Repositories\TicketRepository;
 use App\Repositories\UserRepository;
+use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -278,12 +279,13 @@ class TicketService
                 }
 
                 $targetStatus = TicketStatus::from($data['status']);
-                $completedAt = $data['completed_at'];
+                $startedAt = CarbonImmutable::parse($data['started_at'])->utc();
+                $completedAt = CarbonImmutable::parse($data['completed_at'])->utc();
 
                 $lockedTicket->handlings()->create([
                     'handled_by_id' => $handledBy->getKey(),
                     'notes' => $data['notes'],
-                    'started_at' => $data['started_at'],
+                    'started_at' => $startedAt,
                     'completed_at' => $completedAt,
                     'result_photo_object_key' => $objectKey ?: null,
                     'result_photo_original_name' => $resultPhoto?->getClientOriginalName(),

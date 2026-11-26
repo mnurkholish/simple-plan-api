@@ -103,7 +103,7 @@ class AssetMaintenanceOccurrence extends Model
         }
 
         if ($this->realized_at !== null && $this->scheduled_date !== null) {
-            return $this->realized_at->copy()->startOfDay()->gt($this->scheduled_date->copy()->startOfDay());
+            return $this->realized_at->copy()->setTimezone(config('app.operational_timezone'))->startOfDay()->toDateString() > $this->scheduled_date->toDateString();
         }
 
         return (bool) $this->is_late;
@@ -143,10 +143,10 @@ class AssetMaintenanceOccurrence extends Model
             return 0;
         }
 
-        $scheduledDate = $this->scheduled_date->copy()->startOfDay();
+        $scheduledDate = Carbon::parse($this->scheduled_date->toDateString(), config('app.operational_timezone'))->startOfDay();
 
         if ($this->realized_at !== null) {
-            $comparisonDate = $this->realized_at->copy()->startOfDay();
+            $comparisonDate = $this->realized_at->copy()->setTimezone(config('app.operational_timezone'))->startOfDay();
         } else {
             $comparisonDate = $this->resolveReferenceDate($asOf);
         }
@@ -321,6 +321,6 @@ class AssetMaintenanceOccurrence extends Model
             return Carbon::parse($asOf)->startOfDay();
         }
 
-        return today()->startOfDay();
+        return today(config('app.operational_timezone'))->startOfDay();
     }
 }

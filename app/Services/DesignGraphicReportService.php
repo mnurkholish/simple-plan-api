@@ -53,7 +53,7 @@ class DesignGraphicReportService
             ->chunkById(500, function (Collection $requests) use (&$status, &$months, &$designTypes, &$durationSeconds, &$durationCount): void {
                 foreach ($requests as $request) {
                     $status[$request->status->value]++;
-                    $months[$request->created_at->format('Y-m')]++;
+                    $months[$request->created_at->copy()->setTimezone(config('app.operational_timezone'))->format('Y-m')]++;
 
                     $type = trim(preg_replace('/\s+/u', ' ', $request->design_type) ?? $request->design_type);
                     $key = mb_strtolower($type, 'UTF-8');
@@ -110,13 +110,13 @@ class DesignGraphicReportService
                 foreach ($requests as $request) {
                     $rows[] = [
                         $request->request_number,
-                        $request->created_at->format('Y-m-d H:i:s'),
+                        $request->created_at->copy()->setTimezone(config('app.operational_timezone'))->format('Y-m-d H:i:s'),
                         $request->requester?->name ?? '-',
                         $request->unit?->unit_name ?? '-',
                         $request->design_type,
                         $request->assignedOfficer?->name ?? '-',
                         ucwords(str_replace('_', ' ', $request->status->value)),
-                        $request->completed_at?->format('Y-m-d H:i:s') ?? '-',
+                        $request->completed_at?->copy()->setTimezone(config('app.operational_timezone'))->format('Y-m-d H:i:s') ?? '-',
                     ];
                 }
             });

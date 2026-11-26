@@ -61,7 +61,7 @@ test('laporan menghitung rekap, waktu penyelesaian, dan request per bulan sesuai
         'completed_at' => '2026-01-16 20:00:00',
     ]);
     $first->forceFill(['updated_at' => '2026-03-01 00:00:00'])->save();
-    createGraphicReportRequest($this->requester, 2, '2026-01-31 23:59:59', [
+    createGraphicReportRequest($this->requester, 2, '2026-01-31 16:59:59', [
         'status' => DesignRequestStatus::Selesai,
     ]);
     createGraphicReportRequest($this->requester, 3, '2026-03-10 09:00:00', [
@@ -71,7 +71,7 @@ test('laporan menghitung rekap, waktu penyelesaian, dan request per bulan sesuai
     createGraphicReportRequest($this->requester, 4, '2026-03-11 09:00:00', [
         'status' => DesignRequestStatus::Ditolak,
     ]);
-    createGraphicReportRequest($this->requester, 5, '2026-04-01 00:00:00');
+    createGraphicReportRequest($this->requester, 5, '2026-03-31 17:00:00');
 
     $this->getJson(designGraphicReportUrl())->assertOk()
         ->assertJsonPath('data.summary', [

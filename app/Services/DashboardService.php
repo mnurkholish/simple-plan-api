@@ -201,7 +201,7 @@ class DashboardService
     /** @return array<string, int> */
     public function getLiveStats(): array
     {
-        $today = now()->format('Y-m-d');
+        $today = now(config('app.operational_timezone'))->format('Y-m-d');
 
         return [
             'online_users' => $this->onlineUsers(),
@@ -212,12 +212,12 @@ class DashboardService
 
     public function recordLogin(): void
     {
-        $this->incrementDailyCounter('login_today_'.now()->format('Y-m-d'));
+        $this->incrementDailyCounter('login_today_'.now(config('app.operational_timezone'))->format('Y-m-d'));
     }
 
     public function recordLogout(): void
     {
-        $this->incrementDailyCounter('logout_today_'.now()->format('Y-m-d'));
+        $this->incrementDailyCounter('logout_today_'.now(config('app.operational_timezone'))->format('Y-m-d'));
     }
 
     private function onlineUsers(): int
@@ -231,7 +231,7 @@ class DashboardService
 
     private function incrementDailyCounter(string $key): void
     {
-        Cache::add($key, 0, now()->endOfDay());
+        Cache::add($key, 0, now(config('app.operational_timezone'))->endOfDay());
         Cache::increment($key);
     }
 }

@@ -3612,8 +3612,8 @@ class ApiDocumentation
      *         @OA\Property(property="work_description", type="string", example="Pembersihan komponen debu dan penggantian thermal paste"),
      *         @OA\Property(property="maintenance_result", type="string", example="Suhu normal kembali dan perangkat berfungsi stabil"),
      *         @OA\Property(property="post_maintenance_condition", type="string", enum={"Baik", "Rusak Ringan", "Rusak Berat"}, example="Baik"),
-     *         @OA\Property(property="started_at", type="string", example="2026-10-28 09:00:00", description="Format: Y-m-d H:i:s"),
-     *         @OA\Property(property="completed_at", type="string", example="2026-10-28 10:30:00", description="Format: Y-m-d H:i:s (after_or_equal:started_at)"),
+     *         @OA\Property(property="started_at", type="string", format="date-time", example="2026-10-28T09:00:00+07:00", description="Wajib ISO 8601 dengan offset"),
+     *         @OA\Property(property="completed_at", type="string", format="date-time", example="2026-10-28T10:30:00+07:00", description="ISO 8601 dengan offset; harus sama atau setelah started_at"),
      *         @OA\Property(property="photo", type="string", format="binary", description="Maintenance proof photo (JPG/PNG, max 5MB)")
      *     ))),
      *
