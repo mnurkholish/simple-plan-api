@@ -480,13 +480,15 @@ test('Command maintenance:check-status mengubah status menjadi terlambat dan men
 test('Command maintenance:check-status mengirim reminder pada Hari H, H-1, dan H-3 ke petugas', function (): void {
     Notification::fake();
 
+    $today = today(config('app.operational_timezone'));
+
     $scheduleHariH = AssetMaintenance::create([
         'asset_code_id' => $this->codeTik->id,
         'assigned_officer_id' => $this->petugasTik->id,
         'creator_id' => $this->superAdmin->id,
         'maintenance_type' => 'Tugas Hari H',
         'period' => MaintenancePeriod::Monthly,
-        'next_scheduled_date' => now()->format('Y-m-d'),
+        'next_scheduled_date' => $today->format('Y-m-d'),
         'status' => MaintenanceStatus::Terjadwal,
         'is_active' => true,
     ]);
@@ -497,7 +499,7 @@ test('Command maintenance:check-status mengirim reminder pada Hari H, H-1, dan H
         'creator_id' => $this->koordSarpras->id,
         'maintenance_type' => 'Tugas H-1',
         'period' => MaintenancePeriod::Monthly,
-        'next_scheduled_date' => now()->addDay()->format('Y-m-d'),
+        'next_scheduled_date' => $today->copy()->addDay()->format('Y-m-d'),
         'status' => MaintenanceStatus::Terjadwal,
         'is_active' => true,
     ]);
@@ -508,7 +510,7 @@ test('Command maintenance:check-status mengirim reminder pada Hari H, H-1, dan H
         'creator_id' => $this->superAdmin->id,
         'maintenance_type' => 'Tugas H-3',
         'period' => MaintenancePeriod::Monthly,
-        'next_scheduled_date' => now()->addDays(3)->format('Y-m-d'),
+        'next_scheduled_date' => $today->copy()->addDays(3)->format('Y-m-d'),
         'status' => MaintenanceStatus::Terjadwal,
         'is_active' => true,
     ]);
@@ -586,7 +588,7 @@ test('Pembuatan jadwal untuk Hari H langsung mengirimkan notifikasi pengingat in
     Notification::fake();
     Sanctum::actingAs($this->superAdmin);
 
-    $today = now()->format('Y-m-d');
+    $today = today(config('app.operational_timezone'))->format('Y-m-d');
 
     $response = $this->postJson('/api/v1/asset-maintenances', [
         'asset_code_id' => $this->codeTik->id,
@@ -639,7 +641,7 @@ test('Pembuatan jadwal dadakan jarak <= 3 hari langsung mengirimkan notifikasi i
     Notification::fake();
     Sanctum::actingAs($this->superAdmin);
 
-    $h2 = now()->addDays(2)->format('Y-m-d');
+    $h2 = today(config('app.operational_timezone'))->addDays(2)->format('Y-m-d');
     $response = $this->postJson('/api/v1/asset-maintenances', [
         'asset_code_id' => $this->codeTik->id,
         'assigned_officer_id' => $this->petugasTik->id,
@@ -777,8 +779,8 @@ test('Query scope visibleTo mengisolasi data jadwal sesuai role Super Admin, Sar
         'work_description' => 'Eksekusi tanpa penugasan',
         'maintenance_result' => 'Ditolak',
         'post_maintenance_condition' => 'Baik',
-        'started_at' => now()->format('Y-m-d 08:00:00'),
-        'completed_at' => now()->format('Y-m-d 09:00:00'),
+        'started_at' => today(config('app.operational_timezone'))->setTime(8, 0)->toIso8601String(),
+        'completed_at' => today(config('app.operational_timezone'))->setTime(9, 0)->toIso8601String(),
     ])->assertForbidden();
 
     // 2. Koordinator Sarpras hanya melihat dan mengakses Non-TIK (Sarpras), tidak bocor ke IT
