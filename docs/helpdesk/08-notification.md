@@ -39,7 +39,7 @@ Frontend (via WebSocket/Database) akan menerima payload dengan struktur sebagai 
 Mengikuti masing-masing flow tiket. Daftar notifikasi hanya menampilkan notifikasi milik user yang terautentikasi.
 
 ## Routes
-`GET /api/v1/notifications` menampilkan `id`, `title`, `subtitle`, `target`, `ticket_id`, `nomor_tiket`, `url`, `is_read`, dan `created_at` per notifikasi. `target` bernilai `null` untuk notifikasi tanpa tujuan detail. Field tiket dan URL bernilai `null` untuk notifikasi non-tiket.
+`GET /api/v1/notifications` menampilkan field umum `id`, `title`, `subtitle`, `icon`, `color`, `target`, `url`, `is_read`, dan `created_at`. Notifikasi Helpdesk menambahkan `ticket_id`, `nomor_tiket`, dan `status`; notifikasi maintenance menambahkan field maintenance seperti `maintenance_id`, `scheduled_date`, dan `reminder_type`. Field khusus fitur lain tidak ditampilkan sebagai `null`. `target` bernilai `null` untuk notifikasi tanpa tujuan detail.
 
 Frontend dapat langsung memakai `url` untuk membuka detail tiket: `/helpdesk/tik/{id}` atau `/helpdesk/sarpras/{id}`. `target.feature`, `target.service`, dan `target.resource_id` tetap tersedia sebagai metadata navigasi yang terstruktur. Fitur lain dapat mengisi `target` sesuai metadata navigasinya sendiri tanpa menambah endpoint notifikasi.
 

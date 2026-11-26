@@ -3,7 +3,11 @@
 namespace App\Services;
 
 use App\Models\User;
+use App\Notifications\AssetMaintenanceOverdueNotification;
+use App\Notifications\AssetMaintenanceReminderNotification;
+use App\Notifications\DesignRequestUpdatedNotification;
 use App\Notifications\SystemActivityNotification;
+use App\Notifications\TicketStatusUpdatedNotification;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\Cache;
 
@@ -36,7 +40,7 @@ class NotificationService
 
     public function markAllAsRead(User $user): void
     {
-        $user->unreadNotifications->markAsRead();
+        $user->unreadNotifications()->update(['read_at' => now()]);
     }
 
     public function recordLogin(User $user): void
@@ -82,16 +86,38 @@ class NotificationService
 
     private function format(DatabaseNotification $notification): array
     {
-        return [
+        $common = [
             'id' => $notification->id,
             'title' => $notification->data['title'] ?? 'Notifikasi',
             'subtitle' => $notification->data['subtitle'] ?? '',
+            'icon' => $notification->data['icon'] ?? null,
+            'color' => $notification->data['color'] ?? null,
             'target' => $notification->data['target'] ?? null,
-            'ticket_id' => $notification->data['ticket_id'] ?? null,
-            'nomor_tiket' => $notification->data['nomor_tiket'] ?? null,
             'url' => $notification->data['url'] ?? null,
             'is_read' => $notification->read_at !== null,
             'created_at' => $notification->created_at,
         ];
+
+        $detailKeys = match ($notification->type) {
+            TicketStatusUpdatedNotification::class => [
+                'ticket_id', 'nomor_tiket', 'status',
+            ],
+            DesignRequestUpdatedNotification::class => [
+                'design_request_id', 'request_number', 'status',
+            ],
+            AssetMaintenanceReminderNotification::class,
+            AssetMaintenanceOverdueNotification::class => [
+                'maintenance_id', 'asset_code_id', 'full_code', 'item_name',
+                'maintenance_type', 'scheduled_date', 'reminder_type', 'status', 'is_urgent',
+            ],
+            default => [],
+        };
+
+        $details = [];
+        foreach ($detailKeys as $key) {
+            $details[$key] = $notification->data[$key] ?? null;
+        }
+
+        return [...$common, ...$details];
     }
 }

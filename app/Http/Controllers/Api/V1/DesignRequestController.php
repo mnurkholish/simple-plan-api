@@ -10,6 +10,7 @@ use App\Http\Requests\StoreDesignRequestRequest;
 use App\Http\Resources\DesignRequestDetailResource;
 use App\Http\Resources\DesignRequestResource;
 use App\Models\DesignRequest;
+use App\Services\DesignNotificationService;
 use App\Services\DesignRequestService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -17,7 +18,10 @@ use Illuminate\Support\Facades\Gate;
 
 class DesignRequestController extends Controller
 {
-    public function __construct(private readonly DesignRequestService $service) {}
+    public function __construct(
+        private readonly DesignRequestService $service,
+        private readonly DesignNotificationService $notifications,
+    ) {}
 
     public function index(ListDesignRequestRequest $request): AnonymousResourceCollection
     {
@@ -45,6 +49,7 @@ class DesignRequestController extends Controller
         Gate::authorize('assign', $designRequest);
 
         $designRequest = $this->service->assign($designRequest, $request->validated());
+        $this->notifications->assigned($designRequest);
 
         return (new DesignRequestDetailResource($this->service->loadDetail($designRequest)))
             ->additional(['message' => 'Request desain berhasil ditugaskan.']);
@@ -58,6 +63,7 @@ class DesignRequestController extends Controller
             $designRequest,
             $request->string('rejection_note')->toString(),
         );
+        $this->notifications->rejected($designRequest);
 
         return (new DesignRequestDetailResource($this->service->loadDetail($designRequest)))
             ->additional(['message' => 'Request desain berhasil ditolak.']);
@@ -72,6 +78,7 @@ class DesignRequestController extends Controller
             $request->user(),
             $request->file('reference_file'),
         );
+        $this->notifications->created($designRequest);
 
         return (new DesignRequestResource($designRequest))
             ->additional(['message' => 'Request desain berhasil dibuat.'])
