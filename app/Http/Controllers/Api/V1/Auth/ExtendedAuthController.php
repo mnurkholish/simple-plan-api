@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api\V1\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use App\Models\User;
-use App\Services\DashboardService;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Events\Verified;
@@ -19,8 +18,6 @@ use Illuminate\Validation\ValidationException;
 
 class ExtendedAuthController extends Controller
 {
-    public function __construct(private readonly DashboardService $dashboardService) {}
-
     public function register(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -42,7 +39,6 @@ class ExtendedAuthController extends Controller
         event(new Registered($user));
 
         $token = $user->createToken($data['device_name'] ?? 'api-token')->plainTextToken;
-        $this->dashboardService->recordLogin();
 
         return response()->json([
             'message' => 'Registrasi berhasil.',
