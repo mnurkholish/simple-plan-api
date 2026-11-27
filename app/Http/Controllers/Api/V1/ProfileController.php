@@ -13,6 +13,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use RuntimeException;
+use Throwable;
 
 class ProfileController extends Controller
 {
@@ -35,17 +37,43 @@ class ProfileController extends Controller
             $user->email_verified_at = null;
         }
 
-        if ($request->hasFile('avatar')) {
-            $avatarPath = $user->getRawOriginal('avatar');
+        $avatarPath = $user->getRawOriginal('avatar');
+        $newAvatarPath = null;
+        $disk = config('filesystems.default') === 's3' ? 's3' : 'public';
 
-            if ($avatarPath && ! str_starts_with($avatarPath, 'http')) {
-                Storage::disk('public')->delete($avatarPath);
+        try {
+            if ($request->hasFile('avatar')) {
+                $newAvatarPath = $request->file('avatar')->store('avatars', $disk);
+                if ($newAvatarPath === false) {
+                    throw new RuntimeException('Avatar could not be stored.');
+                }
+                $user->avatar = $newAvatarPath;
             }
 
-            $user->avatar = $request->file('avatar')->store('avatars', 'public');
+            $user->save();
+        } catch (Throwable $exception) {
+            if (is_string($newAvatarPath)) {
+                try {
+                    if (! Storage::disk($disk)->delete($newAvatarPath)) {
+                        report(new RuntimeException('Failed avatar upload could not be cleaned up.'));
+                    }
+                } catch (Throwable $cleanupException) {
+                    report($cleanupException);
+                }
+            }
+
+            throw $exception;
         }
 
-        $user->save();
+        if ($newAvatarPath !== null && $avatarPath && ! str_starts_with($avatarPath, 'http')) {
+            try {
+                if (! Storage::disk(Storage::disk('public')->exists($avatarPath) ? 'public' : $disk)->delete($avatarPath)) {
+                    report(new RuntimeException('Previous avatar could not be deleted.'));
+                }
+            } catch (Throwable $exception) {
+                report($exception);
+            }
+        }
 
         return (new UserResource($user->load(['roles.permissions', 'unit'])))
             ->additional(['message' => 'Profil berhasil diperbarui.']);
@@ -81,7 +109,8 @@ class ProfileController extends Controller
         $user->delete();
 
         if ($avatarPath && ! str_starts_with($avatarPath, 'http')) {
-            Storage::disk('public')->delete($avatarPath);
+            $disk = config('filesystems.default') === 's3' ? 's3' : 'public';
+            Storage::disk(Storage::disk('public')->exists($avatarPath) ? 'public' : $disk)->delete($avatarPath);
         }
 
         return response()->json([

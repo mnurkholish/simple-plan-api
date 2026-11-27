@@ -19,7 +19,6 @@ use App\Http\Controllers\Api\V1\DesignGraphicReportController;
 use App\Http\Controllers\Api\V1\DesignReportController;
 use App\Http\Controllers\Api\V1\DesignRequestController;
 use App\Http\Controllers\Api\V1\DesignWorkflowController;
-use App\Http\Controllers\Api\V1\ExampleLiveController;
 use App\Http\Controllers\Api\V1\HelpdeskReportController;
 use App\Http\Controllers\Api\V1\ImpersonationController;
 use App\Http\Controllers\Api\V1\InventoryReportController;
@@ -60,21 +59,6 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             ->name('auth.confirm-password');
 
         Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
-        Route::get('dashboard/live-stats', [DashboardController::class, 'liveStats'])->name('dashboard.live-stats');
-
-        Route::get('example-live', [ExampleLiveController::class, 'index'])
-            ->middleware('permission:dashboard-access')
-            ->name('example-live.index');
-        Route::get('example-live/real-market', [ExampleLiveController::class, 'realMarketData'])
-            ->middleware('permission:dashboard-access')
-            ->name('example-live.market');
-        Route::post('example-live/start', [ExampleLiveController::class, 'startJob'])
-            ->middleware('permission:dashboard-access')
-            ->name('example-live.start');
-        Route::get('example-live/status/{taskId}', [ExampleLiveController::class, 'checkStatus'])
-            ->middleware('permission:dashboard-access')
-            ->name('example-live.status');
-
         Route::get('profile', [ProfileController::class, 'show'])->name('profile.show');
         Route::patch('profile', [ProfileController::class, 'update'])->name('profile.update');
         Route::put('profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
@@ -335,5 +319,3 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             ->name('units.destroy');
     });
 });
-
-Route::middleware('auth:sanctum')->get('inventories', [AssetController::class, 'index']);

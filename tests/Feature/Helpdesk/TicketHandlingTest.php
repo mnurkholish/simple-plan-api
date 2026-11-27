@@ -61,8 +61,8 @@ function validTicketHandlingPayload(TicketStatus $status = TicketStatus::Diprose
     return [
         'notes' => 'Koneksi diperbaiki.',
         'status' => $status->value,
-        'started_at' => '2026-09-11 08:00:00',
-        'completed_at' => '2026-09-11 09:00:00',
+        'started_at' => '2026-09-11T08:00:00+07:00',
+        'completed_at' => '2026-09-11T09:00:00+07:00',
     ];
 }
 
@@ -183,7 +183,7 @@ test('status penanganan hanya dapat tetap diproses atau berubah menjadi terseles
         ->assertJsonPath('data.status', TicketStatus::Diproses->value);
 
     $completionPayload = validTicketHandlingPayload(TicketStatus::Terselesaikan);
-    $completionPayload['completed_at'] = '2026-09-11 09:30:00';
+    $completionPayload['completed_at'] = '2026-09-11T09:30:00+07:00';
     $this->postJson(
         "/api/v1/tickets/{$ticket->id}/handlings",
         $completionPayload,
@@ -192,7 +192,7 @@ test('status penanganan hanya dapat tetap diproses atau berubah menjadi terseles
         ->assertJsonPath('data.status', TicketStatus::Terselesaikan->value);
 
     expect($ticket->refresh()->status)->toBe(TicketStatus::Terselesaikan)
-        ->and($ticket->completed_at?->format('Y-m-d H:i:s'))->toBe('2026-09-11 09:30:00')
+        ->and($ticket->completed_at?->format('Y-m-d H:i:s'))->toBe('2026-09-11 02:30:00')
         ->and($ticket->sla_deadline?->format('Y-m-d H:i:s'))->toBe('2026-09-12 08:00:00')
         ->and($ticket->handlings()->count())->toBe(2)
         ->and($ticket->statusHistories()->count())->toBe(1);
@@ -223,6 +223,11 @@ test('notes status started_at dan completed_at wajib diisi', function (): void {
     $this->postJson("/api/v1/tickets/{$ticket->id}/handlings")
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['notes', 'status', 'started_at', 'completed_at']);
+
+    $this->postJson("/api/v1/tickets/{$ticket->id}/handlings", [
+        ...validTicketHandlingPayload(),
+        'started_at' => '2026-09-11 08:00:00',
+    ])->assertUnprocessable()->assertJsonValidationErrors('started_at');
 
     expect($ticket->handlings()->count())->toBe(0);
 });

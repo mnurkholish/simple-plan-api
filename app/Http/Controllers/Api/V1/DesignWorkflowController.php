@@ -8,6 +8,7 @@ use App\Http\Requests\StoreDesignDraftRequest;
 use App\Http\Requests\StoreDesignRevisionRequest;
 use App\Http\Resources\DesignRequestHistoryResource;
 use App\Models\DesignRequest;
+use App\Services\DesignNotificationService;
 use App\Services\DesignWorkflowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,6 +19,7 @@ class DesignWorkflowController extends Controller
 {
     public function __construct(
         private readonly DesignWorkflowService $service,
+        private readonly DesignNotificationService $notifications,
     ) {}
 
     public function history(DesignRequest $designRequest): DesignRequestHistoryResource
@@ -38,6 +40,7 @@ class DesignWorkflowController extends Controller
             $request->file('file'),
             $request->input('notes'),
         );
+        $this->notifications->draftUploaded($designRequest->refresh());
 
         return response()->json([
             'message' => 'Draft desain berhasil diunggah.',
@@ -55,6 +58,7 @@ class DesignWorkflowController extends Controller
             $designRequest,
             (string) $request->input('revision_note'),
         );
+        $this->notifications->revisionRequested($designRequest->refresh());
 
         return response()->json([
             'message' => 'Revisi desain berhasil diajukan.',
@@ -81,6 +85,7 @@ class DesignWorkflowController extends Controller
         }
 
         $this->service->approve($designRequest);
+        $this->notifications->approved($designRequest->refresh());
 
         return response()->json([
             'message' => 'Request desain berhasil disetujui.',

@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api\V1\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
-use App\Services\DashboardService;
 use App\Services\SsoIamService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -14,7 +13,6 @@ class SsoController extends Controller
 {
     public function __construct(
         private readonly SsoIamService $sso,
-        private readonly DashboardService $dashboardService,
     ) {}
 
     public function config(): JsonResponse
@@ -67,7 +65,6 @@ class SsoController extends Controller
 
         $user = $this->sso->exchangeCode($data['code']);
         $token = $user->createToken($data['device_name'] ?? 'sso-token')->plainTextToken;
-        $this->dashboardService->recordLogin();
 
         return response()->json([
             'message' => 'Login SSO berhasil.',

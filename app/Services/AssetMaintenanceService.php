@@ -12,6 +12,7 @@ use App\Models\AssetMaintenance;
 use App\Models\AssetMaintenanceLog;
 use App\Models\AssetMaintenanceOccurrence;
 use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -92,7 +93,7 @@ class AssetMaintenanceService
     ): AssetMaintenanceLog {
         return DB::transaction(function () use ($schedule, $data, $photoData, $actorId): AssetMaintenanceLog {
             $oldScheduledDate = $this->normalizeDateString($schedule->next_scheduled_date)
-                ?? today()->toDateString();
+                ?? today(config('app.operational_timezone'))->toDateString();
             $postCondition = $this->resolvePostMaintenanceCondition($data['post_maintenance_condition'] ?? null);
 
             /** @var AssetMaintenanceLog $log */
@@ -101,8 +102,8 @@ class AssetMaintenanceService
                 'work_description' => $data['work_description'] ?? null,
                 'maintenance_result' => $data['maintenance_result'] ?? null,
                 'post_maintenance_condition' => $postCondition?->value,
-                'started_at' => $data['started_at'] ?? null,
-                'completed_at' => $data['completed_at'] ?? null,
+                'started_at' => isset($data['started_at']) ? CarbonImmutable::parse($data['started_at'])->utc() : null,
+                'completed_at' => isset($data['completed_at']) ? CarbonImmutable::parse($data['completed_at'])->utc() : null,
                 'proof_photo_object_key' => $photoData['proof_photo_object_key'] ?? $data['proof_photo_object_key'] ?? null,
                 'proof_photo_original_name' => $photoData['proof_photo_original_name'] ?? $data['proof_photo_original_name'] ?? null,
                 'proof_photo_mime_type' => $photoData['proof_photo_mime_type'] ?? $data['proof_photo_mime_type'] ?? null,
@@ -241,7 +242,7 @@ class AssetMaintenanceService
     ): AssetMaintenanceOccurrence {
         $scheduledDate = $this->normalizeDateString($log->scheduled_date)
             ?? $this->normalizeDateString($schedule->next_scheduled_date)
-            ?? today()->toDateString();
+            ?? today(config('app.operational_timezone'))->toDateString();
 
         $realizedAt = $log->completed_at instanceof CarbonInterface
             ? Carbon::instance($log->completed_at)
@@ -372,8 +373,8 @@ class AssetMaintenanceService
             : Carbon::parse($scheduledDate)->startOfDay();
 
         $realized = $realizedAt instanceof CarbonInterface
-            ? Carbon::instance($realizedAt)->startOfDay()
-            : Carbon::parse($realizedAt)->startOfDay();
+            ? Carbon::instance($realizedAt)->setTimezone(config('app.operational_timezone'))->startOfDay()
+            : Carbon::parse($realizedAt)->setTimezone(config('app.operational_timezone'))->startOfDay();
 
         return $realized->gt($scheduled);
     }
@@ -455,6 +456,6 @@ class AssetMaintenanceService
             return Carbon::parse($asOf)->startOfDay();
         }
 
-        return today()->startOfDay();
+        return today(config('app.operational_timezone'))->startOfDay();
     }
 }

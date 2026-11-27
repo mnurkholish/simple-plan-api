@@ -368,7 +368,7 @@ class MaintenanceReportService
                 (string) ($occurrence->assetCode?->location?->name ?? ''),
                 $occurrence->period instanceof MaintenancePeriod ? $occurrence->period->label() : (string) ($occurrence->period ?? ''),
                 $occurrence->scheduled_date?->format('Y-m-d') ?? '',
-                $occurrence->realized_at?->format('Y-m-d H:i:s') ?? '-',
+                $occurrence->realized_at?->copy()->setTimezone(config('app.operational_timezone'))->format('Y-m-d H:i:s') ?? '-',
                 $effectiveStatus->label(),
                 $postCondition,
                 $officerName,

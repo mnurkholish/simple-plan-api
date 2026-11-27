@@ -83,7 +83,7 @@ class UserService
         $riwayat[] = [
             'status' => $status,
             'alasan' => $alasan,
-            'tanggal' => now()->toDateTimeString(),
+            'tanggal' => now()->toIso8601String(),
         ];
 
         $updateData = [

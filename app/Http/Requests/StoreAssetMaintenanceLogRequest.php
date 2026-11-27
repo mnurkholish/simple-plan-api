@@ -18,14 +18,15 @@ class StoreAssetMaintenanceLogRequest extends FormRequest
      */
     public function rules(): array
     {
+        $timestamp = ['required', 'date', 'regex:/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/i'];
+
         return [
             'work_description' => ['required', 'string'],
             'maintenance_result' => ['required', 'string'],
             'post_maintenance_condition' => ['required', Rule::enum(AssetCondition::class)],
-            'started_at' => ['required', 'date_format:Y-m-d H:i:s'],
+            'started_at' => $timestamp,
             'completed_at' => [
-                'required',
-                'date_format:Y-m-d H:i:s',
+                ...$timestamp,
                 'after_or_equal:started_at',
             ],
             'photo' => ['nullable', 'image', 'max:5120'],
@@ -60,9 +61,9 @@ class StoreAssetMaintenanceLogRequest extends FormRequest
             'post_maintenance_condition.required' => 'Kondisi pasca pemeliharaan wajib dipilih.',
             'post_maintenance_condition.enum' => 'Kondisi pasca pemeliharaan yang dipilih tidak valid.',
             'started_at.required' => 'Waktu mulai pengerjaan wajib diisi.',
-            'started_at.date_format' => 'Format waktu mulai harus YYYY-MM-DD HH:MM:SS.',
+            'started_at.regex' => 'Waktu mulai harus memakai ISO 8601 dengan offset zona waktu.',
             'completed_at.required' => 'Waktu selesai pengerjaan wajib diisi.',
-            'completed_at.date_format' => 'Format waktu selesai harus YYYY-MM-DD HH:MM:SS.',
+            'completed_at.regex' => 'Waktu selesai harus memakai ISO 8601 dengan offset zona waktu.',
             'completed_at.after_or_equal' => 'Waktu selesai tidak boleh lebih awal dari waktu mulai.',
             'photo.image' => 'Foto bukti pemeliharaan harus berupa berkas gambar.',
             'photo.max' => 'Ukuran foto bukti pemeliharaan tidak boleh lebih dari 5 MB.',

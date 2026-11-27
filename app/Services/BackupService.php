@@ -9,6 +9,7 @@ use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 use Throwable;
@@ -19,10 +20,10 @@ class BackupService
     public function histories(array $filters, int $perPage): LengthAwarePaginator
     {
         $from = isset($filters['date_from'])
-            ? CarbonImmutable::parse($filters['date_from'], 'Asia/Jakarta')->startOfDay()->utc()
+            ? CarbonImmutable::parse($filters['date_from'], config('app.operational_timezone'))->startOfDay()->utc()
             : null;
         $to = isset($filters['date_to'])
-            ? CarbonImmutable::parse($filters['date_to'], 'Asia/Jakarta')->addDay()->startOfDay()->utc()
+            ? CarbonImmutable::parse($filters['date_to'], config('app.operational_timezone'))->addDay()->startOfDay()->utc()
             : null;
 
         return BackupHistory::query()
@@ -49,21 +50,23 @@ class BackupService
 
     public function deleteArchive(int $id): void
     {
-        $history = BackupHistory::findOrFail($id);
+        DB::transaction(function () use ($id): void {
+            $history = BackupHistory::query()->whereKey($id)->lockForUpdate()->firstOrFail();
 
-        abort_unless($history->status === 'success', 409, 'Backup belum berhasil.');
+            abort_unless($history->status === 'success', 409, 'Backup belum berhasil.');
 
-        if (! filled($history->object_key)) {
-            return;
-        }
+            if (! filled($history->object_key)) {
+                return;
+            }
 
-        abort_unless($history->disk === 'backup', 404, 'File backup tidak ditemukan.');
+            abort_unless($history->disk === 'backup', 404, 'File backup tidak ditemukan.');
 
-        if (! Storage::disk('backup')->delete($history->object_key)) {
-            throw new RuntimeException('Gagal menghapus arsip backup dari storage.');
-        }
+            if (! Storage::disk('backup')->delete($history->object_key)) {
+                throw new RuntimeException('Gagal menghapus arsip backup dari storage.');
+            }
 
-        $history->update(['disk' => null, 'object_key' => null]);
+            $history->update(['disk' => null, 'object_key' => null]);
+        });
     }
 
     public function create(int $performedById): ?BackupHistory

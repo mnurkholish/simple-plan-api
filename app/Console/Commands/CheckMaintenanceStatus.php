@@ -20,9 +20,9 @@ class CheckMaintenanceStatus extends Command
 
     public function handle(AssetMaintenanceService $maintenanceService): int
     {
-        $today = today()->toDateString();
-        $h1 = today()->addDay()->toDateString();
-        $h3 = today()->addDays(3)->toDateString();
+        $today = today(config('app.operational_timezone'))->toDateString();
+        $h1 = today(config('app.operational_timezone'))->addDay()->toDateString();
+        $h3 = today(config('app.operational_timezone'))->addDays(3)->toDateString();
 
         $completedToScheduledCount = AssetMaintenance::query()
             ->where('status', MaintenanceStatus::Selesai)

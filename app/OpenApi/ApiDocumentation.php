@@ -31,7 +31,6 @@ use OpenApi\Annotations as OA;
  * @OA\Tag(name="Roles", description="Role and permission management")
  * @OA\Tag(name="Units", description="Unit management")
  * @OA\Tag(name="Backups", description="MySQL and MinIO backup management")
- * @OA\Tag(name="Example Live", description="Market proxy and background task demo")
  * @OA\Tag(name="Impersonation", description="Sanctum token impersonation")
  * @OA\Tag(name="Notifications", description="Notification and activity summary")
  * @OA\Tag(name="Assets", description="Asset lookup")
@@ -1194,18 +1193,6 @@ class ApiDocumentation
 
     /**
      * @OA\Get(
-     *     path="/dashboard/live-stats",
-     *     tags={"Dashboard"},
-     *     summary="Get live dashboard stats",
-     *     security={{"sanctum":{}}},
-     *
-     *     @OA\Response(response=200, description="Live stats")
-     * )
-     */
-    public function liveStats(): void {}
-
-    /**
-     * @OA\Get(
      *     path="/profile",
      *     tags={"Profile"},
      *     summary="Get profile",
@@ -1858,61 +1845,6 @@ class ApiDocumentation
      * )
      */
     public function backupsDownloadHistory(): void {}
-
-    /**
-     * @OA\Get(
-     *     path="/example-live",
-     *     tags={"Example Live"},
-     *     summary="Get Example Live metadata",
-     *     security={{"sanctum":{}}},
-     *
-     *     @OA\Response(response=200, description="Metadata")
-     * )
-     */
-    public function exampleLiveIndex(): void {}
-
-    /**
-     * @OA\Get(
-     *     path="/example-live/real-market",
-     *     tags={"Example Live"},
-     *     summary="Get market data proxy",
-     *     security={{"sanctum":{}}},
-     *
-     *     @OA\Parameter(name="range", in="query", @OA\Schema(type="string", enum={"live","1d","7d","30d"})),
-     *
-     *     @OA\Response(response=200, description="Market data")
-     * )
-     */
-    public function exampleLiveMarket(): void {}
-
-    /**
-     * @OA\Post(
-     *     path="/example-live/start",
-     *     tags={"Example Live"},
-     *     summary="Start background task",
-     *     security={{"sanctum":{}}},
-     *
-     *     @OA\RequestBody(required=false, @OA\JsonContent(@OA\Property(property="steps", type="integer", minimum=1, maximum=60, example=10))),
-     *
-     *     @OA\Response(response=202, description="Task started")
-     * )
-     */
-    public function exampleLiveStart(): void {}
-
-    /**
-     * @OA\Get(
-     *     path="/example-live/status/{taskId}",
-     *     tags={"Example Live"},
-     *     summary="Check background task status",
-     *     security={{"sanctum":{}}},
-     *
-     *     @OA\Parameter(name="taskId", in="path", required=true, @OA\Schema(type="string", format="uuid")),
-     *
-     *     @OA\Response(response=200, description="Task status"),
-     *     @OA\Response(response=404, description="Task not found")
-     * )
-     */
-    public function exampleLiveStatus(): void {}
 
     /**
      * @OA\Post(
@@ -3612,8 +3544,8 @@ class ApiDocumentation
      *         @OA\Property(property="work_description", type="string", example="Pembersihan komponen debu dan penggantian thermal paste"),
      *         @OA\Property(property="maintenance_result", type="string", example="Suhu normal kembali dan perangkat berfungsi stabil"),
      *         @OA\Property(property="post_maintenance_condition", type="string", enum={"Baik", "Rusak Ringan", "Rusak Berat"}, example="Baik"),
-     *         @OA\Property(property="started_at", type="string", example="2026-10-28 09:00:00", description="Format: Y-m-d H:i:s"),
-     *         @OA\Property(property="completed_at", type="string", example="2026-10-28 10:30:00", description="Format: Y-m-d H:i:s (after_or_equal:started_at)"),
+     *         @OA\Property(property="started_at", type="string", format="date-time", example="2026-10-28T09:00:00+07:00", description="Wajib ISO 8601 dengan offset"),
+     *         @OA\Property(property="completed_at", type="string", format="date-time", example="2026-10-28T10:30:00+07:00", description="ISO 8601 dengan offset; harus sama atau setelah started_at"),
      *         @OA\Property(property="photo", type="string", format="binary", description="Maintenance proof photo (JPG/PNG, max 5MB)")
      *     ))),
      *

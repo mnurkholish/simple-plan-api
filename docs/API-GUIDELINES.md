@@ -182,6 +182,10 @@ memungkinkan.
 
 Jangan menggunakan format tanggal yang berubah-ubah antar endpoint.
 
+Timestamp disimpan dalam UTC dan dikirim sebagai ISO 8601 dengan offset `Z`.
+Input waktu dari client wajib memakai ISO 8601 dengan offset. Tanggal tanpa jam (`YYYY-MM-DD`) dan filter
+periode memakai hari operasional Asia/Jakarta.
+
 ---
 
 ## 10. File Upload Contract

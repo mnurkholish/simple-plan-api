@@ -81,7 +81,7 @@ test('export Excel berisi lima sheet, rincian request, rekap, dan grafik sesuai 
         'assigned_officer_id' => $officer->id,
         'completed_at' => '2026-01-16 20:00:00',
     ]);
-    createDesignGraphicExportRequest($this->requester, 2, '2026-03-31 23:59:59', [
+    createDesignGraphicExportRequest($this->requester, 2, '2026-03-31 16:59:59', [
         'status' => DesignRequestStatus::Ditolak,
         'design_type' => 'poster edukasi',
     ]);
@@ -107,7 +107,7 @@ test('export Excel berisi lima sheet, rincian request, rekap, dan grafik sesuai 
         expect($details->getCell('D3')->getValue())->toBe($this->requester->unit->unit_name);
         expect($details->getCell('E3')->getValue())->toBe('Poster  Edukasi');
         expect($details->getCell('F3')->getValue())->toBe($officer->name);
-        expect($details->getCell('H3')->getValue())->toBe('2026-01-16 20:00:00');
+        expect($details->getCell('H3')->getValue())->toBe('2026-01-17 03:00:00');
 
         expect($book->getSheetByName('Rekap')->getCell('B2')->getValue())->toBe(2);
         expect($book->getSheetByName('Rekap')->getCell('B3')->getValue())->toBe(1);

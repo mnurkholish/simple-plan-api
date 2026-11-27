@@ -17,11 +17,4 @@ class DashboardController extends Controller
             'data' => $this->service->getDashboardData($request->user()),
         ]);
     }
-
-    public function liveStats(): JsonResponse
-    {
-        return response()->json([
-            'data' => $this->service->getLiveStats(),
-        ]);
-    }
 }

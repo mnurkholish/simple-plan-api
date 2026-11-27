@@ -14,8 +14,6 @@ use App\Models\User;
 use App\Support\DashboardResolver;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 
 class DashboardService
 {
@@ -196,42 +194,5 @@ class DashboardService
         }
 
         return $query;
-    }
-
-    /** @return array<string, int> */
-    public function getLiveStats(): array
-    {
-        $today = now()->format('Y-m-d');
-
-        return [
-            'online_users' => $this->onlineUsers(),
-            'logins_today' => (int) Cache::get('login_today_'.$today, 0),
-            'logouts_today' => (int) Cache::get('logout_today_'.$today, 0),
-        ];
-    }
-
-    public function recordLogin(): void
-    {
-        $this->incrementDailyCounter('login_today_'.now()->format('Y-m-d'));
-    }
-
-    public function recordLogout(): void
-    {
-        $this->incrementDailyCounter('logout_today_'.now()->format('Y-m-d'));
-    }
-
-    private function onlineUsers(): int
-    {
-        return DB::table('personal_access_tokens')
-            ->where(function ($query): void {
-                $query->where('last_used_at', '>=', now()->subMinutes(5))
-                    ->orWhere('created_at', '>=', now()->subMinutes(5));
-            })->distinct('tokenable_id')->count('tokenable_id');
-    }
-
-    private function incrementDailyCounter(string $key): void
-    {
-        Cache::add($key, 0, now()->endOfDay());
-        Cache::increment($key);
     }
 }

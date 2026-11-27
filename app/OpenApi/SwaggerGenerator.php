@@ -7,6 +7,7 @@ use OpenApi\Analysers\AttributeAnnotationFactory;
 use OpenApi\Analysers\DocBlockAnnotationFactory;
 use OpenApi\Analysers\ReflectionAnalyser;
 use OpenApi\Generator;
+use OpenApi\Processors\AugmentProperties;
 
 class SwaggerGenerator extends Generator
 {
@@ -20,6 +21,10 @@ class SwaggerGenerator extends Generator
         ]));
 
         $this->docBlockAnalyserLocked = true;
+
+        // All API properties are declared in DocBlocks, without PHP property types
+        // to infer. This processor repeatedly parses the large documentation block.
+        $this->getProcessorPipeline()->remove(AugmentProperties::class);
 
         return $this;
     }

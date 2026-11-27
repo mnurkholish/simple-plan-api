@@ -27,6 +27,7 @@ class StoreTicketHandlingRequest extends FormRequest
      */
     public function rules(): array
     {
+        $timestamp = ['required', 'date', 'regex:/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/i'];
         $ticket = $this->route('ticket');
         $allowedStatuses = match ($ticket instanceof Ticket ? $ticket->status : null) {
             TicketStatus::Diproses => [
@@ -42,10 +43,9 @@ class StoreTicketHandlingRequest extends FormRequest
         return [
             'notes' => ['required', 'string'],
             'status' => ['required', Rule::in($allowedStatuses)],
-            'started_at' => ['required', 'date'],
+            'started_at' => $timestamp,
             'completed_at' => [
-                'required',
-                'date',
+                ...$timestamp,
                 'after_or_equal:started_at',
             ],
             'result_photo' => ['nullable', 'image', 'max:5120'],

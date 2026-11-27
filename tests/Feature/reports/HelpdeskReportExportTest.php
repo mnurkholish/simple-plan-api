@@ -86,13 +86,13 @@ test('export Excel berisi enam sheet, rincian tiket, rekap, dan grafik sesuai fi
         'sla_deadline' => '2026-01-15 10:00:00',
     ]);
     $tik->tikDetail()->create(['quality_category_id' => $quality->id, 'it_tag_id' => $tag->id]);
-    $sarpras = createHelpdeskExportTicket($this->reporter, TicketService::Sarpras, TicketStatus::Ditutup, '2026-03-31 23:59:59', [
-        'completed_at' => '2026-04-01 03:59:59',
-        'sla_deadline' => '2026-04-01 03:00:00',
+    $sarpras = createHelpdeskExportTicket($this->reporter, TicketService::Sarpras, TicketStatus::Ditutup, '2026-03-31 16:59:59', [
+        'completed_at' => '2026-03-31 20:59:59',
+        'sla_deadline' => '2026-03-31 20:00:00',
     ]);
     $sarpras->sarprasDetail()->create(['sarpras_category_id' => $category->id]);
     createHelpdeskExportTicket($this->reporter, TicketService::Tik, TicketStatus::Ditolak, '2026-02-10 09:00:00');
-    createHelpdeskExportTicket($this->reporter, TicketService::Sarpras, TicketStatus::Baru, '2026-04-01 00:00:00');
+    createHelpdeskExportTicket($this->reporter, TicketService::Sarpras, TicketStatus::Baru, '2026-03-31 17:00:00');
 
     $response = $this->get(helpdeskExportUrl())->assertOk()
         ->assertHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')

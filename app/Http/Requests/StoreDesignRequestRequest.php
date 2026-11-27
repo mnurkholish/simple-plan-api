@@ -18,7 +18,7 @@ class StoreDesignRequestRequest extends FormRequest
             'title' => ['required', 'string', 'max:100'],
             'design_type' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string'],
-            'needed_at' => ['required', 'date', 'after_or_equal:today'],
+            'needed_at' => ['required', 'date', 'after_or_equal:'.today(config('app.operational_timezone'))->toDateString()],
             'reference_file' => ['nullable', 'file', 'max:5120'],
         ];
     }

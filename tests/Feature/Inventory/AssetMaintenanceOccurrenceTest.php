@@ -13,6 +13,7 @@ use App\Models\AssetMaintenanceLog;
 use App\Models\AssetMaintenanceOccurrence;
 use App\Models\User;
 use App\Services\AssetMaintenanceService;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -78,7 +79,7 @@ test('Pembuatan jadwal maintenance otomatis membuat occurrence awal secara idemp
     Notification::fake();
     Sanctum::actingAs($this->superAdmin);
 
-    $scheduledDate = today()->addDays(10)->toDateString();
+    $scheduledDate = today(config('app.operational_timezone'))->addDays(10)->toDateString();
 
     $response = $this->postJson('/api/v1/asset-maintenances', [
         'asset_code_id' => $this->codeTik->id,
@@ -114,8 +115,8 @@ test('Pembaruan jadwal menyinkronkan occurrence terbuka tanpa duplikasi dan menj
     Notification::fake();
     Sanctum::actingAs($this->superAdmin);
 
-    $initialDate = today()->addDays(7)->toDateString();
-    $rescheduledDate = today()->addDays(14)->toDateString();
+    $initialDate = today(config('app.operational_timezone'))->addDays(7)->toDateString();
+    $rescheduledDate = today(config('app.operational_timezone'))->addDays(14)->toDateString();
 
     $createResponse = $this->postJson('/api/v1/asset-maintenances', [
         'asset_code_id' => $this->codeTik->id,
@@ -155,7 +156,7 @@ test('Pembaruan jadwal menyinkronkan occurrence terbuka tanpa duplikasi dan menj
 test('Realisasi tepat waktu memperbarui occurrence menjadi selesai, menautkan log, dan membuat siklus berikutnya', function (): void {
     Sanctum::actingAs($this->superAdmin);
 
-    $firstCycleDate = today()->toDateString();
+    $firstCycleDate = today(config('app.operational_timezone'))->toDateString();
     $createResponse = $this->postJson('/api/v1/asset-maintenances', [
         'asset_code_id' => $this->codeTik->id,
         'assigned_officer_id' => $this->petugasTik->id,
@@ -173,8 +174,8 @@ test('Realisasi tepat waktu memperbarui occurrence menjadi selesai, menautkan lo
         'work_description' => 'Membersihkan rack server dan cek UPS',
         'maintenance_result' => 'Seluruh unit berfungsi normal',
         'post_maintenance_condition' => AssetCondition::Good->value,
-        'started_at' => "{$firstCycleDate} 08:00:00",
-        'completed_at' => "{$firstCycleDate} 09:30:00",
+        'started_at' => "{$firstCycleDate}T08:00:00+07:00",
+        'completed_at' => "{$firstCycleDate}T09:30:00+07:00",
     ]);
 
     $logResponse->assertCreated();
@@ -189,7 +190,7 @@ test('Realisasi tepat waktu memperbarui occurrence menjadi selesai, menautkan lo
     expect($completedOccurrence)->not->toBeNull()
         ->and($completedOccurrence->status)->toBe(MaintenanceStatus::Selesai)
         ->and($completedOccurrence->asset_maintenance_log_id)->toBe($log->id)
-        ->and($completedOccurrence->realized_at->format('Y-m-d H:i:s'))->toBe("{$firstCycleDate} 09:30:00")
+        ->and($completedOccurrence->realized_at->format('Y-m-d H:i:s'))->toBe(CarbonImmutable::parse("{$firstCycleDate}T09:30:00+07:00")->utc()->format('Y-m-d H:i:s'))
         ->and($completedOccurrence->is_late)->toBeFalse()
         ->and($completedOccurrence->wasRealizedLate())->toBeFalse()
         ->and($completedOccurrence->isOverdue())->toBeFalse()
@@ -213,8 +214,8 @@ test('Realisasi tepat waktu memperbarui occurrence menjadi selesai, menautkan lo
 });
 
 test('Realisasi terlambat menandai occurrence selesai dengan is_late true dan menghitung keterlambatan secara akurat', function (): void {
-    $scheduledDate = today()->subDays(5)->toDateString();
-    $realizedDate = today()->subDays(1)->toDateString();
+    $scheduledDate = today(config('app.operational_timezone'))->subDays(5)->toDateString();
+    $realizedDate = today(config('app.operational_timezone'))->subDays(1)->toDateString();
 
     $schedule = AssetMaintenance::create([
         'asset_code_id' => $this->codeTik->id,
@@ -240,14 +241,14 @@ test('Realisasi terlambat menandai occurrence selesai dengan is_late true dan me
         'work_description' => 'Pemeriksaan dilakukan terlambat 4 hari',
         'maintenance_result' => 'Kondisi perangkat baik',
         'post_maintenance_condition' => AssetCondition::Good->value,
-        'started_at' => "{$realizedDate} 10:00:00",
-        'completed_at' => "{$realizedDate} 11:00:00",
+        'started_at' => "{$realizedDate}T10:00:00+07:00",
+        'completed_at' => "{$realizedDate}T11:00:00+07:00",
     ])->assertCreated();
 
     $openOccurrence->refresh();
     expect($openOccurrence->status)->toBe(MaintenanceStatus::Selesai)
         ->and($openOccurrence->asset_maintenance_log_id)->not->toBeNull()
-        ->and($openOccurrence->realized_at->format('Y-m-d H:i:s'))->toBe("{$realizedDate} 11:00:00")
+        ->and($openOccurrence->realized_at->format('Y-m-d H:i:s'))->toBe(CarbonImmutable::parse("{$realizedDate}T11:00:00+07:00")->utc()->format('Y-m-d H:i:s'))
         ->and($openOccurrence->is_late)->toBeTrue()
         ->and($openOccurrence->wasRealizedLate())->toBeTrue()
         ->and($openOccurrence->isOverdue())->toBeFalse()
@@ -255,7 +256,7 @@ test('Realisasi terlambat menandai occurrence selesai dengan is_late true dan me
         ->and($openOccurrence->overdueDays())->toBe(4);
 
     // Siklus berikutnya (scheduledDate + 7 hari = today + 2 hari) harus berstatus terjadwal
-    $nextDate = today()->addDays(2)->toDateString();
+    $nextDate = today(config('app.operational_timezone'))->addDays(2)->toDateString();
     $nextOccurrence = $schedule->occurrences()->whereDate('scheduled_date', $nextDate)->first();
     expect($nextOccurrence)->not->toBeNull()
         ->and($nextOccurrence->status)->toBe(MaintenanceStatus::Terjadwal)
@@ -263,8 +264,8 @@ test('Realisasi terlambat menandai occurrence selesai dengan is_late true dan me
 });
 
 test('Realisasi jadwal yang sangat tertinggal tetap mendeteksi siklus berikutnya sebagai terlambat bila masih lewat hari ini', function (): void {
-    $veryOldScheduledDate = today()->subDays(20)->toDateString();
-    $realizedDate = today()->toDateString();
+    $veryOldScheduledDate = today(config('app.operational_timezone'))->subDays(20)->toDateString();
+    $realizedDate = today(config('app.operational_timezone'))->toDateString();
 
     $schedule = AssetMaintenance::create([
         'asset_code_id' => $this->codeTik->id,
@@ -283,11 +284,11 @@ test('Realisasi jadwal yang sangat tertinggal tetap mendeteksi siklus berikutnya
         'work_description' => 'Eksekusi susulan',
         'maintenance_result' => 'Baik',
         'post_maintenance_condition' => AssetCondition::Good->value,
-        'started_at' => "{$realizedDate} 08:00:00",
-        'completed_at' => "{$realizedDate} 09:00:00",
+        'started_at' => "{$realizedDate}T08:00:00+07:00",
+        'completed_at' => "{$realizedDate}T09:00:00+07:00",
     ])->assertCreated();
 
-    $nextDate = today()->subDays(13)->toDateString();
+    $nextDate = today(config('app.operational_timezone'))->subDays(13)->toDateString();
     $nextOccurrence = $schedule->occurrences()->whereDate('scheduled_date', $nextDate)->first();
     expect($nextOccurrence)->not->toBeNull()
         ->and($nextOccurrence->status)->toBe(MaintenanceStatus::Terlambat)
@@ -298,7 +299,7 @@ test('Reschedule ke tanggal yang sudah memiliki occurrence selesai tidak menimpa
     Notification::fake();
     Sanctum::actingAs($this->superAdmin);
 
-    $firstDate = today()->toDateString();
+    $firstDate = today(config('app.operational_timezone'))->toDateString();
     $createResponse = $this->postJson('/api/v1/asset-maintenances', [
         'asset_code_id' => $this->codeTik->id,
         'assigned_officer_id' => $this->petugasTik->id,
@@ -313,8 +314,8 @@ test('Reschedule ke tanggal yang sudah memiliki occurrence selesai tidak menimpa
         'work_description' => 'Pembersihan',
         'maintenance_result' => 'Bersih',
         'post_maintenance_condition' => AssetCondition::Good->value,
-        'started_at' => "{$firstDate} 08:00:00",
-        'completed_at' => "{$firstDate} 08:45:00",
+        'started_at' => "{$firstDate}T08:00:00+07:00",
+        'completed_at' => "{$firstDate}T08:45:00+07:00",
     ])->assertCreated();
 
     $logId = $logResponse->json('data.id');
@@ -334,9 +335,9 @@ test('Reschedule ke tanggal yang sudah memiliki occurrence selesai tidak menimpa
 test('Command maintenance:check-status menyinkronkan occurrence, menandai overdue, backfill log, dan berjalan idempoten', function (): void {
     Notification::fake();
 
-    $pastDate = today()->subDays(3)->toDateString();
-    $futureDate = today()->addDays(5)->toDateString();
-    $inactivePastDate = today()->subDays(4)->toDateString();
+    $pastDate = today(config('app.operational_timezone'))->subDays(3)->toDateString();
+    $futureDate = today(config('app.operational_timezone'))->addDays(5)->toDateString();
+    $inactivePastDate = today(config('app.operational_timezone'))->subDays(4)->toDateString();
 
     $overdueSchedule = AssetMaintenance::create([
         'asset_code_id' => $this->codeTik->id,
@@ -359,15 +360,15 @@ test('Command maintenance:check-status menyinkronkan occurrence, menandai overdu
     ]);
 
     // Legacy log without an occurrence row
-    $legacyDate = today()->subMonth()->toDateString();
+    $legacyDate = today(config('app.operational_timezone'))->subMonth()->toDateString();
     $legacyLog = AssetMaintenanceLog::create([
         'asset_maintenance_id' => $overdueSchedule->id,
         'scheduled_date' => $legacyDate,
         'work_description' => 'Log lama sebelum fitur occurrence',
         'maintenance_result' => 'Normal',
         'post_maintenance_condition' => AssetCondition::Good,
-        'started_at' => "{$legacyDate} 09:00:00",
-        'completed_at' => "{$legacyDate} 10:00:00",
+        'started_at' => "{$legacyDate}T09:00:00+07:00",
+        'completed_at' => "{$legacyDate}T10:00:00+07:00",
     ]);
 
     $futureSchedule = AssetMaintenance::create([

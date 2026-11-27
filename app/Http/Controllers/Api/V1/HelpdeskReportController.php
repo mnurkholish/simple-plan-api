@@ -38,7 +38,7 @@ class HelpdeskReportController extends Controller
                 'charts' => $report['charts'],
                 'period' => $filters['periode_awal'].' – '.$filters['periode_akhir'],
                 'service' => $service,
-                'downloadedAt' => now()->format('d M Y, H:i'),
+                'downloadedAt' => now(config('app.operational_timezone'))->format('d M Y, H:i').' WIB',
                 'downloadedBy' => $request->user()->name,
             ], $filename.'.pdf', [
                 'view' => 'reports.helpdesk.pdf',

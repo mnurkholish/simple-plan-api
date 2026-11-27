@@ -89,10 +89,10 @@ test('jumlah request per status dan jenis desain manual sesuai database', functi
 
 test('filter periode menghitung request pada batas tanggal awal dan akhir', function (): void {
     actingAsDesignReportReader();
-    createDesignReportRequest($this->requester, 11, '2026-01-09 23:59:59');
-    $first = createDesignReportRequest($this->requester, 12, '2026-01-10 00:00:00', ['design_type' => 'Poster khusus']);
-    $last = createDesignReportRequest($this->requester, 13, '2026-01-12 23:59:59', ['design_type' => 'Banner manual', 'status' => DesignRequestStatus::Ditolak]);
-    createDesignReportRequest($this->requester, 14, '2026-01-13 00:00:00');
+    createDesignReportRequest($this->requester, 11, '2026-01-09 16:59:59');
+    $first = createDesignReportRequest($this->requester, 12, '2026-01-09 17:00:00', ['design_type' => 'Poster khusus']);
+    $last = createDesignReportRequest($this->requester, 13, '2026-01-12 16:59:59', ['design_type' => 'Banner manual', 'status' => DesignRequestStatus::Ditolak]);
+    createDesignReportRequest($this->requester, 14, '2026-01-12 17:00:00');
 
     $response = $this->getJson('/api/v1/design-reports?start_date=2026-01-10&end_date=2026-01-12')
         ->assertOk()

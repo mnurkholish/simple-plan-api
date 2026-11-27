@@ -22,8 +22,8 @@ class HelpdeskReportService
         abort_unless($actor->hasAnyRole(['super-admin', 'management', 'koordinator-sarpras']), 403);
 
         $query = Ticket::query()
-            ->where('tickets.created_at', '>=', CarbonImmutable::createFromFormat('!Y-m-d', $filters['periode_awal']))
-            ->where('tickets.created_at', '<', CarbonImmutable::createFromFormat('!Y-m-d', $filters['periode_akhir'])->addDay());
+            ->where('tickets.created_at', '>=', CarbonImmutable::parse($filters['periode_awal'], config('app.operational_timezone'))->startOfDay()->utc())
+            ->where('tickets.created_at', '<', CarbonImmutable::parse($filters['periode_akhir'], config('app.operational_timezone'))->addDay()->startOfDay()->utc());
 
         if ($actor->hasRole('koordinator-sarpras')) {
             $query->where('tickets.service', TicketService::Sarpras->value);
@@ -65,7 +65,7 @@ class HelpdeskReportService
             ->chunkById(500, function (Collection $tickets) use (&$months, &$status, &$categories, &$sla, &$completed, &$rejected, &$durationSeconds, &$durationCount): void {
                 foreach ($tickets as $ticket) {
                     $status[$ticket->status->value]++;
-                    $months[$ticket->created_at->format('Y-m')]++;
+                    $months[$ticket->created_at->copy()->setTimezone(config('app.operational_timezone'))->format('Y-m')]++;
 
                     $service = $ticket->service;
                     if ($service === TicketService::Tik) {
@@ -152,15 +152,15 @@ class HelpdeskReportService
                     $rows[] = [
                         $ticket->ticket_number,
                         $ticket->service === TicketService::Tik ? 'TIK' : 'Sarpras',
-                        $ticket->created_at->format('Y-m-d H:i:s'),
+                        $ticket->created_at->copy()->setTimezone(config('app.operational_timezone'))->format('Y-m-d H:i:s'),
                         $ticket->asset?->assetCode?->full_code ?? '—',
                         $ticket->asset?->detail_item ?: ($ticket->asset?->assetCode?->item?->name ?? '—'),
                         $category ?? 'Belum diklasifikasi',
                         ucfirst($ticket->priority?->value ?? '—'),
                         $ticket->assignedOfficer?->name ?? '—',
                         ucfirst($ticket->status->value),
-                        $ticket->sla_deadline?->format('Y-m-d H:i:s') ?? '—',
-                        $ticket->completed_at?->format('Y-m-d H:i:s') ?? '—',
+                        $ticket->sla_deadline?->copy()->setTimezone(config('app.operational_timezone'))->format('Y-m-d H:i:s') ?? '—',
+                        $ticket->completed_at?->copy()->setTimezone(config('app.operational_timezone'))->format('Y-m-d H:i:s') ?? '—',
                         $sla,
                     ];
                 }

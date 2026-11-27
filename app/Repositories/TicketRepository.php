@@ -38,7 +38,7 @@ class TicketRepository
                 fn (Builder $query, string $dateFrom): Builder => $query->where(
                     'created_at',
                     '>=',
-                    CarbonImmutable::createFromFormat('!Y-m-d', $dateFrom),
+                    CarbonImmutable::parse($dateFrom, config('app.operational_timezone'))->startOfDay()->utc(),
                 ),
             )
             ->when(
@@ -46,7 +46,7 @@ class TicketRepository
                 fn (Builder $query, string $dateTo): Builder => $query->where(
                     'created_at',
                     '<',
-                    CarbonImmutable::createFromFormat('!Y-m-d', $dateTo)->addDay(),
+                    CarbonImmutable::parse($dateTo, config('app.operational_timezone'))->addDay()->startOfDay()->utc(),
                 ),
             )
             ->when(

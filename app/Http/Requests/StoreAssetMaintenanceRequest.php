@@ -45,7 +45,7 @@ class StoreAssetMaintenanceRequest extends FormRequest
             ],
             'maintenance_type' => ['required', 'string', 'max:255'],
             'period' => ['required', Rule::enum(MaintenancePeriod::class)],
-            'next_scheduled_date' => ['required', 'date', 'after_or_equal:today'],
+            'next_scheduled_date' => ['required', 'date', 'after_or_equal:'.today(config('app.operational_timezone'))->toDateString()],
         ];
     }
 
